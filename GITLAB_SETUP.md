@@ -6,9 +6,28 @@ This guide will help you set up Git and connect your repository to GitLab.
 
 1. **Git installed** - Check with: `git --version`
 2. **GitLab account** - You need access to a GitLab instance (e.g., gitlab.tudelft.nl)
-3. **GitLab repository** - Create a new repository on GitLab or use an existing one
 
 ## Initial Setup
+
+### Step 0: Create Repository on GitLab (Do This First!)
+
+**Yes, create the repository on GitLab first!** Here's how:
+
+1. **Log in to GitLab** (e.g., https://gitlab.tudelft.nl)
+2. **Click "New project"** or the "+" button
+3. **Choose "Create blank project"**
+4. **Fill in the details:**
+   - Project name: `phylozoo` (or your preferred name)
+   - Project slug: (auto-generated, usually fine)
+   - Visibility: Choose Private or Internal (Public if you want it open)
+   - **IMPORTANT: Do NOT initialize with a README, .gitignore, or license** (since you already have these files)
+5. **Click "Create project"**
+
+6. **Copy the repository URL** - GitLab will show you the URL. It will look like:
+   - HTTPS: `https://gitlab.tudelft.nl/YOUR_USERNAME/phylozoo.git`
+   - SSH: `git@gitlab.tudelft.nl:YOUR_USERNAME/phylozoo.git`
+
+You'll need this URL in the next steps!
 
 ### Step 1: Initialize Git Repository
 
