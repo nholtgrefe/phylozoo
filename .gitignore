@@ -38,6 +38,9 @@ htmlcov/
 .pytest_cache/
 .hypothesis/
 
+# Ruff
+.ruff_cache/
+
 # MyPy
 .mypy_cache/
 .dmypy.json
