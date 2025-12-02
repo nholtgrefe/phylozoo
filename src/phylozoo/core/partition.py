@@ -61,16 +61,49 @@ class Partition:
     __slots__ = ('_parts', '_elements', '_initialized')
     
     def __init__(self, parts: List[Set[T]]) -> None:
-        # Store in private attributes
-        self._parts: tuple = tuple(frozenset(part) for part in parts)
-        self._elements: frozenset = (
-            frozenset().union(*self._parts) if self._parts else frozenset()
-        )
-        self._initialized: bool = True
+        # Convert to frozensets, compute elements, and validate in one pass
+        parts_frozen: List[frozenset] = []
+        elements_set: Set[T] = set()
+        total_size: int = 0
         
-        # Always validate
-        if not self._is_valid():
+        for part in parts:
+            part_frozen = frozenset(part)
+            parts_frozen.append(part_frozen)
+            part_size = len(part_frozen)
+            total_size += part_size
+            
+            # Check for overlaps during element collection (early validation)
+            for elt in part_frozen:
+                if elt in elements_set:
+                    raise ValueError("Invalid partition: sets overlap")
+                elements_set.add(elt)
+        
+        # Validate total size matches (catches any remaining edge cases)
+        if total_size != len(elements_set):
             raise ValueError("Invalid partition: sets overlap")
+        
+        # Sort for canonical form
+        def sort_key(part: frozenset) -> tuple:
+            """Sort key: (size, sorted_elements). Uses simple sorting when possible."""
+            try:
+                # Try simple sorting first (works for same/comparable types)
+                sorted_elements = sorted(part)
+                return (len(part), tuple(sorted_elements))
+            except TypeError:
+                # Fall back to complex sorting for mixed types
+                element_keys = []
+                for elt in part:
+                    elt_type = type(elt).__name__
+                    try:
+                        element_keys.append((elt_type, elt))
+                    except TypeError:
+                        element_keys.append((elt_type, str(elt)))
+                element_keys.sort()
+                return (len(part), tuple(element_keys))
+        
+        self._parts: tuple = tuple(sorted(parts_frozen, key=sort_key))
+        self._elements: frozenset = frozenset(elements_set)
+        self._initialized: bool = True
     
     def __setattr__(self, name: str, value: Any) -> None:
         """
@@ -136,6 +169,7 @@ class Partition:
         Check if two partitions are equal.
         
         Two partitions are equal if they have the same parts (order doesn't matter).
+        Since parts are stored in canonical (sorted) order, we can compare tuples directly.
         
         Parameters
         ----------
@@ -156,7 +190,8 @@ class Partition:
         """
         if not isinstance(other, Partition):
             return False
-        return set(self.parts) == set(other.parts)
+        # Since parts are stored in canonical order, we can compare directly
+        return self._parts == other._parts
     
     def __hash__(self) -> int:
         """
@@ -165,14 +200,15 @@ class Partition:
         Returns
         -------
         int
-            Hash value based on the parts (order-independent).
+            Hash value based on the parts.
         
         Notes
         -----
         Partitions are hashable because parts are stored as frozensets.
-        The hash is order-independent to match __eq__ behavior.
+        Since parts are stored in canonical (sorted) order, we can hash
+        the tuple directly.
         """
-        return hash(frozenset(self._parts))
+        return hash(self._parts)
     
     def __contains__(self, subset: Union[Set[T], frozenset]) -> bool:
         """
@@ -218,12 +254,8 @@ class Partition:
         >>> list(partition)
         [frozenset({1, 2}), frozenset({3, 4})]  # Always sorted, regardless of input order
         """
-        # Sort by size first, then by sorted elements for deterministic order
-        sorted_parts = sorted(
-            self._parts,
-            key=lambda part: (len(part), sorted(part))
-        )
-        return iter(sorted_parts)
+        # Parts are already stored in sorted order, so just iterate
+        return iter(self._parts)
     
     def __len__(self) -> int:
         """
@@ -359,9 +391,10 @@ class Partition:
         >>> reps[0]
         Partition([{1}, {3}])
         """
-        combinations = list(itertools.product(*self._parts))
-        partitions = [[{elt} for elt in comb] for comb in combinations]
-        return [Partition(part) for part in partitions]
+        return [
+            Partition([{elt} for elt in comb])
+            for comb in itertools.product(*self._parts)
+        ]
     
     def is_refinement(self, other: 'Partition') -> bool:
         """

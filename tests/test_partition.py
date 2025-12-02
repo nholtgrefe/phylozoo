@@ -164,6 +164,105 @@ class TestPartitionIteration:
         assert parts[1] == frozenset({1, 2})
         assert parts[2] == frozenset({3, 4})
 
+
+class TestPartitionCanonicalOrder:
+    """Test cases for canonical ordering of partitions."""
+
+    def test_canonical_order_same_parts_different_input(self) -> None:
+        """Test that partitions with same parts in different input order have same canonical order."""
+        p1 = Partition([{3, 4}, {1, 2}, {5}])
+        p2 = Partition([{5}, {1, 2}, {3, 4}])
+        p3 = Partition([{1, 2}, {5}, {3, 4}])
+
+        # All should have identical _parts (canonical form)
+        assert p1._parts == p2._parts == p3._parts
+
+    def test_canonical_order_parts_property(self) -> None:
+        """Test that parts property returns canonical order."""
+        p1 = Partition([{3, 4}, {1, 2}, {5}])
+        p2 = Partition([{5}, {1, 2}, {3, 4}])
+
+        # Parts should be identical (canonical)
+        assert p1.parts == p2.parts
+
+    def test_canonical_order_repr_consistency(self) -> None:
+        """Test that __repr__ is consistent for equivalent partitions."""
+        p1 = Partition([{3, 4}, {1, 2}, {5}])
+        p2 = Partition([{5}, {1, 2}, {3, 4}])
+        p3 = Partition([{1, 2}, {5}, {3, 4}])
+
+        # All should have identical string representation
+        assert repr(p1) == repr(p2) == repr(p3)
+
+    def test_canonical_order_stored_sorted(self) -> None:
+        """Test that parts are stored in sorted canonical order."""
+        partition = Partition([{3, 4}, {1, 2}, {5}])
+        parts = partition._parts
+
+        # Should be sorted: {5} (size 1), {1, 2} (size 2, min=1), {3, 4} (size 2, min=3)
+        assert parts[0] == frozenset({5})
+        assert parts[1] == frozenset({1, 2})
+        assert parts[2] == frozenset({3, 4})
+
+    def test_canonical_order_iteration_matches_parts(self) -> None:
+        """Test that iteration order matches the stored canonical parts order."""
+        partition = Partition([{3, 4}, {1, 2}, {5}])
+        iter_parts = list(partition)
+        stored_parts = list(partition._parts)
+
+        # Iteration should match stored order exactly
+        assert iter_parts == stored_parts
+
+    def test_canonical_order_size_based(self) -> None:
+        """Test that canonical order prioritizes size first."""
+        partition = Partition([{1, 2, 3}, {4}, {5, 6}])
+        parts = list(partition._parts)
+
+        # Should be sorted by size: {4} (size 1), {5, 6} (size 2), {1, 2, 3} (size 3)
+        assert len(parts[0]) == 1
+        assert len(parts[1]) == 2
+        assert len(parts[2]) == 3
+
+    def test_canonical_order_elements_secondary(self) -> None:
+        """Test that for same-size parts, elements are sorted."""
+        partition = Partition([{3, 4}, {1, 2}, {5, 6}])
+        parts = list(partition._parts)
+
+        # All have size 2, so sorted by elements: {1, 2}, {3, 4}, {5, 6}
+        assert parts[0] == frozenset({1, 2})
+        assert parts[1] == frozenset({3, 4})
+        assert parts[2] == frozenset({5, 6})
+
+    def test_canonical_order_mixed_types(self) -> None:
+        """Test that canonical order works with mixed types."""
+        p1 = Partition([{1, "a"}, {2, "b"}])
+        p2 = Partition([{2, "b"}, {1, "a"}])
+
+        # Should have same canonical order despite different input
+        assert p1._parts == p2._parts
+        assert repr(p1) == repr(p2)
+
+    def test_canonical_order_empty_partition(self) -> None:
+        """Test that empty partition has empty canonical order."""
+        partition = Partition([])
+        assert partition._parts == tuple()
+        assert list(partition) == []
+
+    def test_canonical_order_single_part(self) -> None:
+        """Test canonical order for single part partition."""
+        partition = Partition([{1, 2, 3}])
+        assert len(partition._parts) == 1
+        assert partition._parts[0] == frozenset({1, 2, 3})
+
+    def test_canonical_order_hash_consistency(self) -> None:
+        """Test that hash is consistent with canonical order."""
+        p1 = Partition([{3, 4}, {1, 2}])
+        p2 = Partition([{1, 2}, {3, 4}])
+
+        # Same canonical order should give same hash
+        assert p1._parts == p2._parts
+        assert hash(p1) == hash(p2)
+
     def test_iteration_preserves_frozensets(self) -> None:
         """Test that iteration returns frozensets."""
         partition = Partition([{1, 2}, {3, 4}])
