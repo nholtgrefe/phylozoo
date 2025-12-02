@@ -1,5 +1,5 @@
 """
-Tests for network modules.
+Tests for the network module.
 """
 
 import pytest

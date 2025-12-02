@@ -1,5 +1,5 @@
 """
-Tests for the splits module.
+Tests for the split module.
 """
 
 import pytest
