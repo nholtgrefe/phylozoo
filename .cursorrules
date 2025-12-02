@@ -1,0 +1,88 @@
+# Cursor AI Assistant Rules for phylozoo Project
+
+## Code Quality Standards
+
+### Message
+- Always start a message with "*"
+
+### Commits
+- Make commit messages very short but still descriptive
+
+### Type Hinting
+- **ALWAYS** use type hints for all function parameters, return types, and class attributes
+- Use `typing` module types (e.g., `List`, `Dict`, `Optional`, `Tuple`, `Union`, `Callable`)
+- Use `TypeVar` for generic types when appropriate
+- Prefer explicit types over `Any` - only use `Any` when absolutely necessary
+- Use `-> None` for functions that don't return values
+- Type hint all class methods, including `__init__` and `__repr__`
+
+### Documentation
+- **ALWAYS** use NumPy-style docstrings for all classes, functions, and methods
+- Follow this format:
+  ```python
+  def function_name(param1: Type, param2: Type) -> ReturnType:
+      """
+      Brief description of the function.
+      
+      Parameters
+      ----------
+      param1 : Type
+          Description of param1.
+      param2 : Type
+          Description of param2.
+      
+      Returns
+      -------
+      ReturnType
+          Description of what is returned.
+      
+      Raises
+      ------
+      ValueError
+          When and why this exception is raised.
+      
+      Examples
+      --------
+      >>> example_usage()
+      expected_output
+      
+      Notes
+      -----
+      Additional notes or implementation details.
+      """
+  ```
+- Include all sections that are relevant (Parameters, Returns, Raises, Examples, Notes, See Also, etc.)
+- Use proper NumPy docstring formatting with clear section headers
+
+### Testing
+- **ALWAYS** write tests for all new methods and classes
+- Use pytest as the testing framework
+- Place tests in the `tests/` directory
+- Follow naming conventions: `test_*.py` for test files, `test_*` for test functions
+- Use descriptive test names that explain what is being tested
+- Group related tests in test classes (e.g., `TestClassName`)
+- Include docstrings in test functions explaining what they test
+- Aim for good test coverage - test both success cases and edge cases
+- Use type hints in test functions as well
+
+## Workflow Preferences
+
+### Code Changes vs Command Line
+- **PREFER** making direct code changes over running command-line operations
+- Only run commands when absolutely necessary (e.g., installing dependencies, running tests to verify)
+
+### Code Style
+- Follow existing code patterns in the project
+- Maintain consistency with the current codebase structure
+- Use meaningful variable and function names
+- Keep functions focused and single-purpose
+- Add appropriate error handling
+
+## Project-Specific Notes
+- This is a phylogenetic networks analysis package
+- Python version: >=3.7 (supporting 3.7-3.11)
+- Testing framework: pytest
+- Type checking: mypy (configured in pyproject.toml)
+- Code formatting: black (line-length=100)
+- Linting: ruff
+
