@@ -2,9 +2,6 @@
 
 ## Code Quality Standards
 
-### Message
-- Always start a message in the chat with "*"
-
 ### Commits
 - Make commit messages very short but still descriptive
 
@@ -53,6 +50,7 @@
   ```
 - Include all sections that are relevant (Parameters, Returns, Raises, Examples, Notes, See Also, etc.)
 - Use proper NumPy docstring formatting with clear section headers
+- When including an example, also include it in the tests. When updating an example, update the tests etc.
 
 ### Testing
 - **ALWAYS** write tests for all new methods and classes
@@ -64,6 +62,7 @@
 - Include docstrings in test functions explaining what they test
 - Aim for good test coverage - test both success cases and edge cases
 - Use type hints in test functions as well
+- If a test does not work at first go, don't necessarily fix the test to work, but consider whether we might want to update the class of interest instead.
 
 ## Workflow Preferences
 

@@ -5,6 +5,7 @@ This module provides a class for working with partitions of sets.
 """
 
 import itertools
+import warnings
 from typing import Any, Iterator, List, Set, TypeVar, Union
 
 T = TypeVar('T')
@@ -68,6 +69,15 @@ class Partition:
         
         for part in parts:
             part_frozen = frozenset(part)
+            
+            # Warn if empty set is added
+            if len(part_frozen) == 0:
+                warnings.warn(
+                    "Empty set added to partition. This may cause unexpected behavior.",
+                    UserWarning,
+                    stacklevel=2
+                )
+            
             parts_frozen.append(part_frozen)
             part_size = len(part_frozen)
             total_size += part_size

@@ -39,7 +39,10 @@ class TestPartitionCreation:
 
     def test_part_with_empty_set(self) -> None:
         """Test partition containing an empty set."""
-        partition = Partition([{1, 2}, set()])
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            partition = Partition([{1, 2}, set()])
         assert len(partition) == 2
         assert partition.size() == 2
         assert partition.elements == frozenset({1, 2})
@@ -502,7 +505,10 @@ class TestPartitionEdgeCases:
 
     def test_empty_sets_in_partition(self) -> None:
         """Test partition with multiple empty sets."""
-        partition = Partition([set(), set(), {1}])
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            partition = Partition([set(), set(), {1}])
         assert len(partition) == 3
         assert partition.size() == 1
 
