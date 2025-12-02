@@ -6,7 +6,7 @@ This module provides classes for working with sets of quarnets.
 
 from typing import List, Optional, Set
 
-from phylozoo.quarnet import Quarnet
+from .quarnet import Quarnet
 
 
 class QuarnetSet:

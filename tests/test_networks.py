@@ -3,7 +3,7 @@ Tests for network modules.
 """
 
 import pytest
-from phylozoo.networks import (
+from phylozoo.core.network import (
     DirectedNetwork,
     SemiDirectedNetwork,
     random_semi_directed_network,

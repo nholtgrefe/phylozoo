@@ -1,5 +1,5 @@
 """
-Networks module for PhyloZoo.
+Network module.
 
 This module provides classes for working with phylogenetic networks.
 """
@@ -15,4 +15,3 @@ __all__ = [
     "MixedGraph",
     "MultiMixedGraph",
 ]
-

@@ -7,40 +7,51 @@ and related structures.
 
 __version__ = "0.1.0"
 
-# Import structures fundamental classes for convenient access
-from .structures import (
-    Split,
-    SplitSet,
-    SplitSystem,
-    QuartetSplitSet,
-    Partition,
-    CircularOrdering,
-    CircularSetOrdering,
-)
-
-# Import network classes
-from .networks import (
+# Import core classes for convenient access
+from .core import (
+    # Networks
     DirectedNetwork,
     SemiDirectedNetwork,
     random_semi_directed_network,
     MixedGraph,
     MultiMixedGraph,
+    # Structures
+    Split,
+    SplitSystem,
+    Partition,
+    CircularOrdering,
+    CircularSetOrdering,
+    # Distance
+    DistanceMatrix,
+    # Sequence
+    MSA,
+)
+
+# Import inference classes
+from .inference import (
+    NetworkInferrer,
+    infer_network_from_msa,
 )
 
 __all__ = [
     "__version__",
-    # Structures
-    "Split",
-    "SplitSet",
-    "SplitSystem",
-    "QuartetSplitSet",
-    "Partition",
-    "CircularOrdering",
-    "CircularSetOrdering",
-    # Networks
+    # Core - Networks
     "DirectedNetwork",
     "SemiDirectedNetwork",
     "random_semi_directed_network",
     "MixedGraph",
     "MultiMixedGraph",
+    # Core - Structures
+    "Split",
+    "SplitSystem",
+    "Partition",
+    "CircularOrdering",
+    "CircularSetOrdering",
+    # Core - Distance
+    "DistanceMatrix",
+    # Core - Sequence
+    "MSA",
+    # Inference
+    "NetworkInferrer",
+    "infer_network_from_msa",
 ]

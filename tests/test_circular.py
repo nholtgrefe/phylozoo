@@ -7,7 +7,7 @@ This module contains comprehensive tests for CircularSetOrdering and CircularOrd
 import pytest
 from typing import List, Set
 
-from phylozoo.structures.circular import CircularSetOrdering, CircularOrdering
+from phylozoo.core.structure.circular import CircularSetOrdering, CircularOrdering
 
 
 class TestCircularSetOrderingCreation:
