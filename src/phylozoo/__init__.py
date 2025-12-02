@@ -7,8 +7,8 @@ and related structures.
 
 __version__ = "0.1.0"
 
-# Import core fundamental classes for convenient access
-from .core import (
+# Import structures fundamental classes for convenient access
+from .structures import (
     Split,
     SplitSet,
     SplitSystem,
@@ -29,7 +29,7 @@ from .networks import (
 
 __all__ = [
     "__version__",
-    # Core
+    # Structures
     "Split",
     "SplitSet",
     "SplitSystem",

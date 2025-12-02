@@ -3,16 +3,16 @@ API Reference
 
 This section contains the API reference for all modules and classes in phylozoo.
 
-Core Modules
-------------
+Structures Module
+-----------------
 
 .. toctree::
    :maxdepth: 2
 
-   core
+   structures
 
 Network Modules
-----------------
+---------------
 
 .. toctree::
    :maxdepth: 2

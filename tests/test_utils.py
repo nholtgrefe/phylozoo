@@ -4,9 +4,9 @@ Tests for utility modules.
 
 import pytest
 from phylozoo.utils._config import set_validate, validate
-from phylozoo.utils.circular import CircularOrdering, CircularSetOrdering
+from phylozoo.structures.circular import CircularOrdering, CircularSetOrdering
 from phylozoo.utils.distances import DistanceMatrix
-from phylozoo.utils.partition import Partition
+from phylozoo.structures.partition import Partition
 from phylozoo.utils.tools import id_generator, normalized_l_p_norm
 
 
@@ -75,11 +75,12 @@ class TestPartition:
         partition = Partition([{1, 2}, {3, 4}])
         assert len(partition) == 2
 
-    def test_add_block(self) -> None:
-        """Test adding a block to a partition."""
-        partition = Partition()
-        partition.add_block({1, 2})
+    def test_partition_immutability(self) -> None:
+        """Test that partition is immutable (no add_block method)."""
+        partition = Partition([{1, 2}])
         assert len(partition) == 1
+        # Partition is immutable, so we can't modify it after creation
+        assert {1, 2} in partition
 
 
 class TestTools:

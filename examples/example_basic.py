@@ -3,7 +3,7 @@ Basic example demonstrating phylozoo usage.
 
 This example shows how to create and work with basic phylozoo objects.
 """
-from phylozoo.core import Split, SplitSystem
+from phylozoo.structures import Split, SplitSystem
 from phylozoo.networks import DirectedNetwork
 from phylozoo.msa import MSA
 

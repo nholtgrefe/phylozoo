@@ -9,7 +9,7 @@ The package is organized into logical submodules based on functionality:
 ```
 phylozoo/
 ├── __init__.py              # Main package initialization
-├── core/                    # Fundamental data structures
+├── structures/              # Fundamental data structures
 │   ├── __init__.py
 │   ├── splits.py           # Split, SplitSet, SplitSystem, QuartetSplitSet
 │   ├── partition.py         # Partition class
@@ -49,7 +49,7 @@ phylozoo/
 
 ## Module Descriptions
 
-### `core/` - Fundamental Data Structures
+### `structures/` - Fundamental Data Structures
 
 **Purpose:** Contains fundamental data structures used throughout the package.
 
@@ -60,7 +60,7 @@ phylozoo/
 
 **Usage:**
 ```python
-from phylozoo.core import Split, SplitSystem, Partition, CircularOrdering
+from phylozoo.structures import Split, SplitSystem, Partition, CircularOrdering
 ```
 
 **Rationale:** These are fundamental concepts that other modules build upon. Grouping them makes dependencies clear and provides a clean foundation.
@@ -134,9 +134,9 @@ from phylozoo.networks import DirectedNetwork, SemiDirectedNetwork, MixedGraph
 
 ### Recommended Imports
 
-**Core functionality:**
+**Structures functionality:**
 ```python
-from phylozoo.core import Split, SplitSystem, Partition
+from phylozoo.structures import Split, SplitSystem, Partition
 ```
 
 **Networks:**
@@ -165,7 +165,7 @@ To maintain backward compatibility with existing code, you may want to add re-ex
 
 ```python
 # In phylozoo/__init__.py
-from .core import Split, SplitSystem  # Re-export for convenience
+from .structures import Split, SplitSystem  # Re-export for convenience
 ```
 
 ## Future Organization Suggestions
@@ -184,7 +184,7 @@ Consider further organizing:
 
 ## Notes
 
-- The `core/` module contains fundamental structures that are used by all other modules
+- The `structures/` module contains fundamental structures that are used by all other modules
 - New modules (`diversity/`, `plotting/`, `squirrel/`) are created as skeletons ready for implementation
 - The structure is designed to be extensible and maintainable
 

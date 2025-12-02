@@ -3,7 +3,7 @@ Tests for the partition module.
 """
 
 import pytest
-from phylozoo.core.partition import Partition
+from phylozoo.structures.partition import Partition
 
 
 class TestPartitionCreation:

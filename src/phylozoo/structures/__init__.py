@@ -1,5 +1,5 @@
 """
-Core fundamental modules for PhyloZoo.
+Structures module for PhyloZoo.
 
 This submodule contains fundamental data structures used throughout the package:
 - Splits: 2-partitions of sets
