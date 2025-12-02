@@ -3,7 +3,7 @@
 ## Code Quality Standards
 
 ### Message
-- Always start a message with "*"
+- Always start a message in the chat with "*"
 
 ### Commits
 - Make commit messages very short but still descriptive

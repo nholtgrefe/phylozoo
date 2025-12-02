@@ -133,3 +133,6 @@ Thumbs.db
 # Project specific
 *.egg-info/
 sandbox/
+
+# Cursor
+.cursorrules
