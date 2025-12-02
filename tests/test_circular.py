@@ -739,3 +739,25 @@ class TestCircularSetOrderingContains:
         assert {4} not in cso
         assert {1, 3} not in cso
 
+
+class TestCircularSetOrderingDocstringExamples:
+    """Test examples from CircularSetOrdering docstring."""
+    
+    def test_docstring_example(self) -> None:
+        """Test the example from CircularSetOrdering docstring."""
+        cso = CircularSetOrdering([{1, 2}, {3}, {4, 5}])
+        assert len(cso) == 3
+        assert {1, 2} in cso
+        assert cso.are_neighbors({1, 2}, {3})
+
+
+class TestCircularOrderingDocstringExamples:
+    """Test examples from CircularOrdering docstring."""
+    
+    def test_docstring_example(self) -> None:
+        """Test the example from CircularOrdering docstring."""
+        co = CircularOrdering([1, 2, 3, 4])
+        assert len(co) == 4
+        assert 1 in co
+        assert co.are_neighbors(1, 2)
+

@@ -537,3 +537,20 @@ class TestPartitionEdgeCases:
         assert 0 in partition.elements
         assert partition.get_part(0) == frozenset({0, 1})
 
+
+class TestPartitionDocstringExamples:
+    """Test examples from Partition docstring."""
+    
+    def test_docstring_example(self) -> None:
+        """Test the example from Partition docstring."""
+        partition = Partition([{1, 2}, {3, 4}, {5}])
+        assert len(partition) == 3
+        assert partition.size() == 5
+        assert {1, 2} in partition
+        assert partition.get_part(3) == frozenset({3, 4})
+        # Check that parts is a read-only tuple in canonical form
+        assert isinstance(partition.parts, tuple)
+        assert frozenset({1, 2}) in partition.parts
+        assert frozenset({3, 4}) in partition.parts
+        assert frozenset({5}) in partition.parts
+
