@@ -65,3 +65,5 @@ cython_debug/
 .DS_Store
 Thumbs.db
 
+# Cursor
+.cursorrules

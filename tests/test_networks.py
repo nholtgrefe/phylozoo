@@ -3,8 +3,11 @@ Tests for network modules.
 """
 
 import pytest
-from phylozoo.dnetwork import DirectedNetwork
-from phylozoo.sdnetwork import SemiDirectedNetwork, random_semi_directed_network
+from phylozoo.networks import (
+    DirectedNetwork,
+    SemiDirectedNetwork,
+    random_semi_directed_network,
+)
 
 
 class TestDirectedNetwork:

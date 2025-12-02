@@ -22,7 +22,7 @@ def sample_split():
     Split
         A sample split object
     """
-    from phylozoo.splits import Split
+    from phylozoo.core import Split
 
     return Split({1, 2}, {3, 4})
 
@@ -37,7 +37,7 @@ def sample_split_system():
     SplitSystem
         A sample split system object
     """
-    from phylozoo.splits import Split, SplitSystem
+    from phylozoo.core import Split, SplitSystem
 
     split1 = Split({1, 2}, {3, 4})
     split2 = Split({1, 3}, {2, 4})
@@ -54,7 +54,7 @@ def sample_quartet_split_set():
     QuartetSplitSet
         A sample quartet split set object
     """
-    from phylozoo.splits import Split, QuartetSplitSet
+    from phylozoo.core import Split, QuartetSplitSet
 
     split1 = Split({1, 2}, {3, 4})
     split2 = Split({1, 3}, {2, 4})

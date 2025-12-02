@@ -6,6 +6,8 @@ This module provides classes for working with phylogenetic splits.
 
 from typing import List, Optional, Set
 
+from .partition import Partition
+
 
 class Split:
     """
@@ -52,9 +54,61 @@ class Split:
         return f"Split({self.set1}, {self.set2})"
 
 
+class SplitSet:
+    """
+    A set of splits.
+
+    This is a placeholder class for split set functionality.
+    """
+
+    def __init__(self, splits: Optional[List[Split]] = None) -> None:
+        """
+        Initialize a split set.
+
+        Parameters
+        ----------
+        splits : Optional[List[Split]], optional
+            List of splits, by default None
+        """
+        self.splits: List[Split] = splits or []
+
+    def add(self, split: Split) -> None:
+        """
+        Add a split to the set.
+
+        Parameters
+        ----------
+        split : Split
+            Split to add
+        """
+        self.splits.append(split)
+
+    def __len__(self) -> int:
+        """
+        Return the number of splits in the set.
+
+        Returns
+        -------
+        int
+            Number of splits
+        """
+        return len(self.splits)
+
+    def __repr__(self) -> str:
+        """
+        Return string representation of the split set.
+
+        Returns
+        -------
+        str
+            String representation
+        """
+        return f"SplitSet(splits={len(self.splits)})"
+
+
 class SplitSystem:
     """
-    A system of splits.
+    A split system.
 
     This is a placeholder class for split system functionality.
     """
@@ -104,48 +158,7 @@ class SplitSystem:
         return f"SplitSystem(splits={len(self.splits)})"
 
 
-class SplitSet:
-    """
-    A set of splits.
-
-    This is a placeholder class for split set functionality.
-    """
-
-    def __init__(self, splits: Optional[List[Split]] = None) -> None:
-        """
-        Initialize a split set.
-
-        Parameters
-        ----------
-        splits : Optional[List[Split]], optional
-            List of splits, by default None
-        """
-        self.splits: List[Split] = splits or []
-
-    def __len__(self) -> int:
-        """
-        Return the number of splits in the set.
-
-        Returns
-        -------
-        int
-            Number of splits
-        """
-        return len(self.splits)
-
-    def __repr__(self) -> str:
-        """
-        Return string representation of the split set.
-
-        Returns
-        -------
-        str
-            String representation
-        """
-        return f"SplitSet(splits={len(self.splits)})"
-
-
-class QuartetSplitSet(SplitSet):
+class QuartetSplitSet:
     """
     A set of quartet splits.
 
@@ -161,9 +174,31 @@ class QuartetSplitSet(SplitSet):
         Parameters
         ----------
         splits : Optional[List[Split]], optional
-            List of splits, by default None
+            List of quartet splits, by default None
         elements : Optional[Set[int]], optional
-            Set of elements (typically 4 elements for a quartet), by default None
+            Set of elements, by default None
         """
-        super().__init__(splits)
+        self.splits: List[Split] = splits or []
         self.elements: Set[int] = elements or set()
+
+    def __len__(self) -> int:
+        """
+        Return the number of splits in the set.
+
+        Returns
+        -------
+        int
+            Number of splits
+        """
+        return len(self.splits)
+
+    def __repr__(self) -> str:
+        """
+        Return string representation of the quartet split set.
+
+        Returns
+        -------
+        str
+            String representation
+        """
+        return f"QuartetSplitSet(splits={len(self.splits)})"
