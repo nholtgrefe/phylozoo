@@ -29,7 +29,7 @@ class Partition:
     Attributes
     ----------
     parts : Tuple[frozenset, ...]
-        Tuple of frozen sets representing the partition blocks (read-only).
+        Tuple of frozen sets representing the partition blocks in canonical form (read-only).
     elements : frozenset
         Frozen set containing the union of all elements in the partition (read-only).
     
@@ -82,7 +82,30 @@ class Partition:
         if total_size != len(elements_set):
             raise ValueError("Invalid partition: sets overlap")
         
-        # Sort for canonical form
+        # Store in canonical form
+        self._parts: tuple = self._canonical_form(tuple(parts_frozen))
+        self._elements: frozenset = frozenset(elements_set)
+        self._initialized: bool = True
+    
+    @staticmethod
+    def _canonical_form(parts: tuple) -> tuple:
+        """
+        Compute canonical form of a partition.
+        
+        The canonical form sorts parts by size first, then by their elements
+        in sorted order. This ensures deterministic ordering regardless of
+        input order.
+        
+        Parameters
+        ----------
+        parts : tuple
+            Tuple of frozensets representing the partition parts.
+        
+        Returns
+        -------
+        tuple
+            Tuple of frozensets in canonical (sorted) order.
+        """
         def sort_key(part: frozenset) -> tuple:
             """Sort key: (size, sorted_elements). Uses simple sorting when possible."""
             try:
@@ -101,9 +124,7 @@ class Partition:
                 element_keys.sort()
                 return (len(part), tuple(element_keys))
         
-        self._parts: tuple = tuple(sorted(parts_frozen, key=sort_key))
-        self._elements: frozenset = frozenset(elements_set)
-        self._initialized: bool = True
+        return tuple(sorted(parts, key=sort_key))
     
     def __setattr__(self, name: str, value: Any) -> None:
         """
