@@ -71,9 +71,9 @@ class MixedMultiGraph:
     0
     >>> G.add_directed_edge(1, 2)  # Parallel directed edge
     1
-    >>> G.add_edge(2, 3)  # Undirected edge
+    >>> G.add_undirected_edge(2, 3)  # Undirected edge
     0
-    >>> G.add_edge(2, 3)  # Parallel undirected edge
+    >>> G.add_undirected_edge(2, 3)  # Parallel undirected edge
     1
     >>> G.number_of_connected_components()
     1
@@ -86,9 +86,10 @@ class MixedMultiGraph:
     4
     >>> # Create from NetworkX graphs
     >>> import networkx as nx
+    >>> from phylozoo.core.structure.mixed_multi_graph import graph_to_mixedmultigraph
     >>> nx_g = nx.Graph()
     >>> nx_g.add_edge(1, 2, weight=1.0)
-    >>> G3 = MixedMultiGraph.from_graph(nx_g)
+    >>> G3 = graph_to_mixedmultigraph(nx_g)
     >>> G3.number_of_edges()
     1
     """
@@ -133,13 +134,13 @@ class MixedMultiGraph:
                     u = edge.pop('u')
                     v = edge.pop('v')
                     key = edge.pop('key', None)
-                    self.add_edge(u, v, key=key, **edge)
+                    self.add_undirected_edge(u, v, key=key, **edge)
                 elif len(edge) == 2:
                     u, v = edge
-                    self.add_edge(u, v)
+                    self.add_undirected_edge(u, v)
                 elif len(edge) == 3:
                     u, v, key = edge
-                    self.add_edge(u, v, key=key)
+                    self.add_undirected_edge(u, v, key=key)
                 else:
                     raise ValueError(f"Invalid edge format: {edge}")
 
@@ -220,7 +221,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2, weight=1.0)
+        >>> G.add_undirected_edge(1, 2, weight=1.0)
         0
         >>> list(G.edges_iter())
         [(1, 2)]
@@ -229,6 +230,62 @@ class MixedMultiGraph:
         """
         # Return edges from combined graph (has all edges)
         return self._combined.edges(keys=keys, data=data)
+    
+    def undirected_edges_iter(self, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+        """
+        Return an iterator over undirected edges.
+
+        Parameters
+        ----------
+        keys : bool, optional
+            If True, return edge keys. By default False.
+        data : bool, optional
+            If True, return edge data. By default False.
+
+        Returns
+        -------
+        Iterator
+            Iterator over undirected edges.
+
+        Examples
+        --------
+        >>> G = MixedMultiGraph()
+        >>> G.add_undirected_edge(1, 2, weight=1.0)
+        0
+        >>> list(G.undirected_edges_iter())
+        [(1, 2)]
+        >>> list(G.undirected_edges_iter(keys=True))
+        [(1, 2, 0)]
+        """
+        return self._undirected.edges(keys=keys, data=data)
+    
+    def directed_edges_iter(self, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+        """
+        Return an iterator over directed edges.
+
+        Parameters
+        ----------
+        keys : bool, optional
+            If True, return edge keys. By default False.
+        data : bool, optional
+            If True, return edge data. By default False.
+
+        Returns
+        -------
+        Iterator
+            Iterator over directed edges.
+
+        Examples
+        --------
+        >>> G = MixedMultiGraph()
+        >>> G.add_directed_edge(1, 2, weight=1.0)
+        0
+        >>> list(G.directed_edges_iter())
+        [(1, 2)]
+        >>> list(G.directed_edges_iter(keys=True))
+        [(1, 2, 0)]
+        """
+        return self._directed.edges(keys=keys, data=data)
     
 
     def neighbors(self, v: T) -> Iterator[T]:
@@ -248,7 +305,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.add_directed_edge(1, 3)
         0
@@ -341,7 +398,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2, weight=1.0)
+        >>> G.add_undirected_edge(1, 2, weight=1.0)
         0
         >>> G[1]
         {2: {0: {'weight': 1.0}}}
@@ -366,7 +423,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> nx.is_connected(G.combined_graph)
         True
@@ -536,7 +593,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.add_directed_edge(2, 3)
         0
@@ -612,7 +669,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.remove_node(2)
         >>> list(G.nodes())
@@ -681,7 +738,7 @@ class MixedMultiGraph:
         >>> key2 = G.add_directed_edge(1, 2, weight=2.0)  # Parallel edge
         >>> key1 != key2
         True
-        >>> G.add_edge(1, 2)  # This removes the directed edges
+        >>> G.add_undirected_edge(1, 2)  # This removes the directed edges
         >>> G.add_directed_edge(1, 2)  # This removes the undirected edge
         """
         # Ensure nodes exist
@@ -810,54 +867,44 @@ class MixedMultiGraph:
                 raise ValueError(f"Invalid edge format: {edge}")
 
     @property
-    def directed_edges(self) -> List[Tuple[T, T]]:
+    def directed_edges(self) -> 'EdgeView':
         """
-        Get all directed edges as a list (attribute form for compatibility).
+        Get all directed edges (works as both attribute and method).
+
+        When accessed as attribute, returns an EdgeView object (list-like).
+        When called as method, returns an iterator with optional keys and data.
 
         Returns
         -------
-        List[Tuple[T, T]]
-            List of directed edges.
+        EdgeView
+            Edge view object that's both callable and list-like.
 
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_directed_edge(1, 2)
+        >>> G.add_directed_edge(1, 2, weight=1.0)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_directed_edge(1, 2, weight=2.0)  # Parallel edge
+        1
+        >>> G.add_undirected_edge(2, 3)
         0
-        >>> G.directed_edges
-        [(1, 2)]
+        >>> G.directed_edges  # Attribute access
+        [(1, 2), (1, 2)]
+        >>> list(G.directed_edges())  # Method call
+        [(1, 2), (1, 2)]
+        >>> list(G.directed_edges(keys=True))  # With keys
+        [(1, 2, 0), (1, 2, 1)]
+        >>> list(G.directed_edges(data=True))  # With data
+        [(1, 2, {'weight': 1.0}), (1, 2, {'weight': 2.0})]
+        >>> list(G.directed_edges(keys=True, data=True))  # With keys and data
+        [(1, 2, 0, {'weight': 1.0}), (1, 2, 1, {'weight': 2.0})]
         """
-        return list(self._directed.edges())
-    
-    def directed_edges_with_keys(self, keys: bool = True) -> List[Tuple[T, T, int]]:
-        """
-        Return all directed edges with keys.
-
-        Parameters
-        ----------
-        keys : bool, optional
-            If True, return (u, v, key) tuples. By default True.
-
-        Returns
-        -------
-        List[Tuple[T, T, int]]
-            List of directed edges with keys.
-
-        Examples
-        --------
-        >>> G = MixedMultiGraph()
-        >>> G.add_directed_edge(1, 2)
-        0
-        >>> G.directed_edges_with_keys()
-        [(1, 2, 0)]
-        """
-        return list(self._directed.edges(keys=True))
+        edges_list = list(self._directed.edges())
+        return self.EdgeView(edges_list, self.directed_edges_iter)
 
     # ========== Undirected Edge Operations ==========
 
-    def add_edge(self, u: T, v: T, key: Optional[int] = None, **attr: Any) -> int:
+    def add_undirected_edge(self, u: T, v: T, key: Optional[int] = None, **attr: Any) -> int:
         """
         Add undirected edge (u, v) to the graph.
 
@@ -888,12 +935,12 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> key1 = G.add_edge(1, 2, weight=1.0)
-        >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
+        >>> key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        >>> key2 = G.add_undirected_edge(1, 2, weight=2.0)  # Parallel edge
         >>> key1 != key2
         True
         >>> G.add_directed_edge(1, 2)  # This removes the undirected edges
-        >>> G.add_edge(1, 2)  # This removes the directed edge
+        >>> G.add_undirected_edge(1, 2)  # This removes the directed edge
         """
         # Ensure nodes exist
         if u not in self._directed:
@@ -923,7 +970,7 @@ class MixedMultiGraph:
 
         return key
 
-    def add_edges_from(
+    def add_undirected_edges_from(
         self, edges: List[Tuple[T, T] | Tuple[T, T, int]], **attr: Any
     ) -> None:
         """
@@ -939,15 +986,15 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edges_from([(1, 2), (2, 3), (3, 1)])
+        >>> G.add_undirected_edges_from([(1, 2), (2, 3), (3, 1)])
         """
         for edge in edges:
             if len(edge) == 2:
                 u, v = edge
-                self.add_edge(u, v, **attr)
+                self.add_undirected_edge(u, v, **attr)
             elif len(edge) == 3:
                 u, v, key = edge
-                self.add_edge(u, v, key=key, **attr)
+                self.add_undirected_edge(u, v, key=key, **attr)
             else:
                 raise ValueError(f"Invalid edge format: {edge}")
 
@@ -1010,7 +1057,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.remove_edges_from([(1, 2), (2, 3)])
         """
@@ -1024,34 +1071,41 @@ class MixedMultiGraph:
             else:
                 raise ValueError(f"Invalid edge format: {edge}")
 
-    def undirected_edges(self, keys: bool = False) -> List[Tuple[T, T] | Tuple[T, T, int]]:
+    @property
+    def undirected_edges(self) -> 'EdgeView':
         """
-        Return all undirected edges of the graph.
+        Get all undirected edges (works as both attribute and method).
 
-        Parameters
-        ----------
-        keys : bool, optional
-            If True, return (u, v, key) tuples. If False, return (u, v) tuples.
-            By default False.
+        When accessed as attribute, returns an EdgeView object (list-like).
+        When called as method, returns an iterator with optional keys and data.
 
         Returns
         -------
-        List[Tuple[T, T] | Tuple[T, T, int]]
-            List of undirected edges.
+        EdgeView
+            Edge view object that's both callable and list-like.
 
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2, weight=1.0)
         0
+        >>> G.add_undirected_edge(1, 2, weight=2.0)  # Parallel edge
+        1
         >>> G.add_directed_edge(2, 3)
         0
-        >>> G.undirected_edges()
-        [(1, 2)]
+        >>> G.undirected_edges  # Attribute access
+        [(1, 2), (1, 2)]
+        >>> list(G.undirected_edges())  # Method call
+        [(1, 2), (1, 2)]
+        >>> list(G.undirected_edges(keys=True))  # With keys
+        [(1, 2, 0), (1, 2, 1)]
+        >>> list(G.undirected_edges(data=True))  # With data
+        [(1, 2, {'weight': 1.0}), (1, 2, {'weight': 2.0})]
+        >>> list(G.undirected_edges(keys=True, data=True))  # With keys and data
+        [(1, 2, 0, {'weight': 1.0}), (1, 2, 1, {'weight': 2.0})]
         """
-        if keys:
-            return list(self._undirected.edges(keys=True))
-        return list(self._undirected.edges())
+        edges_list = list(self._undirected.edges())
+        return self.EdgeView(edges_list, self.undirected_edges_iter)
 
     # ========== Query Operations ==========
 
@@ -1076,7 +1130,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.has_edge(1, 2)
         True
@@ -1117,7 +1171,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.number_of_edges()
         2
@@ -1144,7 +1198,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.add_directed_edge(1, 3)
         0
@@ -1177,11 +1231,11 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
-        >>> G.add_edge(1, 2)  # Parallel edge
+        >>> G.add_undirected_edge(1, 2)  # Parallel edge
         1
-        >>> G.add_edge(1, 3)
+        >>> G.add_undirected_edge(1, 3)
         0
         >>> G.undirected_degree(1)
         3
@@ -1270,7 +1324,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.add_directed_edge(3, 4)
         0
@@ -1291,7 +1345,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.add_directed_edge(2, 3)
         0
@@ -1312,7 +1366,7 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
         >>> G.add_directed_edge(3, 4)
         0
@@ -1350,9 +1404,9 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.is_cutedge(2, 3)
         True
@@ -1410,9 +1464,9 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.is_cutvertex(2)
         True
@@ -1463,7 +1517,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G._validate_synchronization()
         True
@@ -1508,7 +1562,7 @@ class MixedMultiGraph:
         >>> G.add_directed_edge(1, 2)
         0
         >>> H = G.copy()
-        >>> H.add_edge(2, 3)
+        >>> H.add_undirected_edge(2, 3)
         0
         >>> G.number_of_edges()
         1
@@ -1532,7 +1586,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.clear()
         >>> len(G.nodes())
@@ -1560,7 +1614,7 @@ class MixedMultiGraph:
         >>> G = MixedMultiGraph()
         >>> G.add_directed_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.identify_two_nodes(1, 2)
         >>> list(G.nodes())
@@ -1594,9 +1648,9 @@ class MixedMultiGraph:
         Examples
         --------
         >>> G = MixedMultiGraph()
-        >>> G.add_edge(1, 2)
+        >>> G.add_undirected_edge(1, 2)
         0
-        >>> G.add_edge(2, 3)
+        >>> G.add_undirected_edge(2, 3)
         0
         >>> G.identify_node_set([1, 2, 3])
         >>> len(G.nodes()) <= 3
@@ -1643,7 +1697,7 @@ def graph_to_mixedmultigraph(graph: nx.Graph) -> MixedMultiGraph:
         mg.add_node(node, **data)
     # Add all edges with attributes
     for u, v, data in graph.edges(data=True):
-        mg.add_edge(u, v, **data)
+        mg.add_undirected_edge(u, v, **data)
     return mg
 
 
@@ -1681,7 +1735,7 @@ def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> MixedMultiGraph:
         mg.add_node(node, **data)
     # Add all edges with keys and attributes
     for u, v, key, data in graph.edges(keys=True, data=True):
-        mg.add_edge(u, v, key=key, **data)
+        mg.add_undirected_edge(u, v, key=key, **data)
     return mg
 
 

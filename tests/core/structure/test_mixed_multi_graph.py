@@ -313,7 +313,7 @@ class TestNodeOperations:
         """Test removing a node."""
         G = MixedMultiGraph()
         G.add_nodes_from([1, 2, 3])
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
         G.remove_node(2)
         assert 2 not in G
@@ -338,7 +338,7 @@ class TestUndirectedEdgeOperations:
     def test_add_undirected_edge(self) -> None:
         """Test adding a single undirected edge."""
         G = MixedMultiGraph()
-        key = G.add_edge(1, 2)
+        key = G.add_undirected_edge(1, 2)
         assert G.has_edge(1, 2)
         assert G.has_edge(2, 1)  # Undirected is symmetric
         assert isinstance(key, int)
@@ -346,7 +346,7 @@ class TestUndirectedEdgeOperations:
     def test_add_undirected_edge_with_attributes(self) -> None:
         """Test adding undirected edge with attributes."""
         G = MixedMultiGraph()
-        key = G.add_edge(1, 2, weight=5.0, label='test', color='red')
+        key = G.add_undirected_edge(1, 2, weight=5.0, label='test', color='red')
         assert G.has_edge(1, 2)
         # Check attributes via __getitem__
         edge_data = G[1][2][key]
@@ -357,9 +357,9 @@ class TestUndirectedEdgeOperations:
     def test_parallel_undirected_edges(self) -> None:
         """Test adding parallel undirected edges."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, weight=1.0)
-        key2 = G.add_edge(1, 2, weight=2.0)
-        key3 = G.add_edge(1, 2, weight=3.0)
+        key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, weight=2.0)
+        key3 = G.add_undirected_edge(1, 2, weight=3.0)
         assert key1 != key2 != key3
         num_edges = count_undirected_edges(G, 1, 2)
         assert num_edges == 3
@@ -370,8 +370,8 @@ class TestUndirectedEdgeOperations:
     def test_parallel_undirected_edges_with_explicit_keys(self) -> None:
         """Test adding parallel undirected edges with explicit keys."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, key=10, weight=1.0)
-        key2 = G.add_edge(1, 2, key=20, weight=2.0)
+        key1 = G.add_undirected_edge(1, 2, key=10, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, key=20, weight=2.0)
         assert key1 == 10
         assert key2 == 20
         assert G.has_edge(1, 2, key=10)
@@ -380,7 +380,7 @@ class TestUndirectedEdgeOperations:
     def test_add_edges_from(self) -> None:
         """Test adding multiple undirected edges."""
         G = MixedMultiGraph()
-        G.add_edges_from([(1, 2), (2, 3), (3, 4)])
+        G.add_undirected_edges_from([(1, 2), (2, 3), (3, 4)])
         assert G.has_edge(1, 2)
         assert G.has_edge(2, 3)
         assert G.has_edge(3, 4)
@@ -389,7 +389,7 @@ class TestUndirectedEdgeOperations:
     def test_add_edges_from_with_attributes(self) -> None:
         """Test adding multiple edges with shared attributes."""
         G = MixedMultiGraph()
-        G.add_edges_from([(1, 2), (2, 3)], weight=5.0, type='test')
+        G.add_undirected_edges_from([(1, 2), (2, 3)], weight=5.0, type='test')
         for u, v in [(1, 2), (2, 3)]:
             keys = list(G[u][v].keys())
             assert len(keys) > 0
@@ -399,8 +399,8 @@ class TestUndirectedEdgeOperations:
     def test_remove_undirected_edge(self) -> None:
         """Test removing an undirected edge."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, weight=1.0)
-        key2 = G.add_edge(1, 2, weight=2.0)
+        key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, weight=2.0)
         G.remove_edge(1, 2, key=key1)
         assert not G.has_edge(1, 2, key=key1)
         assert G.has_edge(1, 2, key=key2)
@@ -409,8 +409,8 @@ class TestUndirectedEdgeOperations:
     def test_remove_undirected_edge_without_key(self) -> None:
         """Test removing undirected edge without specifying key."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2, weight=1.0)
-        G.add_edge(1, 2, weight=2.0)
+        G.add_undirected_edge(1, 2, weight=1.0)
+        G.add_undirected_edge(1, 2, weight=2.0)
         # Behavior: should remove one edge (which one?)
         G.remove_edge(1, 2)
         # Report behavior
@@ -420,7 +420,7 @@ class TestUndirectedEdgeOperations:
     def test_remove_edges_from(self) -> None:
         """Test removing multiple edges."""
         G = MixedMultiGraph()
-        G.add_edges_from([(1, 2), (2, 3), (3, 4)])
+        G.add_undirected_edges_from([(1, 2), (2, 3), (3, 4)])
         G.remove_edges_from([(1, 2), (3, 4)])
         assert not G.has_edge(1, 2)
         assert G.has_edge(2, 3)
@@ -504,8 +504,8 @@ class TestMutualExclusivity:
     def test_adding_directed_removes_undirected(self) -> None:
         """Test that adding directed edge removes undirected edges."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, weight=1.0)
-        key2 = G.add_edge(1, 2, weight=2.0)
+        key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, weight=2.0)
         assert count_undirected_edges(G, 1, 2) == 2
         
         G.add_directed_edge(1, 2, weight=3.0)
@@ -519,16 +519,16 @@ class TestMutualExclusivity:
         key2 = G.add_directed_edge(1, 2, weight=2.0)
         assert count_directed_edges(G, 1, 2) == 2
         
-        G.add_edge(1, 2, weight=3.0)
+        G.add_undirected_edge(1, 2, weight=3.0)
         assert count_directed_edges(G, 1, 2) == 0  # Directed edges removed
         assert count_undirected_edges(G, 1, 2) == 1  # Undirected edge added
 
     def test_switching_back_and_forth(self) -> None:
         """Test switching between directed and undirected multiple times."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(1, 2)  # This removes undirected edge
-        G.add_edge(1, 2)  # This removes directed edge and adds undirected
+        G.add_undirected_edge(1, 2)  # This removes directed edge and adds undirected
         G.add_directed_edge(1, 2)  # This removes undirected and adds directed
         # Final state should be directed
         assert count_directed_edges(G, 1, 2) == 1
@@ -541,7 +541,7 @@ class TestQueryOperations:
     def test_has_edge(self) -> None:
         """Test has_edge method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(3, 4)
         assert G.has_edge(1, 2)
         assert G.has_edge(2, 1)  # Undirected is symmetric
@@ -552,8 +552,8 @@ class TestQueryOperations:
     def test_has_edge_with_key(self) -> None:
         """Test has_edge with specific key."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, weight=1.0)
-        key2 = G.add_edge(1, 2, weight=2.0)
+        key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, weight=2.0)
         assert G.has_edge(1, 2, key=key1)
         assert G.has_edge(1, 2, key=key2)
         assert not G.has_edge(1, 2, key=999)
@@ -567,8 +567,8 @@ class TestQueryOperations:
     def test_number_of_edges(self) -> None:
         """Test number_of_edges method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(1, 2)  # Parallel
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Parallel
         G.add_directed_edge(2, 3)
         G.add_directed_edge(2, 3)  # Parallel
         assert G.number_of_edges() == 4
@@ -580,18 +580,18 @@ class TestQueryOperations:
         assert G.undirected_degree(1) == 0
         
         # Single undirected edge
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         assert G.undirected_degree(1) == 1
         assert G.undirected_degree(2) == 1
         
         # Parallel undirected edges
-        G.add_edge(1, 2)  # Parallel edge
+        G.add_undirected_edge(1, 2)  # Parallel edge
         assert G.undirected_degree(1) == 2
         assert G.undirected_degree(2) == 2
         
         # Multiple undirected edges
-        G.add_edge(1, 3)
-        G.add_edge(1, 3)  # Parallel
+        G.add_undirected_edge(1, 3)
+        G.add_undirected_edge(1, 3)  # Parallel
         assert G.undirected_degree(1) == 4  # 2 to node 2, 2 to node 3
         assert G.undirected_degree(3) == 2
         
@@ -609,8 +609,8 @@ class TestQueryOperations:
         assert G.degree(1) == 0
         
         # Only undirected edges
-        G.add_edge(1, 2)
-        G.add_edge(1, 2)  # Parallel undirected
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Parallel undirected
         assert G.degree(1) == 2
         assert G.degree(2) == 2
         
@@ -625,8 +625,8 @@ class TestQueryOperations:
         
         # Mixed edges
         G3 = MixedMultiGraph()
-        G3.add_edge(1, 2)  # Undirected: contributes 1
-        G3.add_edge(1, 2)  # Parallel undirected: contributes 1
+        G3.add_undirected_edge(1, 2)  # Undirected: contributes 1
+        G3.add_undirected_edge(1, 2)  # Parallel undirected: contributes 1
         G3.add_directed_edge(1, 3)  # Outgoing: contributes 1
         G3.add_directed_edge(4, 1)  # Incoming: contributes 1
         # Node 1: 2 undirected + 1 outgoing + 1 incoming = 4
@@ -664,7 +664,7 @@ class TestQueryOperations:
         assert G.indegree(2) == 4  # 4 incoming edges total
         
         # Undirected edges should not affect indegree
-        G.add_edge(5, 2)
+        G.add_undirected_edge(5, 2)
         assert G.indegree(2) == 4  # Still 4 (undirected doesn't count)
 
     def test_outdegree(self) -> None:
@@ -691,7 +691,7 @@ class TestQueryOperations:
         assert G.outdegree(1) == 4  # 4 outgoing edges total
         
         # Undirected edges should not affect outdegree
-        G.add_edge(1, 5)
+        G.add_undirected_edge(1, 5)
         assert G.outdegree(1) == 4  # Still 4 (undirected doesn't count)
 
 
@@ -721,8 +721,8 @@ class TestSpecialMethods:
     def test_getitem(self) -> None:
         """Test __getitem__ method for adjacency access."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, weight=1.0)
-        key2 = G.add_edge(1, 2, weight=2.0)
+        key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, weight=2.0)
         key3 = G.add_directed_edge(1, 3, weight=3.0)
         
         # Check structure: G[u] should return dict-like view of neighbors
@@ -769,7 +769,7 @@ class TestProperties:
     def test_edges_property(self) -> None:
         """Test edges property."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
         # Test as attribute
         edges = G.edges
@@ -781,7 +781,7 @@ class TestProperties:
     def test_edges_property_with_data(self) -> None:
         """Test edges property with data=True."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2, weight=5.0)
+        G.add_undirected_edge(1, 2, weight=5.0)
         edges_data = list(G.edges(data=True))
         # Find the edge and check data
         for u, v, data in edges_data:
@@ -792,17 +792,42 @@ class TestProperties:
     def test_directed_edges_property(self) -> None:
         """Test directed_edges property."""
         G = MixedMultiGraph()
-        G.add_directed_edge(1, 2)
-        G.add_directed_edge(2, 3)
+        G.add_directed_edge(1, 2, weight=1.0)
+        G.add_directed_edge(1, 2, weight=2.0)  # Parallel edge
+        G.add_directed_edge(2, 3, weight=3.0)
         directed = G.directed_edges
         assert (1, 2) in directed
         assert (2, 3) in directed
         assert (2, 1) not in directed  # Not reverse
+        # Test as method with keys and data
+        edges_with_keys = list(G.directed_edges(keys=True))
+        assert (1, 2, 0) in edges_with_keys
+        assert (1, 2, 1) in edges_with_keys
+        edges_with_data = list(G.directed_edges(data=True))
+        weights = {e[2]['weight'] for e in edges_with_data if e[0] == 1 and e[1] == 2}
+        assert weights == {1.0, 2.0}
+
+    def test_undirected_edges_property(self) -> None:
+        """Test undirected_edges property."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.0)
+        G.add_undirected_edge(1, 2, weight=2.0)  # Parallel edge
+        G.add_undirected_edge(2, 3, weight=3.0)
+        undirected = G.undirected_edges
+        assert (1, 2) in undirected
+        assert (2, 3) in undirected
+        # Test as method with keys and data
+        edges_with_keys = list(G.undirected_edges(keys=True))
+        assert (1, 2, 0) in edges_with_keys
+        assert (1, 2, 1) in edges_with_keys
+        edges_with_data = list(G.undirected_edges(data=True))
+        weights = {e[2]['weight'] for e in edges_with_data if e[0] == 1 and e[1] == 2}
+        assert weights == {1.0, 2.0}
 
     def test_combined_graph_property(self) -> None:
         """Test combined_graph property."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
         combined = G.combined_graph
         # Combined should have all edges as undirected
@@ -844,7 +869,7 @@ class TestIterators:
     def test_edges_iter(self) -> None:
         """Test edges_iter method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
         edges = list(G.edges_iter())
         assert len(edges) >= 2
@@ -852,8 +877,8 @@ class TestIterators:
     def test_edges_iter_with_keys(self) -> None:
         """Test edges_iter with keys=True."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2)
-        key2 = G.add_edge(1, 2)
+        key1 = G.add_undirected_edge(1, 2)
+        key2 = G.add_undirected_edge(1, 2)
         edges = list(G.edges_iter(keys=True))
         keys_found = {k for u, v, k in edges if (u, v) == (1, 2) or (u, v) == (2, 1)}
         assert key1 in keys_found
@@ -862,8 +887,8 @@ class TestIterators:
     def test_neighbors(self) -> None:
         """Test neighbors method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(1, 3)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 3)
         G.add_directed_edge(1, 4)
         G.add_directed_edge(5, 1)  # Incoming
         neighbors = set(G.neighbors(1))
@@ -881,30 +906,30 @@ class TestConnectivity:
     def test_is_connected(self) -> None:
         """Test is_connected method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
         G.add_directed_edge(3, 4)
         assert G.is_connected()
         
         G2 = MixedMultiGraph()
-        G2.add_edge(1, 2)
-        G2.add_edge(3, 4)
+        G2.add_undirected_edge(1, 2)
+        G2.add_undirected_edge(3, 4)
         assert not G2.is_connected()
 
     def test_number_of_connected_components(self) -> None:
         """Test number_of_connected_components method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
-        G.add_edge(4, 5)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(4, 5)
         assert G.number_of_connected_components() == 2
 
     def test_connected_components(self) -> None:
         """Test connected_components method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
-        G.add_edge(4, 5)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(4, 5)
         components = list(G.connected_components())
         assert len(components) == 2
         comp_sets = [set(comp) for comp in components]
@@ -914,9 +939,9 @@ class TestConnectivity:
     def test_is_cutedge(self) -> None:
         """Test is_cutedge method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
-        G.add_edge(3, 4)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
         # Edge (2, 3) is a cut edge
         key = next(iter(G._undirected[2][3].keys()))
         assert G.is_cutedge(2, 3, key=key)
@@ -929,9 +954,9 @@ class TestConnectivity:
     def test_is_cutvertex(self) -> None:
         """Test is_cutvertex method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
-        G.add_edge(2, 4)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(2, 4)
         # Node 2 is a cut vertex
         assert G.is_cutvertex(2)
         # Node 1 is not a cut vertex
@@ -944,13 +969,13 @@ class TestGraphOperations:
     def test_copy(self) -> None:
         """Test copy method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2, weight=5.0)
+        G.add_undirected_edge(1, 2, weight=5.0)
         G.add_directed_edge(2, 3, weight=10.0)
         H = G.copy()
         assert H.number_of_nodes() == G.number_of_nodes()
         assert H.number_of_edges() == G.number_of_edges()
         # Modify H and ensure G is unchanged
-        H.add_edge(4, 5)
+        H.add_undirected_edge(4, 5)
         assert 4 not in G
         assert 5 not in G
 
@@ -958,7 +983,7 @@ class TestGraphOperations:
         """Test clear method."""
         G = MixedMultiGraph()
         G.add_nodes_from([1, 2, 3, 4, 5])
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
         G.clear()
         assert G.number_of_nodes() == 0
@@ -967,8 +992,8 @@ class TestGraphOperations:
     def test_identify_two_nodes(self) -> None:
         """Test identify_two_nodes method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
         G.add_directed_edge(1, 4)
         G.identify_two_nodes(1, 2)  # Keep node 1
         # Node 2 should be removed, edges should be transferred
@@ -980,9 +1005,9 @@ class TestGraphOperations:
     def test_identify_node_set(self) -> None:
         """Test identify_node_set method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
-        G.add_edge(2, 3)
-        G.add_edge(3, 4)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
         G.identify_node_set([1, 2, 3])  # Keep first node (1)
         assert 1 in G
         assert 2 not in G
@@ -996,7 +1021,7 @@ class TestValidation:
     def test_validate_synchronization(self) -> None:
         """Test _validate_synchronization method."""
         G = MixedMultiGraph()
-        G.add_edge(1, 2)
+        G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
         assert G._validate_synchronization()
         
@@ -1036,7 +1061,7 @@ class TestEdgeCases:
         G = MixedMultiGraph()
         # Check if self-loops are allowed
         try:
-            key = G.add_edge(1, 1, weight=5.0)
+            key = G.add_undirected_edge(1, 1, weight=5.0)
             print(f"Self-loop undirected edge added with key: {key}")
             assert G.has_edge(1, 1)
         except Exception as e:
@@ -1057,8 +1082,8 @@ class TestEdgeCases:
     def test_parallel_edges_same_attributes(self) -> None:
         """Test parallel edges with same attributes."""
         G = MixedMultiGraph()
-        key1 = G.add_edge(1, 2, weight=5.0, label='same')
-        key2 = G.add_edge(1, 2, weight=5.0, label='same')
+        key1 = G.add_undirected_edge(1, 2, weight=5.0, label='same')
+        key2 = G.add_undirected_edge(1, 2, weight=5.0, label='same')
         # Should still create parallel edges
         assert key1 != key2
         assert count_undirected_edges(G, 1, 2) == 2
@@ -1094,12 +1119,12 @@ class TestLargerGraphs:
         
         # Create a cycle
         for i in range(1, 10):
-            G.add_edge(i, i + 1)
-        G.add_edge(10, 1)  # Close the cycle
+            G.add_undirected_edge(i, i + 1)
+        G.add_undirected_edge(10, 1)  # Close the cycle
         
         # Add some parallel edges
-        G.add_edge(1, 2, weight=2.0)
-        G.add_edge(5, 6, weight=3.0)
+        G.add_undirected_edge(1, 2, weight=2.0)
+        G.add_undirected_edge(5, 6, weight=3.0)
         
         assert G.number_of_nodes() == 10
         assert G.is_connected()
@@ -1144,8 +1169,8 @@ class TestLargerGraphs:
         
         # Undirected component
         for i in range(1, 6):
-            G.add_edge(i, i + 1)
-        G.add_edge(5, 1)  # Close cycle
+            G.add_undirected_edge(i, i + 1)
+        G.add_undirected_edge(5, 1)  # Close cycle
         
         # Directed component
         for i in range(6, 10):
@@ -1153,7 +1178,7 @@ class TestLargerGraphs:
         G.add_directed_edge(10, 6)  # Close cycle
         
         # Connect components with one edge
-        G.add_edge(5, 6)
+        G.add_undirected_edge(5, 6)
         
         assert G.number_of_nodes() == 10
         assert G.is_connected()
@@ -1167,7 +1192,7 @@ class TestLargerGraphs:
         
         # Add many parallel edges between same nodes
         for i in range(10):
-            G.add_edge(1, 2, weight=float(i))
+            G.add_undirected_edge(1, 2, weight=float(i))
         for i in range(10):
             G.add_directed_edge(3, 4, weight=float(i))
         
@@ -1193,8 +1218,8 @@ class TestLargerGraphs:
         
         # Create graph
         for i in range(1, 10):
-            key1 = G.add_edge(i, i + 1, weight=1.0)
-            key2 = G.add_edge(i, i + 1, weight=2.0)  # Parallel
+            key1 = G.add_undirected_edge(i, i + 1, weight=1.0)
+            key2 = G.add_undirected_edge(i, i + 1, weight=2.0)  # Parallel
         
         # Remove some edges
         G.remove_edge(1, 2, key=0)  # Remove one parallel edge
@@ -1212,7 +1237,7 @@ class TestLargerGraphs:
         
         # Create connected graph
         for i in range(1, 10):
-            G.add_edge(i, i + 1)
+            G.add_undirected_edge(i, i + 1)
         
         # Remove some nodes
         G.remove_node(5)
