@@ -4,31 +4,49 @@ Directed multi-graph module.
 This module provides the DirectedMultiGraph class for working with directed multi-graphs.
 """
 
-from typing import Any, List, Optional, Set, Tuple, TypeVar
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar
 
 import networkx as nx
 
 T = TypeVar('T')
 
 
-class DirectedMultiGraph(nx.MultiDiGraph):
+class DirectedMultiGraph:
     """
     Directed multi-graph where all edges are directed.
+
+    This class uses composition with a NetworkX MultiDiGraph:
+    - _graph: nx.MultiDiGraph for directed edges
+    - _combined: nx.MultiGraph combining all edges as undirected for connectivity analysis
 
     This class allows parallel directed edges (multiple directed edges between
     the same nodes), and each parallel edge can have different parameters
     (weights, attributes, etc.) via edge keys.
 
-    Since this inherits from nx.MultiDiGraph, most NetworkX methods work
-    directly. This class provides additional convenience methods consistent
-    with MixedMultiGraph.
-
     Parameters
     ----------
-    *args
-        Additional arguments passed to nx.MultiDiGraph.
-    **kwargs
-        Additional keyword arguments passed to nx.MultiDiGraph.
+    edges : Optional[List[Tuple[T, T] | Tuple[T, T, int] | Dict[str, Any]]], optional
+        List of directed edges. Can be:
+        - (u, v) tuples (key auto-generated)
+        - (u, v, key) tuples (explicit key)
+        - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+        If keys are not provided, they will be auto-generated. By default None.
+
+    Attributes
+    ----------
+    _graph : nx.MultiDiGraph
+        NetworkX MultiDiGraph storing directed edges.
+        **Warning:** Do not modify directly. Use class methods instead.
+    _combined : nx.MultiGraph
+        Combined undirected view of all edges for connectivity analysis.
+        **Warning:** Do not modify directly. Use class methods instead.
+    
+    Notes
+    -----
+    The underlying graphs (`_graph`, `_combined`) are accessible
+    but should NOT be modified directly. All modifications must go through the
+    class methods (add_edge, remove_edge, etc.) to ensure state synchronization.
+    Direct modification will desynchronize the graphs and cause incorrect behavior.
 
     Examples
     --------
@@ -37,29 +55,534 @@ class DirectedMultiGraph(nx.MultiDiGraph):
     >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
     >>> key1 != key2
     True
+    >>> G.number_of_connected_components()
+    1
+    >>> # Initialize with edges (including attributes)
+    >>> G2 = DirectedMultiGraph(
+    ...     edges=[(1, 2), {'u': 2, 'v': 3, 'weight': 5.0}]
+    ... )
+    >>> G2.number_of_edges()
+    2
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        edges: Optional[List[Tuple[T, T] | Tuple[T, T, int] | Dict[str, Any]]] = None,
+    ) -> None:
         """
         Initialize a directed multi-graph.
 
         Parameters
         ----------
-        *args
-            Additional arguments passed to nx.MultiDiGraph.
-        **kwargs
-            Additional keyword arguments passed to nx.MultiDiGraph.
-        """
-        super().__init__(*args, **kwargs)
+        edges : Optional[List[Tuple[T, T] | Tuple[T, T, int] | Dict[str, Any]]], optional
+            List of directed edges. Can be:
+            - (u, v) tuples (key auto-generated)
+            - (u, v, key) tuples (explicit key)
+            - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+            By default None.
 
-    def _clear_cache(self) -> None:
+        Examples
+        --------
+        >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
+        >>> G2 = DirectedMultiGraph(edges=[(1, 2, 0), {'u': 2, 'v': 3, 'weight': 5.0}])
         """
-        Clear any cached computations.
+        self._graph: nx.MultiDiGraph = nx.MultiDiGraph()
+        self._combined: nx.MultiGraph = nx.MultiGraph()
 
-        This method is a placeholder for subclasses to override if they
-        maintain cached values that need to be cleared when the graph changes.
+        # Load edges if given
+        if edges:
+            for edge in edges:
+                if isinstance(edge, dict):
+                    # Dict format: {'u': u, 'v': v, 'key': key, **attr}
+                    u = edge.pop('u')
+                    v = edge.pop('v')
+                    key = edge.pop('key', None)
+                    self.add_edge(u, v, key=key, **edge)
+                elif len(edge) == 2:
+                    u, v = edge
+                    self.add_edge(u, v)
+                elif len(edge) == 3:
+                    u, v, key = edge
+                    self.add_edge(u, v, key=key)
+                else:
+                    raise ValueError(f"Invalid edge format: {edge}")
+
+    # ========== NetworkX Compatibility Methods ==========
+
+    def nodes_iter(self, data: bool = False) -> Iterator[T] | Dict[T, Dict[str, Any]]:
         """
-        pass
+        Return an iterator over nodes or a dict of node data.
+
+        Parameters
+        ----------
+        data : bool, optional
+            If True, return a dict keyed by node with node data as values.
+            If False, return an iterator over nodes. By default False.
+
+        Returns
+        -------
+        Iterator[T] | Dict[T, Dict[str, Any]]
+            Iterator over nodes or dict of node data.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_node(1, weight=2.0)
+        >>> list(G.nodes_iter())
+        [1]
+        >>> dict(G.nodes_iter(data=True))
+        {1: {'weight': 2.0}}
+        """
+        if data:
+            return self._graph.nodes(data=True)
+        return iter(self._graph.nodes())
+
+    def edges_iter(self, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+        """
+        Return an iterator over edges.
+
+        Parameters
+        ----------
+        keys : bool, optional
+            If True, return edge keys. By default False.
+        data : bool, optional
+            If True, return edge data. By default False.
+
+        Returns
+        -------
+        Iterator
+            Iterator over edges.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2, weight=1.0)
+        0
+        >>> list(G.edges_iter())
+        [(1, 2)]
+        >>> list(G.edges_iter(keys=True))
+        [(1, 2, 0)]
+        """
+        return self._graph.edges(keys=keys, data=data)
+
+    def neighbors(self, v: T) -> Iterator[T]:
+        """
+        Return an iterator over neighbors of node v.
+
+        For directed graphs, neighbors include both predecessors and successors.
+
+        Parameters
+        ----------
+        v : T
+            Node.
+
+        Returns
+        -------
+        Iterator[T]
+            Iterator over neighbors.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(3, 2)
+        0
+        >>> list(G.neighbors(2))
+        [1, 3]
+        """
+        neighbors_set: Set[T] = set()
+        if v in self._graph:
+            neighbors_set.update(self._graph.predecessors(v))
+            neighbors_set.update(self._graph.successors(v))
+        return iter(neighbors_set)
+
+    def predecessors(self, v: T) -> Iterator[T]:
+        """
+        Return an iterator over predecessor nodes of v.
+
+        Parameters
+        ----------
+        v : T
+            Node.
+
+        Returns
+        -------
+        Iterator[T]
+            Iterator over predecessor nodes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(3, 2)
+        0
+        >>> list(G.predecessors(2))
+        [1, 3]
+        """
+        return self._graph.predecessors(v)
+
+    def successors(self, v: T) -> Iterator[T]:
+        """
+        Return an iterator over successor nodes of v.
+
+        Parameters
+        ----------
+        v : T
+            Node.
+
+        Returns
+        -------
+        Iterator[T]
+            Iterator over successor nodes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(1, 3)
+        0
+        >>> list(G.successors(1))
+        [2, 3]
+        """
+        return self._graph.successors(v)
+
+    def __contains__(self, v: T) -> bool:
+        """
+        Check if node v is in the graph.
+
+        Parameters
+        ----------
+        v : T
+            Node to check.
+
+        Returns
+        -------
+        bool
+            True if v is in the graph, False otherwise.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_node(1)
+        >>> 1 in G
+        True
+        >>> 2 in G
+        False
+        """
+        return v in self._graph
+
+    def __iter__(self) -> Iterator[T]:
+        """
+        Iterate over nodes.
+
+        Returns
+        -------
+        Iterator[T]
+            Iterator over nodes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_nodes_from([1, 2, 3])
+        >>> list(G)
+        [1, 2, 3]
+        """
+        return iter(self.nodes)
+
+    def __len__(self) -> int:
+        """
+        Return the number of nodes.
+
+        Returns
+        -------
+        int
+            Number of nodes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_nodes_from([1, 2, 3])
+        >>> len(G)
+        3
+        """
+        return len(self._graph)
+
+    def __getitem__(self, v: T) -> Dict[T, Dict[int, Dict[str, Any]]]:
+        """
+        Return adjacency dict for node v.
+
+        Parameters
+        ----------
+        v : T
+            Node.
+
+        Returns
+        -------
+        Dict[T, Dict[int, Dict[str, Any]]]
+            Adjacency dict (actually returns NetworkX's AdjacencyView, which is
+            dict-like and supports all dict operations).
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2, weight=1.0)
+        0
+        >>> G[1]
+        {2: {0: {'weight': 1.0}}}
+        """
+        return self._graph[v]
+
+    # ========== Properties for Attribute Access ==========
+
+    @property
+    def combined_graph(self) -> nx.MultiGraph:
+        """
+        Get combined undirected graph for NetworkX algorithms.
+
+        Returns
+        -------
+        nx.MultiGraph
+            Combined graph treating all edges as undirected.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(2, 3)
+        0
+        >>> nx.is_connected(G.combined_graph)
+        True
+        """
+        return self._combined
+
+    class NodeView:
+        """
+        Node view that works as both attribute and method, similar to NetworkX's NodeView.
+        
+        This class provides a set-like interface for nodes while also being callable
+        as a method to get iterators or node data.
+        """
+        def __init__(self, items: Set[T], callable_func: callable):
+            """
+            Initialize a node view.
+            
+            Parameters
+            ----------
+            items : Set[T]
+                Set of nodes.
+            callable_func : callable
+                Function to call when used as method.
+            """
+            self._items = items
+            self._callable_func = callable_func
+        
+        def __call__(self, data: bool = False):
+            """
+            Call as method to get iterator or node data.
+            
+            Parameters
+            ----------
+            data : bool, optional
+                If True, return dict of node data. By default False.
+            
+            Returns
+            -------
+            Iterator[T] | Dict[T, Dict[str, Any]]
+                Iterator over nodes or dict of node data.
+            """
+            return self._callable_func(data)
+        
+        def __iter__(self):
+            """Iterate over nodes."""
+            return iter(self._items)
+        
+        def __contains__(self, item: T) -> bool:
+            """Check if node in view."""
+            return item in self._items
+        
+        def __repr__(self) -> str:
+            """String representation."""
+            return repr(self._items)
+        
+        def __len__(self) -> int:
+            """Number of nodes."""
+            return len(self._items)
+        
+        def __or__(self, other):
+            """Union with other set."""
+            return self._items | other
+        
+        def __and__(self, other):
+            """Intersection with other set."""
+            return self._items & other
+        
+        def issubset(self, other):
+            """Check if this is a subset of other."""
+            return self._items.issubset(other)
+    
+    class EdgeView:
+        """
+        Edge view that works as both attribute and method, similar to NetworkX's EdgeView.
+        
+        This class provides a list-like interface for edges while also being callable
+        as a method to get iterators with keys or data.
+        """
+        def __init__(self, items: List[Tuple[T, T]], callable_func: callable):
+            """
+            Initialize an edge view.
+            
+            Parameters
+            ----------
+            items : List[Tuple[T, T]]
+                List of edges.
+            callable_func : callable
+                Function to call when used as method.
+            """
+            self._items = items
+            self._callable_func = callable_func
+        
+        def __call__(self, keys: bool = False, data: bool = False):
+            """
+            Call as method to get iterator with keys or data.
+            
+            Parameters
+            ----------
+            keys : bool, optional
+                If True, return edge keys. By default False.
+            data : bool, optional
+                If True, return edge data. By default False.
+            
+            Returns
+            -------
+            Iterator
+                Iterator over edges.
+            """
+            return self._callable_func(keys, data)
+        
+        def __iter__(self):
+            """Iterate over edges."""
+            return iter(self._items)
+        
+        def __contains__(self, item: Tuple[T, T]) -> bool:
+            """Check if edge in view."""
+            return item in self._items
+        
+        def __repr__(self) -> str:
+            """String representation."""
+            return repr(self._items)
+        
+        def __len__(self) -> int:
+            """Number of edges."""
+            return len(self._items)
+    
+    @property
+    def nodes(self) -> 'NodeView':
+        """
+        Get all nodes (works as both attribute and method).
+
+        When accessed as attribute, returns a NodeView object (set-like).
+        When called as method, returns an iterator or dict.
+
+        Returns
+        -------
+        NodeView
+            Node view object that's both callable and set-like.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_nodes_from([1, 2, 3])
+        >>> G.nodes  # Attribute access
+        {1, 2, 3}
+        >>> list(G.nodes())  # Method call
+        [1, 2, 3]
+        >>> dict(G.nodes(data=True))  # Method call with data
+        {1: {}, 2: {}, 3: {}}
+        """
+        nodes_set = set(self._graph.nodes())
+        return self.NodeView(nodes_set, self.nodes_iter)
+
+    @property
+    def edges(self) -> 'EdgeView':
+        """
+        Get all edges (works as both attribute and method).
+
+        When accessed as attribute, returns an EdgeView object (list-like).
+        When called as method, returns an iterator.
+
+        Returns
+        -------
+        EdgeView
+            Edge view object that's both callable and list-like.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(2, 3)
+        0
+        >>> G.edges  # Attribute access
+        [(1, 2), (2, 3)]
+        >>> list(G.edges())  # Method call
+        [(1, 2), (2, 3)]
+        >>> list(G.edges(keys=True))  # With keys
+        [(1, 2, 0), (2, 3, 0)]
+        >>> list(G.edges(data=True))  # With data
+        [(1, 2, {}), (2, 3, {})]
+        >>> list(G.edges(keys=True, data=True))  # With keys and data
+        [(1, 2, 0, {}), (2, 3, 0, {})]
+        """
+        edges_list = list(self._graph.edges())
+        return self.EdgeView(edges_list, self.edges_iter)
+
+    # ========== Node Operations ==========
+
+    def add_node(self, v: T, **attr: Any) -> None:
+        """
+        Add node v to the graph.
+
+        Parameters
+        ----------
+        v : T
+            Node to add.
+        **attr
+            Node attributes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_node(1, weight=2.0)
+        >>> 1 in G
+        True
+        """
+        self._graph.add_node(v, **attr)
+        self._combined.add_node(v, **attr)
+
+    def add_nodes_from(self, nodes: List[T] | Set[T], **attr: Any) -> None:
+        """
+        Add nodes from iterable.
+
+        Parameters
+        ----------
+        nodes : List[T] | Set[T]
+            Iterable of nodes.
+        **attr
+            Attributes to add to all nodes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_nodes_from([1, 2, 3])
+        >>> len(G)
+        3
+        """
+        self._graph.add_nodes_from(nodes, **attr)
+        self._combined.add_nodes_from(nodes, **attr)
 
     def remove_node(self, v: T) -> None:
         """
@@ -83,8 +606,8 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         >>> list(G.nodes())
         [1, 3]
         """
-        super().remove_node(v)
-        self._clear_cache()
+        self._graph.remove_node(v)
+        self._combined.remove_node(v)
 
     def remove_nodes_from(self, nodes: List[T] | Set[T]) -> None:
         """
@@ -108,7 +631,128 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         for v in nodes:
             self.remove_node(v)
 
-    def remove_edges_from(self, edges: List[Tuple[T, T] | Tuple[T, T, int]]) -> None:
+    # ========== Edge Operations ==========
+
+    def add_edge(self, u: T, v: T, key: Optional[int] = None, **attr: Any) -> int:
+        """
+        Add directed edge (u, v) to the graph.
+
+        Parallel directed edges are allowed. Each parallel edge can have
+        different attributes (weights, etc.) via the key parameter.
+
+        Parameters
+        ----------
+        u : T
+            Source node.
+        v : T
+            Target node.
+        key : Optional[int], optional
+            Edge key. If None, auto-generates a key. By default None.
+        **attr
+            Edge attributes (e.g., weight, label, etc.).
+
+        Returns
+        -------
+        int
+            The key of the added edge.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> key1 = G.add_edge(1, 2, weight=1.0)
+        >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
+        >>> key1 != key2
+        True
+        """
+        # Ensure nodes exist
+        if u not in self._graph:
+            self._graph.add_node(u)
+            self._combined.add_node(u)
+        if v not in self._graph:
+            self._graph.add_node(v)
+            self._combined.add_node(v)
+
+        # Auto-generate key if not provided
+        if key is None:
+            if u in self._graph and v in self._graph[u]:
+                existing_keys = set(self._graph[u][v].keys())
+                key = max(existing_keys) + 1 if existing_keys else 0
+            else:
+                key = 0
+
+        # Add to both graph and combined graph
+        self._graph.add_edge(u, v, key=key, **attr)
+        self._combined.add_edge(u, v, key=key, **attr)
+
+        return key
+
+    def add_edges_from(
+        self, edges: List[Tuple[T, T] | Tuple[T, T, int]], **attr: Any
+    ) -> None:
+        """
+        Add all edges in 'edges' to the graph.
+
+        Parameters
+        ----------
+        edges : List[Tuple[T, T] | Tuple[T, T, int]]
+            List of edges. Can be (u, v) or (u, v, key) tuples.
+        **attr
+            Edge attributes applied to all edges.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edges_from([(1, 2), (2, 3), (3, 1)])
+        """
+        for edge in edges:
+            if len(edge) == 2:
+                u, v = edge
+                self.add_edge(u, v, **attr)
+            elif len(edge) == 3:
+                u, v, key = edge
+                self.add_edge(u, v, key=key, **attr)
+            else:
+                raise ValueError(f"Invalid edge format: {edge}")
+
+    def remove_edge(self, u: T, v: T, key: Optional[int] = None) -> None:
+        """
+        Remove edge (u, v) from the graph.
+
+        Parameters
+        ----------
+        u : T
+            Source node.
+        v : T
+            Target node.
+        key : Optional[int], optional
+            Edge key. If None, removes one edge. By default None.
+
+        Raises
+        ------
+        ValueError
+            If no edge (u, v) exists with the specified key.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> key = G.add_edge(1, 2)
+        0
+        >>> G.remove_edge(1, 2, key=key)
+        """
+        if key is None:
+            if not self._graph.has_edge(u, v):
+                raise ValueError(f"No edge ({u}, {v}) exists.")
+            key = next(iter(self._graph[u][v].keys()))
+
+        if not self._graph.has_edge(u, v, key):
+            raise ValueError(f"Edge ({u}, {v}, {key}) does not exist.")
+
+        self._graph.remove_edge(u, v, key)
+        self._combined.remove_edge(u, v, key)
+
+    def remove_edges_from(
+        self, edges: List[Tuple[T, T] | Tuple[T, T, int]]
+    ) -> None:
         """
         Remove all edges in 'edges' from the graph.
 
@@ -129,15 +773,115 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         for edge in edges:
             if len(edge) == 2:
                 u, v = edge
-                # Remove all parallel edges between u and v
-                if u in self and v in self[u]:
-                    for key in list(self[u][v].keys()):
-                        super().remove_edge(u, v, key=key)
+                self.remove_edge(u, v)
             elif len(edge) == 3:
                 u, v, key = edge
-                super().remove_edge(u, v, key=key)
+                self.remove_edge(u, v, key=key)
             else:
                 raise ValueError(f"Invalid edge format: {edge}")
+
+    # ========== Query Operations ==========
+
+    def has_edge(self, u: T, v: T, key: Optional[int] = None) -> bool:
+        """
+        Check if edge exists.
+
+        Parameters
+        ----------
+        u : T
+            Source node.
+        v : T
+            Target node.
+        key : Optional[int], optional
+            Edge key. By default None.
+
+        Returns
+        -------
+        bool
+            True if edge exists, False otherwise.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.has_edge(1, 2)
+        True
+        >>> G.has_edge(2, 3)
+        False
+        """
+        return self._graph.has_edge(u, v, key)
+
+    def number_of_nodes(self) -> int:
+        """
+        Return the number of nodes.
+
+        Returns
+        -------
+        int
+            Number of nodes.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_nodes_from([1, 2, 3])
+        >>> G.number_of_nodes()
+        3
+        """
+        return len(self)
+
+    def number_of_edges(self) -> int:
+        """
+        Return the number of edges.
+
+        Returns
+        -------
+        int
+            Number of edges.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(2, 3)
+        0
+        >>> G.number_of_edges()
+        2
+        """
+        return self._graph.number_of_edges()
+
+    def degree(self, v: T) -> int:
+        """
+        Return the total degree of vertex v.
+
+        The degree is the sum of incoming and outgoing directed edges.
+
+        Parameters
+        ----------
+        v : T
+            Vertex.
+
+        Returns
+        -------
+        int
+            Total degree of v. Returns 0 if v is not in the graph.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(3, 2)
+        0
+        >>> G.degree(2)
+        2
+        >>> G.degree(99)  # Node not in graph
+        0
+        """
+        if v not in self._graph:
+            return 0
+        return self._graph.degree(v)
 
     def indegree(self, v: T) -> int:
         """
@@ -153,7 +897,7 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         Returns
         -------
         int
-            Indegree of v.
+            Indegree of v. Returns 0 if v is not in the graph.
 
         Examples
         --------
@@ -164,8 +908,12 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         0
         >>> G.indegree(2)
         2
+        >>> G.indegree(99)  # Node not in graph
+        0
         """
-        return self.in_degree(v)
+        if v not in self._graph:
+            return 0
+        return self._graph.in_degree(v)
 
     def outdegree(self, v: T) -> int:
         """
@@ -181,7 +929,7 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         Returns
         -------
         int
-            Outdegree of v.
+            Outdegree of v. Returns 0 if v is not in the graph.
 
         Examples
         --------
@@ -192,8 +940,77 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         0
         >>> G.outdegree(1)
         2
+        >>> G.outdegree(99)  # Node not in graph
+        0
         """
-        return self.out_degree(v)
+        if v not in self._graph:
+            return 0
+        return self._graph.out_degree(v)
+
+    # ========== Connectivity Methods ==========
+
+    def number_of_connected_components(self) -> int:
+        """
+        Return the number of weakly connected components.
+
+        Returns
+        -------
+        int
+            Number of connected components.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(3, 4)
+        0
+        >>> G.number_of_connected_components()
+        2
+        """
+        return nx.number_connected_components(self._combined)
+
+    def is_connected(self) -> bool:
+        """
+        Check if graph is weakly connected.
+
+        Returns
+        -------
+        bool
+            True if graph is connected, False otherwise.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(2, 3)
+        0
+        >>> G.is_connected()
+        True
+        """
+        return nx.is_connected(self._combined)
+
+    def connected_components(self):
+        """
+        Get weakly connected components.
+
+        Returns
+        -------
+        Iterator
+            Iterator over sets of nodes in each component.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(3, 4)
+        0
+        >>> list(G.connected_components())
+        [{1, 2}, {3, 4}]
+        """
+        return nx.connected_components(self._combined)
 
     def is_cutedge(self, u: T, v: T, key: Optional[int] = None) -> bool:
         """
@@ -231,19 +1048,27 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         >>> G.is_cutedge(2, 3)
         True
         """
-        if u not in self or v not in self[u]:
-            raise ValueError(f"Edge ({u}, {v}) is not in the graph.")
+        if not self.has_edge(u, v, key):
+            raise ValueError(f"Edge ({u}, {v}, {key}) is not in the graph.")
 
         # Find edge key if not provided
         if key is None:
-            if u in self and v in self[u]:
-                key = next(iter(self[u][v].keys()))
+            if u in self._graph and v in self._graph[u]:
+                key = next(iter(self._graph[u][v].keys()))
             else:
                 raise ValueError(f"Edge ({u}, {v}) is not in the graph.")
 
-        modified_graph = self.copy()
-        modified_graph.remove_edge(u, v, key=key)
-        return nx.number_weakly_connected_components(modified_graph) != nx.number_weakly_connected_components(self)
+        num_before = nx.number_connected_components(self._combined)
+
+        # Temporarily remove and check
+        self._combined.remove_edge(u, v, key)
+        num_after = nx.number_connected_components(self._combined)
+
+        # Restore edge
+        edge_data = dict(self._graph[u][v][key])
+        self._combined.add_edge(u, v, key=key, **edge_data)
+
+        return num_after != num_before
 
     def is_cutvertex(self, v: T) -> bool:
         """
@@ -280,9 +1105,111 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         if v not in self:
             raise ValueError(f"Vertex {v} is not in the graph.")
 
-        modified_graph = self.copy()
-        modified_graph.remove_node(v)
-        return nx.number_weakly_connected_components(modified_graph) != nx.number_weakly_connected_components(self)
+        num_before = nx.number_connected_components(self._combined)
+
+        # Temporarily remove and check
+        self._combined.remove_node(v)
+        num_after = nx.number_connected_components(self._combined)
+
+        # Restore node and its edges
+        self._combined.add_node(v)
+        # Restore edges incident to v
+        for predecessor in self._graph.predecessors(v):
+            for k, data in self._graph[predecessor][v].items():
+                self._combined.add_edge(predecessor, v, key=k, **data)
+        for successor in self._graph.successors(v):
+            for k, data in self._graph[v][successor].items():
+                self._combined.add_edge(v, successor, key=k, **data)
+
+        return num_after != num_before
+
+    # ========== Graph Operations ==========
+
+    def _validate_synchronization(self) -> bool:
+        """
+        Validate that the internal graphs are synchronized.
+        
+        Checks that `_combined` contains all edges from `_graph`.
+        This is useful for debugging if the graphs have been modified directly
+        (which should not happen).
+        
+        Returns
+        -------
+        bool
+            True if graphs are synchronized, False otherwise.
+        
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G._validate_synchronization()
+        True
+        >>> # Direct modification (BAD - don't do this!)
+        >>> G._graph.add_edge(99, 100)
+        >>> G._validate_synchronization()
+        False
+        """
+        # Check that all edges in _graph are in _combined
+        for u, v, key in self._graph.edges(keys=True):
+            if not self._combined.has_edge(u, v, key):
+                return False
+        
+        # Check that combined doesn't have extra edges
+        combined_edges = set(self._combined.edges(keys=True))
+        graph_edges = set(self._graph.edges(keys=True))
+        
+        if combined_edges != graph_edges:
+            return False
+        
+        return True
+
+    def copy(self) -> 'DirectedMultiGraph':
+        """
+        Create a copy of the graph.
+
+        Returns
+        -------
+        DirectedMultiGraph
+            A copy of the graph.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> H = G.copy()
+        >>> H.add_edge(2, 3)
+        0
+        >>> G.number_of_edges()
+        1
+        >>> H.number_of_edges()
+        2
+        """
+        new_graph = DirectedMultiGraph()
+        new_graph._graph = self._graph.copy()
+        new_graph._combined = self._combined.copy()
+        return new_graph
+
+    def clear(self) -> None:
+        """
+        Clear the whole directed multi-graph.
+
+        Removes all nodes and edges.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.add_edge(2, 3)
+        0
+        >>> G.clear()
+        >>> len(G.nodes())
+        0
+        """
+        self._graph.clear()
+        self._combined.clear()
 
     def identify_two_nodes(self, u: T, v: T) -> None:
         """
@@ -308,8 +1235,15 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         >>> list(G.nodes())
         [1, 3]
         """
-        nx.contracted_nodes(self, u, v, self_loops=False, copy=False)
-        self._clear_cache()
+        # Use NetworkX's contracted_nodes on each graph
+        nx.contracted_nodes(self._graph, u, v, self_loops=False, copy=False)
+        nx.contracted_nodes(self._combined, u, v, self_loops=False, copy=False)
+
+        # Clean up any self-loops that might have been created
+        if self._graph.has_edge(u, u):
+            for k in list(self._graph[u][u].keys()):
+                self._graph.remove_edge(u, u, key=k)
+                self._combined.remove_edge(u, u, key=k)
 
     def identify_node_set(self, nodes: List[T] | Set[T]) -> None:
         """
@@ -338,22 +1272,77 @@ class DirectedMultiGraph(nx.MultiDiGraph):
         for i in range(1, len(nodes_list)):
             self.identify_two_nodes(nodes_list[0], nodes_list[i])
 
-    def clear(self) -> None:
-        """
-        Clear the whole directed multi-graph.
 
-        Removes all nodes and edges.
+# ========== Factory Functions ==========
 
-        Examples
-        --------
-        >>> G = DirectedMultiGraph()
-        >>> G.add_edge(1, 2)
-        0
-        >>> G.add_edge(2, 3)
-        0
-        >>> G.clear()
-        >>> len(G.nodes())
-        0
-        """
-        super().clear()
-        self._clear_cache()
+def digraph_to_directedmultigraph(graph: nx.DiGraph) -> DirectedMultiGraph:
+    """
+    Create a DirectedMultiGraph from a NetworkX DiGraph.
+
+    All edges from the DiGraph are added as directed edges.
+
+    Parameters
+    ----------
+    graph : nx.DiGraph
+        NetworkX DiGraph to convert.
+
+    Returns
+    -------
+    DirectedMultiGraph
+        New DirectedMultiGraph instance with all edges as directed.
+
+    Examples
+    --------
+    >>> G = nx.DiGraph()
+    >>> G.add_edge(1, 2, weight=5.0)
+    >>> G.add_edge(2, 3)
+    >>> M = digraph_to_directedmultigraph(G)
+    >>> M.number_of_edges()
+    2
+    """
+    dmg = DirectedMultiGraph()
+    # Add all nodes with attributes
+    for node, data in graph.nodes(data=True):
+        dmg.add_node(node, **data)
+    # Add all edges with attributes
+    for u, v, data in graph.edges(data=True):
+        dmg.add_edge(u, v, **data)
+    return dmg
+
+
+def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> DirectedMultiGraph:
+    """
+    Create a DirectedMultiGraph from a NetworkX MultiDiGraph.
+
+    All edges from the MultiDiGraph are added as directed edges, preserving
+    parallel edges and their keys.
+
+    Parameters
+    ----------
+    graph : nx.MultiDiGraph
+        NetworkX MultiDiGraph to convert.
+
+    Returns
+    -------
+    DirectedMultiGraph
+        New DirectedMultiGraph instance with all edges as directed.
+
+    Examples
+    --------
+    >>> G = nx.MultiDiGraph()
+    >>> G.add_edge(1, 2, key=0, weight=1.0)
+    0
+    >>> G.add_edge(1, 2, key=1, weight=2.0)
+    1
+    >>> M = multidigraph_to_directedmultigraph(G)
+    >>> M.number_of_edges()
+    2
+    """
+    dmg = DirectedMultiGraph()
+    # Add all nodes with attributes
+    for node, data in graph.nodes(data=True):
+        dmg.add_node(node, **data)
+    # Add all edges with keys and attributes
+    for u, v, key, data in graph.edges(keys=True, data=True):
+        dmg.add_edge(u, v, key=key, **data)
+    return dmg

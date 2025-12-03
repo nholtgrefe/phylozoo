@@ -393,7 +393,8 @@ class MixedMultiGraph:
         Returns
         -------
         Dict[T, Dict[int, Dict[str, Any]]]
-            Adjacency dict.
+            Adjacency dict (actually returns NetworkX's AdjacencyView, which is
+            dict-like and supports all dict operations).
 
         Examples
         --------
