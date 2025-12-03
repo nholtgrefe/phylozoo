@@ -4,15 +4,7 @@ Structures Module
 Partition
 ---------
 
-.. automodule:: phylozoo.structures.partition
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Splits
-------
-
-.. automodule:: phylozoo.structures.splits
+.. automodule:: phylozoo.core.structure.partition
    :members:
    :undoc-members:
    :show-inheritance:
@@ -20,7 +12,23 @@ Splits
 Circular
 --------
 
-.. automodule:: phylozoo.structures.circular
+.. automodule:: phylozoo.core.structure.circular
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Mixed Multi-Graph
+-----------------
+
+.. automodule:: phylozoo.core.structure.mixed_multi_graph
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Directed Multi-Graph
+--------------------
+
+.. automodule:: phylozoo.core.structure.directed_multi_graph
    :members:
    :undoc-members:
    :show-inheritance:
