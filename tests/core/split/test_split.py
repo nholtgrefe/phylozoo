@@ -3,7 +3,7 @@ Tests for the split module.
 """
 
 import pytest
-from phylozoo.core.structure import Split, SplitSystem
+from phylozoo.core.split import Split, SplitSystem
 
 
 class TestSplit:

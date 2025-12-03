@@ -7,7 +7,7 @@ This module provides classes for working with split systems.
 from typing import Iterator, Optional, Set, TYPE_CHECKING
 
 from ...utils.tools import id_generator
-from .splits import Split
+from .split import Split
 
 if TYPE_CHECKING:
     from ..network.semi_directed import SemiDirectedNetwork

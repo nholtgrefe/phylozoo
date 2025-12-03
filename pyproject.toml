@@ -20,7 +20,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
-dependencies = []
+dependencies = [
+    "networkx>=3.0.0",
+]
 
 [project.optional-dependencies]
 test = [

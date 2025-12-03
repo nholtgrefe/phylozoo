@@ -13,8 +13,8 @@ from .core import (
     DirectedNetwork,
     SemiDirectedNetwork,
     random_semi_directed_network,
-    MixedGraph,
-    MultiMixedGraph,
+    MixedMultiGraph,
+    DirectedMultiGraph,
     # Structures
     Split,
     SplitSystem,
@@ -39,8 +39,8 @@ __all__ = [
     "DirectedNetwork",
     "SemiDirectedNetwork",
     "random_semi_directed_network",
-    "MixedGraph",
-    "MultiMixedGraph",
+    "MixedMultiGraph",
+    "DirectedMultiGraph",
     # Core - Structures
     "Split",
     "SplitSystem",
