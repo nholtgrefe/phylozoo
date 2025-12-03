@@ -8,7 +8,7 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.structure.directed_multi_graph import (
+from phylozoo.core.primitives.dm_graph import (
     DirectedMultiGraph,
     digraph_to_directedmultigraph,
     multidigraph_to_directedmultigraph,

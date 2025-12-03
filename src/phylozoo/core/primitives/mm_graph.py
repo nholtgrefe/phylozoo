@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, TYP
 import networkx as nx
 
 if TYPE_CHECKING:
-    from .directed_multi_graph import DirectedMultiGraph
+    from .dm_graph import DirectedMultiGraph
 
 T = TypeVar('T')
 
@@ -86,7 +86,7 @@ class MixedMultiGraph:
     4
     >>> # Create from NetworkX graphs
     >>> import networkx as nx
-    >>> from phylozoo.core.structure.mixed_multi_graph import graph_to_mixedmultigraph
+    >>> from phylozoo.core.primitives.mm_graph import graph_to_mixedmultigraph
     >>> nx_g = nx.Graph()
     >>> nx_g.add_edge(1, 2, weight=1.0)
     >>> G3 = graph_to_mixedmultigraph(nx_g)
@@ -1798,7 +1798,7 @@ def directedmultigraph_to_mixedmultigraph(graph: 'DirectedMultiGraph') -> MixedM
 
     Examples
     --------
-    >>> from phylozoo.core.structure import DirectedMultiGraph
+    >>> from phylozoo.core.primitives import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2, weight=1.0)
     0

@@ -5,7 +5,7 @@ This module provides classes for working with phylogenetic networks.
 """
 
 from .directed import DirectedNetwork
-from ..structure import MixedMultiGraph, DirectedMultiGraph
+from ..primitives import MixedMultiGraph, DirectedMultiGraph
 from .semi_directed import SemiDirectedNetwork, random_semi_directed_network
 
 __all__ = [

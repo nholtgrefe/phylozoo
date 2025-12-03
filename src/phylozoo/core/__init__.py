@@ -6,7 +6,7 @@ the package.
 """
 
 from .network import DirectedNetwork, SemiDirectedNetwork, random_semi_directed_network
-from .structure import Partition, CircularOrdering, CircularSetOrdering, MixedMultiGraph, DirectedMultiGraph
+from .primitives import Partition, CircularOrdering, CircularSetOrdering, MixedMultiGraph, DirectedMultiGraph
 from .split import Split, SplitSystem
 from .distance import DistanceMatrix
 from .sequence import MSA

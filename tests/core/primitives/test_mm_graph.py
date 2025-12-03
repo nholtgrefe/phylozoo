@@ -8,7 +8,7 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.structure.mixed_multi_graph import (
+from phylozoo.core.primitives.mm_graph import (
     MixedMultiGraph,
     graph_to_mixedmultigraph,
     multigraph_to_mixedmultigraph,
@@ -238,7 +238,7 @@ class TestFactoryMethods:
 
     def test_from_directedmultigraph(self) -> None:
         """Test from_directedmultigraph factory method."""
-        from phylozoo.core.structure import DirectedMultiGraph
+        from phylozoo.core.primitives import DirectedMultiGraph
         
         G = DirectedMultiGraph()
         G.add_node(1, label='node1')

@@ -4,9 +4,9 @@ Tests for utility modules.
 
 import pytest
 from phylozoo.utils._config import set_validate, validate
-from phylozoo.core.structure.circular import CircularOrdering, CircularSetOrdering
+from phylozoo.core.primitives.circular_ordering import CircularOrdering, CircularSetOrdering
 from phylozoo.core.distance import DistanceMatrix
-from phylozoo.core.structure.partition import Partition
+from phylozoo.core.primitives.partition import Partition
 from phylozoo.utils.tools import id_generator, normalized_l_p_norm
 
 

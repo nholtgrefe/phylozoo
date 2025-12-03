@@ -4,7 +4,7 @@ Structures Module
 Partition
 ---------
 
-.. automodule:: phylozoo.core.structure.partition
+.. automodule:: phylozoo.core.primitives.partition
    :members:
    :undoc-members:
    :show-inheritance:
@@ -12,7 +12,7 @@ Partition
 Circular
 --------
 
-.. automodule:: phylozoo.core.structure.circular
+.. automodule:: phylozoo.core.primitives.circular_ordering
    :members:
    :undoc-members:
    :show-inheritance:
@@ -20,7 +20,7 @@ Circular
 Mixed Multi-Graph
 -----------------
 
-.. automodule:: phylozoo.core.structure.mixed_multi_graph
+.. automodule:: phylozoo.core.primitives.mm_graph
    :members:
    :undoc-members:
    :show-inheritance:
@@ -28,7 +28,7 @@ Mixed Multi-Graph
 Directed Multi-Graph
 --------------------
 
-.. automodule:: phylozoo.core.structure.directed_multi_graph
+.. automodule:: phylozoo.core.primitives.dm_graph
    :members:
    :undoc-members:
    :show-inheritance:

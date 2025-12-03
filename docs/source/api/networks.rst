@@ -21,7 +21,7 @@ Mixed Graph
 -----------
 
 # MixedMultiGraph is now in structures module
-# .. automodule:: phylozoo.core.structure.mixed_multi_graph
+# .. automodule:: phylozoo.core.primitives.mm_graph
    :members:
    :undoc-members:
    :show-inheritance:

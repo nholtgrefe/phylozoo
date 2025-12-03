@@ -22,7 +22,7 @@ def sample_split():
     Split
         A sample split object
     """
-    from phylozoo.core.structure import Split
+    from phylozoo.core.primitives import Split
 
     return Split({1, 2}, {3, 4})
 
@@ -37,7 +37,7 @@ def sample_split_system():
     SplitSystem
         A sample split system object
     """
-    from phylozoo.core.structure import Split, SplitSystem
+    from phylozoo.core.primitives import Split, SplitSystem
 
     split1 = Split({1, 2}, {3, 4})
     split2 = Split({1, 3}, {2, 4})

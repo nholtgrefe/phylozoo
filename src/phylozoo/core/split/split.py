@@ -7,7 +7,7 @@ This module provides classes for working with phylogenetic splits.
 import itertools
 from typing import Set, TypeVar
 
-from ..structure.partition import Partition
+from ..primitives.partition import Partition
 
 T = TypeVar('T')
 

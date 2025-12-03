@@ -27,6 +27,22 @@ from .core import (
     MSA,
 )
 
+# Make core submodules available at package level
+from . import core
+# Import submodules so they're accessible as phylozoo.network, phylozoo.primitives, etc.
+from .core import network as _network_module
+from .core import primitives as _primitives_module
+from .core import split as _split_module
+from .core import distance as _distance_module
+from .core import sequence as _sequence_module
+
+# Re-export submodules at package level
+network = _network_module
+primitives = _primitives_module
+split = _split_module
+distance = _distance_module
+sequence = _sequence_module
+
 # Import inference classes
 from .inference import (
     NetworkInferrer,
@@ -35,6 +51,14 @@ from .inference import (
 
 __all__ = [
     "__version__",
+    # Core module
+    "core",
+    # Core submodules (available as phylozoo.network, phylozoo.primitives, etc.)
+    "network",
+    "primitives",
+    "split",
+    "distance",
+    "sequence",
     # Core - Networks
     "DirectedNetwork",
     "SemiDirectedNetwork",
