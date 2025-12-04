@@ -15,7 +15,7 @@ from .mm_operations import (
     identify_node_set,
 )
 # Import conversion functions for convenience
-from .mm_conversion import (
+from .mm_conversions import (
     graph_to_mixedmultigraph,
     multigraph_to_mixedmultigraph,
     multidigraph_to_mixedmultigraph,

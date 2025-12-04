@@ -15,7 +15,7 @@ from .dm_operations import (
     identify_node_set,
 )
 # Import conversion functions for convenience
-from .dm_conversion import (
+from .dm_conversions import (
     digraph_to_directedmultigraph,
     multidigraph_to_directedmultigraph,
 )

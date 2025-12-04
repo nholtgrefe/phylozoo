@@ -180,5 +180,5 @@ def identify_node_set(graph: 'MixedMultiGraph', nodes: List[T] | Set[T]) -> None
         identify_two_nodes(graph, nodes_list[0], nodes_list[i])
 
 
-# Note: Conversion functions are now in mm_conversion module
+# Note: Conversion functions are now in mm_conversions module
 

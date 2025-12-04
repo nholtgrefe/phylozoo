@@ -87,7 +87,7 @@ class MixedMultiGraph:
     4
     >>> # Create from NetworkX graphs
     >>> import networkx as nx
-    >>> from phylozoo.core.primitives.m_multigraph.mm_conversion import graph_to_mixedmultigraph
+    >>> from phylozoo.core.primitives.m_multigraph.mm_conversions import graph_to_mixedmultigraph
     >>> nx_g = nx.Graph()
     >>> nx_g.add_edge(1, 2, weight=1.0)
     >>> G3 = graph_to_mixedmultigraph(nx_g)

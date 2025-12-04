@@ -6,7 +6,7 @@ This module provides classes and functions for working with mixed phylogenetic n
 
 from typing import List, Optional, Set, Tuple
 
-from .d_phynetwork import DirectedPhyNetwork
+from ..dnetwork.d_phynetwork import DirectedPhyNetwork
 
 
 class MixedPhyNetwork(DirectedPhyNetwork):
