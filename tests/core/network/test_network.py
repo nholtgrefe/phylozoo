@@ -2,6 +2,8 @@
 Tests for the network module.
 """
 
+import warnings
+
 import pytest
 from phylozoo.core.network import (
     DirectedPhyNetwork,
@@ -15,7 +17,9 @@ class TestDirectedPhyNetwork:
 
     def test_directed_network_creation(self) -> None:
         """Test creating a directed network."""
-        network = DirectedPhyNetwork(edges=[])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            network = DirectedPhyNetwork(edges=[])
         assert network.number_of_nodes() == 0
         assert network.number_of_edges() == 0
 
@@ -63,14 +67,18 @@ class TestSemiDirectedNetwork:
 
     def test_semi_directed_network_creation(self) -> None:
         """Test creating a semi-directed network."""
-        network = SemiDirectedNetwork()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            network = SemiDirectedNetwork()
         assert network.number_of_nodes() == 0
         assert network.number_of_edges() == 0
         assert len(network.undirected_edges) == 0
 
     def test_semi_directed_network_is_immutable(self) -> None:
         """Test that semi-directed network is immutable."""
-        network = SemiDirectedNetwork()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            network = SemiDirectedNetwork()
         # Verify mutation methods don't exist
         assert not hasattr(network, "add_undirected_edge")
         assert not hasattr(network, "add_node")
@@ -78,5 +86,7 @@ class TestSemiDirectedNetwork:
 
     def test_random_semi_directed_network(self) -> None:
         """Test random semi-directed network generation."""
-        network = random_semi_directed_network(5)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            network = random_semi_directed_network(5)
         assert isinstance(network, SemiDirectedNetwork)

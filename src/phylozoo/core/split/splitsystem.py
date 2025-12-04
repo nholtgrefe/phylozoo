@@ -10,7 +10,7 @@ from ...utils.tools import id_generator
 from .split import Split
 
 if TYPE_CHECKING:
-    from ..network.semi_directed import SemiDirectedNetwork
+    from ..network.sd_phynetwork import SemiDirectedNetwork
 
 
 class SplitSystem:
@@ -223,7 +223,7 @@ class SplitSystem:
         >>> isinstance(tree, SemiDirectedNetwork)
         True
         """
-        from ..network.semi_directed import SemiDirectedNetwork
+        from ..network.sd_phynetwork import SemiDirectedNetwork
         
         tree = SemiDirectedNetwork(edges=[])
         center_node = id_generator()
