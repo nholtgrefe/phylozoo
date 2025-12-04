@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, TYP
 import networkx as nx
 
 if TYPE_CHECKING:
-    from .dm_graph import DirectedMultiGraph
+    from ..d_multigraph.dm_graph import DirectedMultiGraph
 
 T = TypeVar('T')
 
@@ -75,7 +75,8 @@ class MixedMultiGraph:
     0
     >>> G.add_undirected_edge(2, 3)  # Parallel undirected edge
     1
-    >>> G.number_of_connected_components()
+    >>> from phylozoo.core.primitives.m_multigraph.mm_operations import number_of_connected_components
+    >>> number_of_connected_components(G)
     1
     >>> # Initialize with edges (including attributes)
     >>> G2 = MixedMultiGraph(
@@ -86,7 +87,7 @@ class MixedMultiGraph:
     4
     >>> # Create from NetworkX graphs
     >>> import networkx as nx
-    >>> from phylozoo.core.primitives.mm_graph import graph_to_mixedmultigraph
+    >>> from phylozoo.core.primitives.m_multigraph.mm_conversion import graph_to_mixedmultigraph
     >>> nx_g = nx.Graph()
     >>> nx_g.add_edge(1, 2, weight=1.0)
     >>> G3 = graph_to_mixedmultigraph(nx_g)
@@ -1312,69 +1313,8 @@ class MixedMultiGraph:
         return self._directed.out_degree(v)
 
     # ========== Connectivity Methods ==========
-
-    def number_of_connected_components(self) -> int:
-        """
-        Return the number of weakly connected components.
-
-        Returns
-        -------
-        int
-            Number of connected components.
-
-        Examples
-        --------
-        >>> G = MixedMultiGraph()
-        >>> G.add_undirected_edge(1, 2)
-        0
-        >>> G.add_directed_edge(3, 4)
-        0
-        >>> G.number_of_connected_components()
-        2
-        """
-        return nx.number_connected_components(self._combined)
-
-    def is_connected(self) -> bool:
-        """
-        Check if graph is weakly connected.
-
-        Returns
-        -------
-        bool
-            True if graph is connected, False otherwise.
-
-        Examples
-        --------
-        >>> G = MixedMultiGraph()
-        >>> G.add_undirected_edge(1, 2)
-        0
-        >>> G.add_directed_edge(2, 3)
-        0
-        >>> G.is_connected()
-        True
-        """
-        return nx.is_connected(self._combined)
-
-    def connected_components(self):
-        """
-        Get weakly connected components.
-
-        Returns
-        -------
-        Iterator
-            Iterator over sets of nodes in each component.
-
-        Examples
-        --------
-        >>> G = MixedMultiGraph()
-        >>> G.add_undirected_edge(1, 2)
-        0
-        >>> G.add_directed_edge(3, 4)
-        0
-        >>> list(G.connected_components())
-        [{1, 2}, {3, 4}]
-        """
-        return nx.connected_components(self._combined)
+    # Note: number_of_connected_components, is_connected, and connected_components
+    # are now functions in mm_operations module (NetworkX-style API)
 
     def is_cutedge(self, u: T, v: T, key: Optional[int] = None) -> bool:
         """
@@ -1597,221 +1537,5 @@ class MixedMultiGraph:
         self._directed.clear()
         self._combined.clear()
 
-    def identify_two_nodes(self, u: T, v: T) -> None:
-        """
-        Identify two nodes u and v by keeping node u.
-
-        All edges incident to v are moved to u, and v is removed.
-
-        Parameters
-        ----------
-        u : T
-            Node to keep.
-        v : T
-            Node to identify with u (will be removed).
-
-        Examples
-        --------
-        >>> G = MixedMultiGraph()
-        >>> G.add_directed_edge(1, 2)
-        0
-        >>> G.add_undirected_edge(2, 3)
-        0
-        >>> G.identify_two_nodes(1, 2)
-        >>> list(G.nodes())
-        [1, 3]
-        """
-        # Use NetworkX's contracted_nodes on each graph
-        nx.contracted_nodes(self._undirected, u, v, self_loops=False, copy=False)
-        nx.contracted_nodes(self._directed, u, v, self_loops=False, copy=False)
-        nx.contracted_nodes(self._combined, u, v, self_loops=False, copy=False)
-
-        # Clean up any self-loops that might have been created
-        # (contracted_nodes with self_loops=False should handle this, but be safe)
-        if self._undirected.has_edge(u, u):
-            for k in list(self._undirected[u][u].keys()):
-                self._undirected.remove_edge(u, u, key=k)
-                self._combined.remove_edge(u, u, key=k)
-        if self._directed.has_edge(u, u):
-            for k in list(self._directed[u][u].keys()):
-                self._directed.remove_edge(u, u, key=k)
-                self._combined.remove_edge(u, u, key=k)
-
-    def identify_node_set(self, nodes: List[T] | Set[T]) -> None:
-        """
-        Identify all nodes in the set by keeping the first node.
-
-        Parameters
-        ----------
-        nodes : List[T] | Set[T]
-            Iterable of nodes to identify. The first node will be kept.
-
-        Examples
-        --------
-        >>> G = MixedMultiGraph()
-        >>> G.add_undirected_edge(1, 2)
-        0
-        >>> G.add_undirected_edge(2, 3)
-        0
-        >>> G.identify_node_set([1, 2, 3])
-        >>> len(G.nodes()) <= 3
-        True
-        """
-        nodes_list = list(nodes)
-        if len(nodes_list) < 2:
-            return
-
-        for i in range(1, len(nodes_list)):
-            self.identify_two_nodes(nodes_list[0], nodes_list[i])
-
-
-# ========== Factory Functions ==========
-
-def graph_to_mixedmultigraph(graph: nx.Graph) -> MixedMultiGraph:
-    """
-    Create a MixedMultiGraph from a NetworkX Graph.
-
-    All edges from the Graph are added as undirected edges.
-
-    Parameters
-    ----------
-    graph : nx.Graph
-        NetworkX Graph to convert.
-
-    Returns
-    -------
-    MixedMultiGraph
-        New MixedMultiGraph instance with all edges as undirected.
-
-    Examples
-    --------
-    >>> G = nx.Graph()
-    >>> G.add_edge(1, 2, weight=5.0)
-    >>> G.add_edge(2, 3)
-    >>> M = graph_to_mixedmultigraph(G)
-    >>> M.number_of_edges()
-    2
-    """
-    mg = MixedMultiGraph()
-    # Add all nodes with attributes
-    for node, data in graph.nodes(data=True):
-        mg.add_node(node, **data)
-    # Add all edges with attributes
-    for u, v, data in graph.edges(data=True):
-        mg.add_undirected_edge(u, v, **data)
-    return mg
-
-
-def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> MixedMultiGraph:
-    """
-    Create a MixedMultiGraph from a NetworkX MultiGraph.
-
-    All edges from the MultiGraph are added as undirected edges, preserving
-    parallel edges and their keys.
-
-    Parameters
-    ----------
-    graph : nx.MultiGraph
-        NetworkX MultiGraph to convert.
-
-    Returns
-    -------
-    MixedMultiGraph
-        New MixedMultiGraph instance with all edges as undirected.
-
-    Examples
-    --------
-    >>> G = nx.MultiGraph()
-    >>> G.add_edge(1, 2, key=0, weight=1.0)
-    0
-    >>> G.add_edge(1, 2, key=1, weight=2.0)
-    1
-    >>> M = multigraph_to_mixedmultigraph(G)
-    >>> M.number_of_edges()
-    2
-    """
-    mg = MixedMultiGraph()
-    # Add all nodes with attributes
-    for node, data in graph.nodes(data=True):
-        mg.add_node(node, **data)
-    # Add all edges with keys and attributes
-    for u, v, key, data in graph.edges(keys=True, data=True):
-        mg.add_undirected_edge(u, v, key=key, **data)
-    return mg
-
-
-def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> MixedMultiGraph:
-    """
-    Create a MixedMultiGraph from a NetworkX MultiDiGraph.
-
-    All edges from the MultiDiGraph are added as directed edges, preserving
-    parallel edges and their keys.
-
-    Parameters
-    ----------
-    graph : nx.MultiDiGraph
-        NetworkX MultiDiGraph to convert.
-
-    Returns
-    -------
-    MixedMultiGraph
-        New MixedMultiGraph instance with all edges as directed.
-
-    Examples
-    --------
-    >>> G = nx.MultiDiGraph()
-    >>> G.add_edge(1, 2, key=0, weight=1.0)
-    0
-    >>> G.add_edge(1, 2, key=1, weight=2.0)
-    1
-    >>> M = multidigraph_to_mixedmultigraph(G)
-    >>> M._directed.number_of_edges()
-    2
-    """
-    mg = MixedMultiGraph()
-    # Add all nodes with attributes
-    for node, data in graph.nodes(data=True):
-        mg.add_node(node, **data)
-    # Add all edges directly to preserve keys (bypass mutual exclusivity checks)
-    for u, v, key, data in graph.edges(keys=True, data=True):
-        mg._directed.add_edge(u, v, key=key, **data)
-        mg._combined.add_edge(u, v, key=key, **data)
-    return mg
-
-
-def directedmultigraph_to_mixedmultigraph(graph: 'DirectedMultiGraph') -> MixedMultiGraph:
-    """
-    Create a MixedMultiGraph from a DirectedMultiGraph.
-
-    All edges from the DirectedMultiGraph are added as directed edges,
-    preserving parallel edges and their keys.
-
-    Parameters
-    ----------
-    graph : DirectedMultiGraph
-        DirectedMultiGraph instance to convert.
-
-    Returns
-    -------
-    MixedMultiGraph
-        New MixedMultiGraph instance with all edges as directed.
-
-    Examples
-    --------
-    >>> from phylozoo.core.primitives import DirectedMultiGraph
-    >>> G = DirectedMultiGraph()
-    >>> G.add_edge(1, 2, weight=1.0)
-    0
-    >>> M = directedmultigraph_to_mixedmultigraph(G)
-    >>> M._directed.number_of_edges()
-    1
-    """
-    mg = MixedMultiGraph()
-    # Add all nodes with attributes
-    for node, data in graph.nodes(data=True):
-        mg.add_node(node, **data)
-    # Add all edges directly to preserve keys (bypass mutual exclusivity checks)
-    for u, v, key, data in graph.edges(keys=True, data=True):
-        mg._directed.add_edge(u, v, key=key, **data)
-        mg._combined.add_edge(u, v, key=key, **data)
-    return mg
+    # Note: identify_two_nodes and identify_node_set are now functions
+    # in mm_operations module (NetworkX-style API)

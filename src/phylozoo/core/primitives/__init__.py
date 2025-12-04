@@ -7,8 +7,8 @@ This submodule contains fundamental data structures used throughout the package.
 from ..split import Split, SplitSystem
 from .partition import Partition
 from .circular_ordering import CircularOrdering, CircularSetOrdering
-from .mm_graph import MixedMultiGraph
-from .dm_graph import DirectedMultiGraph
+from .d_multigraph import DirectedMultiGraph
+from .m_multigraph import MixedMultiGraph
 
 __all__ = [
     "Split",

@@ -8,7 +8,7 @@ import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
-from ..primitives.dm_graph import DirectedMultiGraph
+from ..primitives.d_multigraph.dm_graph import DirectedMultiGraph
 
 T = TypeVar('T')
 

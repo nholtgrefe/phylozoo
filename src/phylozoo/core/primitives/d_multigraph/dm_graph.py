@@ -55,7 +55,8 @@ class DirectedMultiGraph:
     >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
     >>> key1 != key2
     True
-    >>> G.number_of_connected_components()
+    >>> from phylozoo.core.primitives.d_multigraph.dm_operations import number_of_connected_components
+    >>> number_of_connected_components(G)
     1
     >>> # Initialize with edges (including attributes)
     >>> G2 = DirectedMultiGraph(
@@ -948,69 +949,8 @@ class DirectedMultiGraph:
         return self._graph.out_degree(v)
 
     # ========== Connectivity Methods ==========
-
-    def number_of_connected_components(self) -> int:
-        """
-        Return the number of weakly connected components.
-
-        Returns
-        -------
-        int
-            Number of connected components.
-
-        Examples
-        --------
-        >>> G = DirectedMultiGraph()
-        >>> G.add_edge(1, 2)
-        0
-        >>> G.add_edge(3, 4)
-        0
-        >>> G.number_of_connected_components()
-        2
-        """
-        return nx.number_connected_components(self._combined)
-
-    def is_connected(self) -> bool:
-        """
-        Check if graph is weakly connected.
-
-        Returns
-        -------
-        bool
-            True if graph is connected, False otherwise.
-
-        Examples
-        --------
-        >>> G = DirectedMultiGraph()
-        >>> G.add_edge(1, 2)
-        0
-        >>> G.add_edge(2, 3)
-        0
-        >>> G.is_connected()
-        True
-        """
-        return nx.is_connected(self._combined)
-
-    def connected_components(self):
-        """
-        Get weakly connected components.
-
-        Returns
-        -------
-        Iterator
-            Iterator over sets of nodes in each component.
-
-        Examples
-        --------
-        >>> G = DirectedMultiGraph()
-        >>> G.add_edge(1, 2)
-        0
-        >>> G.add_edge(3, 4)
-        0
-        >>> list(G.connected_components())
-        [{1, 2}, {3, 4}]
-        """
-        return nx.connected_components(self._combined)
+    # Note: number_of_connected_components, is_connected, and connected_components
+    # are now functions in dm_operations module (NetworkX-style API)
 
     def is_cutedge(self, u: T, v: T, key: Optional[int] = None) -> bool:
         """
@@ -1211,138 +1151,5 @@ class DirectedMultiGraph:
         self._graph.clear()
         self._combined.clear()
 
-    def identify_two_nodes(self, u: T, v: T) -> None:
-        """
-        Identify two nodes u and v by keeping node u.
-
-        All edges incident to v are moved to u, and v is removed.
-
-        Parameters
-        ----------
-        u : T
-            Node to keep.
-        v : T
-            Node to identify with u (will be removed).
-
-        Examples
-        --------
-        >>> G = DirectedMultiGraph()
-        >>> G.add_edge(1, 2)
-        0
-        >>> G.add_edge(2, 3)
-        0
-        >>> G.identify_two_nodes(1, 2)
-        >>> list(G.nodes())
-        [1, 3]
-        """
-        # Use NetworkX's contracted_nodes on each graph
-        nx.contracted_nodes(self._graph, u, v, self_loops=False, copy=False)
-        nx.contracted_nodes(self._combined, u, v, self_loops=False, copy=False)
-
-        # Clean up any self-loops that might have been created
-        if self._graph.has_edge(u, u):
-            for k in list(self._graph[u][u].keys()):
-                self._graph.remove_edge(u, u, key=k)
-                self._combined.remove_edge(u, u, key=k)
-
-    def identify_node_set(self, nodes: List[T] | Set[T]) -> None:
-        """
-        Identify all nodes in the set by keeping the first node.
-
-        Parameters
-        ----------
-        nodes : List[T] | Set[T]
-            Iterable of nodes to identify. The first node will be kept.
-
-        Examples
-        --------
-        >>> G = DirectedMultiGraph()
-        >>> G.add_edge(1, 2)
-        0
-        >>> G.add_edge(2, 3)
-        0
-        >>> G.identify_node_set([1, 2, 3])
-        >>> len(G.nodes()) <= 3
-        True
-        """
-        nodes_list = list(nodes)
-        if len(nodes_list) < 2:
-            return
-
-        for i in range(1, len(nodes_list)):
-            self.identify_two_nodes(nodes_list[0], nodes_list[i])
-
-
-# ========== Factory Functions ==========
-
-def digraph_to_directedmultigraph(graph: nx.DiGraph) -> DirectedMultiGraph:
-    """
-    Create a DirectedMultiGraph from a NetworkX DiGraph.
-
-    All edges from the DiGraph are added as directed edges.
-
-    Parameters
-    ----------
-    graph : nx.DiGraph
-        NetworkX DiGraph to convert.
-
-    Returns
-    -------
-    DirectedMultiGraph
-        New DirectedMultiGraph instance with all edges as directed.
-
-    Examples
-    --------
-    >>> G = nx.DiGraph()
-    >>> G.add_edge(1, 2, weight=5.0)
-    >>> G.add_edge(2, 3)
-    >>> M = digraph_to_directedmultigraph(G)
-    >>> M.number_of_edges()
-    2
-    """
-    dmg = DirectedMultiGraph()
-    # Add all nodes with attributes
-    for node, data in graph.nodes(data=True):
-        dmg.add_node(node, **data)
-    # Add all edges with attributes
-    for u, v, data in graph.edges(data=True):
-        dmg.add_edge(u, v, **data)
-    return dmg
-
-
-def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> DirectedMultiGraph:
-    """
-    Create a DirectedMultiGraph from a NetworkX MultiDiGraph.
-
-    All edges from the MultiDiGraph are added as directed edges, preserving
-    parallel edges and their keys.
-
-    Parameters
-    ----------
-    graph : nx.MultiDiGraph
-        NetworkX MultiDiGraph to convert.
-
-    Returns
-    -------
-    DirectedMultiGraph
-        New DirectedMultiGraph instance with all edges as directed.
-
-    Examples
-    --------
-    >>> G = nx.MultiDiGraph()
-    >>> G.add_edge(1, 2, key=0, weight=1.0)
-    0
-    >>> G.add_edge(1, 2, key=1, weight=2.0)
-    1
-    >>> M = multidigraph_to_directedmultigraph(G)
-    >>> M.number_of_edges()
-    2
-    """
-    dmg = DirectedMultiGraph()
-    # Add all nodes with attributes
-    for node, data in graph.nodes(data=True):
-        dmg.add_node(node, **data)
-    # Add all edges with keys and attributes
-    for u, v, key, data in graph.edges(keys=True, data=True):
-        dmg.add_edge(u, v, key=key, **data)
-    return dmg
+    # Note: identify_two_nodes and identify_node_set are now functions
+    # in dm_operations module (NetworkX-style API)

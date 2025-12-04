@@ -8,10 +8,15 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.primitives.dm_graph import (
+from phylozoo.core.primitives.d_multigraph import (
     DirectedMultiGraph,
     digraph_to_directedmultigraph,
     multidigraph_to_directedmultigraph,
+    number_of_connected_components,
+    is_connected,
+    connected_components,
+    identify_two_nodes,
+    identify_node_set,
 )
 
 
@@ -559,26 +564,26 @@ class TestConnectivity:
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(3, 4)
-        assert G.number_of_connected_components() == 2
+        assert number_of_connected_components(G) == 2
 
     def test_is_connected(self) -> None:
         """Test is_connected method."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
-        assert G.is_connected()
+        assert is_connected(G)
         
         G2 = DirectedMultiGraph()
         G2.add_edge(1, 2)
         G2.add_edge(3, 4)
-        assert not G2.is_connected()
+        assert not is_connected(G2)
 
     def test_connected_components(self) -> None:
         """Test connected_components method."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(3, 4)
-        components = list(G.connected_components())
+        components = list(connected_components(G))
         assert len(components) == 2
         assert {1, 2} in components
         assert {3, 4} in components
@@ -665,7 +670,7 @@ class TestGraphOperations:
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
-        G.identify_two_nodes(1, 2)
+        identify_two_nodes(G, 1, 2)
         assert 2 not in G
         assert 1 in G
         # Edges should be moved to node 1
@@ -677,7 +682,7 @@ class TestGraphOperations:
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         G.add_edge(3, 4)
-        G.identify_node_set([1, 2, 3])
+        identify_node_set(G, [1, 2, 3])
         # First node (1) should be kept
         assert 1 in G
         # Other nodes may or may not be present (depends on implementation)
@@ -706,8 +711,8 @@ class TestEdgeCases:
         # NetworkX raises NetworkXPointlessConcept for connectivity on null graph
         import networkx as nx
         with pytest.raises(nx.NetworkXPointlessConcept):
-            G.is_connected()
-        assert G.number_of_connected_components() == 0
+            is_connected(G)
+        assert number_of_connected_components(G) == 0
         assert list(G.nodes()) == []
         assert list(G.edges()) == []
 
@@ -751,8 +756,8 @@ class TestEdgeCases:
             G.add_edge(i, i + 1)
         assert G.number_of_nodes() == 101
         assert G.number_of_edges() == 100
-        assert G.is_connected()
-        assert G.number_of_connected_components() == 1
+        assert is_connected(G)
+        assert number_of_connected_components(G) == 1
 
     def test_large_graph_node_removal(self) -> None:
         """Test node removal on larger graph."""
@@ -765,7 +770,7 @@ class TestEdgeCases:
         assert 25 not in G
         assert G.number_of_nodes() == 50
         # Graph should be disconnected
-        assert G.number_of_connected_components() == 2
+        assert number_of_connected_components(G) == 2
 
 
 class TestLargerGraphs:
@@ -777,8 +782,8 @@ class TestLargerGraphs:
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         G.add_edge(3, 1)
-        assert G.is_connected()
-        assert G.number_of_connected_components() == 1
+        assert is_connected(G)
+        assert number_of_connected_components(G) == 1
         # No cut-edges in a cycle
         assert not G.is_cutedge(1, 2)
         assert not G.is_cutedge(2, 3)
@@ -809,7 +814,7 @@ class TestLargerGraphs:
                 G.add_edge(left, right)
         assert G.number_of_nodes() == 5
         assert G.number_of_edges() == 6
-        assert G.is_connected()
+        assert is_connected(G)
         # All nodes in left partition have outdegree 3
         assert all(G.outdegree(i) == 3 for i in [1, 2])
         # All nodes in right partition have indegree 2

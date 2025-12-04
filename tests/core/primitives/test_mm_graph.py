@@ -8,12 +8,17 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.primitives.mm_graph import (
+from phylozoo.core.primitives.m_multigraph import (
     MixedMultiGraph,
     graph_to_mixedmultigraph,
     multigraph_to_mixedmultigraph,
     multidigraph_to_mixedmultigraph,
     directedmultigraph_to_mixedmultigraph,
+    number_of_connected_components,
+    is_connected,
+    connected_components,
+    identify_two_nodes,
+    identify_node_set,
 )
 
 
@@ -909,12 +914,12 @@ class TestConnectivity:
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_directed_edge(3, 4)
-        assert G.is_connected()
+        assert is_connected(G)
         
         G2 = MixedMultiGraph()
         G2.add_undirected_edge(1, 2)
         G2.add_undirected_edge(3, 4)
-        assert not G2.is_connected()
+        assert not is_connected(G2)
 
     def test_number_of_connected_components(self) -> None:
         """Test number_of_connected_components method."""
@@ -922,7 +927,7 @@ class TestConnectivity:
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(4, 5)
-        assert G.number_of_connected_components() == 2
+        assert number_of_connected_components(G) == 2
 
     def test_connected_components(self) -> None:
         """Test connected_components method."""
@@ -930,7 +935,7 @@ class TestConnectivity:
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(4, 5)
-        components = list(G.connected_components())
+        components = list(connected_components(G))
         assert len(components) == 2
         comp_sets = [set(comp) for comp in components]
         assert {1, 2, 3} in comp_sets
@@ -995,7 +1000,7 @@ class TestGraphOperations:
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_directed_edge(1, 4)
-        G.identify_two_nodes(1, 2)  # Keep node 1
+        identify_two_nodes(G, 1, 2)  # Keep node 1
         # Node 2 should be removed, edges should be transferred
         assert 2 not in G
         assert 1 in G
@@ -1008,7 +1013,7 @@ class TestGraphOperations:
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(3, 4)
-        G.identify_node_set([1, 2, 3])  # Keep first node (1)
+        identify_node_set(G, [1, 2, 3])  # Keep first node (1)
         assert 1 in G
         assert 2 not in G
         assert 3 not in G
@@ -1040,7 +1045,7 @@ class TestEdgeCases:
         G = MixedMultiGraph()
         # Behavior: NetworkX raises NetworkXPointlessConcept for empty graph connectivity
         try:
-            result = G.is_connected()
+            result = is_connected(G)
             print(f"is_connected() on empty graph returns: {result}")
         except Exception as e:
             print(f"is_connected() on empty graph raises: {type(e).__name__}: {e}")
@@ -1053,7 +1058,7 @@ class TestEdgeCases:
         G.add_node(1)
         assert G.number_of_nodes() == 1
         assert G.number_of_edges() == 0
-        assert G.is_connected()  # Single node is connected
+        assert is_connected(G)  # Single node is connected
         assert G.degree(1) == 0
 
     def test_self_loops_undirected(self) -> None:
@@ -1127,8 +1132,8 @@ class TestLargerGraphs:
         G.add_undirected_edge(5, 6, weight=3.0)
         
         assert G.number_of_nodes() == 10
-        assert G.is_connected()
-        assert G.number_of_connected_components() == 1
+        assert is_connected(G)
+        assert number_of_connected_components(G) == 1
         # Check degrees
         for node in nodes:
             degree = G.degree(node)
@@ -1152,7 +1157,7 @@ class TestLargerGraphs:
         G.add_directed_edge(5, 6, weight=30.0)
         
         assert G.number_of_nodes() == 10
-        assert G.is_connected()  # Weakly connected
+        assert is_connected(G)  # Weakly connected
         # Check degrees
         for node in nodes:
             indeg = G.indegree(node)
@@ -1181,8 +1186,8 @@ class TestLargerGraphs:
         G.add_undirected_edge(5, 6)
         
         assert G.number_of_nodes() == 10
-        assert G.is_connected()
-        assert G.number_of_connected_components() == 1
+        assert is_connected(G)
+        assert number_of_connected_components(G) == 1
 
     def test_large_graph_with_many_parallel_edges(self) -> None:
         """Test large graph with many parallel edges."""
@@ -1226,7 +1231,7 @@ class TestLargerGraphs:
         G.remove_edge(5, 6)  # Remove without key
         
         # Check connectivity
-        components = G.number_of_connected_components()
+        components = number_of_connected_components(G)
         print(f"After edge removals, number of components: {components}")
 
     def test_large_graph_node_removal(self) -> None:
@@ -1249,6 +1254,6 @@ class TestLargerGraphs:
         assert G.number_of_nodes() == 7
         
         # Check connectivity
-        components = G.number_of_connected_components()
+        components = number_of_connected_components(G)
         print(f"After node removals, number of components: {components}")
 
