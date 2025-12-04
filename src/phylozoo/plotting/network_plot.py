@@ -14,7 +14,7 @@ def plot_network(network, ax=None, **kwargs):
     Parameters
     ----------
     network
-        Network object to plot (e.g., DirectedNetwork, SemiDirectedNetwork)
+        Network object to plot (e.g., DirectedPhyNetwork, SemiDirectedNetwork)
     ax : optional
         Matplotlib axes object to plot on. If None, creates a new figure.
     **kwargs

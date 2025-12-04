@@ -63,7 +63,7 @@
 - Aim for good test coverage - test both success cases and edge cases
 - Use type hints in test functions as well
 - If a test does not work at first go, don't necessarily fix the test to work, but consider whether we might want to update the class of interest instead.
-- **NEVER** catch errors in testing code. I want to see errors if they happen.
+- **NEVER** fix tests based on the actual behavior, instead clarify with me what behaviour I want to see.
 
 ## Workflow Preferences
 

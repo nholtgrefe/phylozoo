@@ -225,7 +225,7 @@ class SplitSystem:
         """
         from ..network.semi_directed import SemiDirectedNetwork
         
-        tree = SemiDirectedNetwork()
+        tree = SemiDirectedNetwork(edges=[])
         center_node = id_generator()
         tree.add_node(center_node)
         

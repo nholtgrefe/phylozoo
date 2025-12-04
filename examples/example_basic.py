@@ -4,7 +4,7 @@ Basic example demonstrating phylozoo usage.
 This example shows how to create and work with basic phylozoo objects.
 """
 from phylozoo.core.primitives import Split, SplitSystem
-from phylozoo.core.network import DirectedNetwork
+from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.sequence import MSA
 
 
@@ -27,10 +27,7 @@ def main() -> None:
 
     # Example 3: Working with networks
     print("3. Creating a directed network:")
-    network = DirectedNetwork()
-    network.add_node("A")
-    network.add_node("B")
-    network.add_edge("A", "B")
+    network = DirectedPhyNetwork(edges=[("A", "B")], taxa={"B": "B"})
     print(f"   Network: {network}\n")
 
     # Example 4: Working with MSA

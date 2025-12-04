@@ -10,7 +10,7 @@ __version__ = "0.1.0"
 # Import core classes for convenient access
 from .core import (
     # Networks
-    DirectedNetwork,
+    DirectedPhyNetwork,
     SemiDirectedNetwork,
     random_semi_directed_network,
     MixedMultiGraph,
@@ -60,7 +60,7 @@ __all__ = [
     "distance",
     "sequence",
     # Core - Networks
-    "DirectedNetwork",
+    "DirectedPhyNetwork",
     "SemiDirectedNetwork",
     "random_semi_directed_network",
     "MixedMultiGraph",

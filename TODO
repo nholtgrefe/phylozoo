@@ -1,0 +1,9 @@
+Rename phylozoo to phyloweb?
+__repr__ for mixed graph classes
+update doc strings to include Raise.
+a network may not consist of a single node
+use jit and numba etc.
+use for cached property
+make subpartitions a generator
+in edge and out edges method
+Maybe internal logic to switch to non-multigraph if not necessary?
