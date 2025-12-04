@@ -4,14 +4,9 @@ Conversion functions for DirectedMultiGraph.
 This module provides functions for converting NetworkX graphs to DirectedMultiGraph.
 """
 
-from typing import TYPE_CHECKING
-
 import networkx as nx
 
-if TYPE_CHECKING:
-    from .dm_graph import DirectedMultiGraph
-else:
-    from .dm_graph import DirectedMultiGraph
+from .dm_graph import DirectedMultiGraph
 
 
 def digraph_to_directedmultigraph(graph: nx.DiGraph) -> 'DirectedMultiGraph':

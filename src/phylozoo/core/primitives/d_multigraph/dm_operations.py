@@ -5,14 +5,11 @@ This module provides functions for working with DirectedMultiGraph instances,
 following NetworkX-style function-based API.
 """
 
-from typing import TYPE_CHECKING, Iterator, List, Set, TypeVar
+from typing import Iterator, List, Set, TypeVar
 
 import networkx as nx
 
-if TYPE_CHECKING:
-    from .dm_graph import DirectedMultiGraph
-else:
-    from .dm_graph import DirectedMultiGraph
+from .dm_graph import DirectedMultiGraph
 
 T = TypeVar('T')
 
