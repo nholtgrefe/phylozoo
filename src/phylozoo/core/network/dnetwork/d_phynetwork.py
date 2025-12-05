@@ -8,6 +8,8 @@ import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
+import networkx as nx
+
 from ...primitives.d_multigraph.dm_graph import DirectedMultiGraph
 
 T = TypeVar('T')
@@ -16,6 +18,17 @@ T = TypeVar('T')
 class DirectedPhyNetwork:
     """
     A directed phylogenetic network.
+    
+    A DirectedPhyNetwork is a directed acyclic graph (DAG) representing a phylogenetic
+    network structure. It consists of:
+    
+    - **Root node**: Exactly one node with in-degree 0
+    - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
+    - **Tree nodes**: Internal nodes (non-root, non-leaf) with in-degree 1 and out-degree >= 2
+    - **Hybrid nodes**: Internal nodes with in-degree >= 2 and out-degree 1
+    
+    The `validate()` method checks whether the network adheres to this definition upon
+    initialization.
     
     This class uses composition with DirectedMultiGraph for graph structure and adds
     phylogenetic-specific features like leaves, node labels, and network topology methods.
@@ -37,20 +50,19 @@ class DirectedPhyNetwork:
         
         Edge attributes can be set via dict format. Suggested attributes:
         - branch_length (float): Branch length for the edge
-        - bootstrap (float): Bootstrap support value (typically 0.0 to 1.0)
-        - gamma (float): For hybrid edges only - inheritance probability.
-          If ANY gamma value is specified for edges entering a hybrid node, then
-          ALL edges entering that hybrid node must have gamma values, and they must
-          sum to exactly 1.0. If no gamma values are specified for a hybrid node,
-          no validation is performed.
-          This is validated during initialization.
+        - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
+        - gamma (float): For hybrid edges only - inheritance probability (must be in [0.0, 1.0]).
+          Must be in [0.0, 1.0]. If ANY gamma is specified for edges entering a hybrid node,
+          then ALL edges entering that hybrid node must have gamma values summing to 1.0.
           
           Note: If you need more forgiving behavior (e.g., partial gamma values that
           don't sum to 1.0), consider using a different edge attribute name (e.g., 'gamma2')
           which will not be validated.
         
+        These attributes are validated during initialization.
+        
         Other edge attributes are also supported (any key-value pairs can be added),
-        but only the above three are suggested for phylogenetic networks.
+        but the above three are suggested for phylogenetic networks.
         
         Must be provided (can be empty list for empty network, but a warning will be raised).
     taxa : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
@@ -294,35 +306,43 @@ class DirectedPhyNetwork:
         # Note: Internal nodes without explicit labels remain unlabeled
         # Only leaves are guaranteed to have labels (taxa)
     
-    def validate(self) -> bool:
+    def _validate_bootstrap_constraints(self) -> None:
         """
-        Validate the network structure and edge attributes.
+        Validate bootstrap values are within [0.0, 1.0].
         
-        Checks:
-        - Network structure is valid
-        - For each hybrid node, if ANY incoming edge has a gamma value, then
-          ALL incoming edges (including parallel edges) must have gamma values,
-          and they must sum to exactly 1.0. If no gamma values are specified,
-          no validation is performed.
+        Raises
+        ------
+        ValueError
+            If any edge has a bootstrap value outside [0.0, 1.0].
+        """
+        for u, v, key, data in self._graph.edges(keys=True, data=True):
+            if 'bootstrap' in data:
+                bootstrap = data['bootstrap']
+                if not isinstance(bootstrap, (int, float)):
+                    raise ValueError(
+                        f"Bootstrap value on edge ({u}, {v}, key={key}) must be numeric, "
+                        f"got {type(bootstrap).__name__}"
+                    )
+                if bootstrap < 0.0 or bootstrap > 1.0:
+                    raise ValueError(
+                        f"Bootstrap value on edge ({u}, {v}, key={key}) is {bootstrap}, "
+                        f"but must be in [0.0, 1.0]"
+                    )
+    
+    def _validate_gamma_constraints(self) -> None:
+        """
+        Validate gamma constraints for hybrid nodes.
         
-        Returns
-        -------
-        bool
-            True if the network is valid, False otherwise.
+        For each hybrid node, if ANY incoming edge has a gamma value, then
+        ALL incoming edges (including parallel edges) must have gamma values,
+        and they must sum to exactly 1.0. If no gamma values are specified,
+        no validation is performed.
         
         Raises
         ------
         ValueError
             If gamma constraints are violated.
-        
-        Notes
-        -----
-        This method checks that the network structure is valid and that
-        gamma values for hybrid edges are properly specified. If ANY gamma value
-        is given for edges entering a hybrid node, then ALL edges entering that
-        hybrid node must have gamma values, and they must sum to exactly 1.0.
         """
-        # Check gamma constraints for hybrid nodes
         for hybrid_node in self.hybrid_nodes:
             gamma_values: List[float] = []
             incoming_edges: List[Tuple[T, T, int]] = []
@@ -334,6 +354,18 @@ class DirectedPhyNetwork:
                     incoming_edges.append((u, v, key))
                     gamma = edge_data.get('gamma')
                     if gamma is not None:
+                        # Validate gamma is numeric
+                        if not isinstance(gamma, (int, float)):
+                            raise ValueError(
+                                f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
+                                f"{hybrid_node} must be numeric, got {type(gamma).__name__}"
+                            )
+                        # Validate gamma is in [0.0, 1.0]
+                        if gamma < 0.0 or gamma > 1.0:
+                            raise ValueError(
+                                f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
+                                f"{hybrid_node} is {gamma}, but must be in [0.0, 1.0]"
+                            )
                         gamma_values.append(gamma)
             
             # If any gamma values are set, ALL edges must have gamma values
@@ -359,6 +391,88 @@ class DirectedPhyNetwork:
                         f"Hybrid node {hybrid_node} has gamma values that sum to {gamma_sum}, "
                         f"but must sum to exactly 1.0"
                     )
+    
+    def validate(self) -> bool:
+        """
+        Validate the network structure and edge attributes.
+        
+        Checks:
+        1. Directed acyclic graph (no directed cycles)
+        2. Single root node (exactly one node with in-degree 0)
+        3. Leaf nodes: all have in-degree 1 and out-degree 0
+        4. Internal nodes: all have either (in-degree 1 and out-degree >= 2) or
+           (in-degree >= 2 and out-degree 1)
+        5. Bootstrap values: all bootstrap values must be in [0.0, 1.0]
+        6. Gamma constraints: if any gamma is specified for a hybrid node, all
+           incoming edges must have gamma values summing to 1.0
+        
+        Returns
+        -------
+        bool
+            True if the network is valid, False otherwise.
+        
+        Raises
+        ------
+        ValueError
+            If any structural, bootstrap, or gamma constraints are violated.
+        
+        Notes
+        -----
+        This method performs comprehensive validation of the network structure
+        and edge attributes. See class docstring for detailed validation rules.
+        Empty networks (no nodes) are considered valid.
+        """
+        # Empty networks are valid
+        if self.number_of_nodes() == 0:
+            return True
+        
+        # 1. Check for directed cycles (must be acyclic)
+        if not nx.is_directed_acyclic_graph(self._graph._graph):
+            cycles = list(nx.simple_cycles(self._graph._graph))
+            raise ValueError(
+                f"Network contains directed cycles. Found {len(cycles)} cycle(s). "
+                f"First cycle: {cycles[0] if cycles else 'unknown'}"
+            )
+        
+        # 2. Check for single root node (using cached property)
+        # Accessing root_node will raise if no root or multiple roots
+        root = self.root_node
+        
+        # 3. Check leaf nodes: in-degree 1, out-degree 0 (using cached property)
+        leaves = self.leaves
+        for leaf in leaves:
+            indeg = self._graph.indegree(leaf)
+            if indeg != 1:
+                raise ValueError(
+                    f"Leaf node {leaf} has in-degree {indeg}, but must have in-degree 1"
+                )
+        
+        # 4. Check internal nodes (non-root, non-leaf)
+        # Use cached properties: tree_nodes and hybrid_nodes cover all valid internal nodes
+        # Any node that's not root, not leaf, and not in tree_nodes or hybrid_nodes is invalid
+        tree_nodes = set(self.tree_nodes)
+        hybrid_nodes = set(self.hybrid_nodes)
+        
+        # Use internal_nodes cached property (already excludes root and leaves)
+        all_internal = set(self.internal_nodes)
+        valid_internal = tree_nodes | hybrid_nodes
+        
+        invalid_nodes = all_internal - valid_internal
+        if invalid_nodes:
+            for node in invalid_nodes:
+                indeg = self._graph.indegree(node)
+                outdeg = self._graph.outdegree(node)
+                raise ValueError(
+                    f"Internal node {node} has in-degree {indeg} and out-degree {outdeg}. "
+                    f"Internal nodes must have either (in-degree 1 and out-degree >= 2) "
+                    f"or (in-degree >= 2 and out-degree 1)."
+                )
+        
+        # 5. Validate bootstrap constraints
+        self._validate_bootstrap_constraints()
+        
+        # 6. Validate gamma constraints
+        self._validate_gamma_constraints()
         
         return True
     
@@ -518,46 +632,7 @@ class DirectedPhyNetwork:
                 )
             if key not in edges_data:
                 return None
-            return edges_data[key].get(attr)
-    
-    def get_edge_attributes(self, u: T, v: T, attr: str = 'branch_length') -> Dict[int, Any]:
-        """
-        Get attribute values for all parallel edges between u and v.
-        
-        Parameters
-        ----------
-        u, v : T
-            Edge endpoints.
-        attr : str, default 'branch_length'
-            Attribute name. Suggested attributes: 'branch_length', 'bootstrap', 'gamma'.
-            Any edge attribute can be accessed.
-        
-        Returns
-        -------
-        Dict[int, Any]
-            Dictionary mapping edge keys to attribute values.
-            Keys without the attribute are omitted.
-        
-        Examples
-        --------
-        >>> net = DirectedPhyNetwork(
-        ...     edges=[
-        ...         {'u': 3, 'v': 1, 'key': 0, 'branch_length': 0.5},
-        ...         {'u': 3, 'v': 1, 'key': 1, 'branch_length': 0.7}
-        ...     ],
-        ...     taxa={1: "A"}
-        ... )
-        >>> net.get_edge_attributes(3, 1, 'branch_length')
-        {0: 0.5, 1: 0.7}
-        """
-        if not self.has_edge(u, v):
-            return {}
-        
-        result: Dict[int, Any] = {}
-        for edge_key, edge_data in self._graph._graph[u][v].items():
-            if attr in edge_data:
-                result[edge_key] = edge_data[attr]
-        return result
+                return edges_data[key].get(attr)
     
     def get_branch_length(self, u: T, v: T, key: Optional[int] = None) -> Optional[float]:
         """
@@ -895,7 +970,7 @@ class DirectedPhyNetwork:
     @cached_property
     def internal_nodes(self) -> List[T]:
         """
-        Return a list of all internal (non-leaf) nodes.
+        Return a list of all internal (non-root, non-leaf) nodes.
         
         Returns
         -------
@@ -908,7 +983,8 @@ class DirectedPhyNetwork:
         >>> net.internal_nodes
         [3]
         """
-        return [v for v in self._graph.nodes if v not in self.leaves]
+        root = self.root_node
+        return [v for v in self._graph.nodes if v != root and v not in self.leaves]
     
     @cached_property
     def root_node(self) -> T:
@@ -945,7 +1021,7 @@ class DirectedPhyNetwork:
         """
         Return a list of all hybrid nodes.
         
-        A hybrid node is a node with in-degree 2 and total degree 3.
+        A hybrid node is a node with in-degree >= 2 and out-degree 1.
         
         Returns
         -------
@@ -960,7 +1036,36 @@ class DirectedPhyNetwork:
         """
         return [
             v for v in self._graph.nodes
-            if self._graph.indegree(v) == 2 and self._graph.degree(v) == 3
+            if self._graph.indegree(v) >= 2 and self._graph.outdegree(v) == 1
+        ]
+    
+    @cached_property
+    def tree_nodes(self) -> List[T]:
+        """
+        Return a list of all tree nodes.
+        
+        A tree node is an internal node (non-root, non-leaf) with in-degree 1
+        and out-degree >= 2.
+        
+        Returns
+        -------
+        List[T]
+            List of tree node identifiers.
+        
+        Examples
+        --------
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net.tree_nodes
+        [3]
+        """
+        root = self.root_node
+        leaves = self.leaves
+        return [
+            v for v in self._graph.nodes
+            if v != root
+            and v not in leaves
+            and self._graph.indegree(v) == 1
+            and self._graph.outdegree(v) >= 2
         ]
     
     @cached_property
@@ -988,19 +1093,21 @@ class DirectedPhyNetwork:
         return res
     
     @cached_property
-    def non_hybrid_edges(self) -> List[Tuple[T, T]]:
+    def tree_edges(self) -> List[Tuple[T, T]]:
         """
-        Return a list of all non-hybrid edges.
+        Return a list of all tree edges.
+        
+        Tree edges are all edges that are not hybrid edges.
         
         Returns
         -------
         List[Tuple[T, T]]
-            List of (source, target) tuples for non-hybrid edges.
+            List of (source, target) tuples for tree edges.
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
-        >>> len(net.non_hybrid_edges)
+        >>> len(net.tree_edges)
         2
         """
         hybrid_edges = set(self.hybrid_edges)
@@ -1040,6 +1147,17 @@ class DirectedPhyNetwork:
         True
         """
         return len(self.hybrid_nodes) == 0
+    
+    def __len__(self) -> int:
+        """
+        Return the number of nodes in the network.
+        
+        Returns
+        -------
+        int
+            Number of nodes.
+        """
+        return self.number_of_nodes()
     
     # ========== Graph Operations ==========
     

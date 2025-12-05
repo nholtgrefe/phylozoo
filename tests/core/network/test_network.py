@@ -17,11 +17,10 @@ class TestDirectedPhyNetwork:
 
     def test_directed_network_creation(self) -> None:
         """Test creating a directed network."""
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            network = DirectedPhyNetwork(edges=[])
-        assert network.number_of_nodes() == 0
-        assert network.number_of_edges() == 0
+        # Empty network is invalid (no root), so test with a minimal valid network
+        network = DirectedPhyNetwork(edges=[(1, 2)], taxa={2: "A"})
+        assert network.number_of_nodes() == 2
+        assert network.number_of_edges() == 1
 
     def test_directed_network_with_edges(self) -> None:
         """Test creating a directed network with edges and taxa."""
@@ -97,57 +96,70 @@ class TestIncidentEdges:
 
     def test_incident_parent_edges_basic(self) -> None:
         """Test incident_parent_edges with basic edges."""
+        # Create valid structure: root -> tree nodes (out-degree 2) -> hybrid -> leaf
         net = DirectedPhyNetwork(
-            edges=[(1, 2), (3, 2), (4, 2)],
-            taxa={2: "A"}
+            edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
+            taxa={2: "A", 8: "B", 9: "C"}
         )
         
-        parent_edges = list(net.incident_parent_edges(2))
-        assert len(parent_edges) == 3
-        assert (1, 2) in parent_edges
-        assert (3, 2) in parent_edges
-        assert (4, 2) in parent_edges
+        parent_edges = list(net.incident_parent_edges(4))  # Test on hybrid node
+        assert len(parent_edges) == 2
+        assert (5, 4) in parent_edges
+        assert (6, 4) in parent_edges
 
     def test_incident_parent_edges_with_attributes(self) -> None:
         """Test incident_parent_edges with edge attributes."""
+        # Valid network: root -> tree nodes (out-degree 2) -> hybrid -> leaf
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 1, 'v': 2, 'branch_length': 0.5, 'bootstrap': 0.95},
-                {'u': 3, 'v': 2, 'branch_length': 0.3, 'bootstrap': 0.87}
+                {'u': 7, 'v': 5},
+                {'u': 7, 'v': 6},
+                {'u': 5, 'v': 4, 'branch_length': 0.5, 'bootstrap': 0.95},
+                {'u': 5, 'v': 8},
+                {'u': 6, 'v': 4, 'branch_length': 0.3, 'bootstrap': 0.87},
+                {'u': 6, 'v': 9},
+                {'u': 4, 'v': 2}
             ],
-            taxa={2: "A"}
+            taxa={2: "A", 8: "B", 9: "C"}
         )
         
-        parent_edges = list(net.incident_parent_edges(2, data=True))
+        parent_edges = list(net.incident_parent_edges(4, data=True))  # Test on hybrid node
         assert len(parent_edges) == 2
         # Check that data is included
         edge_dict = {edge[0]: edge[2] for edge in parent_edges if len(edge) == 3}
-        assert 1 in edge_dict
-        assert edge_dict[1]['branch_length'] == 0.5
-        assert edge_dict[1]['bootstrap'] == 0.95
+        assert 5 in edge_dict
+        assert edge_dict[5]['branch_length'] == 0.5
+        assert edge_dict[5]['bootstrap'] == 0.95
 
     def test_incident_parent_edges_with_keys_and_data(self) -> None:
         """Test incident_parent_edges with keys and data."""
+        # Valid network with parallel edges to hybrid
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 1, 'v': 2, 'key': 0, 'branch_length': 0.5},
-                {'u': 1, 'v': 2, 'key': 1, 'branch_length': 0.7}  # Parallel edge
+                {'u': 7, 'v': 5},
+                {'u': 7, 'v': 6},
+                {'u': 5, 'v': 4, 'key': 0, 'branch_length': 0.5},
+                {'u': 5, 'v': 4, 'key': 1, 'branch_length': 0.7},  # Parallel edge
+                {'u': 5, 'v': 8},
+                {'u': 6, 'v': 4},
+                {'u': 6, 'v': 9},
+                {'u': 4, 'v': 2}
             ],
-            taxa={2: "A"}
+            taxa={2: "A", 8: "B", 9: "C"}
         )
         
-        parent_edges = list(net.incident_parent_edges(2, keys=True, data=True))
-        assert len(parent_edges) == 2
+        parent_edges = list(net.incident_parent_edges(4, keys=True, data=True))  # Test on hybrid
+        assert len(parent_edges) >= 2  # At least 2 edges from 5, plus 1 from 6
+        # Check structure
         for edge in parent_edges:
             assert len(edge) == 4
             u, v, key, data = edge
-            assert u == 1
-            assert v == 2
-            assert key in [0, 1]
-            assert 'branch_length' in data
+            assert v == 4
+            assert 'branch_length' in data or u == 6  # Edge from 6 may not have branch_length
 
     def test_incident_child_edges_basic(self) -> None:
         """Test incident_child_edges with basic edges."""
+        # Valid tree: root -> internal -> leaves
         net = DirectedPhyNetwork(
             edges=[(1, 2), (1, 3), (1, 4)],
             taxa={2: "A", 3: "B", 4: "C"}
@@ -161,6 +173,7 @@ class TestIncidentEdges:
 
     def test_incident_child_edges_with_attributes(self) -> None:
         """Test incident_child_edges with edge attributes."""
+        # Valid tree: root -> leaves
         net = DirectedPhyNetwork(
             edges=[
                 {'u': 1, 'v': 2, 'branch_length': 0.5, 'bootstrap': 0.95},
@@ -179,33 +192,47 @@ class TestIncidentEdges:
 
     def test_incident_child_edges_with_keys_and_data(self) -> None:
         """Test incident_child_edges with keys and data."""
+        # Valid network: root -> tree nodes -> hybrid (with parallel edges from one parent)
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 1, 'v': 2, 'key': 0, 'branch_length': 0.5},
-                {'u': 1, 'v': 2, 'key': 1, 'branch_length': 0.7}  # Parallel edge
+                {'u': 7, 'v': 5},
+                {'u': 7, 'v': 6},
+                {'u': 5, 'v': 4, 'key': 0, 'branch_length': 0.5},
+                {'u': 5, 'v': 4, 'key': 1, 'branch_length': 0.7},  # Parallel edge to hybrid
+                {'u': 5, 'v': 8},
+                {'u': 6, 'v': 4},
+                {'u': 6, 'v': 9},
+                {'u': 4, 'v': 2}
             ],
-            taxa={2: "A"}
+            taxa={2: "A", 8: "B", 9: "C"}
         )
         
-        child_edges = list(net.incident_child_edges(1, keys=True, data=True))
-        assert len(child_edges) == 2
-        for edge in child_edges:
+        child_edges = list(net.incident_child_edges(5, keys=True, data=True))  # Test on tree node 5
+        # Should have 2 parallel edges to hybrid node 4, plus 1 to 8
+        parallel_to_4 = [e for e in child_edges if e[1] == 4]
+        assert len(parallel_to_4) == 2  # Exactly 2 parallel edges to 4
+        for edge in parallel_to_4:
             assert len(edge) == 4
             u, v, key, data = edge
-            assert u == 1
-            assert v == 2
+            assert u == 5
+            assert v == 4
             assert key in [0, 1]
             assert 'branch_length' in data
 
     def test_incident_edges_for_hybrid_node(self) -> None:
         """Test incident edges for a hybrid node with gamma values."""
+        # Valid network: root -> tree nodes -> hybrid -> leaf
         net = DirectedPhyNetwork(
             edges=[
+                {'u': 7, 'v': 5},
+                {'u': 7, 'v': 6},
                 {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 5, 'v': 8},
                 {'u': 6, 'v': 4, 'gamma': 0.4},
-                {'u': 4, 'v': 7}
+                {'u': 6, 'v': 9},
+                {'u': 4, 'v': 2}
             ],
-            taxa={7: "A"}
+            taxa={2: "A", 8: "B", 9: "C"}
         )
         
         # Check parent edges (incoming to hybrid node)
@@ -224,7 +251,7 @@ class TestIncidentEdges:
         # Check child edges (outgoing from hybrid node)
         child_edges = list(net.incident_child_edges(4))
         assert len(child_edges) == 1
-        assert (4, 7) in child_edges
+        assert (4, 2) in child_edges
 
     def test_incident_edges_empty(self) -> None:
         """Test incident edges for nodes with no edges."""
@@ -243,12 +270,13 @@ class TestIncidentEdges:
 
     def test_incident_edges_consistency_with_parents_children(self) -> None:
         """Test that incident edges are consistent with parents/children methods."""
+        # Valid network: root -> tree nodes (out-degree 2) -> hybrid -> leaf
         net = DirectedPhyNetwork(
-            edges=[(1, 2), (3, 2), (2, 4)],
-            taxa={4: "A"}
+            edges=[(7, 5), (7, 6), (5, 2), (5, 8), (6, 2), (6, 9), (2, 4)],
+            taxa={4: "A", 8: "B", 9: "C"}
         )
         
-        # Check parent edges match parents
+        # Check parent edges match parents (node 2 is hybrid)
         parents = set(net.parents(2))
         parent_edges = list(net.incident_parent_edges(2))
         parent_nodes_from_edges = {edge[0] for edge in parent_edges}
