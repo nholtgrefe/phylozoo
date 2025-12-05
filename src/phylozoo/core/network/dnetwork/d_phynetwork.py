@@ -39,8 +39,15 @@ class DirectedPhyNetwork:
         - branch_length (float): Branch length for the edge
         - bootstrap (float): Bootstrap support value (typically 0.0 to 1.0)
         - gamma (float): For hybrid edges only - inheritance probability.
-          The sum of gamma values for all edges entering a hybrid node must equal 1.0.
+          If ANY gamma value is specified for edges entering a hybrid node, then
+          ALL edges entering that hybrid node must have gamma values, and they must
+          sum to exactly 1.0. If no gamma values are specified for a hybrid node,
+          no validation is performed.
           This is validated during initialization.
+          
+          Note: If you need more forgiving behavior (e.g., partial gamma values that
+          don't sum to 1.0), consider using a different edge attribute name (e.g., 'gamma2')
+          which will not be validated.
         
         Other edge attributes are also supported (any key-value pairs can be added),
         but only the above three are suggested for phylogenetic networks.
@@ -293,8 +300,10 @@ class DirectedPhyNetwork:
         
         Checks:
         - Network structure is valid
-        - For each hybrid node, if any incoming edge has a gamma value,
-          the sum of all gamma values on ALL parallel incoming edges must equal 1.0
+        - For each hybrid node, if ANY incoming edge has a gamma value, then
+          ALL incoming edges (including parallel edges) must have gamma values,
+          and they must sum to exactly 1.0. If no gamma values are specified,
+          no validation is performed.
         
         Returns
         -------
@@ -309,25 +318,47 @@ class DirectedPhyNetwork:
         Notes
         -----
         This method checks that the network structure is valid and that
-        gamma values for hybrid edges sum to 1.0 per hybrid node.
+        gamma values for hybrid edges are properly specified. If ANY gamma value
+        is given for edges entering a hybrid node, then ALL edges entering that
+        hybrid node must have gamma values, and they must sum to exactly 1.0.
         """
         # Check gamma constraints for hybrid nodes
         for hybrid_node in self.hybrid_nodes:
-            gamma_sum = 0.0
+            gamma_values: List[float] = []
+            incoming_edges: List[Tuple[T, T, int]] = []
+            
             # Use incident_parent_edges to get all incoming edges (including parallel edges)
             for edge in self.incident_parent_edges(hybrid_node, keys=True, data=True):
                 if len(edge) == 4:  # (u, v, key, data)
-                    _, _, _, edge_data = edge
+                    u, v, key, edge_data = edge
+                    incoming_edges.append((u, v, key))
                     gamma = edge_data.get('gamma')
                     if gamma is not None:
-                        gamma_sum += gamma
+                        gamma_values.append(gamma)
             
-            # If any gamma values are set, they must sum to 1.0
-            if gamma_sum > 0 and abs(gamma_sum - 1.0) > 1e-10:
-                raise ValueError(
-                    f"Hybrid node {hybrid_node} has gamma values that sum to {gamma_sum}, "
-                    f"but must sum to 1.0"
-                )
+            # If any gamma values are set, ALL edges must have gamma values
+            if len(gamma_values) > 0:
+                # Check if all incoming edges have gamma values
+                missing_edges: List[str] = []
+                for u, v, key in incoming_edges:
+                    gamma = self.get_edge_attribute(u, v, key, 'gamma')
+                    if gamma is None:
+                        missing_edges.append(f"({u}, {v}, key={key})")
+                
+                if missing_edges:
+                    raise ValueError(
+                        f"Hybrid node {hybrid_node} has some edges with gamma values "
+                        f"but others without. If ANY gamma is specified, ALL incoming edges "
+                        f"must have gamma values. Missing gamma on edges: {', '.join(missing_edges)}"
+                    )
+                
+                # All gammas are present, check they sum to 1.0
+                gamma_sum = sum(gamma_values)
+                if abs(gamma_sum - 1.0) > 1e-10:
+                    raise ValueError(
+                        f"Hybrid node {hybrid_node} has gamma values that sum to {gamma_sum}, "
+                        f"but must sum to exactly 1.0"
+                    )
         
         return True
     
@@ -588,8 +619,9 @@ class DirectedPhyNetwork:
         """
         Get gamma value for a hybrid edge.
         
-        Gamma values represent inheritance probabilities for hybrid nodes.
-        The sum of gamma values for all edges entering a hybrid node must equal 1.0.
+        If ANY gamma value is specified for edges entering a hybrid node, then
+        ALL edges entering that hybrid node must have gamma values, and they must
+        sum to exactly 1.0.
         
         Parameters
         ----------
