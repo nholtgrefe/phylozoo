@@ -19,6 +19,7 @@ python -m examples.example_basic
 ## Available Examples
 
 - `example_basic.py` - Basic usage examples showing how to create and work with splits, networks, and MSAs
+- `example_directed_phynetwork.py` - Comprehensive examples demonstrating DirectedPhyNetwork features including trees, hybrid networks, edge attributes (branch_length, bootstrap, gamma), and network topology properties
 
 ## Creating New Examples
 

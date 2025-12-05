@@ -129,11 +129,13 @@ class DirectedPhyNetwork:
     >>> # Network with hybrid node and gamma values
     >>> net4 = DirectedPhyNetwork(
     ...     edges=[
-    ...         {'u': 5, 'v': 4, 'gamma': 0.6},
-    ...         {'u': 6, 'v': 4, 'gamma': 0.4},  # Sum = 1.0
-    ...         {'u': 4, 'v': 1, 'branch_length': 0.2}
+    ...         (7, 5), (7, 6),  # Root to tree nodes
+    ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
+    ...         {'u': 6, 'v': 4, 'gamma': 0.4},  # Hybrid edge (Sum = 1.0)
+    ...         (5, 8), (6, 9),  # Tree nodes also have other children
+    ...         (4, 1)  # Hybrid to leaf
     ...     ],
-    ...     taxa={1: "A"}
+    ...     taxa={1: "A", 8: "B", 9: "C"}
     ... )
     >>> net4.get_gamma(5, 4)
     0.6
@@ -625,16 +627,17 @@ class DirectedPhyNetwork:
         --------
         >>> net = DirectedPhyNetwork(
         ...     edges=[
-        ...         {'u': 3, 'v': 1, 'key': 0, 'branch_length': 0.5},
-        ...         {'u': 3, 'v': 1, 'key': 1, 'branch_length': 0.7}  # Parallel edge
+        ...         {'u': 3, 'v': 2, 'key': 0, 'branch_length': 0.5},
+        ...         {'u': 3, 'v': 2, 'key': 1, 'branch_length': 0.7},  # Parallel edge
+        ...         (2, 1)  # Tree node 2 to leaf
         ...     ],
         ...     taxa={1: "A"}
         ... )
-        >>> net.get_edge_attribute(3, 1, key=0, attr='branch_length')
+        >>> net.get_edge_attribute(3, 2, key=0, attr='branch_length')
         0.5
-        >>> net.get_edge_attribute(3, 1, key=1, attr='branch_length')
+        >>> net.get_edge_attribute(3, 2, key=1, attr='branch_length')
         0.7
-        >>> net.get_edge_attribute(3, 1, attr='branch_length')  # Raises ValueError
+        >>> net.get_edge_attribute(3, 2, attr='branch_length')  # Raises ValueError
         """
         if not self.has_edge(u, v):
             return None
@@ -741,11 +744,13 @@ class DirectedPhyNetwork:
         --------
         >>> net = DirectedPhyNetwork(
         ...     edges=[
-        ...         {'u': 5, 'v': 4, 'gamma': 0.6},
-        ...         {'u': 6, 'v': 4, 'gamma': 0.4},  # Sum = 1.0
-        ...         {'u': 4, 'v': 1}
+        ...         (7, 5), (7, 6),  # Root to tree nodes
+        ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
+        ...         {'u': 6, 'v': 4, 'gamma': 0.4},  # Hybrid edge (Sum = 1.0)
+        ...         (5, 8), (6, 9),  # Tree nodes also have other children
+        ...         (4, 1)  # Hybrid to leaf
         ...     ],
-        ...     taxa={1: "A"}
+        ...     taxa={1: "A", 8: "B", 9: "C"}
         ... )
         >>> net.get_gamma(5, 4)
         0.6
