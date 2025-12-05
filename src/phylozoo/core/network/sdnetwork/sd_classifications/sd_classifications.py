@@ -8,7 +8,7 @@ semi-directed and mixed phylogenetic networks (e.g., is_tree, is_binary, level, 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..sd_phynetwork import SemiDirectedNetwork
+    from ..sd_phynetwork import SemiDirectedPhyNetwork
     from ..m_phynetwork import MixedPhyNetwork
 
 # TODO: Implement classification functions here.

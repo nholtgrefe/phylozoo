@@ -11,7 +11,7 @@ __version__ = "0.1.0"
 from .core import (
     # Networks
     DirectedPhyNetwork,
-    SemiDirectedNetwork,
+    SemiDirectedPhyNetwork,
     random_semi_directed_network,
     MixedMultiGraph,
     DirectedMultiGraph,
@@ -61,7 +61,7 @@ __all__ = [
     "sequence",
     # Core - Networks
     "DirectedPhyNetwork",
-    "SemiDirectedNetwork",
+    "SemiDirectedPhyNetwork",
     "random_semi_directed_network",
     "MixedMultiGraph",
     "DirectedMultiGraph",

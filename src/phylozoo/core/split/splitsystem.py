@@ -10,7 +10,7 @@ from ...utils.tools import id_generator
 from .split import Split
 
 if TYPE_CHECKING:
-    from ..network.sdnetwork.sd_phynetwork import SemiDirectedNetwork
+    from ..network.sdnetwork.sd_phynetwork import SemiDirectedPhyNetwork
 
 
 class SplitSystem:
@@ -195,7 +195,7 @@ class SplitSystem:
         """
         return len(self._splits)
     
-    def displayed_tree(self) -> 'SemiDirectedNetwork':
+    def displayed_tree(self) -> 'SemiDirectedPhyNetwork':
         """
         Return the tree that displays the split system.
         
@@ -205,7 +205,7 @@ class SplitSystem:
         
         Returns
         -------
-        SemiDirectedNetwork
+        SemiDirectedPhyNetwork
             A tree (semi-directed network) that displays all splits in the system.
         
         Raises
@@ -220,12 +220,12 @@ class SplitSystem:
         >>> split2 = Split({1, 3}, {2, 4})
         >>> system = SplitSystem([split1, split2])
         >>> tree = system.displayed_tree()
-        >>> isinstance(tree, SemiDirectedNetwork)
+        >>> isinstance(tree, SemiDirectedPhyNetwork)
         True
         """
-        from ..network.sdnetwork.sd_phynetwork import SemiDirectedNetwork
+        from ..network.sdnetwork.sd_phynetwork import SemiDirectedPhyNetwork
         
-        tree = SemiDirectedNetwork(edges=[])
+        tree = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
         center_node = id_generator()
         tree.add_node(center_node)
         
@@ -238,7 +238,7 @@ class SplitSystem:
         # Process non-trivial splits
         for split in self._splits:
             if not split.is_trivial():
-                # For now, we'll need to implement create_split in SemiDirectedNetwork
+                # For now, we'll need to implement create_split in SemiDirectedPhyNetwork
                 # This is a placeholder that will need to be implemented
                 # tree.create_split(split)
                 pass

@@ -229,10 +229,7 @@ class DirectedPhyNetwork:
             are not leaves, or if nodes in internal_node_labels are leaves.
         """
         # Identify all leaves (nodes with no outgoing edges)
-        all_leaves: Set[T] = {
-            node for node in self._graph.nodes
-            if self._graph.outdegree(node) == 0
-        }
+        all_leaves: Set[T] = self.leaves
         
         # Process taxa (taxon labels for leaves)
         covered_leaves: Set[T] = set()
