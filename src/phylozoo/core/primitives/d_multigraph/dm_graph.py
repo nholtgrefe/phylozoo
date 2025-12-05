@@ -249,6 +249,70 @@ class DirectedMultiGraph:
         [2, 3]
         """
         return self._graph.successors(v)
+    
+    def incident_parent_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+        """
+        Return an iterator over edges entering node v (from parent nodes).
+        
+        Parameters
+        ----------
+        v : T
+            Node.
+        keys : bool, optional
+            If True, return edge keys. By default False.
+        data : bool, optional
+            If True, return edge data. By default False.
+        
+        Returns
+        -------
+        Iterator
+            Iterator over incoming edges as (u, v) or (u, v, key) or (u, v, key, data).
+        
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2, weight=1.0)
+        0
+        >>> G.add_edge(3, 2, weight=2.0)
+        0
+        >>> list(G.incident_parent_edges(2))
+        [(1, 2), (3, 2)]
+        >>> list(G.incident_parent_edges(2, keys=True, data=True))
+        [(1, 2, 0, {'weight': 1.0}), (3, 2, 0, {'weight': 2.0})]
+        """
+        return self._graph.in_edges(v, keys=keys, data=data)
+    
+    def incident_child_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+        """
+        Return an iterator over edges leaving node v (to child nodes).
+        
+        Parameters
+        ----------
+        v : T
+            Node.
+        keys : bool, optional
+            If True, return edge keys. By default False.
+        data : bool, optional
+            If True, return edge data. By default False.
+        
+        Returns
+        -------
+        Iterator
+            Iterator over outgoing edges as (v, u) or (v, u, key) or (v, u, key, data).
+        
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2, weight=1.0)
+        0
+        >>> G.add_edge(1, 3, weight=2.0)
+        0
+        >>> list(G.incident_child_edges(1))
+        [(1, 2), (1, 3)]
+        >>> list(G.incident_child_edges(1, keys=True, data=True))
+        [(1, 2, 0, {'weight': 1.0}), (1, 3, 0, {'weight': 2.0})]
+        """
+        return self._graph.out_edges(v, keys=keys, data=data)
 
     def __contains__(self, v: T) -> bool:
         """

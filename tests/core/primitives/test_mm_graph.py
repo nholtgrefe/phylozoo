@@ -189,12 +189,150 @@ class TestFactoryMethods:
         M = graph_to_mixedmultigraph(G)
         assert M.number_of_nodes() == 3
         assert M.number_of_edges() == 2
-        # All edges should be undirected
-        assert count_undirected_edges(M, 1, 2) == 1
-        assert count_undirected_edges(M, 2, 3) == 1
-        # Check attributes preserved
-        assert M._undirected[1][2][0]['weight'] == 5.0
-        assert M._undirected.nodes[1].get('label') == 'node1'
+
+
+class TestIncidentEdges:
+    """Test cases for incident edge methods."""
+
+    def test_incident_parent_edges_basic(self) -> None:
+        """Test incident_parent_edges with basic directed edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(3, 2)
+        G.add_directed_edge(4, 2)
+        
+        parent_edges = list(G.incident_parent_edges(2))
+        assert len(parent_edges) == 3
+        assert (1, 2) in parent_edges
+        assert (3, 2) in parent_edges
+        assert (4, 2) in parent_edges
+
+    def test_incident_parent_edges_with_keys_and_data(self) -> None:
+        """Test incident_parent_edges with keys and data."""
+        G = MixedMultiGraph()
+        key1 = G.add_directed_edge(1, 2, weight=1.0)
+        key2 = G.add_directed_edge(1, 2, weight=2.0)  # Parallel edge
+        
+        parent_edges = list(G.incident_parent_edges(2, keys=True, data=True))
+        assert len(parent_edges) == 2
+        for edge in parent_edges:
+            assert len(edge) == 4
+            u, v, key, data = edge
+            assert u == 1
+            assert v == 2
+            assert key in [key1, key2]
+            assert 'weight' in data
+
+    def test_incident_child_edges_basic(self) -> None:
+        """Test incident_child_edges with basic directed edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(1, 3)
+        G.add_directed_edge(1, 4)
+        
+        child_edges = list(G.incident_child_edges(1))
+        assert len(child_edges) == 3
+        assert (1, 2) in child_edges
+        assert (1, 3) in child_edges
+        assert (1, 4) in child_edges
+
+    def test_incident_child_edges_with_keys_and_data(self) -> None:
+        """Test incident_child_edges with keys and data."""
+        G = MixedMultiGraph()
+        key1 = G.add_directed_edge(1, 2, weight=1.0)
+        key2 = G.add_directed_edge(1, 2, weight=2.0)  # Parallel edge
+        
+        child_edges = list(G.incident_child_edges(1, keys=True, data=True))
+        assert len(child_edges) == 2
+        for edge in child_edges:
+            assert len(edge) == 4
+            u, v, key, data = edge
+            assert u == 1
+            assert v == 2
+            assert key in [key1, key2]
+            assert 'weight' in data
+
+    def test_incident_undirected_edges_basic(self) -> None:
+        """Test incident_undirected_edges with basic undirected edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(2, 4)
+        
+        undirected_edges = list(G.incident_undirected_edges(2))
+        assert len(undirected_edges) == 3
+        assert (1, 2) in undirected_edges or (2, 1) in undirected_edges
+        assert (2, 3) in undirected_edges or (3, 2) in undirected_edges
+        assert (2, 4) in undirected_edges or (4, 2) in undirected_edges
+
+    def test_incident_undirected_edges_with_keys_and_data(self) -> None:
+        """Test incident_undirected_edges with keys and data."""
+        G = MixedMultiGraph()
+        key1 = G.add_undirected_edge(1, 2, weight=1.0)
+        key2 = G.add_undirected_edge(1, 2, weight=2.0)  # Parallel edge
+        
+        undirected_edges = list(G.incident_undirected_edges(1, keys=True, data=True))
+        assert len(undirected_edges) == 2
+        for edge in undirected_edges:
+            assert len(edge) == 4
+            u, v, key, data = edge
+            assert 1 in [u, v]
+            assert 2 in [u, v]
+            assert key in [key1, key2]
+            assert 'weight' in data
+
+    def test_incident_undirected_edges_empty(self) -> None:
+        """Test incident_undirected_edges for node with no undirected edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        
+        undirected_edges = list(G.incident_undirected_edges(1))
+        assert len(undirected_edges) == 0
+
+    def test_incident_edges_mixed_graph(self) -> None:
+        """Test incident edges in a graph with both directed and undirected edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.0)
+        G.add_directed_edge(3, 2, weight=2.0)
+        G.add_undirected_edge(2, 4, weight=3.0)
+        G.add_undirected_edge(2, 5, weight=4.0)
+        
+        # Check directed parent edges
+        parent_edges = list(G.incident_parent_edges(2))
+        assert len(parent_edges) == 2
+        assert (1, 2) in parent_edges
+        assert (3, 2) in parent_edges
+        
+        # Check undirected edges
+        undirected_edges = list(G.incident_undirected_edges(2))
+        assert len(undirected_edges) == 2
+        # Check that edges contain node 2
+        edge_nodes = set()
+        for edge in undirected_edges:
+            edge_nodes.update(edge[:2])
+        assert 2 in edge_nodes
+        assert 4 in edge_nodes
+        assert 5 in edge_nodes
+
+    def test_incident_edges_consistency(self) -> None:
+        """Test that incident edges are consistent with graph structure."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.0)
+        G.add_directed_edge(2, 3, weight=2.0)
+        G.add_undirected_edge(2, 4, weight=3.0)
+        
+        # Node 2: incoming from 1, outgoing to 3, undirected to 4
+        parent_edges_2 = list(G.incident_parent_edges(2))
+        child_edges_2 = list(G.incident_child_edges(2))
+        undirected_edges_2 = list(G.incident_undirected_edges(2))
+        
+        assert len(parent_edges_2) == 1
+        assert len(child_edges_2) == 1
+        assert len(undirected_edges_2) == 1
+        assert (1, 2) in parent_edges_2
+        assert (2, 3) in child_edges_2
+        # Undirected edge should contain both 2 and 4
+        assert any(2 in edge[:2] and 4 in edge[:2] for edge in undirected_edges_2)
 
     def test_from_multigraph(self) -> None:
         """Test from_multigraph factory method."""

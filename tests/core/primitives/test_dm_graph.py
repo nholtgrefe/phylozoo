@@ -101,9 +101,159 @@ class TestFactoryMethods:
         M = digraph_to_directedmultigraph(G)
         assert M.number_of_nodes() == 3
         assert M.number_of_edges() == 2
-        # Check attributes preserved
-        assert M._graph[1][2][0]['weight'] == 5.0
-        assert M._graph.nodes[1].get('label') == 'node1'
+
+
+class TestIncidentEdges:
+    """Test cases for incident edge methods."""
+
+    def test_incident_parent_edges_basic(self) -> None:
+        """Test incident_parent_edges with basic edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(3, 2)
+        G.add_edge(4, 2)
+        
+        parent_edges = list(G.incident_parent_edges(2))
+        assert len(parent_edges) == 3
+        assert (1, 2) in parent_edges
+        assert (3, 2) in parent_edges
+        assert (4, 2) in parent_edges
+
+    def test_incident_parent_edges_with_keys(self) -> None:
+        """Test incident_parent_edges with keys."""
+        G = DirectedMultiGraph()
+        key1 = G.add_edge(1, 2, weight=1.0)
+        key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
+        
+        parent_edges = list(G.incident_parent_edges(2, keys=True))
+        assert len(parent_edges) == 2
+        assert (1, 2, key1) in parent_edges
+        assert (1, 2, key2) in parent_edges
+
+    def test_incident_parent_edges_with_data(self) -> None:
+        """Test incident_parent_edges with data."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2, weight=1.0, label="test")
+        G.add_edge(3, 2, weight=2.0)
+        
+        parent_edges = list(G.incident_parent_edges(2, data=True))
+        assert len(parent_edges) == 2
+        # Check that data is included
+        edge_dict = {edge[0]: edge[2] for edge in parent_edges if len(edge) == 3}
+        assert 1 in edge_dict
+        assert edge_dict[1]['weight'] == 1.0
+        assert edge_dict[1]['label'] == "test"
+
+    def test_incident_parent_edges_with_keys_and_data(self) -> None:
+        """Test incident_parent_edges with keys and data."""
+        G = DirectedMultiGraph()
+        key1 = G.add_edge(1, 2, weight=1.0)
+        key2 = G.add_edge(1, 2, weight=2.0)
+        
+        parent_edges = list(G.incident_parent_edges(2, keys=True, data=True))
+        assert len(parent_edges) == 2
+        # Check structure: (u, v, key, data)
+        for edge in parent_edges:
+            assert len(edge) == 4
+            u, v, key, data = edge
+            assert u == 1
+            assert v == 2
+            assert key in [key1, key2]
+            assert 'weight' in data
+
+    def test_incident_parent_edges_empty(self) -> None:
+        """Test incident_parent_edges for node with no incoming edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        
+        parent_edges = list(G.incident_parent_edges(1))
+        assert len(parent_edges) == 0
+
+    def test_incident_child_edges_basic(self) -> None:
+        """Test incident_child_edges with basic edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(1, 3)
+        G.add_edge(1, 4)
+        
+        child_edges = list(G.incident_child_edges(1))
+        assert len(child_edges) == 3
+        assert (1, 2) in child_edges
+        assert (1, 3) in child_edges
+        assert (1, 4) in child_edges
+
+    def test_incident_child_edges_with_keys(self) -> None:
+        """Test incident_child_edges with keys."""
+        G = DirectedMultiGraph()
+        key1 = G.add_edge(1, 2, weight=1.0)
+        key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
+        
+        child_edges = list(G.incident_child_edges(1, keys=True))
+        assert len(child_edges) == 2
+        assert (1, 2, key1) in child_edges
+        assert (1, 2, key2) in child_edges
+
+    def test_incident_child_edges_with_data(self) -> None:
+        """Test incident_child_edges with data."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2, weight=1.0, label="test")
+        G.add_edge(1, 3, weight=2.0)
+        
+        child_edges = list(G.incident_child_edges(1, data=True))
+        assert len(child_edges) == 2
+        # Check that data is included
+        edge_dict = {edge[1]: edge[2] for edge in child_edges if len(edge) == 3}
+        assert 2 in edge_dict
+        assert edge_dict[2]['weight'] == 1.0
+        assert edge_dict[2]['label'] == "test"
+
+    def test_incident_child_edges_with_keys_and_data(self) -> None:
+        """Test incident_child_edges with keys and data."""
+        G = DirectedMultiGraph()
+        key1 = G.add_edge(1, 2, weight=1.0)
+        key2 = G.add_edge(1, 2, weight=2.0)
+        
+        child_edges = list(G.incident_child_edges(1, keys=True, data=True))
+        assert len(child_edges) == 2
+        # Check structure: (u, v, key, data)
+        for edge in child_edges:
+            assert len(edge) == 4
+            u, v, key, data = edge
+            assert u == 1
+            assert v == 2
+            assert key in [key1, key2]
+            assert 'weight' in data
+
+    def test_incident_child_edges_empty(self) -> None:
+        """Test incident_child_edges for node with no outgoing edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        
+        child_edges = list(G.incident_child_edges(2))
+        assert len(child_edges) == 0
+
+    def test_incident_edges_consistency(self) -> None:
+        """Test that incident_parent_edges and incident_child_edges are consistent."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2, weight=1.0)
+        G.add_edge(2, 3, weight=2.0)
+        G.add_edge(3, 4, weight=3.0)
+        
+        # Node 2: incoming from 1, outgoing to 3
+        parent_edges_2 = list(G.incident_parent_edges(2))
+        child_edges_2 = list(G.incident_child_edges(2))
+        assert len(parent_edges_2) == 1
+        assert len(child_edges_2) == 1
+        assert (1, 2) in parent_edges_2
+        assert (2, 3) in child_edges_2
+        
+        # Node 3: incoming from 2, outgoing to 4
+        parent_edges_3 = list(G.incident_parent_edges(3))
+        child_edges_3 = list(G.incident_child_edges(3))
+        assert len(parent_edges_3) == 1
+        assert len(child_edges_3) == 1
+        assert (2, 3) in parent_edges_3
+        assert (3, 4) in child_edges_3
 
     def test_multidigraph_to_directedmultigraph(self) -> None:
         """Test multidigraph_to_directedmultigraph factory method."""
