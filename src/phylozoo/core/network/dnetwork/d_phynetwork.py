@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Uni
 import networkx as nx
 
 from ...primitives.d_multigraph.dm_graph import DirectedMultiGraph
+from ...primitives.d_multigraph.dm_operations import is_connected
 
 T = TypeVar('T')
 
@@ -20,8 +21,8 @@ class DirectedPhyNetwork:
     """
     A directed phylogenetic network.
     
-    A DirectedPhyNetwork is a directed acyclic graph (DAG) representing a phylogenetic
-    network structure. It consists of:
+    A DirectedPhyNetwork is a weakly connected, directed acyclic graph (DAG) representing 
+    a phylogenetic network structure. It consists of:
     
     - **Root node**: Exactly one node with in-degree 0
     - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
@@ -53,7 +54,9 @@ class DirectedPhyNetwork:
         - branch_length (float): Branch length for the edge
         - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
         - gamma (float): For hybrid edges only - inheritance probability (must be in [0.0, 1.0]).
-          Must be in [0.0, 1.0]. If ANY gamma is specified for edges entering a hybrid node,
+          **Gamma values can only be set on edges that point into hybrid nodes** (hybrid edges).
+          Attempting to set gamma on a non-hybrid edge will raise a ValueError during validation.
+          If ANY gamma is specified for edges entering a hybrid node,
           then ALL edges entering that hybrid node must have gamma values summing to 1.0.
           
           Note: If you need more forgiving behavior (e.g., partial gamma values that
@@ -334,6 +337,7 @@ class DirectedPhyNetwork:
         """
         Validate gamma constraints for hybrid nodes.
         
+        Gamma values can only be set on hybrid edges (edges pointing into hybrid nodes).
         For each hybrid node, if ANY incoming edge has a gamma value, then
         ALL incoming edges (including parallel edges) must have gamma values,
         and they must sum to exactly 1.0. If no gamma values are specified,
@@ -342,8 +346,21 @@ class DirectedPhyNetwork:
         Raises
         ------
         ValueError
-            If gamma constraints are violated.
+            If gamma constraints are violated, including gamma set on non-hybrid edges.
         """
+        # First, check that gamma is only set on hybrid edges
+        hybrid_edges_set = set(self.hybrid_edges)
+        
+        for u, v, key, data in self._graph.edges(keys=True, data=True):
+            if 'gamma' in data:
+                # Check if this edge is a hybrid edge
+                if (u, v) not in hybrid_edges_set:
+                    raise ValueError(
+                        f"Gamma value can only be set on hybrid edges (edges pointing into "
+                        f"hybrid nodes). Edge ({u}, {v}, key={key}) is not a hybrid edge."
+                    )
+        
+        # Then validate gamma constraints for hybrid nodes
         for hybrid_node in self.hybrid_nodes:
             gamma_values: List[float] = []
             incoming_edges: List[Tuple[T, T, int]] = []
@@ -400,12 +417,14 @@ class DirectedPhyNetwork:
         Checks:
         1. Directed acyclic graph (no directed cycles)
         2. Single root node (exactly one node with in-degree 0)
-        3. Leaf nodes: all have in-degree 1 and out-degree 0
-        4. Internal nodes: all have either (in-degree 1 and out-degree >= 2) or
+        3. Network is connected (weakly connected)
+        4. Leaf nodes: all have in-degree 1 and out-degree 0
+        5. Internal nodes: all have either (in-degree 1 and out-degree >= 2) or
            (in-degree >= 2 and out-degree 1)
-        5. Bootstrap values: all bootstrap values must be in [0.0, 1.0]
-        6. Gamma constraints: if any gamma is specified for a hybrid node, all
-           incoming edges must have gamma values summing to 1.0
+        6. Bootstrap values: all bootstrap values must be in [0.0, 1.0]
+        7. Gamma constraints: gamma can only be set on hybrid edges, and if any gamma
+           is specified for a hybrid node, all incoming edges must have gamma values
+           summing to 1.0
         
         Returns
         -------
@@ -439,7 +458,13 @@ class DirectedPhyNetwork:
         # Accessing root_node will raise if no root or multiple roots
         root = self.root_node
         
-        # 3. Check leaf nodes: in-degree 1, out-degree 0 (using cached property)
+        # 3. Check that network is connected (weakly connected)
+        if not is_connected(self._graph):
+            raise ValueError(
+                "Network is not connected. All nodes must be in a single weakly connected component."
+            )
+        
+        # 4. Check leaf nodes: in-degree 1, out-degree 0 (using cached property)
         leaves = self.leaves
         for leaf in leaves:
             indeg = self._graph.indegree(leaf)
@@ -448,7 +473,7 @@ class DirectedPhyNetwork:
                     f"Leaf node {leaf} has in-degree {indeg}, but must have in-degree 1"
                 )
         
-        # 4. Check internal nodes (non-root, non-leaf)
+        # 5. Check internal nodes (non-root, non-leaf)
         # Use cached properties: tree_nodes and hybrid_nodes cover all valid internal nodes
         # Any node that's not root, not leaf, and not in tree_nodes or hybrid_nodes is invalid
         tree_nodes = set(self.tree_nodes)
@@ -469,10 +494,10 @@ class DirectedPhyNetwork:
                     f"or (in-degree >= 2 and out-degree 1)."
                 )
         
-        # 5. Validate bootstrap constraints
+        # 6. Validate bootstrap constraints
         self._validate_bootstrap_constraints()
         
-        # 6. Validate gamma constraints
+        # 7. Validate gamma constraints
         self._validate_gamma_constraints()
         
         return True
@@ -695,6 +720,7 @@ class DirectedPhyNetwork:
         """
         Get gamma value for a hybrid edge.
         
+        Gamma values can only be set on hybrid edges (edges pointing into hybrid nodes).
         If ANY gamma value is specified for edges entering a hybrid node, then
         ALL edges entering that hybrid node must have gamma values, and they must
         sum to exactly 1.0.

@@ -554,6 +554,44 @@ class TestGammaValidation:
         # Sum should be 1.0
         assert abs(gamma_0 + gamma_1 + gamma_6 - 1.0) < 1e-10
 
+    def test_gamma_only_on_hybrid_edges(self) -> None:
+        """Test that gamma can only be set on hybrid edges."""
+        # Try to set gamma on a tree edge (not a hybrid edge)
+        # Tree edge: from root to tree node (tree node has out-degree >= 2)
+        with pytest.raises(ValueError, match="Gamma value can only be set on hybrid edges"):
+            DirectedPhyNetwork(
+                edges=[
+                    {'u': 3, 'v': 1, 'gamma': 0.5},  # Gamma on tree edge (1 is tree node)
+                    (3, 2),  # Another tree edge
+                    (1, 4), (1, 5),  # Tree node 1 splits
+                    (2, 6), (2, 7)  # Tree node 2 splits
+                ],
+                taxa={4: "A", 5: "B", 6: "C", 7: "D"}
+            )
+        
+        # Try to set gamma on an edge to a leaf (not a hybrid edge)
+        with pytest.raises(ValueError, match="Gamma value can only be set on hybrid edges"):
+            DirectedPhyNetwork(
+                edges=[
+                    {'u': 3, 'v': 1, 'gamma': 0.5}  # Gamma on edge to leaf
+                ],
+                taxa={1: "A"}
+            )
+        
+        # Valid: gamma on hybrid edge
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),  # Root to tree nodes
+                {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
+                {'u': 6, 'v': 4, 'gamma': 0.4},  # Hybrid edge
+                (5, 8),  # Tree node 5 also has another child
+                (6, 9),  # Tree node 6 also has another child
+                (4, 1)  # Hybrid to leaf
+            ],
+            taxa={1: "A", 8: "B", 9: "C"}
+        )
+        assert net.validate() is True
+
     def test_gamma_multiple_hybrids(self) -> None:
         """Test gamma validation with multiple hybrid nodes."""
         # Hybrid 4 has gammas from 7 and 8, but not from 5 and 6

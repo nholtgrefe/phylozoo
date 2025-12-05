@@ -7,3 +7,4 @@ use for cached property
 make subpartitions a generator
 in edge and out edges method
 Maybe internal logic to switch to non-multigraph if not necessary?
+Use | instead of Union for typehinting

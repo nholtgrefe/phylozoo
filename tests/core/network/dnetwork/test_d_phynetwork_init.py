@@ -422,6 +422,34 @@ class TestInvalidInitialization:
                 internal_node_labels="invalid"  # type: ignore
             )
 
+    def test_disconnected_network(self) -> None:
+        """Test that disconnected networks raise ValueError."""
+        # Note: Disconnected networks will typically have multiple roots, which is
+        # caught first. However, the connectivity check is still performed as an
+        # explicit validation step. If a network somehow passes the root check but
+        # is disconnected, it will be caught here.
+        
+        # Two disconnected components (will fail on multiple roots first)
+        with pytest.raises(ValueError, match="multiple root nodes|not connected"):
+            DirectedPhyNetwork(
+                edges=[
+                    (1, 2),  # Component 1: 1 -> 2
+                    (3, 4)   # Component 2: 3 -> 4 (disconnected)
+                ],
+                taxa={2: "A", 4: "B"}
+            )
+        
+        # Three disconnected components (will fail on multiple roots first)
+        with pytest.raises(ValueError, match="multiple root nodes|not connected"):
+            DirectedPhyNetwork(
+                edges=[
+                    (1, 2),  # Component 1
+                    (3, 4),  # Component 2
+                    (5, 6)   # Component 3
+                ],
+                taxa={2: "A", 4: "B", 6: "C"}
+            )
+
 
 class TestValidationEdgeCases:
     """Test edge cases for validation."""
