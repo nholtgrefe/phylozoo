@@ -280,6 +280,8 @@ class DirectedMultiGraph:
         >>> list(G.incident_parent_edges(2, keys=True, data=True))
         [(1, 2, 0, {'weight': 1.0}), (3, 2, 0, {'weight': 2.0})]
         """
+        if v not in self._graph:
+            return iter([])
         return self._graph.in_edges(v, keys=keys, data=data)
     
     def incident_child_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
@@ -312,6 +314,8 @@ class DirectedMultiGraph:
         >>> list(G.incident_child_edges(1, keys=True, data=True))
         [(1, 2, 0, {'weight': 1.0}), (1, 3, 0, {'weight': 2.0})]
         """
+        if v not in self._graph:
+            return iter([])
         return self._graph.out_edges(v, keys=keys, data=data)
 
     def __contains__(self, v: T) -> bool:

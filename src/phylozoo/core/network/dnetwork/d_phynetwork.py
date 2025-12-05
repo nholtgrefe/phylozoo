@@ -4,6 +4,7 @@ Directed network module.
 This module provides classes and functions for working with directed phylogenetic networks.
 """
 
+import math
 import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
@@ -31,7 +32,7 @@ class DirectedPhyNetwork:
     initialization.
     
     This class uses composition with DirectedMultiGraph for graph structure and adds
-    phylogenetic-specific features like leaves, node labels, and network topology methods.
+    phylogenetic-specific features like taxa labels, node labels, and network topology methods.
     
     Leaves refer to node IDs, and taxa refer to the labels of leaves. Leaves must always
     have labels (taxa). Internal nodes may or may not be labeled. Node IDs are separate
@@ -323,7 +324,7 @@ class DirectedPhyNetwork:
                         f"Bootstrap value on edge ({u}, {v}, key={key}) must be numeric, "
                         f"got {type(bootstrap).__name__}"
                     )
-                if bootstrap < 0.0 or bootstrap > 1.0:
+                if math.isnan(bootstrap) or bootstrap < 0.0 or bootstrap > 1.0:
                     raise ValueError(
                         f"Bootstrap value on edge ({u}, {v}, key={key}) is {bootstrap}, "
                         f"but must be in [0.0, 1.0]"
@@ -632,7 +633,7 @@ class DirectedPhyNetwork:
                 )
             if key not in edges_data:
                 return None
-                return edges_data[key].get(attr)
+            return edges_data[key].get(attr)
     
     def get_branch_length(self, u: T, v: T, key: Optional[int] = None) -> Optional[float]:
         """
@@ -983,6 +984,9 @@ class DirectedPhyNetwork:
         >>> net.internal_nodes
         [3]
         """
+        # Handle empty network
+        if len(self._graph) == 0:
+            return []
         root = self.root_node
         return [v for v in self._graph.nodes if v != root and v not in self.leaves]
     
@@ -1058,6 +1062,9 @@ class DirectedPhyNetwork:
         >>> net.tree_nodes
         [3]
         """
+        # Handle empty network
+        if len(self._graph) == 0:
+            return []
         root = self.root_node
         leaves = self.leaves
         return [
