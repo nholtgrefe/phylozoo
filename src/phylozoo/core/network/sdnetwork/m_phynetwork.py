@@ -17,17 +17,30 @@ T = TypeVar('T')
 
 class MixedPhyNetwork:
     """
-    A mixed phylogenetic network. This is an abstract network type which may have undirected 
-    cycles, used for canonical forms and to address unidentifiability issues. For semi-directed 
-    phylogenetic networks, use the SemiDirectedPhyNetwork subclass which does not have 
-    undirected cycles.
+    A mixed phylogenetic network.
     
     A MixedPhyNetwork is a mixed multigraph (with both directed and undirected edges)
-    that can be obtained from a directed phylogenetic LSA (Least Stable Ancestor) network by
+    representing a phylogenetic network structure. This is an abstract network type which
+    may have undirected cycles, used for canonical forms and to address unidentifiability
+    issues. For semi-directed phylogenetic networks without undirected cycles, use the
+    SemiDirectedPhyNetwork subclass.
+    
+    A MixedPhyNetwork can be obtained from a directed phylogenetic LSA (Least Stable
+    Ancestor) network by:
+    
     1. Suppressing the outdegree-2 root node (if it exists)
     2. Undirecting all non-hybrid edges
     3. Optionally undirecting all hybrid edges for selected hybrid nodes
-      (i.e., if one hybrid edge is undirected, all partner hybrid edges are undirected)
+       (i.e., if one hybrid edge is undirected, all partner hybrid edges are undirected)
+    
+    The network consists of:
+    
+    - **Leaf nodes**: Nodes with no outgoing directed edges, each with a taxon label
+    - **Tree nodes**: Internal nodes with in-degree 0 and total degree >= 3
+    - **Hybrid nodes**: Internal nodes with in-degree >= 2 and total degree = in-degree + 1
+    
+    The `validate()` method checks whether the network adheres to structural constraints
+    upon initialization.
     
     This class uses composition with MixedMultiGraph for graph structure and adds
     phylogenetic-specific features like taxa labels, node labels, and network topology methods.
@@ -41,7 +54,7 @@ class MixedPhyNetwork:
     
     Parameters
     ----------
-    directed_edges : List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]], optional
+    directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
         List of directed edges. Can be:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -51,13 +64,23 @@ class MixedPhyNetwork:
         - branch_length (float): Branch length for the edge
         - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
         - gamma (float): For hybrid edges only - inheritance probability (must be in [0.0, 1.0]).
-          **Gamma values can only be set on directed/hybrid edges**
-          Undirected edges cannot have gamma values.
-          Attempting to set gamma on an undirected/non-hybrid edge will raise a
+          **Gamma values can only be set on directed edges that point into hybrid nodes**
+          (hybrid edges). Undirected edges cannot have gamma values.
+          Attempting to set gamma on an undirected or non-hybrid edge will raise a
           ValueError during validation. If ANY gamma is specified for edges entering a hybrid node,
           then ALL edges entering that hybrid node must have gamma values summing to 1.0.
+          
+          Note: If you need more forgiving behavior (e.g., partial gamma values that
+          don't sum to 1.0), consider using a different edge attribute name (e.g., 'gamma2')
+          which will not be validated.
+        
+        These attributes are validated during initialization.
+        
+        Other edge attributes are also supported (any key-value pairs can be added),
+        but the above three are suggested for phylogenetic networks.
+        
         By default None.
-    undirected_edges : List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]], optional
+    undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
         List of undirected edges. Can be:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -66,7 +89,14 @@ class MixedPhyNetwork:
         Edge attributes can be set via dict format. Suggested attributes:
         - branch_length (float): Branch length for the edge
         - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
+        
         **Note: Undirected edges cannot have gamma values.**
+        
+        These attributes are validated during initialization.
+        
+        Other edge attributes are also supported (any key-value pairs can be added),
+        but the above two are suggested for phylogenetic networks.
+        
         By default None.
     taxa : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
         Taxon labels for leaves. Can be:
@@ -103,19 +133,44 @@ class MixedPhyNetwork:
     --------
     >>> # Initialize with taxa mapping
     >>> net = MixedPhyNetwork(
-    ...     undirected_edges=[(1, 2), (1, 3), (1, 4)],
-    ...     taxa={2: "A", 3: "B", 4: "C"}
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     taxa={1: "A", 2: "B", 4: "C"}
     ... )
     >>> net.taxa
     {'A', 'B', 'C'}
-    >>> # Network with both directed and undirected edges
+    >>> # Partial taxa mapping - uncovered leaves get auto-generated labels
     >>> net2 = MixedPhyNetwork(
-    ...     directed_edges=[(5, 4), (6, 4)],  # Hybrid edges
-    ...     undirected_edges=[(4, 1)],  # Tree edge
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
     ...     taxa={1: "A"}
     ... )
-    >>> net2.hybrid_nodes
-    [4]
+    >>> net2.taxa  # 2, 4, and 5 are auto-labeled
+    {'A', '2', '4', '5'}
+    >>> # Network with branch lengths and bootstrap support
+    >>> net3 = MixedPhyNetwork(
+    ...     undirected_edges=[
+    ...         {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
+    ...         {'u': 3, 'v': 2, 'branch_length': 0.3, 'bootstrap': 0.87},
+    ...         (3, 4)
+    ...     ],
+    ...     taxa={1: "A", 2: "B", 4: "C"}
+    ... )
+    >>> net3.get_branch_length(3, 1)
+    0.5
+    >>> net3.get_bootstrap(3, 1)
+    0.95
+    >>> # Network with hybrid node and gamma values
+    >>> net4 = MixedPhyNetwork(
+    ...     directed_edges=[
+    ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
+    ...         {'u': 6, 'v': 4, 'gamma': 0.4}  # Hybrid edge (Sum = 1.0)
+    ...     ],
+    ...     undirected_edges=[(4, 1), (4, 2), (4, 3)],  # Tree edges
+    ...     taxa={1: "A", 2: "B", 3: "C"}
+    ... )
+    >>> net4.get_gamma(5, 4)
+    0.6
+    >>> net4.get_gamma(6, 4)
+    0.4
     """
     
     def __init__(
@@ -313,7 +368,7 @@ class MixedPhyNetwork:
                     has_bootstrap = True
                     break
         if not has_bootstrap:
-            return True
+            return
         
         # Check directed edges
         for u, v, key, data in self._graph._directed.edges(keys=True, data=True):
@@ -373,7 +428,7 @@ class MixedPhyNetwork:
                     has_gamma = True
                     break
         if not has_gamma:
-            return True
+            return
         
         # First, check that gamma is only set on directed hybrid edges
         hybrid_edges_set = set(self.hybrid_edges)
@@ -446,6 +501,66 @@ class MixedPhyNetwork:
                         f"but must sum to exactly 1.0"
                     )
     
+    def _validate_mixednetwork_constraint(self) -> bool:
+        """
+        Validate mixed network constraint.
+        
+        This is a placeholder for future mixed network specific validation.
+        Currently always returns True but issues a warning that additional
+        validation checks may be added later.
+        
+        Returns
+        -------
+        bool
+            Always returns True.
+        
+        Warns
+        -----
+        UserWarning
+            Always issued to indicate that additional validation checks may be added later.
+        """
+        warnings.warn(
+            "Validity is not fully checked for MixedPhyNetworks. "
+            "Additional validation checks may be added later. "
+            "For validated networks, use SemiDirectedPhyNetwork.",
+            UserWarning,
+            stacklevel=3
+        )
+        return True
+    
+    def _validate_degree_constraints(self) -> None:
+        """
+        Validate degree constraints for nodes.
+        
+        Checks:
+        1. All internal nodes have degree >= 3
+        2. Each node has indegree either 0 or undirected_degree-1
+        
+        Raises
+        ------
+        ValueError
+            If any degree constraints are violated.
+        """
+        # 1. Check that all internal nodes have degree >= 3
+        internal_nodes = self.internal_nodes
+        for node in internal_nodes:
+            degree = self._graph.degree(node)
+            if degree < 3:
+                raise ValueError(
+                    f"Internal node {node} has degree {degree}, but all internal nodes "
+                    f"must have degree >= 3."
+                )
+        
+        # 2. Check that each node has indegree either 0 or undirected_degree-1
+        for node in self._graph.nodes:
+            indegree = self._graph.indegree(node)
+            undirected_degree = self._graph.undirected_degree(node)
+            if indegree != 0 and indegree != undirected_degree - 1:
+                raise ValueError(
+                    f"Node {node} has indegree {indegree} and undirected degree {undirected_degree}. "
+                    f"Each node must have indegree either 0 or undirected_degree-1."
+                )
+    
     def validate(self) -> bool:
         """
         Validate the network structure and edge attributes.
@@ -454,8 +569,9 @@ class MixedPhyNetwork:
         1. Network is connected (weakly connected)
         2. All internal nodes have degree >= 3
         3. Each node has indegree either 0 or undirected_degree-1
-        4. Bootstrap values are in [0.0, 1.0]
-        5. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
+        4. Mixed network constraint (issues warning that additional checks may be added)
+        5. Bootstrap values are in [0.0, 1.0]
+        6. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
         
         Returns
         -------
@@ -478,15 +594,6 @@ class MixedPhyNetwork:
         checks may be added later. For fully validated networks with additional
         constraints, use SemiDirectedPhyNetwork.
         """
-        # Issue warning that additional checks may be added
-        warnings.warn(
-            "Validity is not fully checked for MixedPhyNetworks. "
-            "Additional validation checks may be added later. "
-            "For validated networks, use SemiDirectedPhyNetwork.",
-            UserWarning,
-            stacklevel=2
-        )
-        
         # Empty networks are valid
         if self.number_of_nodes() == 0:
             return True
@@ -497,25 +604,11 @@ class MixedPhyNetwork:
                 "Network is not connected. All nodes must be in a single connected component."
             )
         
-        # 2. Check that all internal nodes have degree >= 3
-        internal_nodes = self.internal_nodes
-        for node in internal_nodes:
-            degree = self._graph.degree(node)
-            if degree < 3:
-                raise ValueError(
-                    f"Internal node {node} has degree {degree}, but all internal nodes "
-                    f"must have degree >= 3."
-                )
+        # 2. Validate degree constraints
+        self._validate_degree_constraints()
         
-        # 3. Check that each node has indegree either 0 or undirected_degree-1
-        for node in self._graph.nodes:
-            indegree = self._graph.indegree(node)
-            undirected_degree = self._graph.undirected_degree(node)
-            if indegree != 0 and indegree != undirected_degree - 1:
-                raise ValueError(
-                    f"Node {node} has indegree {indegree} and undirected degree {undirected_degree}. "
-                    f"Each node must have indegree either 0 or undirected_degree-1."
-                )
+        # 3. Validate mixed network constraint (issues warning)
+        self._validate_mixednetwork_constraint()
         
         # 4. Validate bootstrap constraints
         self._validate_bootstrap_constraints()

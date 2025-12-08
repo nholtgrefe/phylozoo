@@ -325,7 +325,7 @@ class DirectedPhyNetwork:
                 has_bootstrap = True
                 break
         if not has_bootstrap:
-            return True
+            return
         
         for u, v, key, data in self._graph.edges(keys=True, data=True):
             if 'bootstrap' in data:
@@ -363,7 +363,7 @@ class DirectedPhyNetwork:
                 has_gamma = True
                 break
         if not has_gamma:
-            return True
+            return
         
         # First, check that gamma is only set on hybrid edges
         hybrid_edges_set = set(self.hybrid_edges)
@@ -427,14 +427,63 @@ class DirectedPhyNetwork:
                         f"but must sum to exactly 1.0"
                     )
     
+    def _validate_degree_constraints(self) -> None:
+        """
+        Validate degree constraints for nodes.
+        
+        Checks:
+        1. Single root node (exactly one node with in-degree 0)
+        2. Leaf nodes have in-degree 1 and out-degree 0
+        3. Internal nodes have either (in-degree 1 and out-degree >= 2) or
+           (in-degree >= 2 and out-degree 1)
+        
+        Raises
+        ------
+        ValueError
+            If any degree constraints are violated.
+        """
+        # 1. Check for single root node (using cached property)
+        # Accessing root_node will raise if no root or multiple roots
+        root = self.root_node
+        
+        # 2. Check leaf nodes: in-degree 1, out-degree 0 (using cached property)
+        leaves = self.leaves
+        for leaf in leaves:
+            indeg = self._graph.indegree(leaf)
+            if indeg != 1:
+                raise ValueError(
+                    f"Leaf node {leaf} has in-degree {indeg}, but must have in-degree 1"
+                )
+        
+        # 3. Check internal nodes (non-root, non-leaf)
+        # Use cached properties: tree_nodes and hybrid_nodes cover all valid internal nodes
+        # Any node that's not root, not leaf, and not in tree_nodes or hybrid_nodes is invalid
+        tree_nodes = set(self.tree_nodes)
+        hybrid_nodes = set(self.hybrid_nodes)
+        
+        # Use internal_nodes cached property (already excludes root and leaves)
+        all_internal = set(self.internal_nodes)
+        valid_internal = tree_nodes | hybrid_nodes
+        
+        invalid_nodes = all_internal - valid_internal
+        if invalid_nodes:
+            for node in invalid_nodes:
+                indeg = self._graph.indegree(node)
+                outdeg = self._graph.outdegree(node)
+                raise ValueError(
+                    f"Internal node {node} has in-degree {indeg} and out-degree {outdeg}. "
+                    f"Internal nodes must have either (in-degree 1 and out-degree >= 2) "
+                    f"or (in-degree >= 2 and out-degree 1)."
+                )
+    
     def validate(self) -> bool:
         """
         Validate the network structure and edge attributes.
         
         Checks:
-        1. Directed acyclic graph (no directed cycles)
-        2. Single root node (exactly one node with in-degree 0)
-        3. Network is connected (weakly connected)
+        1. Network is connected (weakly connected)
+        2. Directed acyclic graph (no directed cycles)
+        3. Single root node (exactly one node with in-degree 0)
         4. Leaf nodes: all have in-degree 1 and out-degree 0
         5. Internal nodes: all have either (in-degree 1 and out-degree >= 2) or
            (in-degree >= 2 and out-degree 1)
@@ -463,7 +512,13 @@ class DirectedPhyNetwork:
         if self.number_of_nodes() == 0:
             return True
         
-        # 1. Check for directed cycles (must be acyclic)
+        # 1. Check that network is connected (weakly connected)
+        if not is_connected(self._graph):
+            raise ValueError(
+                "Network is not connected. All nodes must be in a single weakly connected component."
+            )
+        
+        # 2. Check for directed cycles (must be acyclic)
         if not nx.is_directed_acyclic_graph(self._graph._graph):
             cycles = list(nx.simple_cycles(self._graph._graph))
             raise ValueError(
@@ -471,50 +526,13 @@ class DirectedPhyNetwork:
                 f"First cycle: {cycles[0] if cycles else 'unknown'}"
             )
         
-        # 2. Check for single root node (using cached property)
-        # Accessing root_node will raise if no root or multiple roots
-        root = self.root_node
+        # 3. Validate degree constraints (includes root check)
+        self._validate_degree_constraints()
         
-        # 3. Check that network is connected (weakly connected)
-        if not is_connected(self._graph):
-            raise ValueError(
-                "Network is not connected. All nodes must be in a single weakly connected component."
-            )
-        
-        # 4. Check leaf nodes: in-degree 1, out-degree 0 (using cached property)
-        leaves = self.leaves
-        for leaf in leaves:
-            indeg = self._graph.indegree(leaf)
-            if indeg != 1:
-                raise ValueError(
-                    f"Leaf node {leaf} has in-degree {indeg}, but must have in-degree 1"
-                )
-        
-        # 5. Check internal nodes (non-root, non-leaf)
-        # Use cached properties: tree_nodes and hybrid_nodes cover all valid internal nodes
-        # Any node that's not root, not leaf, and not in tree_nodes or hybrid_nodes is invalid
-        tree_nodes = set(self.tree_nodes)
-        hybrid_nodes = set(self.hybrid_nodes)
-        
-        # Use internal_nodes cached property (already excludes root and leaves)
-        all_internal = set(self.internal_nodes)
-        valid_internal = tree_nodes | hybrid_nodes
-        
-        invalid_nodes = all_internal - valid_internal
-        if invalid_nodes:
-            for node in invalid_nodes:
-                indeg = self._graph.indegree(node)
-                outdeg = self._graph.outdegree(node)
-                raise ValueError(
-                    f"Internal node {node} has in-degree {indeg} and out-degree {outdeg}. "
-                    f"Internal nodes must have either (in-degree 1 and out-degree >= 2) "
-                    f"or (in-degree >= 2 and out-degree 1)."
-                )
-        
-        # 6. Validate bootstrap constraints
+        # 4. Validate bootstrap constraints
         self._validate_bootstrap_constraints()
         
-        # 7. Validate gamma constraints
+        # 5. Validate gamma constraints
         self._validate_gamma_constraints()
         
         return True
