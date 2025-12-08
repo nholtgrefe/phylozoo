@@ -13,6 +13,7 @@ from .mm_operations import (
     connected_components,
     identify_two_nodes,
     identify_node_set,
+    source_components,
 )
 # Import conversion functions for convenience
 from .mm_conversions import (
@@ -29,6 +30,7 @@ __all__ = [
     "connected_components",
     "identify_two_nodes",
     "identify_node_set",
+    "source_components",
     "graph_to_mixedmultigraph",
     "multigraph_to_mixedmultigraph",
     "multidigraph_to_mixedmultigraph",

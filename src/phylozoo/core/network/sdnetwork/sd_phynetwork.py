@@ -8,6 +8,7 @@ import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
+from ...primitives.m_multigraph.mm_operations import is_connected
 from .m_phynetwork import MixedPhyNetwork
 
 T = TypeVar('T')
@@ -220,6 +221,27 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             internal_node_labels=internal_node_labels
         )
     
+    def _validate_semidir_constraint(self) -> bool:
+        """
+        Validate semi-directed network constraint.
+        
+        This method should be implemented to validate semi-directed network specific constraints.
+        Currently always returns True as a placeholder.
+        
+        Returns
+        -------
+        bool
+            Always returns True (placeholder).
+        
+        Notes
+        -----
+        This method should validate that:
+        - All hybrid edges are directed
+        - All non-hybrid edges are undirected
+        """
+        # TODO: Implement semi-directed network constraint validation
+        return True
+    
     def validate(self) -> bool:
         """
         Validate the network structure and edge attributes.
@@ -240,26 +262,30 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         
         Notes
         -----
-        This method calls the parent validation (which checks connectivity, internal node degrees,
-        indegree constraints, bootstrap, and gamma) and then performs additional semi-directed
-        network specific checks.
+        This method performs the same validation checks as MixedPhyNetwork, but replaces
+        the mixed network constraint check with a semi-directed network constraint check.
         """
-        # Call parent validation (checks connectivity, internal node degrees, indegree constraints,
-        # bootstrap, and gamma constraints)
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            if not super().validate():
-                return False
-        
         # Empty networks are valid
         if self.number_of_nodes() == 0:
             return True
         
-        # Additional semi-directed network constraints
-        # TODO: Implement additional validation logic for semi-directed networks
-        # - All hybrid edges are directed
-        # - All non-hybrid edges are undirected
+        # 1. Check that network is connected (weakly connected)
+        if not is_connected(self._graph):
+            raise ValueError(
+                "Network is not connected. All nodes must be in a single connected component."
+            )
+        
+        # 2. Validate degree constraints
+        self._validate_degree_constraints()
+        
+        # 3. Validate semi-directed network constraint (replaces mixed network constraint)
+        self._validate_semidir_constraint()
+        
+        # 4. Validate bootstrap constraints
+        self._validate_bootstrap_constraints()
+        
+        # 5. Validate gamma constraints
+        self._validate_gamma_constraints()
         
         return True
     

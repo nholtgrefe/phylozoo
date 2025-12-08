@@ -19,6 +19,7 @@ from phylozoo.core.primitives.m_multigraph import (
     connected_components,
     identify_two_nodes,
     identify_node_set,
+    source_components,
 )
 
 
@@ -1158,8 +1159,286 @@ class TestGraphOperations:
         print(f"After identifying [1,2,3], edges incident to 1: {list(G.neighbors(1))}")
 
 
+class TestSourceComponents:
+    """Test cases for source_components function."""
+    
+    def test_empty_graph(self) -> None:
+        """Test source_components on empty graph."""
+        G = MixedMultiGraph()
+        components = source_components(G)
+        assert components == []
+    
+    def test_single_node_no_edges(self) -> None:
+        """Test source_components with isolated node."""
+        G = MixedMultiGraph()
+        G.add_node(1)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1}
+        assert undir_edges == []
+        assert out_edges == []
+    
+    def test_simple_source_component(self) -> None:
+        """Test simple source component with undirected edges and outgoing directed edge."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1, 2, 3}
+        assert set(undir_edges) == {(1, 2, 0), (2, 3, 0)}
+        assert out_edges == [(3, 4, 0)]
+    
+    def test_component_with_incoming_edge(self) -> None:
+        """Test component with incoming directed edge (not a source component)."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(3, 1)  # Edge pointing into component {1, 2}
+        components = source_components(G)
+        # Component {1, 2} is NOT a source component (has incoming edge from 3)
+        # Component {3} IS a source component (no incoming edges)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {3}
+        assert undir_edges == []
+        assert out_edges == [(3, 1, 0)]
+    
+    def test_multiple_source_components(self) -> None:
+        """Test multiple source components."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(3, 4)
+        G.add_directed_edge(2, 5)
+        G.add_directed_edge(4, 5)
+        components = source_components(G)
+        assert len(components) == 2
+        # Sort by first node for consistent testing
+        components_sorted = sorted(components, key=lambda x: min(x[0]))
+        nodes1, undir1, out1 = components_sorted[0]
+        nodes2, undir2, out2 = components_sorted[1]
+        # Both should be source components
+        assert (set(nodes1) == {1, 2} and set(nodes2) == {3, 4}) or \
+               (set(nodes1) == {3, 4} and set(nodes2) == {1, 2})
+        assert set(nodes1) != set(nodes2)
+    
+    def test_only_undirected_edges(self) -> None:
+        """Test graph with only undirected edges (all components are source components)."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(3, 4)
+        G.add_undirected_edge(5, 6)
+        G.add_undirected_edge(6, 7)
+        components = source_components(G)
+        assert len(components) == 3
+        # Components: {1, 2}, {3, 4}, and {5, 6, 7}
+        node_sets = [set(nodes) for nodes, _, _ in components]
+        assert {1, 2} in node_sets
+        assert {3, 4} in node_sets
+        assert {5, 6, 7} in node_sets
+    
+    def test_component_with_no_outgoing_edges(self) -> None:
+        """Test source component with no outgoing edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1, 2, 3}
+        assert set(undir_edges) == {(1, 2, 0), (2, 3, 0)}
+        assert out_edges == []
+    
+    def test_component_with_multiple_outgoing_edges(self) -> None:
+        """Test source component with multiple outgoing edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(1, 3)
+        G.add_directed_edge(1, 4)
+        G.add_directed_edge(2, 5)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1, 2}
+        assert set(undir_edges) == {(1, 2, 0)}
+        assert set(out_edges) == {(1, 3, 0), (1, 4, 0), (2, 5, 0)}
+    
+    def test_complex_multiple_components(self) -> None:
+        """Test complex scenario with multiple components, some source, some not."""
+        G = MixedMultiGraph()
+        # Component 1: {1, 2, 3} - has incoming edge from 6, NOT a source component
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 6)  # Outgoing
+        G.add_directed_edge(6, 1)  # Incoming to {1, 2, 3}
+        # Component 2: {4, 5} - no incoming edges, IS a source component
+        G.add_undirected_edge(4, 5)
+        G.add_directed_edge(5, 6)  # Outgoing
+        # Component 3: {7, 8} - no incoming edges, IS a source component
+        G.add_undirected_edge(7, 8)
+        # Component 4: {6} - has incoming edges from {1,2,3} and {4,5}, NOT a source component
+        # (node 6 is isolated in undirected graph, but has incoming directed edges)
+        components = source_components(G)
+        assert len(components) == 2
+        node_sets = [set(nodes) for nodes, _, _ in components]
+        assert {4, 5} in node_sets
+        assert {7, 8} in node_sets
+    
+    def test_parallel_undirected_edges(self) -> None:
+        """Test source component with parallel undirected edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.0)
+        G.add_undirected_edge(1, 2, weight=2.0)  # Parallel edge
+        G.add_directed_edge(2, 3)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1, 2}
+        # Should include both parallel edges with their keys
+        assert len(undir_edges) == 2
+        assert set(undir_edges) == {(1, 2, 0), (1, 2, 1)}
+        assert out_edges == [(2, 3, 0)]
+    
+    def test_parallel_directed_edges(self) -> None:
+        """Test source component with parallel directed outgoing edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(1, 3, weight=1.0)
+        G.add_directed_edge(1, 3, weight=2.0)  # Parallel edge
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1, 2}
+        assert set(undir_edges) == {(1, 2, 0)}
+        # Should include both parallel edges with their keys
+        assert len(out_edges) == 2
+        assert set(out_edges) == {(1, 3, 0), (1, 3, 1)}
+    
+    def test_isolated_nodes_as_source_components(self) -> None:
+        """Test isolated nodes that are source components."""
+        G = MixedMultiGraph()
+        G.add_node(1)
+        G.add_node(2)
+        G.add_directed_edge(1, 3)
+        G.add_directed_edge(2, 4)
+        components = source_components(G)
+        assert len(components) == 2
+        node_sets = [set(nodes) for nodes, _, _ in components]
+        assert {1} in node_sets
+        assert {2} in node_sets
+        # Check outgoing edges
+        for nodes, undir, out in components:
+            if set(nodes) == {1}:
+                assert undir == []
+                assert out == [(1, 3, 0)]
+            elif set(nodes) == {2}:
+                assert undir == []
+                assert out == [(2, 4, 0)]
+    
+    def test_isolated_node_with_incoming_edge(self) -> None:
+        """Test isolated node with incoming edge (not a source component)."""
+        G = MixedMultiGraph()
+        G.add_node(1)
+        G.add_directed_edge(2, 1)  # Edge pointing into {1}
+        components = source_components(G)
+        # {1} is NOT a source component (has incoming edge)
+        # {2} IS a source component (no incoming edges)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {2}
+        assert undir_edges == []
+        assert out_edges == [(2, 1, 0)]
+    
+    def test_large_source_component(self) -> None:
+        """Test large source component with many nodes and edges."""
+        G = MixedMultiGraph()
+        # Create a chain: 1-2-3-4-5-6-7-8-9-10
+        for i in range(1, 10):
+            G.add_undirected_edge(i, i + 1)
+        # Add outgoing edges
+        G.add_directed_edge(5, 20)
+        G.add_directed_edge(10, 21)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == set(range(1, 11))
+        assert len(undir_edges) == 9
+        assert set(out_edges) == {(5, 20, 0), (10, 21, 0)}
+    
+    def test_nested_components(self) -> None:
+        """Test nested component structure."""
+        G = MixedMultiGraph()
+        # Component A: {1, 2, 3} - source component
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        # Component B: {4, 5} - has incoming edge from {1,2,3}, NOT source
+        G.add_undirected_edge(4, 5)
+        G.add_directed_edge(5, 6)
+        # Component C: {6, 7} - has incoming edge from {4,5}, NOT source
+        G.add_undirected_edge(6, 7)
+        # Component D: {8, 9} - source component
+        G.add_undirected_edge(8, 9)
+        components = source_components(G)
+        assert len(components) == 2
+        node_sets = [set(nodes) for nodes, _, _ in components]
+        assert {1, 2, 3} in node_sets
+        assert {8, 9} in node_sets
+    
+    def test_component_with_bidirectional_edges(self) -> None:
+        """Test component with edges going both ways (not source if has incoming)."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(3, 1)  # Incoming to {1, 2}
+        G.add_directed_edge(1, 3)  # Outgoing from {1, 2}
+        components = source_components(G)
+        # {1, 2} is NOT a source component (has incoming edge (3, 1) from {3})
+        # {3} is NOT a source component (has incoming edge (1, 3) from {1, 2})
+        # Neither component is a source component
+        assert len(components) == 0
+    
+    def test_all_components_have_incoming_edges(self) -> None:
+        """Test case where no components are source components."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(3, 4)
+        # Create a cycle of directed edges
+        G.add_directed_edge(2, 3)  # {1,2} -> {3,4}
+        G.add_directed_edge(4, 1)  # {3,4} -> {1,2}
+        components = source_components(G)
+        # Both components have incoming edges, so neither is a source component
+        assert len(components) == 0
+    
+    def test_single_node(self) -> None:
+        """Test isolated node"""
+        G = MixedMultiGraph()
+        G.add_node(1)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1}
+    
+    def test_mixed_parallel_edges(self) -> None:
+        """Test source component with both parallel undirected and directed edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.0)
+        G.add_undirected_edge(1, 2, weight=2.0)  # Parallel undirected
+        G.add_directed_edge(1, 3, weight=1.0)
+        G.add_directed_edge(1, 3, weight=2.0)  # Parallel directed
+        G.add_directed_edge(2, 4)
+        components = source_components(G)
+        assert len(components) == 1
+        nodes, undir_edges, out_edges = components[0]
+        assert set(nodes) == {1, 2}
+        assert len(undir_edges) == 2  # Both parallel undirected edges
+        assert set(undir_edges) == {(1, 2, 0), (1, 2, 1)}
+        assert len(out_edges) == 3  # (1, 3) twice + (2, 4) once
+        assert set(out_edges) == {(1, 3, 0), (1, 3, 1), (2, 4, 0)}
+
+
 class TestValidation:
-    """Test cases for validation methods."""
 
     def test_validate_synchronization(self) -> None:
         """Test _validate_synchronization method."""
