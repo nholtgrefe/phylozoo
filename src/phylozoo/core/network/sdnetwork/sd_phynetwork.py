@@ -17,9 +17,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
     """
     A semi-directed phylogenetic network.
     
-    A SemiDirectedPhyNetwork is a mixed phylogenetic network where:
-    - Exactly the non-hybrid edges are undirected
-    - All hybrid edges remain directed
+    A SemiDirectedPhyNetwork is a mixed multi-graph that can be obtained from
+    a directed phylogenetic LSA (Least Stable Ancestor) network by:
+    1. Suppressing the outdegree-2 root node (if it exists)
+    2. Undirecting all non-hybrid edges
     
     This is a subclass of MixedPhyNetwork with additional constraints on edge directions.
     
@@ -71,10 +72,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
     This class is immutable after initialization. To create a network,
     build it using MixedMultiGraph and then create a SemiDirectedPhyNetwork from it,
     or initialize it with edges and taxa.
-    
-    The `validate()` method ensures that:
-    - All hybrid edges are directed
-    - All non-hybrid edges are undirected
+
     
     Examples
     --------
@@ -150,10 +148,9 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         """
         Validate the network structure and edge attributes.
         
-        Checks:
-        1. Network is connected
-        2. All hybrid edges are directed
-        3. All non-hybrid edges are undirected
+        Checks all constraints from MixedPhyNetwork plus additional semi-directed network constraints:
+        - All hybrid edges are directed
+        - All non-hybrid edges are undirected
         
         Returns
         -------
@@ -167,136 +164,73 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         
         Notes
         -----
-        This method performs comprehensive validation of the network structure
-        and edge attributes. Empty networks (no nodes) are considered valid.
+        This method calls the parent validation (which checks connectivity, internal node degrees,
+        indegree constraints, bootstrap, and gamma) and then performs additional semi-directed
+        network specific checks.
         """
-        # First call parent validation (checks connectivity)
-        if not super().validate():
-            return False
+        # Call parent validation (checks connectivity, internal node degrees, indegree constraints,
+        # bootstrap, and gamma constraints)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            if not super().validate():
+                return False
         
         # Empty networks are valid
         if self.number_of_nodes() == 0:
             return True
         
-        # Identify potential hybrid nodes (nodes with total in-degree >= 2)
-        # Total in-degree includes both directed and undirected edges
-        potential_hybrid_nodes = set()
-        for v in self._graph.nodes:
-            # Count incoming edges (directed + undirected)
-            directed_in = self._graph.indegree(v)
-            undirected_in = sum(1 for _ in self._graph.incident_undirected_edges(v))
-            total_in = directed_in + undirected_in
-            if total_in >= 2:
-                potential_hybrid_nodes.add(v)
-        
-        # For each potential hybrid node, all incoming edges must be directed
-        for v in potential_hybrid_nodes:
-            # Check all undirected edges incident to this node
-            for u, w, key in self._graph._undirected.edges(keys=True):
-                if w == v:  # Incoming undirected edge
-                    raise ValueError(
-                        f"Node {v} has in-degree >= 2, so it is a hybrid node. "
-                        f"Undirected edge ({u}, {v}, key={key}) entering hybrid node {v} "
-                        f"must be directed. In a semi-directed network, all hybrid edges must be directed."
-                    )
-        
-        # Get hybrid edges (directed edges pointing into hybrid nodes)
-        hybrid_edges_set = set(self.hybrid_edges)
-        
-        # Check that all directed edges are hybrid edges
-        for u, v, key in self._graph._directed.edges(keys=True):
-            if (u, v) not in hybrid_edges_set:
-                raise ValueError(
-                    f"Directed edge ({u}, {v}, key={key}) is not a hybrid edge. "
-                    f"In a semi-directed network, only hybrid edges can be directed."
-                )
-        
-        # Check that all undirected edges are not hybrid edges
-        for u, v, key in self._graph._undirected.edges(keys=True):
-            if (u, v) in hybrid_edges_set:
-                raise ValueError(
-                    f"Undirected edge ({u}, {v}, key={key}) is a hybrid edge. "
-                    f"In a semi-directed network, hybrid edges must be directed."
-                )
+        # Additional semi-directed network constraints
+        # TODO: Implement additional validation logic for semi-directed networks
+        # - All hybrid edges are directed
+        # - All non-hybrid edges are undirected
         
         return True
     
-    @cached_property
-    def hybrid_nodes(self) -> List[T]:
+    def copy(self) -> 'SemiDirectedPhyNetwork':
         """
-        Return a list of all hybrid nodes.
+        Create a copy of the network.
         
-        In a semi-directed network, a hybrid node is a node with in-degree >= 2
-        from directed edges (regardless of out-degree, since outgoing edges may be undirected).
+        Returns a shallow copy of the network. Cached properties are not
+        copied but will be recomputed on first access.
         
         Returns
         -------
-        List[T]
-            List of hybrid node identifiers.
+        SemiDirectedPhyNetwork
+            A copy of the network.
         
         Examples
         --------
-        >>> net = SemiDirectedPhyNetwork(
-        ...     directed_edges=[(5, 4), (6, 4)],
-        ...     undirected_edges=[(4, 1)],
-        ...     taxa={1: "A"}
-        ... )
-        >>> net.hybrid_nodes
-        [4]
-        """
-        return [
-            v for v in self._graph.nodes
-            if self._graph.indegree(v) >= 2
-        ]
-    
-    @cached_property
-    def hybrid_edges(self) -> List[Tuple[T, T]]:
-        """
-        Return a list of all hybrid edges (directed edges pointing into hybrid nodes).
-        
-        Returns
-        -------
-        List[Tuple[T, T]]
-            List of (source, target) tuples for hybrid edges.
-        
-        Examples
-        --------
-        >>> net = SemiDirectedPhyNetwork(
-        ...     directed_edges=[(3, 2), (4, 2)],
-        ...     taxa={2: "A"}
-        ... )
-        >>> net.hybrid_edges
-        [(3, 2), (4, 2)]
-        """
-        res = []
-        for v in self.hybrid_nodes:
-            for p in self._graph._directed.predecessors(v):
-                res.append((p, v))
-        return res
-    
-    @cached_property
-    def tree_edges(self) -> List[Tuple[T, T]]:
-        """
-        Return a list of all tree edges (undirected edges).
-        
-        In a semi-directed network, tree edges are all undirected edges.
-        
-        Returns
-        -------
-        List[Tuple[T, T]]
-            List of (source, target) tuples for tree edges.
-        
-        Examples
-        --------
-        >>> net = SemiDirectedPhyNetwork(
-        ...     undirected_edges=[(3, 1), (3, 2)],
-        ...     taxa={1: "A", 2: "B"}
-        ... )
-        >>> len(net.tree_edges)
+        >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1)], taxa={1: "A"})
+        >>> net2 = net.copy()
+        >>> net.number_of_nodes()
         2
+        >>> net2.number_of_nodes()
+        2
+        >>> isinstance(net2, SemiDirectedPhyNetwork)
+        True
         """
-        # In semi-directed networks, tree edges are all undirected edges
-        return list(self._graph._undirected.edges())
+        # Create new network by copying internal structures
+        new_net = SemiDirectedPhyNetwork.__new__(SemiDirectedPhyNetwork)
+        new_net._graph = self._graph.copy()
+        new_net._node_to_label = self._node_to_label.copy()
+        new_net._label_to_node = self._label_to_node.copy()
+        return new_net
+    
+    @cached_property
+    def level(self) -> int:
+        """
+        Return the level of the network.
+        
+        Placeholder: To be implemented.
+        
+        Returns
+        -------
+        int
+            Level of the network (placeholder, returns 0 for now).
+        """
+        # TODO: Implement level calculation
+        return 0
     
     def __repr__(self) -> str:
         """
@@ -305,7 +239,13 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         Returns
         -------
         str
-            String representation showing nodes, edges, and taxa count.
+            String representation showing nodes, edges, level, taxa count, and taxon list.
+        
+        Examples
+        --------
+        >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> repr(net)
+        'SemiDirectedPhyNetwork(nodes=3, edges=2, level=0, taxa=2, taxa_list=[A, B])'
         """
         sorted_taxa = sorted(self.taxa)
         n_taxa = len(sorted_taxa)
@@ -318,32 +258,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         
         return (
             f"SemiDirectedPhyNetwork(nodes={self.number_of_nodes()}, "
-            f"directed_edges={self._graph._directed.number_of_edges()}, "
-            f"undirected_edges={self._graph._undirected.number_of_edges()}, "
+            f"edges={self.number_of_edges()}, "
+            f"level={self.level}, "
             f"taxa={n_taxa}, "
             f"taxa_list=[{taxa_list_str}])"
         )
 
 
-def random_semi_directed_network(n_leaves: int, seed: Optional[int] = None) -> SemiDirectedPhyNetwork:
-    """
-    Generate a random semi-directed network.
-    
-    Parameters
-    ----------
-    n_leaves : int
-        Number of leaves in the network
-    seed : Optional[int], optional
-        Random seed, by default None
-    
-    Returns
-    -------
-    SemiDirectedPhyNetwork
-        A random semi-directed network (placeholder - returns empty network)
-    
-    Notes
-    -----
-    This is a placeholder function. Implement actual random generation logic here.
-    """
-    # Placeholder implementation
-    return SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])

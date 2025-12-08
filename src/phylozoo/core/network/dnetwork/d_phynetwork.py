@@ -318,6 +318,15 @@ class DirectedPhyNetwork:
         ValueError
             If any edge has a bootstrap value outside [0.0, 1.0].
         """
+        # Quick check: if no bootstrap values are set, skip validation
+        has_bootstrap = False
+        for u, v, key, data in self._graph.edges(keys=True, data=True):
+            if 'bootstrap' in data:
+                has_bootstrap = True
+                break
+        if not has_bootstrap:
+            return True
+        
         for u, v, key, data in self._graph.edges(keys=True, data=True):
             if 'bootstrap' in data:
                 bootstrap = data['bootstrap']
@@ -347,6 +356,15 @@ class DirectedPhyNetwork:
         ValueError
             If gamma constraints are violated, including gamma set on non-hybrid edges.
         """
+        # Quick check: if no gamma values are set, skip validation
+        has_gamma = False
+        for u, v, key, data in self._graph.edges(keys=True, data=True):
+            if 'gamma' in data:
+                has_gamma = True
+                break
+        if not has_gamma:
+            return True
+        
         # First, check that gamma is only set on hybrid edges
         hybrid_edges_set = set(self.hybrid_edges)
         

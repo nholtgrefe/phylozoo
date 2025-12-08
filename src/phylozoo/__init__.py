@@ -12,7 +12,6 @@ from .core import (
     # Networks
     DirectedPhyNetwork,
     SemiDirectedPhyNetwork,
-    random_semi_directed_network,
     MixedMultiGraph,
     DirectedMultiGraph,
     # Structures
@@ -62,7 +61,6 @@ __all__ = [
     # Core - Networks
     "DirectedPhyNetwork",
     "SemiDirectedPhyNetwork",
-    "random_semi_directed_network",
     "MixedMultiGraph",
     "DirectedMultiGraph",
     # Core - Structures

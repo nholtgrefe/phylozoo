@@ -4,6 +4,7 @@ Mixed network module.
 This module provides classes and functions for working with mixed phylogenetic networks.
 """
 
+import math
 import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
@@ -16,19 +17,17 @@ T = TypeVar('T')
 
 class MixedPhyNetwork:
     """
-    A mixed phylogenetic network.
+    A mixed phylogenetic network. This is an abstract network type which may have undirected 
+    cycles, used for canonical forms and to address unidentifiability issues. For semi-directed 
+    phylogenetic networks, use the SemiDirectedPhyNetwork subclass which does not have 
+    undirected cycles.
     
     A MixedPhyNetwork is a mixed multigraph (with both directed and undirected edges)
-    that can be obtained from a directed phylogenetic network by
-    1. removing the outdegree-1 root node (if it exists)
-    2. Suppressing the outdegree-2 root node (if it exists) (or resulted from step 1)
-    3. Undirecting all non-hybrid edges
-    4. Optionally undirecting all hybrid edges for selected hybrid nodes
+    that can be obtained from a directed phylogenetic LSA (Least Stable Ancestor) network by
+    1. Suppressing the outdegree-2 root node (if it exists)
+    2. Undirecting all non-hybrid edges
+    3. Optionally undirecting all hybrid edges for selected hybrid nodes
       (i.e., if one hybrid edge is undirected, all partner hybrid edges are undirected)
-    
-    This is an abstract network type which may have undirected cycles, used for canonical 
-    forms and to address unidentifiability issues. For semi-directed phylogenetic networks, 
-    use the more common SemiDirectedPhyNetwork subclass which does not have undirected cycles.
     
     This class uses composition with MixedMultiGraph for graph structure and adds
     phylogenetic-specific features like taxa labels, node labels, and network topology methods.
@@ -247,6 +246,7 @@ class MixedPhyNetwork:
         
         # Auto-label uncovered leaves
         uncovered_leaves = all_leaves - covered_leaves
+        
         for leaf_id in uncovered_leaves:
             # Auto-generate label based on node_id
             label = str(leaf_id)
@@ -292,12 +292,170 @@ class MixedPhyNetwork:
         # Note: Internal nodes without explicit labels remain unlabeled
         # Only leaves are guaranteed to have labels (taxa)
     
+    def _validate_bootstrap_constraints(self) -> None:
+        """
+        Validate bootstrap values are within [0.0, 1.0].
+        
+        Raises
+        ------
+        ValueError
+            If any edge has a bootstrap value outside [0.0, 1.0].
+        """
+        # Quick check: if no bootstrap values are set, skip validation
+        has_bootstrap = False
+        for u, v, key, data in self._graph._directed.edges(keys=True, data=True):
+            if 'bootstrap' in data:
+                has_bootstrap = True
+                break
+        if not has_bootstrap:
+            for u, v, key, data in self._graph._undirected.edges(keys=True, data=True):
+                if 'bootstrap' in data:
+                    has_bootstrap = True
+                    break
+        if not has_bootstrap:
+            return True
+        
+        # Check directed edges
+        for u, v, key, data in self._graph._directed.edges(keys=True, data=True):
+            if 'bootstrap' in data:
+                bootstrap = data['bootstrap']
+                if not isinstance(bootstrap, (int, float)):
+                    raise ValueError(
+                        f"Bootstrap value on directed edge ({u}, {v}, key={key}) must be numeric, "
+                        f"got {type(bootstrap).__name__}"
+                    )
+                if math.isnan(bootstrap) or bootstrap < 0.0 or bootstrap > 1.0:
+                    raise ValueError(
+                        f"Bootstrap value on directed edge ({u}, {v}, key={key}) is {bootstrap}, "
+                        f"but must be in [0.0, 1.0]"
+                    )
+        
+        # Check undirected edges
+        for u, v, key, data in self._graph._undirected.edges(keys=True, data=True):
+            if 'bootstrap' in data:
+                bootstrap = data['bootstrap']
+                if not isinstance(bootstrap, (int, float)):
+                    raise ValueError(
+                        f"Bootstrap value on undirected edge ({u}, {v}, key={key}) must be numeric, "
+                        f"got {type(bootstrap).__name__}"
+                    )
+                if math.isnan(bootstrap) or bootstrap < 0.0 or bootstrap > 1.0:
+                    raise ValueError(
+                        f"Bootstrap value on undirected edge ({u}, {v}, key={key}) is {bootstrap}, "
+                        f"but must be in [0.0, 1.0]"
+                    )
+    
+    def _validate_gamma_constraints(self) -> None:
+        """
+        Validate gamma constraints for hybrid nodes.
+        
+        Gamma values can only be set on hybrid edges (directed edges pointing into hybrid nodes).
+        For each hybrid node, if ANY incoming edge has a gamma value, then
+        ALL incoming edges (including parallel edges) must have gamma values,
+        and they must sum to exactly 1.0. If no gamma values are specified,
+        no validation is performed.
+        
+        Raises
+        ------
+        ValueError
+            If gamma constraints are violated, including gamma set on non-hybrid edges
+            or undirected edges.
+        """
+        # Quick check: if no gamma values are set, skip validation
+        has_gamma = False
+        for u, v, key, data in self._graph._directed.edges(keys=True, data=True):
+            if 'gamma' in data:
+                has_gamma = True
+                break
+        if not has_gamma:
+            for u, v, key, data in self._graph._undirected.edges(keys=True, data=True):
+                if 'gamma' in data:
+                    has_gamma = True
+                    break
+        if not has_gamma:
+            return True
+        
+        # First, check that gamma is only set on directed hybrid edges
+        hybrid_edges_set = set(self.hybrid_edges)
+        
+        # Check directed edges
+        for u, v, key, data in self._graph._directed.edges(keys=True, data=True):
+            if 'gamma' in data:
+                # Check if this edge is a hybrid edge
+                if (u, v) not in hybrid_edges_set:
+                    raise ValueError(
+                        f"Gamma value can only be set on hybrid edges (edges pointing into "
+                        f"hybrid nodes). Directed edge ({u}, {v}, key={key}) is not a hybrid edge."
+                    )
+        
+        # Check that gamma is not set on undirected edges
+        for u, v, key, data in self._graph._undirected.edges(keys=True, data=True):
+            if 'gamma' in data:
+                raise ValueError(
+                    f"Gamma values cannot be set on undirected edges. "
+                    f"Undirected edge ({u}, {v}, key={key}) cannot have gamma values."
+                )
+        
+        # Then validate gamma constraints for hybrid nodes
+        for hybrid_node in self.hybrid_nodes:
+            gamma_values: List[float] = []
+            incoming_edges: List[Tuple[T, T, int]] = []
+            
+            # Use incident_parent_edges to get all incoming directed edges (including parallel edges)
+            for edge in self.incident_parent_edges(hybrid_node, keys=True, data=True):
+                if len(edge) == 4:  # (u, v, key, data)
+                    u, v, key, edge_data = edge
+                    incoming_edges.append((u, v, key))
+                    gamma = edge_data.get('gamma')
+                    if gamma is not None:
+                        # Validate gamma is numeric
+                        if not isinstance(gamma, (int, float)):
+                            raise ValueError(
+                                f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
+                                f"{hybrid_node} must be numeric, got {type(gamma).__name__}"
+                            )
+                        # Validate gamma is in [0.0, 1.0]
+                        if gamma < 0.0 or gamma > 1.0:
+                            raise ValueError(
+                                f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
+                                f"{hybrid_node} is {gamma}, but must be in [0.0, 1.0]"
+                            )
+                        gamma_values.append(gamma)
+            
+            # If any gamma values are set, ALL edges must have gamma values
+            if len(gamma_values) > 0:
+                # Check if all incoming edges have gamma values
+                missing_edges: List[str] = []
+                for u, v, key in incoming_edges:
+                    gamma = self.get_edge_attribute(u, v, key, 'gamma')
+                    if gamma is None:
+                        missing_edges.append(f"({u}, {v}, key={key})")
+                
+                if missing_edges:
+                    raise ValueError(
+                        f"Hybrid node {hybrid_node} has some edges with gamma values "
+                        f"but others without. If ANY gamma is specified, ALL incoming edges "
+                        f"must have gamma values. Missing gamma on edges: {', '.join(missing_edges)}"
+                    )
+                
+                # All gammas are present, check they sum to 1.0
+                gamma_sum = sum(gamma_values)
+                if abs(gamma_sum - 1.0) > 1e-10:
+                    raise ValueError(
+                        f"Hybrid node {hybrid_node} has gamma values that sum to {gamma_sum}, "
+                        f"but must sum to exactly 1.0"
+                    )
+    
     def validate(self) -> bool:
         """
         Validate the network structure and edge attributes.
         
-        This is a placeholder method. The actual validation logic will be
-        implemented later.
+        Checks:
+        1. Network is connected (weakly connected)
+        2. All internal nodes have degree >= 3
+        3. Each node has indegree either 0 or undirected_degree-1
+        4. Bootstrap values are in [0.0, 1.0]
+        5. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
         
         Returns
         -------
@@ -309,21 +467,61 @@ class MixedPhyNetwork:
         ValueError
             If any structural or edge attribute constraints are violated.
         
+        Warns
+        -----
+        UserWarning
+            Always issued to indicate that additional validation checks may be added later.
+        
         Notes
         -----
-        This method performs comprehensive validation of the network structure
-        and edge attributes. Empty networks (no nodes) are considered valid.
+        This method performs validation checks but issues a warning that additional
+        checks may be added later. For fully validated networks with additional
+        constraints, use SemiDirectedPhyNetwork.
         """
+        # Issue warning that additional checks may be added
+        warnings.warn(
+            "Validity is not fully checked for MixedPhyNetworks. "
+            "Additional validation checks may be added later. "
+            "For validated networks, use SemiDirectedPhyNetwork.",
+            UserWarning,
+            stacklevel=2
+        )
+        
         # Empty networks are valid
         if self.number_of_nodes() == 0:
             return True
         
-        # TODO: Implement validation logic
-        # For now, just check connectivity
+        # 1. Check that network is connected (weakly connected)
         if not is_connected(self._graph):
             raise ValueError(
                 "Network is not connected. All nodes must be in a single connected component."
             )
+        
+        # 2. Check that all internal nodes have degree >= 3
+        internal_nodes = self.internal_nodes
+        for node in internal_nodes:
+            degree = self._graph.degree(node)
+            if degree < 3:
+                raise ValueError(
+                    f"Internal node {node} has degree {degree}, but all internal nodes "
+                    f"must have degree >= 3."
+                )
+        
+        # 3. Check that each node has indegree either 0 or undirected_degree-1
+        for node in self._graph.nodes:
+            indegree = self._graph.indegree(node)
+            undirected_degree = self._graph.undirected_degree(node)
+            if indegree != 0 and indegree != undirected_degree - 1:
+                raise ValueError(
+                    f"Node {node} has indegree {indegree} and undirected degree {undirected_degree}. "
+                    f"Each node must have indegree either 0 or undirected_degree-1."
+                )
+        
+        # 4. Validate bootstrap constraints
+        self._validate_bootstrap_constraints()
+        
+        # 5. Validate gamma constraints
+        self._validate_gamma_constraints()
         
         return True
     
@@ -887,7 +1085,7 @@ class MixedPhyNetwork:
         """
         Return a list of all hybrid edges.
         
-        In a mixed network, hybrid edges are simply all directed edges.
+        Hybrid edges are all directed edges.
         
         Returns
         -------
@@ -966,7 +1164,7 @@ class MixedPhyNetwork:
         """
         Return a list of all tree edges.
         
-        In a mixed network, tree edges are simply all undirected edges.
+        Tree edges are simply all undirected edges.
         
         Returns
         -------
@@ -984,7 +1182,7 @@ class MixedPhyNetwork:
         [(4, 1)]
         """
         return list(self._graph._undirected.edges())
-    
+
     def __repr__(self) -> str:
         """
         Return string representation of the network.
@@ -992,7 +1190,13 @@ class MixedPhyNetwork:
         Returns
         -------
         str
-            String representation showing nodes, edges, and taxa count.
+            String representation showing nodes, edges, level, taxa count, and taxon list.
+        
+        Examples
+        --------
+        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> repr(net)
+        'MixedPhyNetwork(nodes=3, edges=2, taxa=2, taxa_list=[A, B])'
         """
         sorted_taxa = sorted(self.taxa)
         n_taxa = len(sorted_taxa)
