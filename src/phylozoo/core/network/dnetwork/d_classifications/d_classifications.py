@@ -10,13 +10,33 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..d_phynetwork import DirectedPhyNetwork
 
-# TODO: Implement classification functions here.
-# These could include functions like:
-# - is_tree(network) -> bool
-# - is_binary(network) -> bool
-# - level(network) -> int
-# - is_time_consistent(network) -> bool
-# - etc.
-#
-# Follow the NetworkX-style function-based API, where functions take a network
-# instance as the first argument.
+def is_LSA_network(network: 'DirectedPhyNetwork') -> bool:
+    """
+    Check whether a directed phylogenetic network is an LSA network.
+    
+    An LSA (Least Stable Ancestor) network is one where the root node is the
+    LSA node, i.e., the lowest node through which all root-to-leaf paths pass.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network's root node equals its LSA node, False otherwise.
+    
+    Notes
+    -----
+    For empty networks this function returns True.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+    >>> is_LSA_network(net)
+    True
+    """
+    if network.number_of_nodes() == 0:
+        return True
+    return network.root_node == network.LSA_node

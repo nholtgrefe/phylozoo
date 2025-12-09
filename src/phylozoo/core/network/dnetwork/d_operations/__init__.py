@@ -2,7 +2,12 @@
 Operations for directed phylogenetic networks.
 """
 
-# TODO: Import operations when implemented
-# from .d_operations import (...)
+from .d_operations import (
+    find_lsa_node,
+    to_LSA_network,
+)
 
-__all__ = []
+__all__ = [
+    "find_lsa_node",
+    "to_LSA_network",
+]

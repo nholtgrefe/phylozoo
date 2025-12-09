@@ -2,7 +2,8 @@
 Classification functions for directed phylogenetic networks.
 """
 
-# TODO: Import classification functions when implemented
-# from .d_classifications import (...)
+from .d_classifications import is_LSA_network
 
-__all__ = []
+__all__ = [
+    "is_LSA_network",
+]

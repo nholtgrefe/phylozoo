@@ -8,3 +8,4 @@ Maybe internal logic to switch to non-multigraph if not necessary?
 Use | instead of Union for typehinting
 Validate MixedPhyNetwork (perhaps remove the second condition from our paper), or for now only validate sd network and not m network.
 Use validation manager within methods (such as subnetworks)
+In Newick parse raise Warning if keywords like None,Nan,True,False etc. gamma etc. are used. or do it for mm_graph etc.

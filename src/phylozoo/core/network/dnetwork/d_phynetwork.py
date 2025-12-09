@@ -1108,6 +1108,34 @@ class DirectedPhyNetwork:
         ]
     
     @cached_property
+    def LSA_node(self) -> T:
+        """
+        Return the Least Stable Ancestor (LSA) node of the network.
+        
+        The LSA is the lowest node through which all paths from the root to the leaves pass.
+        In other words, it is the unique node that is an ancestor of all leaves and is
+        the lowest such node (has maximum depth from the root).
+        
+        Returns
+        -------
+        T
+            The LSA node identifier.
+        
+        Raises
+        ------
+        ValueError
+            If the network is empty.
+        
+        Examples
+        --------
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net.LSA_node
+        3
+        """
+        from .d_operations.d_operations import find_lsa_node
+        return find_lsa_node(self)
+    
+    @cached_property
     def tree_nodes(self) -> List[T]:
         """
         Return a list of all tree nodes.
