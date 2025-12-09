@@ -5,7 +5,8 @@ This module provides functions for working with MixedMultiGraph instances,
 following NetworkX-style function-based API.
 """
 
-from typing import TYPE_CHECKING, Iterator, List, Set, Tuple, TypeVar
+from typing import TYPE_CHECKING, Dict, Iterator, List, Set, Tuple, TypeVar
+from collections import deque
 
 import networkx as nx
 
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
     from .mm_graph import MixedMultiGraph
 else:
     from .mm_graph import MixedMultiGraph
+    from ..d_multigraph.dm_graph import DirectedMultiGraph
 
 T = TypeVar('T')
 
@@ -265,5 +267,180 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
             source_comps.append((nodes, undirected_edges, outgoing_edges))
     
     return source_comps
+
+
+def orient_mixed_graph_from_root(graph: 'MixedMultiGraph', root: T) -> 'DirectedMultiGraph':
+    """
+    Orient all edges in a mixed multigraph away from a root vertex using BFS.
+    
+    This function performs a BFS from the given root vertex, orienting all undirected edges
+    away from the current vertex. When a directed edge (u, v) is encountered, v is stored
+    in a separate queue. After processing all undirected edges in the BFS, the function
+    continues BFS from vertices in the directed queue, orienting undirected edges away
+    from those vertices. Directed edges cannot be reoriented.
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The mixed multigraph to orient.
+    root : T
+        The root vertex from which to orient all edges away.
+    
+    Returns
+    -------
+    DirectedMultiGraph
+        A new DirectedMultiGraph with all edges oriented away from the root vertex.
+        All edges in the returned graph are directed (no undirected edges remain).
+    
+    Raises
+    ------
+    ValueError
+        If the root vertex is not in the graph, if there are directed edges pointing
+        in the wrong direction relative to the BFS traversal, or if not all edges can be oriented.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.mm_operations import orient_mixed_graph_from_root
+    >>> G = MixedMultiGraph()
+    >>> G.add_undirected_edge(1, 2)
+    0
+    >>> G.add_undirected_edge(2, 3)
+    0
+    >>> G.add_undirected_edge(2, 4)
+    0
+    >>> dm = orient_mixed_graph_from_root(G, 1)
+    >>> dm.has_edge(1, 2)
+    True
+    >>> dm.has_edge(2, 3)
+    True
+    >>> dm.has_edge(2, 4)
+    True
+    >>> # All edges are now directed
+    >>> dm.number_of_edges() == G.number_of_edges()
+    True
+    """
+    if root not in graph.nodes():
+        raise ValueError(f"Root vertex {root} not found in the graph.")
+    
+    # Mapping of undirected edges to their orientation: (min(u,v), max(u,v), key) -> (u, v)
+    edge_orientations: Dict[Tuple[T, T, int], Tuple[T, T]] = {}
+    
+    # Track visited nodes
+    visited: Set[T] = set()
+    
+    # BFS queue for processing undirected edges
+    bfs_queue = deque([root])
+    visited.add(root)
+    
+    # Queue for vertices reached via directed edges (to be processed later)
+    directed_queue = deque()
+    
+    # Process BFS: first handle all undirected edges, then process directed queue
+    while bfs_queue or directed_queue:
+        # Process all vertices in BFS queue (undirected traversal)
+        while bfs_queue:
+            u = bfs_queue.popleft()
+            
+            # Check all neighbors of u
+            neighbors = set(graph.neighbors(u))
+            
+            for v in neighbors:
+                # Check if there's a directed edge u->v
+                if graph._directed.has_edge(u, v):
+                    # Directed edge u->v: add v to directed queue for later processing
+                    if v not in visited:
+                        directed_queue.append(v)
+                        visited.add(v)
+                
+                # Check if there's a directed edge v->u (pointing towards u)
+                elif graph._directed.has_edge(v, u):
+                    # Directed edge v->u points towards u
+                    # If v is not visited, this means we're going backwards in BFS
+                    # which is invalid if we're orienting away from root
+                    if v not in visited:
+                        raise ValueError(
+                            f"Directed edge ({v}, {u}) points towards vertex {u} "
+                            f"which is being processed in BFS from root {root}. "
+                            f"Cannot orient graph."
+                        )
+                    # If v is already visited, this is fine (v is a parent of u)
+                
+                # Check for undirected edges
+                elif graph._undirected.has_edge(u, v):
+                    # Undirected edge: orient it u->v (away from u)
+                    for key in graph._undirected[u][v].keys():
+                        edge_tuple = (min(u, v), max(u, v), key)
+                        if edge_tuple not in edge_orientations:
+                            edge_orientations[edge_tuple] = (u, v)
+                            
+                            # Add v to BFS queue if not visited
+                            if v not in visited:
+                                bfs_queue.append(v)
+                                visited.add(v)
+        
+        # Now process vertices reached via directed edges
+        # Continue BFS from these vertices, but only traverse undirected edges
+        while directed_queue:
+            u = directed_queue.popleft()
+            
+            # Check all neighbors of u
+            neighbors = set(graph.neighbors(u))
+            
+            for v in neighbors:
+                # Only process undirected edges (skip directed edges)
+                if graph._undirected.has_edge(u, v):
+                    # Undirected edge: orient it u->v (away from u)
+                    for key in graph._undirected[u][v].keys():
+                        edge_tuple = (min(u, v), max(u, v), key)
+                        if edge_tuple not in edge_orientations:
+                            edge_orientations[edge_tuple] = (u, v)
+                            
+                            # Add v to BFS queue if not visited
+                            if v not in visited:
+                                bfs_queue.append(v)
+                                visited.add(v)
+                
+                # If there's a directed edge v->u, check if it's valid
+                elif graph._directed.has_edge(v, u):
+                    # v->u points towards u
+                    # If v is not visited, add it to directed queue
+                    if v not in visited:
+                        directed_queue.append(v)
+                        visited.add(v)
+    
+    # Now build the DirectedMultiGraph
+    # First, copy all existing directed edges
+    dm = DirectedMultiGraph()
+    
+    # Add all nodes with their attributes
+    for node in graph.nodes():
+        # Get node data from either undirected or directed graph
+        node_data = {}
+        if node in graph._undirected.nodes():
+            node_data.update(graph._undirected.nodes[node])
+        if node in graph._directed.nodes():
+            node_data.update(graph._directed.nodes[node])
+        dm.add_node(node, **node_data)
+    
+    # Add all directed edges from original graph
+    for u, v, key, data in graph._directed.edges(keys=True, data=True):
+        dm.add_edge(u, v, key=key, **data)
+    
+    # Add all undirected edges, oriented according to our mapping
+    for u, v, key, data in graph._undirected.edges(keys=True, data=True):
+        edge_tuple = (min(u, v), max(u, v), key)
+        if edge_tuple in edge_orientations:
+            # Use the determined orientation
+            oriented_u, oriented_v = edge_orientations[edge_tuple]
+            dm.add_edge(oriented_u, oriented_v, key=key, **data)
+        else:
+            # Edge not reached in BFS - cannot orient
+            raise ValueError(
+                f"Undirected edge ({u}, {v}, key={key}) is not reachable from root vertex {root}. "
+                f"Cannot determine orientation."
+            )
+    
+    return dm
 
 

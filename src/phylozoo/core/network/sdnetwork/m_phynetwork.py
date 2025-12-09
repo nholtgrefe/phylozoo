@@ -534,7 +534,7 @@ class MixedPhyNetwork:
         
         Checks:
         1. All internal nodes have degree >= 3
-        2. Each node has indegree either 0 or undirected_degree-1
+        2. Each node has indegree either 0 or total_degree-1
         
         Raises
         ------
@@ -551,14 +551,15 @@ class MixedPhyNetwork:
                     f"must have degree >= 3."
                 )
         
-        # 2. Check that each node has indegree either 0 or undirected_degree-1
+        # 2. Check that each node has indegree either 0 or total_degree-1
+        # This constraint applies to all nodes (including leaves)
         for node in self._graph.nodes:
             indegree = self._graph.indegree(node)
-            undirected_degree = self._graph.undirected_degree(node)
-            if indegree != 0 and indegree != undirected_degree - 1:
+            total_degree = self._graph.degree(node)
+            if indegree != 0 and indegree != total_degree - 1:
                 raise ValueError(
-                    f"Node {node} has indegree {indegree} and undirected degree {undirected_degree}. "
-                    f"Each node must have indegree either 0 or undirected_degree-1."
+                    f"Node {node} has indegree {indegree} and total degree {total_degree}. "
+                    f"Each node must have indegree either 0 or total_degree-1."
                 )
     
     def validate(self) -> bool:
