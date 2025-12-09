@@ -85,13 +85,15 @@ from phylozoo.diversity import DiversityCalculator, phylogenetic_diversity
 
 **Modules:**
 - `network_plot.py`: plot_network(), plot_tree()
+- `graph_plot.py`: plot_directed_multigraph(), plot_mixed_multigraph()
 
 **Usage:**
 ```python
-from phylozoo.plotting import plot_network, plot_tree
+from phylozoo.visualize import plot_network, plot_tree
+from phylozoo.visualize import plot_directed_multigraph, plot_mixed_multigraph
 ```
 
-**Status:** Skeleton module - ready for implementation.
+**Status:** Partially implemented - graph plotting functions available, network plotting placeholders.
 
 ### `squirrel/` - Network Inference
 
@@ -151,7 +153,7 @@ from phylozoo.diversity import DiversityCalculator
 
 **Plotting:**
 ```python
-from phylozoo.plotting import plot_network
+from phylozoo.visualize import plot_network
 ```
 
 **Inference:**
