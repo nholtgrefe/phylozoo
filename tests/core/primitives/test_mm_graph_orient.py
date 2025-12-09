@@ -1,7 +1,7 @@
 """
-Tests for orient_mixed_graph_from_root function.
+Tests for orient_away_from_vertex function.
 
-This test suite provides comprehensive coverage of the orient_mixed_graph_from_root
+This test suite provides comprehensive coverage of the orient_away_from_vertex
 function, including basic functionality, edge cases, error handling, and complex structures.
 """
 
@@ -10,13 +10,13 @@ from typing import Dict, List, Set, Tuple
 
 from phylozoo.core.primitives.m_multigraph import (
     MixedMultiGraph,
-    orient_mixed_graph_from_root,
+    orient_away_from_vertex,
 )
 from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 
 
 class TestOrientMixedGraphFromRoot:
-    """Test cases for orient_mixed_graph_from_root function."""
+    """Test cases for orient_away_from_vertex function."""
     
     def test_simple_undirected_tree(self) -> None:
         """Test orienting a simple undirected tree."""
@@ -26,7 +26,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(2, 4)
         G.add_undirected_edge(2, 5)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # All edges should be directed away from root 1
         assert dm.has_edge(1, 2)
@@ -45,7 +45,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_directed_edge(3, 5)
         G.add_undirected_edge(4, 6)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Directed edges should be preserved
         assert dm.has_edge(1, 2)
@@ -64,7 +64,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(1, 2)  # Parallel
         G.add_undirected_edge(2, 3)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # All parallel edges should be oriented
         assert dm.number_of_edges() == G.number_of_edges()
@@ -81,7 +81,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(2, 4)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # All edges should be preserved
         assert dm.number_of_edges() == G.number_of_edges()
@@ -100,7 +100,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(4, 5)
         G.add_undirected_edge(4, 6)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # All edges should be oriented
         assert dm.has_edge(1, 2)
@@ -126,7 +126,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(6, 10)
         G.add_undirected_edge(7, 11)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Verify all edges are oriented away from root
         assert dm.number_of_edges() == G.number_of_edges()
@@ -143,7 +143,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(1, 2)
         
         with pytest.raises(ValueError, match="Root vertex.*not found"):
-            orient_mixed_graph_from_root(G, 999)
+            orient_away_from_vertex(G, 999)
     
     def test_directed_edge_pointing_wrong_way_raises_error(self) -> None:
         """Test that directed edge pointing towards BFS path raises error."""
@@ -153,7 +153,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_directed_edge(4, 2)  # Points towards 2, which is in BFS path
         
         with pytest.raises(ValueError, match="points towards vertex"):
-            orient_mixed_graph_from_root(G, 1)
+            orient_away_from_vertex(G, 1)
     
     def test_directed_cycle_raises_error(self) -> None:
         """Test that directed cycle raises error."""
@@ -164,7 +164,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_directed_edge(4, 2)  # Creates cycle 2->3->4->2
         
         with pytest.raises(ValueError, match="points towards vertex"):
-            orient_mixed_graph_from_root(G, 1)
+            orient_away_from_vertex(G, 1)
     
     def test_unreachable_undirected_edge_raises_error(self) -> None:
         """Test that unreachable undirected edge raises error."""
@@ -173,14 +173,14 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(3, 4)  # Disconnected component
         
         with pytest.raises(ValueError, match="not reachable from root"):
-            orient_mixed_graph_from_root(G, 1)
+            orient_away_from_vertex(G, 1)
     
     def test_single_node_graph(self) -> None:
         """Test orienting graph with single node."""
         G = MixedMultiGraph()
         G.add_node(1)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         assert dm.number_of_nodes() == 1
         assert dm.number_of_edges() == 0
@@ -190,7 +190,7 @@ class TestOrientMixedGraphFromRoot:
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         assert dm.has_edge(1, 2)
         assert dm.number_of_edges() == 1
@@ -203,7 +203,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(2, 3, weight=2.0)
         G.add_directed_edge(3, 4, weight=3.0)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Check attributes are preserved
         edge_data_1_2 = dict(dm._graph[1][2][0])
@@ -223,7 +223,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_node(2, label='leaf', color='blue')
         G.add_undirected_edge(1, 2)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Access node data using nodes() method
         node_data_1 = dict(dm.nodes(data=True))[1]
@@ -247,7 +247,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(7, 9)
         G.add_undirected_edge(8, 10)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Verify all edges are oriented
         assert dm.number_of_edges() == G.number_of_edges()
@@ -274,7 +274,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(3, 6)
         G.add_undirected_edge(3, 7)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         assert dm.has_edge(1, 2)
         assert dm.has_edge(1, 3)
@@ -292,7 +292,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_directed_edge(2, 4)
         G.add_directed_edge(3, 5)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Should preserve all directed edges
         assert dm.number_of_edges() == G.number_of_edges()
@@ -308,8 +308,8 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(2, 4)
         
-        dm1 = orient_mixed_graph_from_root(G, 1)
-        dm2 = orient_mixed_graph_from_root(G, 3)
+        dm1 = orient_away_from_vertex(G, 1)
+        dm2 = orient_away_from_vertex(G, 3)
         
         # Both should have all edges directed
         assert dm1.number_of_edges() == G.number_of_edges()
@@ -332,7 +332,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(1, 2, weight=2.0, key=1)
         G.add_undirected_edge(1, 2, weight=3.0, key=2)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # All parallel edges should be oriented
         assert dm.number_of_edges() == 3
@@ -345,7 +345,7 @@ class TestOrientMixedGraphFromRoot:
         G = MixedMultiGraph()
         
         with pytest.raises(ValueError, match="not found"):
-            orient_mixed_graph_from_root(G, 1)
+            orient_away_from_vertex(G, 1)
     
     def test_star_graph(self) -> None:
         """Test orienting star graph (one central node connected to many leaves)."""
@@ -356,7 +356,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(1, 5)
         G.add_undirected_edge(1, 6)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # All edges should point away from center
         assert dm.number_of_edges() == 5
@@ -374,7 +374,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(3, 4)
         G.add_undirected_edge(4, 5)
         
-        dm = orient_mixed_graph_from_root(G, 1)
+        dm = orient_away_from_vertex(G, 1)
         
         # Should form a directed path
         assert dm.has_edge(1, 2)
@@ -391,7 +391,7 @@ class TestOrientMixedGraphFromRoot:
         G.add_undirected_edge(3, 4)
         G.add_undirected_edge(4, 5)
         
-        dm = orient_mixed_graph_from_root(G, 5)
+        dm = orient_away_from_vertex(G, 5)
         
         # Should form a directed path AWAY from root 5
         assert dm.has_edge(5, 4)  # 5->4 (away from root)

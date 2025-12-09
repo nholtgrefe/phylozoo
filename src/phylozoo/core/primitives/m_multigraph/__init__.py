@@ -14,7 +14,7 @@ from .mm_operations import (
     identify_two_nodes,
     identify_node_set,
     source_components,
-    orient_mixed_graph_from_root,
+    orient_away_from_vertex,
 )
 # Import conversion functions for convenience
 from .mm_conversions import (
@@ -32,7 +32,7 @@ __all__ = [
     "identify_two_nodes",
     "identify_node_set",
     "source_components",
-    "orient_mixed_graph_from_root",
+    "orient_away_from_vertex",
     "graph_to_mixedmultigraph",
     "multigraph_to_mixedmultigraph",
     "multidigraph_to_mixedmultigraph",

@@ -269,7 +269,7 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
     return source_comps
 
 
-def orient_mixed_graph_from_root(graph: 'MixedMultiGraph', root: T) -> 'DirectedMultiGraph':
+def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMultiGraph':
     """
     Orient all edges in a mixed multigraph away from a root vertex using BFS.
     
@@ -301,7 +301,7 @@ def orient_mixed_graph_from_root(graph: 'MixedMultiGraph', root: T) -> 'Directed
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
-    >>> from phylozoo.core.primitives.m_multigraph.mm_operations import orient_mixed_graph_from_root
+    >>> from phylozoo.core.primitives.m_multigraph.mm_operations import orient_away_from_vertex
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -309,7 +309,7 @@ def orient_mixed_graph_from_root(graph: 'MixedMultiGraph', root: T) -> 'Directed
     0
     >>> G.add_undirected_edge(2, 4)
     0
-    >>> dm = orient_mixed_graph_from_root(G, 1)
+    >>> dm = orient_away_from_vertex(G, 1)
     >>> dm.has_edge(1, 2)
     True
     >>> dm.has_edge(2, 3)
