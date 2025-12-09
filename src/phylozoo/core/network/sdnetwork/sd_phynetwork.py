@@ -313,9 +313,9 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
                 raise ValueError("Source component is empty")
             
             # Local imports to avoid circular dependencies
-            from ...network.dnetwork.d_operations.d_operations import to_sd_network
+            from ...network.dnetwork.operations import to_sd_network
             from ...network.dnetwork.d_phynetwork import DirectedPhyNetwork
-            from ...network.dnetwork.d_classifications import is_LSA_network
+            from ...network.dnetwork.classifications import is_LSA_network
             
             # Step 2: Pick a non-leaf vertex r from the source component
             # We cannot pick a leaf node as root, as it won't become the LSA when oriented

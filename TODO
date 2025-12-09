@@ -8,3 +8,6 @@ Maybe internal logic to switch to non-multigraph if not necessary?
 Use | instead of Union for typehinting
 Validate MixedPhyNetwork (perhaps remove the second condition from our paper), or for now only validate sd network and not m network.
 Use validation manager within methods (such as subnetworks)
+Allow single node networks
+Optimize code
+Imrpove folder structure

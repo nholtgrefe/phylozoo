@@ -1132,7 +1132,7 @@ class DirectedPhyNetwork:
         >>> net.LSA_node
         3
         """
-        from .d_operations.d_operations import find_lsa_node
+        from .operations import find_lsa_node
         return find_lsa_node(self)
     
     @cached_property

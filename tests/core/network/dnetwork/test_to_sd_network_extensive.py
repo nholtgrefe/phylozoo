@@ -17,8 +17,8 @@ All tests create valid DirectedPhyNetworks that pass validation.
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork, SemiDirectedPhyNetwork
-from phylozoo.core.network.dnetwork.d_operations.d_operations import to_sd_network
-from phylozoo.core.network.dnetwork.d_classifications import is_LSA_network
+from phylozoo.core.network.dnetwork.operations import to_sd_network
+from phylozoo.core.network.dnetwork.classifications import is_LSA_network
 
 
 class TestToSDNetworkBasicTrees:

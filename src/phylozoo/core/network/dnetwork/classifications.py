@@ -8,7 +8,7 @@ directed phylogenetic networks (e.g., is_tree, is_binary, level, etc.).
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..d_phynetwork import DirectedPhyNetwork
+    from .d_phynetwork import DirectedPhyNetwork
 
 def is_LSA_network(network: 'DirectedPhyNetwork') -> bool:
     """

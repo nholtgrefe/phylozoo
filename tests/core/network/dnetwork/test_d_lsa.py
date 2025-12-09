@@ -5,11 +5,11 @@ Tests for LSA-related utilities on DirectedPhyNetwork.
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.d_operations.d_operations import (
+from phylozoo.core.network.dnetwork.operations import (
     find_lsa_node,
     to_LSA_network,
 )
-from phylozoo.core.network.dnetwork.d_classifications import is_LSA_network
+from phylozoo.core.network.dnetwork.classifications import is_LSA_network
 
 
 class TestFindLSANode:

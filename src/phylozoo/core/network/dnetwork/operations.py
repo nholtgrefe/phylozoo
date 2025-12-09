@@ -9,11 +9,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar
 
 import networkx as nx
 
-from ..d_phynetwork import DirectedPhyNetwork
-from ..d_classifications import is_LSA_network
-from ....primitives.m_multigraph.mm_graph import MixedMultiGraph
-from ....primitives.m_multigraph.mm_operations import suppress_degree2_node
-from ...sdnetwork.sd_phynetwork import SemiDirectedPhyNetwork
+from .d_phynetwork import DirectedPhyNetwork
+from .classifications import is_LSA_network
+from ...primitives.m_multigraph.mm_graph import MixedMultiGraph
+from ...primitives.m_multigraph.mm_operations import suppress_degree2_node
+from ..sdnetwork.sd_phynetwork import SemiDirectedPhyNetwork
 
 T = TypeVar('T')
 
