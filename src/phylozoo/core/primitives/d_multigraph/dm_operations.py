@@ -5,7 +5,7 @@ This module provides functions for working with DirectedMultiGraph instances,
 following NetworkX-style function-based API.
 """
 
-from typing import Iterator, List, Set, TypeVar
+from typing import Any, Dict, Iterator, List, Optional, Set, TypeVar
 
 import networkx as nx
 
@@ -168,6 +168,122 @@ def identify_node_set(graph: 'DirectedMultiGraph', nodes: List[T] | Set[T]) -> N
     
     for i in range(1, len(nodes_list)):
         identify_two_nodes(graph, nodes_list[0], nodes_list[i])
+
+
+def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: Optional[Dict[str, Any]] = None) -> None:
+    """
+    Suppress a single degree-2 node in a directed multigraph in place.
+    
+    A degree-2 node has exactly two incident edges. For a directed multigraph, the only
+    valid configuration is indegree=1 and outdegree=1 (u->x->v). Suppression connects
+    the two neighbors directly: u->x->v becomes u->v.
+    
+    Invalid configurations that raise ValueError:
+    - indegree=2, outdegree=0: Multiple incoming directed edges
+    - indegree=0, outdegree=2: Multiple outgoing directed edges
+    
+    This operation modifies the graph in place. Suppression may create parallel edges.
+    
+    Edge attributes are handled as follows:
+    - If `merged_attrs` is provided: these attributes are used directly for the new edge.
+      This allows the caller to apply special merging logic before suppression.
+    - If `merged_attrs` is None: attributes are merged by taking the incoming edge's data
+      first, then the outgoing edge's data overriding. For attributes present in both edges,
+      the outgoing edge's value overrides the incoming edge's value.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The directed multigraph to modify.
+    node : T
+        The degree-2 node to suppress.
+    merged_attrs : Optional[Dict[str, Any]], optional
+        Pre-merged attributes to use for the resulting edge. If None, attributes are merged
+        by taking incoming edge data first, then outgoing edge data overriding.
+        
+        When provided, these attributes will be used directly for the new edge created
+        during suppression. This is useful when special attribute handling is needed.
+    
+    Raises
+    ------
+    ValueError
+        If the node is not degree-2, or has an invalid edge configuration (indegree=2
+        with outdegree=0, or indegree=0 with outdegree=2).
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> G = DirectedMultiGraph()
+    >>> G.add_edge(1, 2)
+    0
+    >>> G.add_edge(2, 3)
+    0
+    >>> suppress_degree2_node(G, 2)
+    >>> list(G.edges())
+    [(1, 3)]
+    """
+    # Check that node exists
+    if node not in graph.nodes():
+        raise ValueError(f"Node {node} not found in graph")
+    
+    # Verify node is degree-2 using the public API
+    if graph.degree(node) != 2:
+        raise ValueError(
+            f"Node {node} has degree {graph.degree(node)}, expected degree 2"
+        )
+    
+    # Check indegree and outdegree
+    in_deg = graph.indegree(node)
+    out_deg = graph.outdegree(node)
+    
+    # Invalid configurations
+    if in_deg == 2 and out_deg == 0:
+        raise ValueError(
+            f"Node {node} has indegree 2 and outdegree 0. "
+            f"Cannot suppress node with multiple incoming directed edges."
+        )
+    if in_deg == 0 and out_deg == 2:
+        raise ValueError(
+            f"Node {node} has indegree 0 and outdegree 2. "
+            f"Cannot suppress node with multiple outgoing directed edges."
+        )
+    
+    # Valid configuration: indegree=1, outdegree=1
+    if in_deg != 1 or out_deg != 1:
+        raise ValueError(
+            f"Node {node} has indegree {in_deg} and outdegree {out_deg}. "
+            f"Expected indegree 1 and outdegree 1 for suppression."
+        )
+    
+    # Collect incident edges using the public API
+    directed_in = list(graph.incident_parent_edges(node, keys=True, data=True))
+    directed_out = list(graph.incident_child_edges(node, keys=True, data=True))
+    
+    # We should have exactly one incoming and one outgoing edge
+    if len(directed_in) != 1 or len(directed_out) != 1:
+        raise ValueError(
+            f"Node {node} has {len(directed_in)} incoming and {len(directed_out)} outgoing edges. "
+            f"Expected exactly 1 of each."
+        )
+    
+    # Get the neighbors and edge data
+    (u, _, k1, d1) = directed_in[0]  # u->node
+    (_, v, k2, d2) = directed_out[0]  # node->v
+    
+    # Remove the node and its incident edges
+    graph.remove_node(node)
+    
+    # Determine resulting edge attributes
+    # Use provided merged_attrs if given, otherwise merge attributes (incoming first, then outgoing)
+    if merged_attrs is None:
+        merged_attrs = {}
+        if d1:
+            merged_attrs.update(d1)
+        if d2:
+            merged_attrs.update(d2)
+    
+    # Add the new edge u->v
+    graph.add_edge(u, v, key=k1 if k1 == k2 else None, **merged_attrs)
 
 
 

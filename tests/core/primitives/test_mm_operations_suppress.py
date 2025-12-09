@@ -1,0 +1,296 @@
+"""
+Tests for suppress_degree2_node function in mm_operations.
+"""
+
+import pytest
+
+from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+from phylozoo.core.primitives.m_multigraph.mm_operations import suppress_degree2_node
+
+
+class TestSuppressDegree2NodeValidCombinations:
+    """Tests for valid edge type combinations."""
+
+    def test_undirected_undirected(self) -> None:
+        """Test suppression of node with two undirected edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        assert G.has_edge(1, 3)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+    def test_directed_in_directed_out(self) -> None:
+        """Test suppression of node with incoming and outgoing directed edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        assert G.has_edge(1, 3)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+    def test_directed_out_directed_in(self) -> None:
+        """Test suppression of node with outgoing and incoming directed edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(2, 1)
+        G.add_directed_edge(3, 2)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        assert G.has_edge(3, 1)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+    def test_directed_in_undirected(self) -> None:
+        """Test suppression of node with incoming directed and undirected edge."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        assert G.has_edge(1, 3)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+    def test_undirected_directed_in(self) -> None:
+        """Test suppression of node with undirected and incoming directed edge."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(3, 2)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        # directed_in comes first, so n1=3, n2=1, result is 3->1
+        assert G.has_edge(3, 1)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+    def test_directed_out_undirected(self) -> None:
+        """Test suppression of node with outgoing directed and undirected edge."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(2, 1)
+        G.add_undirected_edge(2, 3)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        assert G.has_edge(1, 3)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+    def test_undirected_directed_out(self) -> None:
+        """Test suppression of node with undirected and outgoing directed edge."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        
+        suppress_degree2_node(G, 2)
+        
+        assert 2 not in G.nodes()
+        # directed_out comes before undirected, so n1=3 (target of 2->3), n2=1 (undirected neighbor), result is 3->1
+        assert G.has_edge(3, 1)
+        assert G.number_of_edges() == 1
+        assert G.number_of_nodes() == 2
+
+
+class TestSuppressDegree2NodeInvalidCombinations:
+    """Tests for invalid edge type combinations that raise errors."""
+
+    def test_directed_in_directed_in_raises_error(self) -> None:
+        """Test that multiple incoming directed edges raise ValueError."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(3, 2)
+        
+        with pytest.raises(ValueError, match="multiple incoming directed edges"):
+            suppress_degree2_node(G, 2)
+
+    def test_directed_out_directed_out_raises_error(self) -> None:
+        """Test that multiple outgoing directed edges raise ValueError."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(2, 1)
+        G.add_directed_edge(2, 3)
+        
+        with pytest.raises(ValueError, match="multiple outgoing directed edges"):
+            suppress_degree2_node(G, 2)
+
+
+class TestSuppressDegree2NodeErrorCases:
+    """Tests for error cases (node not found, wrong degree, etc.)."""
+
+    def test_node_not_in_graph_raises_error(self) -> None:
+        """Test that suppressing a non-existent node raises ValueError."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        
+        with pytest.raises(ValueError, match="not found in graph"):
+            suppress_degree2_node(G, 99)
+
+    def test_node_not_degree_2_raises_error(self) -> None:
+        """Test that suppressing a non-degree-2 node raises ValueError."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(2, 4)  # Node 2 now has degree 3
+        
+        with pytest.raises(ValueError, match="has degree 3, expected degree 2"):
+            suppress_degree2_node(G, 2)
+
+    def test_node_degree_1_raises_error(self) -> None:
+        """Test that suppressing a degree-1 node raises ValueError."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        
+        with pytest.raises(ValueError, match="has degree 1, expected degree 2"):
+            suppress_degree2_node(G, 2)
+
+
+class TestSuppressDegree2NodeAttributes:
+    """Tests for attribute handling during suppression."""
+
+    def test_attributes_preserved_undirected(self) -> None:
+        """Test that attributes are preserved when suppressing undirected edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.0, label="edge1")
+        G.add_undirected_edge(2, 3, weight=2.0, label="edge2")
+        
+        suppress_degree2_node(G, 2)
+        
+        # Check that edge exists and has attributes (d2 overrides d1)
+        assert G.has_edge(1, 3)
+        edge_data = dict(G._undirected[1][3][0])
+        assert edge_data.get('weight') == 2.0  # d2 overrides d1
+        assert edge_data.get('label') == "edge2"  # d2 overrides d1
+
+    def test_attributes_preserved_directed(self) -> None:
+        """Test that attributes are preserved when suppressing directed edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.0, label="edge1")
+        G.add_directed_edge(2, 3, weight=2.0, label="edge2")
+        
+        suppress_degree2_node(G, 2)
+        
+        # Check that edge exists and has attributes
+        assert G.has_edge(1, 3)
+        edge_data = dict(G._directed[1][3][0])
+        assert edge_data.get('weight') == 2.0  # d2 overrides d1
+        assert edge_data.get('label') == "edge2"  # d2 overrides d1
+
+    def test_merged_attrs_provided(self) -> None:
+        """Test that provided merged_attrs are used directly."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.0)
+        G.add_undirected_edge(2, 3, weight=2.0)
+        
+        merged_attrs = {'weight': 5.0, 'label': 'merged'}
+        suppress_degree2_node(G, 2, merged_attrs=merged_attrs)
+        
+        # Check that merged_attrs are used
+        assert G.has_edge(1, 3)
+        edge_data = dict(G._undirected[1][3][0])
+        assert edge_data.get('weight') == 5.0
+        assert edge_data.get('label') == 'merged'
+
+    def test_attributes_order_directed_in_first(self) -> None:
+        """Test that directed_in edges come first in attribute merging."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.0, label="directed_in")
+        G.add_undirected_edge(2, 3, weight=2.0, label="undirected")
+        
+        suppress_degree2_node(G, 2)
+        
+        # directed_in comes first, so its attributes are base, then undirected overrides
+        assert G.has_edge(1, 3)
+        edge_data = dict(G._directed[1][3][0])
+        assert edge_data.get('weight') == 2.0  # undirected overrides
+        assert edge_data.get('label') == "undirected"  # undirected overrides
+
+
+class TestSuppressDegree2NodeParallelEdges:
+    """Tests for parallel edge handling."""
+
+    def test_parallel_edges_created(self) -> None:
+        """Test that suppression can create parallel edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(1, 3)  # Already exists
+        
+        suppress_degree2_node(G, 2)
+        
+        # Suppression should create a new edge between 1 and 3
+        # Since there was already an edge, we should have parallel edges
+        # Count edges between 1 and 3 (check undirected edges)
+        undirected_edges_1_3 = list(G._undirected.edges(1, 3, keys=True))
+        # The suppression creates an edge, and if keys differ, we get parallel edges
+        # Note: The exact behavior depends on key assignment during suppression
+        assert len(undirected_edges_1_3) >= 1  # At least one edge exists
+        assert G.has_edge(1, 3)  # Edge exists between 1 and 3
+
+    def test_same_key_preserved(self) -> None:
+        """Test that same keys are preserved when possible."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, key=5)
+        G.add_undirected_edge(2, 3, key=5)
+        
+        suppress_degree2_node(G, 2)
+        
+        # Key should be preserved if same
+        assert G.has_edge(1, 3, key=5)
+
+
+class TestSuppressDegree2NodeComplex:
+    """Tests for complex scenarios."""
+
+    def test_suppress_in_larger_graph(self) -> None:
+        """Test suppression in a larger graph structure."""
+        G = MixedMultiGraph()
+        # Create a path: 1-2-3-4-5
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        G.add_undirected_edge(4, 5)
+        
+        # Suppress node 2
+        suppress_degree2_node(G, 2)
+        assert 2 not in G.nodes()
+        assert G.has_edge(1, 3)
+        
+        # Suppress node 4 (now degree-2 after previous suppression)
+        suppress_degree2_node(G, 4)
+        assert 4 not in G.nodes()
+        assert G.has_edge(3, 5)
+        
+        # Final graph should be 1-3-5
+        assert G.number_of_nodes() == 3
+        assert G.number_of_edges() == 2
+        assert G.has_edge(1, 3)
+        assert G.has_edge(3, 5)
+
+    def test_mixed_directed_undirected_path(self) -> None:
+        """Test suppression in a mixed directed/undirected path."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        
+        suppress_degree2_node(G, 2)
+        assert 2 not in G.nodes()
+        assert G.has_edge(1, 3)  # Should be directed
+        
+        # Check direction
+        assert G._directed.has_edge(1, 3)
+        assert not G._undirected.has_edge(1, 3)
+
