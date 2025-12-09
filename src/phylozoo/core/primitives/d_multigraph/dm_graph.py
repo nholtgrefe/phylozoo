@@ -5,6 +5,8 @@ This module provides the DirectedMultiGraph class for working with directed mult
 """
 
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar
+import warnings
+import keyword
 
 import networkx as nx
 
@@ -733,6 +735,12 @@ class DirectedMultiGraph:
         >>> key1 != key2
         True
         """
+        # Warn on Python keyword identifiers
+        self._warn_on_keyword(u, "Node id")
+        self._warn_on_keyword(v, "Node id")
+        if key is not None:
+            self._warn_on_keyword(key, "Edge key")
+
         # Ensure nodes exist
         if u not in self._graph:
             self._graph.add_node(u)
@@ -754,6 +762,20 @@ class DirectedMultiGraph:
         self._combined.add_edge(u, v, key=key, **attr)
 
         return key
+
+    @staticmethod
+    def _warn_on_keyword(value: Any, context: str) -> None:
+        """Warn if value is a Python keyword (e.g., None, True, False)."""
+        try:
+            as_str = str(value)
+        except Exception:
+            return
+        if keyword.iskeyword(as_str):
+            warnings.warn(
+                f"{context} '{value}' is a Python keyword; using it as an identifier may cause unexpected behavior.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     def add_edges_from(
         self, edges: List[Tuple[T, T] | Tuple[T, T, int]], **attr: Any

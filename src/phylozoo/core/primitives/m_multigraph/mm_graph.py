@@ -5,6 +5,8 @@ This module provides the MixedMultiGraph class for working with mixed multi-grap
 """
 
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, TYPE_CHECKING
+import warnings
+import keyword
 
 import networkx as nx
 
@@ -162,6 +164,20 @@ class MixedMultiGraph:
                     self.add_directed_edge(u, v, key=key)
                 else:
                     raise ValueError(f"Invalid edge format: {edge}")
+
+    @staticmethod
+    def _warn_on_keyword(value: Any, context: str) -> None:
+        """Warn if value is a Python keyword (e.g., None, True, False)."""
+        try:
+            as_str = str(value)
+        except Exception:
+            return
+        if keyword.iskeyword(as_str):
+            warnings.warn(
+                f"{context} '{value}' is a Python keyword; using it as an identifier may cause unexpected behavior.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     # ========== NetworkX Compatibility Methods ==========
 
@@ -840,6 +856,12 @@ class MixedMultiGraph:
         >>> G.add_undirected_edge(1, 2)  # This removes the directed edges
         >>> G.add_directed_edge(1, 2)  # This removes the undirected edge
         """
+        # Warn on Python keyword identifiers
+        self._warn_on_keyword(u, "Node id")
+        self._warn_on_keyword(v, "Node id")
+        if key is not None:
+            self._warn_on_keyword(key, "Edge key")
+
         # Ensure nodes exist
         if u not in self._undirected:
             self._undirected.add_node(u)
@@ -1041,6 +1063,12 @@ class MixedMultiGraph:
         >>> G.add_directed_edge(1, 2)  # This removes the undirected edges
         >>> G.add_undirected_edge(1, 2)  # This removes the directed edge
         """
+        # Warn on Python keyword identifiers
+        self._warn_on_keyword(u, "Node id")
+        self._warn_on_keyword(v, "Node id")
+        if key is not None:
+            self._warn_on_keyword(key, "Edge key")
+
         # Ensure nodes exist
         if u not in self._directed:
             self._directed.add_node(u)

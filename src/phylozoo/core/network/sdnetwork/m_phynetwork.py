@@ -172,7 +172,7 @@ class MixedPhyNetwork:
     >>> net4.get_gamma(6, 4)
     0.4
     """
-    
+
     def __init__(
         self,
         directed_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
@@ -1091,7 +1091,7 @@ class MixedPhyNetwork:
         Return an iterator over neighbors of node v.
         
         Neighbors include nodes connected by both directed and undirected edges.
-        
+
         Parameters
         ----------
         v : T
@@ -1280,7 +1280,7 @@ class MixedPhyNetwork:
     def __repr__(self) -> str:
         """
         Return string representation of the network.
-        
+
         Returns
         -------
         str
