@@ -72,13 +72,15 @@ class TestMinimalValidNetworks:
     def test_single_directed_edge_network(self) -> None:
         """Test network with hybrid node (indegree >= 2, total_degree = indegree + 1)."""
         # Hybrid node 2 has indegree 2 (from 1 and 3), total_degree 3 (outgoing to 4)
+        # Connect nodes 1 and 3 via undirected edge to form single source component
+        # Add extra edges to nodes 1 and 3 to ensure degree >= 3
         net = SemiDirectedPhyNetwork(
             directed_edges=[(1, 2), (3, 2)],
-            undirected_edges=[(2, 4)],
-            taxa={4: "A"}
+            undirected_edges=[(1, 3), (1, 5), (3, 6), (2, 4)],
+            taxa={4: "A", 5: "B", 6: "C"}
         )
-        assert net.number_of_nodes() == 4
-        assert net.number_of_edges() == 3
+        assert net.number_of_nodes() == 6
+        assert net.number_of_edges() == 6
         assert 2 in net.hybrid_nodes
 
 
@@ -114,13 +116,14 @@ class TestNetworksWithHybrids:
         """Test network with single hybrid node."""
         # Hybrid node 4: indegree 2 (from 5, 6), total_degree 3 (outgoing to 2)
         # Nodes 5 and 6 need degree >= 3, so add more edges
+        # Connect nodes 5 and 6 via undirected edge to form single source component
         net = SemiDirectedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
-            undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
+            undirected_edges=[(5, 6), (4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
         )
         assert net.number_of_nodes() == 8
-        assert net.number_of_edges() == 7
+        assert net.number_of_edges() == 8
         assert 4 in net.hybrid_nodes
         assert len(net.hybrid_nodes) > 0  # Has hybrid nodes, so not a tree
 
@@ -129,13 +132,14 @@ class TestNetworksWithHybrids:
         # Hybrid node 5: indegree 2 (from 7, 8), total_degree 3 (outgoing to 4)
         # Hybrid node 4: indegree 2 (from 5, 6), total_degree 3 (outgoing to 1 only)
         # Nodes 6, 7, 8, 9 need degree >= 3
-        # Connect node 9 to the network via node 6
+        # Connect nodes 6, 7, 8 via undirected edges to form single source component
         net = SemiDirectedPhyNetwork(
             directed_edges=[
                 (7, 5), (8, 5),  # Hybrid node 5
                 (5, 4), (6, 4)   # Hybrid node 4
             ],
             undirected_edges=[
+                (6, 7), (7, 8),  # Connect source nodes
                 (4, 1), (6, 11), (6, 12), (6, 9), (7, 13), (7, 14), (8, 15), (8, 16), (9, 2), (9, 3), (9, 17)
             ],
             taxa={1: "A", 2: "B", 3: "C", 11: "D", 12: "E", 13: "F", 14: "G", 15: "H", 16: "I", 17: "J"}
@@ -152,9 +156,10 @@ class TestSemiDirectedConstraints:
     def test_all_hybrid_edges_directed(self) -> None:
         """Test that all hybrid edges are directed."""
         # Nodes 5 and 6 need degree >= 3
+        # Connect nodes 5 and 6 via undirected edge to form single source component
         net = SemiDirectedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
-            undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
+            undirected_edges=[(5, 6), (4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
         )
         # All hybrid edges should be directed
@@ -164,9 +169,10 @@ class TestSemiDirectedConstraints:
     def test_all_non_hybrid_edges_undirected(self) -> None:
         """Test that all non-hybrid edges are undirected."""
         # Nodes 5 and 6 need degree >= 3
+        # Connect nodes 5 and 6 via undirected edge to form single source component
         net = SemiDirectedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
-            undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
+            undirected_edges=[(5, 6), (4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
         )
         # All tree edges should be undirected
@@ -176,9 +182,10 @@ class TestSemiDirectedConstraints:
     def test_validation_passes_valid_semi_directed(self) -> None:
         """Test that valid semi-directed network passes validation."""
         # Nodes 5 and 6 need degree >= 3
+        # Connect nodes 5 and 6 via undirected edge to form single source component
         net = SemiDirectedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
-            undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
+            undirected_edges=[(5, 6), (4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
         )
         # Validation should pass (SemiDirectedPhyNetwork doesn't raise validity warning)

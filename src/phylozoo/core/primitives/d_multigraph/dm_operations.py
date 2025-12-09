@@ -194,7 +194,7 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: Op
     Parameters
     ----------
     graph : DirectedMultiGraph
-        The directed multigraph to modify.
+        The directed multigraph to modify. **This function modifies the graph in place.**
     node : T
         The degree-2 node to suppress.
     merged_attrs : Optional[Dict[str, Any]], optional

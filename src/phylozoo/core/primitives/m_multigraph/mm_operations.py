@@ -477,7 +477,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: Optio
     Parameters
     ----------
     graph : MixedMultiGraph
-        The mixed multigraph to modify.
+        The mixed multigraph to modify. **This function modifies the graph in place.**
     node : T
         The degree-2 node to suppress.
     merged_attrs : Optional[Dict[str, Any]], optional

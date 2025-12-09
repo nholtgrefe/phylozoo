@@ -15,6 +15,7 @@ from .mm_operations import (
     identify_node_set,
     source_components,
     orient_away_from_vertex,
+    suppress_degree2_node,
 )
 # Import conversion functions for convenience
 from .mm_conversions import (
@@ -33,6 +34,7 @@ __all__ = [
     "identify_node_set",
     "source_components",
     "orient_away_from_vertex",
+    "suppress_degree2_node",
     "graph_to_mixedmultigraph",
     "multigraph_to_mixedmultigraph",
     "multidigraph_to_mixedmultigraph",

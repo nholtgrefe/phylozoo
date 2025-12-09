@@ -28,11 +28,11 @@ class MixedPhyNetwork:
     A MixedPhyNetwork can be obtained from a directed phylogenetic LSA (Least Stable
     Ancestor) network by:
     
-    1. Suppressing the outdegree-2 root node (if it exists)
-    2. Undirecting all non-hybrid edges
-    3. Optionally undirecting all hybrid edges for selected hybrid nodes
+    1. Undirecting all non-hybrid edges
+    2. Optionally undirecting all hybrid edges for selected hybrid nodes
        (i.e., if one hybrid edge is undirected, all partner hybrid edges are undirected)
-    
+    3. Suppressing degree-2 nodes
+
     The network consists of:
     
     - **Leaf nodes**: Nodes with no outgoing directed edges, each with a taxon label

@@ -13,6 +13,7 @@ from .dm_operations import (
     connected_components,
     identify_two_nodes,
     identify_node_set,
+    suppress_degree2_node,
 )
 # Import conversion functions for convenience
 from .dm_conversions import (
@@ -27,6 +28,7 @@ __all__ = [
     "connected_components",
     "identify_two_nodes",
     "identify_node_set",
+    "suppress_degree2_node",
     "digraph_to_directedmultigraph",
     "multidigraph_to_directedmultigraph",
 ]
