@@ -10,4 +10,4 @@ Validate MixedPhyNetwork (perhaps remove the second condition from our paper), o
 Use validation manager within methods (such as subnetworks)
 Allow single node networks
 Optimize code
-Imrpove folder structure
+reconsider/standardize imports

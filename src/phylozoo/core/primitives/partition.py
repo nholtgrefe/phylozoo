@@ -374,7 +374,7 @@ class Partition:
                 return part
         raise ValueError(f"Element {element} not found in partition")
     
-    def subpartitions(self, size: int = 4) -> List['Partition']:
+    def subpartitions(self, size: int = 4) -> Iterator['Partition']:
         """
         Generate all subpartitions of a specified size.
         
@@ -386,46 +386,44 @@ class Partition:
         size : int, optional
             Number of parts to include in each subpartition, by default 4.
         
-        Returns
-        -------
-        List[Partition]
-            List of all subpartitions of the specified size.
+        Yields
+        ------
+        Partition
+            Subpartitions of the specified size.
         
         Examples
         --------
         >>> partition = Partition([{1}, {2}, {3}, {4}, {5}])
-        >>> subparts = partition.subpartitions(size=2)
+        >>> subparts = list(partition.subpartitions(size=2))
         >>> len(subparts)
         10  # C(5,2) = 10
         """
-        subparts = self._k_combinations(list(self._parts), size)
-        return [Partition([set(part) for part in subpart]) for subpart in subparts]
+        for comb in itertools.combinations(self._parts, size):
+            yield Partition([set(part) for part in comb])
     
-    def representative_partitions(self) -> List['Partition']:
+    def representative_partitions(self) -> Iterator['Partition']:
         """
         Generate all partitions with exactly one element per part.
         
         For each part in the current partition, selects exactly one element,
         creating a new partition where each part is a singleton set.
         
-        Returns
-        -------
-        List[Partition]
-            List of all representative partitions.
+        Yields
+        ------
+        Partition
+            Representative partitions with exactly one element per part.
         
         Examples
         --------
         >>> partition = Partition([{1, 2}, {3, 4}])
-        >>> reps = partition.representative_partitions()
+        >>> reps = list(partition.representative_partitions())
         >>> len(reps)
         4  # 2 choices from first part * 2 choices from second part
         >>> reps[0]
         Partition([{1}, {3}])
         """
-        return [
-            Partition([{elt} for elt in comb])
-            for comb in itertools.product(*self._parts)
-        ]
+        for comb in itertools.product(*self._parts):
+            yield Partition([{elt} for elt in comb])
     
     def is_refinement(self, other: 'Partition') -> bool:
         """
@@ -468,26 +466,3 @@ class Partition:
                 return False
         return True
     
-    @staticmethod
-    def _k_combinations(structure: List[Any], k: int) -> List[List[Any]]:
-        """
-        Helper function: returns all combinations of size k from a given list.
-        
-        Parameters
-        ----------
-        structure : List[Any]
-            List to generate combinations from.
-        k : int
-            Size of combinations to generate.
-        
-        Returns
-        -------
-        List[List[Any]]
-            List of all combinations of size k.
-        
-        Examples
-        --------
-        >>> Partition._k_combinations([1, 2, 3], 2)
-        [[1, 2], [1, 3], [2, 3]]
-        """
-        return [list(comb) for comb in itertools.combinations(structure, k)]

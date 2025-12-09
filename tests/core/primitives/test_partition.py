@@ -310,27 +310,27 @@ class TestPartitionMethods:
     def test_subpartitions_size(self) -> None:
         """Test generating subpartitions of specified size."""
         partition = Partition([{1}, {2}, {3}, {4}])
-        subparts = partition.subpartitions(size=2)
+        subparts = list(partition.subpartitions(size=2))
         assert len(subparts) == 6  # C(4,2) = 6
 
     def test_subpartitions_all_parts(self) -> None:
         """Test that subpartitions of full size returns original partition."""
         partition = Partition([{1, 2}, {3, 4}])
-        subparts = partition.subpartitions(size=2)
+        subparts = list(partition.subpartitions(size=2))
         assert len(subparts) == 1
         assert subparts[0] == partition
 
     def test_subpartitions_size_one(self) -> None:
         """Test subpartitions of size 1."""
         partition = Partition([{1}, {2}, {3}])
-        subparts = partition.subpartitions(size=1)
+        subparts = list(partition.subpartitions(size=1))
         assert len(subparts) == 3
         assert all(len(p) == 1 for p in subparts)
 
     def test_subpartitions_size_zero(self) -> None:
         """Test subpartitions of size 0 returns partition with empty parts."""
         partition = Partition([{1}, {2}, {3}])
-        subparts = partition.subpartitions(size=0)
+        subparts = list(partition.subpartitions(size=0))
         # Size 0 combinations returns one empty combination, which is an empty partition
         assert len(subparts) == 1
         assert subparts[0] == Partition([])
@@ -338,26 +338,26 @@ class TestPartitionMethods:
     def test_subpartitions_size_too_large(self) -> None:
         """Test subpartitions with size larger than partition."""
         partition = Partition([{1}, {2}])
-        subparts = partition.subpartitions(size=5)
+        subparts = list(partition.subpartitions(size=5))
         assert len(subparts) == 0
 
     def test_representative_partitions(self) -> None:
         """Test generating representative partitions."""
         partition = Partition([{1, 2}, {3, 4}])
-        reps = partition.representative_partitions()
+        reps = list(partition.representative_partitions())
         assert len(reps) == 4  # 2 choices * 2 choices = 4
 
     def test_representative_partitions_singletons(self) -> None:
         """Test that representative partitions contain only singletons."""
         partition = Partition([{1, 2}, {3, 4}])
-        reps = partition.representative_partitions()
+        reps = list(partition.representative_partitions())
         for rep in reps:
             assert all(len(part) == 1 for part in rep)
 
     def test_representative_partitions_covers_all_combinations(self) -> None:
         """Test that representative partitions cover all combinations."""
         partition = Partition([{1, 2}, {3}])
-        reps = partition.representative_partitions()
+        reps = list(partition.representative_partitions())
         assert len(reps) == 2  # 2 choices * 1 choice = 2
         # Should have [{1}, {3}] and [{2}, {3}]
         expected = [

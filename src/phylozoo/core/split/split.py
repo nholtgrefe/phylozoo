@@ -32,8 +32,8 @@ class Split(Partition):
         First set of elements in the split.
     set2 : Set[T]
         Second set of elements in the split.
-    elements : Set[T]
-        Set containing all elements from both sides of the split.
+    elements : frozenset
+        Set containing all elements from both sides of the split (inherited from Partition).
     
     Raises
     ------
@@ -77,25 +77,13 @@ class Split(Partition):
         
         # Use canonical ordering from Partition to determine set1 and set2
         # Partition stores parts in canonical order, so we use that order
-        canonical_parts = list(self._parts)
-        set1_canonical = set(canonical_parts[0])
-        set2_canonical = set(canonical_parts[1])
+        parts_iter = iter(self._parts)
+        set1_canonical = set(next(parts_iter))
+        set2_canonical = set(next(parts_iter))
         
         # Set additional attributes using object.__setattr__ to bypass immutability
         object.__setattr__(self, 'set1', set1_canonical)
         object.__setattr__(self, 'set2', set2_canonical)
-    
-    @property
-    def elements(self) -> Set[T]:
-        """
-        Get the set of all elements in the split.
-        
-        Returns
-        -------
-        Set[T]
-            Set containing all elements from both sides of the split.
-        """
-        return self.set1 | self.set2
     
     def __repr__(self) -> str:
         """
@@ -106,7 +94,7 @@ class Split(Partition):
         str
             String representation.
         """
-        return f"Split({set(self.set1)}, {set(self.set2)})"
+        return f"Split({self.set1}, {self.set2})"
     
     def is_trivial(self) -> bool:
         """
@@ -164,7 +152,7 @@ class Split(Partition):
         if self.elements != other.elements:
             return False
         
-        # Check if one set of this split is a subset of one set of the other split
+        # Check all 4 compatibility cases with early returns
         # Case 1: self.set1 is subset of other.set1, so self.set2 is superset of other.set2
         if self.set1.issubset(other.set1) and other.set2.issubset(self.set2):
             return True

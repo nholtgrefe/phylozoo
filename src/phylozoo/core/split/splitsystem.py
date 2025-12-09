@@ -77,10 +77,9 @@ class SplitSystem:
         """
         if splits is None:
             splits = set()
-        elif isinstance(splits, list):
+        elif not isinstance(splits, set):
             splits = set(splits)
-        else:
-            splits = set(splits)
+        # If it's already a set, use it directly
         
         # Convert to frozenset for immutability
         splits_frozen = frozenset(splits)

@@ -114,8 +114,7 @@ class CircularSetOrdering(Partition):
         object.__setattr__(self, '_initialized', True)
         
         # Compute and store canonical ordering (lexicographically smallest rotation)
-        setorder_tuple = tuple(parts_frozen)
-        canonical = self._canonical_form(setorder_tuple)
+        canonical = self._canonical_form(tuple(parts_frozen))
         object.__setattr__(self, '_setorder', canonical)
     
     @property
@@ -377,7 +376,8 @@ class CircularSetOrdering(Partition):
         i = self._setorder.index(set1_frozen)
         j = self._setorder.index(set2_frozen)
         n = len(self._setorder)
-        return abs(i - j) == 1 or abs(i - j) == n - 1
+        diff = abs(i - j)
+        return diff == 1 or diff == n - 1
     
     def suborderings(self, size: int = 4) -> Iterator['CircularSetOrdering']:
         """
@@ -403,9 +403,8 @@ class CircularSetOrdering(Partition):
         >>> len(subs)
         10  # C(5,2) = 10 combinations
         """
-        sublists = self._k_combinations(list(self._setorder), size)
-        for sublist in sublists:
-            yield CircularSetOrdering([set(s) for s in sublist])
+        for comb in itertools.combinations(self._setorder, size):
+            yield CircularSetOrdering([set(s) for s in comb])
     
     def representative_orderings(self) -> Iterator['CircularOrdering']:
         """
@@ -668,9 +667,8 @@ class CircularOrdering(CircularSetOrdering):
         >>> len(subs)
         10  # C(5,2) = 10 combinations
         """
-        sublists = self._k_combinations(list(self._order), size)
-        for sublist in sublists:
-            yield CircularOrdering(sublist)
+        for comb in itertools.combinations(self._order, size):
+            yield CircularOrdering(list(comb))
     
     def to_circular_setordering(
         self, mapping: Optional[Dict[T, Set[T]]] = None
