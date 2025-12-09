@@ -12,8 +12,6 @@ from .core import (
     # Networks
     DirectedPhyNetwork,
     SemiDirectedPhyNetwork,
-    MixedMultiGraph,
-    DirectedMultiGraph,
     # Structures
     Split,
     SplitSystem,
@@ -61,8 +59,6 @@ __all__ = [
     # Core - Networks
     "DirectedPhyNetwork",
     "SemiDirectedPhyNetwork",
-    "MixedMultiGraph",
-    "DirectedMultiGraph",
     # Core - Structures
     "Split",
     "SplitSystem",

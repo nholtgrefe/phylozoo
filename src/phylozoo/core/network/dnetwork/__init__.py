@@ -4,7 +4,7 @@ Directed network module.
 This module provides classes for working with directed phylogenetic networks.
 """
 
-from .d_phynetwork import DirectedPhyNetwork
+from .base import DirectedPhyNetwork
 
 __all__ = [
     "DirectedPhyNetwork",

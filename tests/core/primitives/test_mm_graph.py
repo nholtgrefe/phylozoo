@@ -8,12 +8,8 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.primitives.m_multigraph import (
-    MixedMultiGraph,
-    graph_to_mixedmultigraph,
-    multigraph_to_mixedmultigraph,
-    multidigraph_to_mixedmultigraph,
-    directedmultigraph_to_mixedmultigraph,
+from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
+from phylozoo.core.primitives.m_multigraph.operations import (
     number_of_connected_components,
     is_connected,
     connected_components,
@@ -21,6 +17,12 @@ from phylozoo.core.primitives.m_multigraph import (
     identify_node_set,
     source_components,
     orient_away_from_vertex,
+)
+from phylozoo.core.primitives.m_multigraph.conversions import (
+    graph_to_mixedmultigraph,
+    multigraph_to_mixedmultigraph,
+    multidigraph_to_mixedmultigraph,
+    directedmultigraph_to_mixedmultigraph,
 )
 
 

@@ -4,8 +4,8 @@ Tests for suppress_degree2_node function in dm_operations.
 
 import pytest
 
-from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
-from phylozoo.core.primitives.d_multigraph.dm_operations import suppress_degree2_node
+from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+from phylozoo.core.primitives.d_multigraph.operations import suppress_degree2_node
 
 
 class TestSuppressDegree2NodeValid:

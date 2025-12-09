@@ -8,10 +8,8 @@ function, including basic functionality, edge cases, error handling, and complex
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.primitives.m_multigraph import (
-    MixedMultiGraph,
-    orient_away_from_vertex,
-)
+from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
+from phylozoo.core.primitives.m_multigraph.operations import orient_away_from_vertex
 from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 
 

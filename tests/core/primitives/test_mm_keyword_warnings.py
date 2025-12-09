@@ -4,7 +4,7 @@ Tests for keyword identifier warnings in MixedMultiGraph.
 
 import pytest
 
-from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
 
 
 def test_keyword_node_id_warns_mm() -> None:

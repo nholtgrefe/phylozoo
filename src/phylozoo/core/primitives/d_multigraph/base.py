@@ -57,7 +57,7 @@ class DirectedMultiGraph:
     >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
     >>> key1 != key2
     True
-    >>> from phylozoo.core.primitives.d_multigraph.dm_operations import number_of_connected_components
+    >>> from phylozoo.core.primitives.d_multigraph.operations import number_of_connected_components
     >>> number_of_connected_components(G)
     1
     >>> # Initialize with edges (including attributes)

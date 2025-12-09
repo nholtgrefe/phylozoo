@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING
 import networkx as nx
 
 if TYPE_CHECKING:
-    from ..d_multigraph.dm_graph import DirectedMultiGraph
-    from .mm_graph import MixedMultiGraph
+    from ..d_multigraph import DirectedMultiGraph
+    from . import MixedMultiGraph
 else:
-    from .mm_graph import MixedMultiGraph
+    from . import MixedMultiGraph
 
 
 def graph_to_mixedmultigraph(graph: nx.Graph) -> 'MixedMultiGraph':

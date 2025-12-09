@@ -11,11 +11,11 @@ from collections import deque
 import networkx as nx
 
 if TYPE_CHECKING:
-    from ..d_multigraph.dm_graph import DirectedMultiGraph
-    from .mm_graph import MixedMultiGraph
+    from ..d_multigraph import DirectedMultiGraph
+    from . import MixedMultiGraph
 else:
-    from .mm_graph import MixedMultiGraph
-    from ..d_multigraph.dm_graph import DirectedMultiGraph
+    from . import MixedMultiGraph
+    from ..d_multigraph import DirectedMultiGraph
 
 T = TypeVar('T')
 
@@ -36,7 +36,7 @@ def number_of_connected_components(graph: 'MixedMultiGraph') -> int:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -64,7 +64,7 @@ def is_connected(graph: 'MixedMultiGraph') -> bool:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -92,7 +92,7 @@ def connected_components(graph: 'MixedMultiGraph') -> Iterator[Set[T]]:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -122,7 +122,7 @@ def identify_two_nodes(graph: 'MixedMultiGraph', u: T, v: T) -> None:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_directed_edge(1, 2)
     0
@@ -164,7 +164,7 @@ def identify_node_set(graph: 'MixedMultiGraph', nodes: List[T] | Set[T]) -> None
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -207,7 +207,7 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -300,8 +300,8 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
-    >>> from phylozoo.core.primitives.m_multigraph.mm_operations import orient_away_from_vertex
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.operations import orient_away_from_vertex
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
@@ -495,7 +495,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: Optio
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0

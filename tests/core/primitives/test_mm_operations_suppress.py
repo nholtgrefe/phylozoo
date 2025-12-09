@@ -4,8 +4,8 @@ Tests for suppress_degree2_node function in mm_operations.
 
 import pytest
 
-from phylozoo.core.primitives.m_multigraph.mm_graph import MixedMultiGraph
-from phylozoo.core.primitives.m_multigraph.mm_operations import suppress_degree2_node
+from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+from phylozoo.core.primitives.m_multigraph.operations import suppress_degree2_node
 
 
 class TestSuppressDegree2NodeValidCombinations:

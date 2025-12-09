@@ -11,7 +11,7 @@ import keyword
 import networkx as nx
 
 if TYPE_CHECKING:
-    from ..d_multigraph.dm_graph import DirectedMultiGraph
+    from ..d_multigraph import DirectedMultiGraph
 
 T = TypeVar('T')
 
@@ -77,7 +77,7 @@ class MixedMultiGraph:
     0
     >>> G.add_undirected_edge(2, 3)  # Parallel undirected edge
     1
-    >>> from phylozoo.core.primitives.m_multigraph.mm_operations import number_of_connected_components
+    >>> from phylozoo.core.primitives.m_multigraph.operations import number_of_connected_components
     >>> number_of_connected_components(G)
     1
     >>> # Initialize with edges (including attributes)
@@ -89,7 +89,7 @@ class MixedMultiGraph:
     4
     >>> # Create from NetworkX graphs
     >>> import networkx as nx
-    >>> from phylozoo.core.primitives.m_multigraph.mm_conversions import graph_to_mixedmultigraph
+    >>> from phylozoo.core.primitives.m_multigraph.conversions import graph_to_mixedmultigraph
     >>> nx_g = nx.Graph()
     >>> nx_g.add_edge(1, 2, weight=1.0)
     >>> G3 = graph_to_mixedmultigraph(nx_g)

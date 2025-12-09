@@ -4,7 +4,7 @@ Tests for keyword identifier warnings in DirectedMultiGraph.
 
 import pytest
 
-from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
 
 
 def test_keyword_node_id_warns_dm() -> None:

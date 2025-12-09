@@ -9,12 +9,12 @@ import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
-from ...primitives.m_multigraph.mm_operations import (
+from ...primitives.m_multigraph.operations import (
     is_connected,
     orient_away_from_vertex,
     source_components,
 )
-from .m_phynetwork import MixedPhyNetwork
+from .base import MixedPhyNetwork
 
 T = TypeVar('T')
 
@@ -314,7 +314,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             
             # Local imports to avoid circular dependencies
             from ...network.dnetwork.operations import to_sd_network
-            from ...network.dnetwork.d_phynetwork import DirectedPhyNetwork
+            from ...network.dnetwork import DirectedPhyNetwork
             from ...network.dnetwork.classifications import is_LSA_network
             
             # Step 2: Pick a non-leaf vertex r from the source component
@@ -552,5 +552,4 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             f"taxa={n_taxa}, "
             f"taxa_list=[{taxa_list_str}])"
         )
-
 

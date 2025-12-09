@@ -6,7 +6,7 @@ the package.
 """
 
 from .network import DirectedPhyNetwork, SemiDirectedPhyNetwork
-from .primitives import Partition, CircularOrdering, CircularSetOrdering, MixedMultiGraph, DirectedMultiGraph
+from .primitives import Partition, CircularOrdering, CircularSetOrdering
 from .split import Split, SplitSystem
 from .distance import DistanceMatrix
 from .sequence import MSA
@@ -15,8 +15,6 @@ __all__ = [
     # Networks
     "DirectedPhyNetwork",
     "SemiDirectedPhyNetwork",
-    "MixedMultiGraph",
-    "DirectedMultiGraph",
     # Split structures
     "Split",
     "SplitSystem",

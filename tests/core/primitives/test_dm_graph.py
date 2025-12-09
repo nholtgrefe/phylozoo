@@ -8,15 +8,17 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import pytest
 from typing import Dict, List, Set, Tuple
 
-from phylozoo.core.primitives.d_multigraph import (
-    DirectedMultiGraph,
-    digraph_to_directedmultigraph,
-    multidigraph_to_directedmultigraph,
+from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+from phylozoo.core.primitives.d_multigraph.operations import (
     number_of_connected_components,
     is_connected,
     connected_components,
     identify_two_nodes,
     identify_node_set,
+)
+from phylozoo.core.primitives.d_multigraph.conversions import (
+    digraph_to_directedmultigraph,
+    multidigraph_to_directedmultigraph,
 )
 
 

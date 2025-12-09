@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, TypeVar
 
 import networkx as nx
 
-from .dm_graph import DirectedMultiGraph
+from . import DirectedMultiGraph
 
 T = TypeVar('T')
 
@@ -30,7 +30,7 @@ def number_of_connected_components(graph: 'DirectedMultiGraph') -> int:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
@@ -58,7 +58,7 @@ def is_connected(graph: 'DirectedMultiGraph') -> bool:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
@@ -86,7 +86,7 @@ def connected_components(graph: 'DirectedMultiGraph') -> Iterator[Set[T]]:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
@@ -116,7 +116,7 @@ def identify_two_nodes(graph: 'DirectedMultiGraph', u: T, v: T) -> None:
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
@@ -152,7 +152,7 @@ def identify_node_set(graph: 'DirectedMultiGraph', nodes: List[T] | Set[T]) -> N
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
@@ -212,7 +212,7 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: Op
     
     Examples
     --------
-    >>> from phylozoo.core.primitives.d_multigraph.dm_graph import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0

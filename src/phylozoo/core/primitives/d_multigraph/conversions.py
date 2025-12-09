@@ -6,7 +6,7 @@ This module provides functions for converting NetworkX graphs to DirectedMultiGr
 
 import networkx as nx
 
-from .dm_graph import DirectedMultiGraph
+from . import DirectedMultiGraph
 
 
 def digraph_to_directedmultigraph(graph: nx.DiGraph) -> 'DirectedMultiGraph':
