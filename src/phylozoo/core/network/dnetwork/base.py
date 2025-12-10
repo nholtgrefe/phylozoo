@@ -21,7 +21,7 @@ class DirectedPhyNetwork:
     """
     A directed phylogenetic network.
     
-    A DirectedPhyNetwork is a weakly connected, directed acyclic graph (DAG) representing 
+    A DirectedPhyNetwork is a weakly connected, directed acyclic multi-graph (DAG) representing 
     a phylogenetic network structure. It consists of:
     - **Root node**: Exactly one node with in-degree 0
     - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
@@ -203,76 +203,113 @@ class DirectedPhyNetwork:
         self._node_to_label: Dict[T, str] = {}
         self._label_to_node: Dict[str, T] = {}
         
-        # Process nodes parameter (add nodes and extract labels)
-        node_labels: Dict[T, str] = {}  # All labels from nodes parameter
-        if nodes:
-            for node_spec in nodes:
-                if isinstance(node_spec, tuple) and len(node_spec) == 2:
-                    # Tuple format: (node_id, {'label': 'label_name', ...})
-                    node_id, attrs = node_spec
-                    if not isinstance(attrs, dict):
-                        raise ValueError(
-                            f"Node tuple must be (node_id, dict_of_attributes), got {node_spec}"
-                        )
-                    
-                    # Add node if it doesn't exist, with all attributes
-                    if node_id not in self._graph:
-                        self._graph.add_node(node_id, **attrs)
-                    else:
-                        # Node exists, update attributes
-                        for key, value in attrs.items():
-                            self._graph._graph.nodes[node_id][key] = value
-                    
-                    # Extract label if provided (for later processing)
-                    if 'label' in attrs:
-                        node_labels[node_id] = attrs['label']
-                else:
-                    # Simple node ID
-                    node_id = node_spec
-                    if node_id not in self._graph:
-                        self._graph.add_node(node_id)
+        # Step 1: Add all nodes to the graph (including attributes like label)
+        # Labels are validated and added to dictionaries during this step
+        self._add_nodes_to_graph(nodes)
         
-        # Initialize labels: use labels from nodes parameter, auto-label uncovered leaves
-        self._initialize_labels_from_nodes(node_labels)
+        # Step 2: Auto-label any uncovered leaves
+        # All leaves are guaranteed to have labels after this step
+        self._auto_label_unlabeled_leaves()
         
-        # Validate the network
+        # Step 3: Validate the network structure
         if not self.validate():
             raise ValueError("Network validation failed")
     
-    def _initialize_labels_from_nodes(
-        self,
-        node_labels: Dict[T, str],
-    ) -> None:
+    def _add_label_to_dicts(self, node_id: T, label: str) -> None:
         """
-        Initialize node labels from nodes parameter and auto-label uncovered leaves.
+        Add a node-label mapping to both label dictionaries with validation.
         
-        This method processes labels specified in the nodes parameter, then auto-labels
-        any leaves that don't have labels.
+        This helper method validates the label (string type, uniqueness) and adds
+        it to both _node_to_label and _label_to_node dictionaries. This is the
+        primary validation point for label constraints.
         
         Parameters
         ----------
-        node_labels : Dict[T, str]
-            Mapping from node IDs to labels (from nodes parameter).
+        node_id : T
+            Node identifier.
+        label : str
+            Label to add. Must be a string and unique.
         
         Raises
         ------
         ValueError
-            If labels are not unique.
+            If label is not a string, or if the label is already used by a different node.
         """
-        # Identify all leaves (nodes with no outgoing edges)
+        # Validate string type
+        if not isinstance(label, str):
+            raise ValueError(
+                f"Node {node_id} has non-string label '{label}' (type: {type(label).__name__}). "
+                f"Labels must be strings. For non-string metadata, store it under a "
+                f"different node attribute instead of 'label'."
+            )
+        
+        # Check for duplicate labels
+        if label in self._label_to_node and self._label_to_node[label] != node_id:
+            existing_node = self._label_to_node[label]
+            raise ValueError(
+                f"Label '{label}' is already used by node {existing_node}. "
+                f"Each label must be unique."
+            )
+        
+        # Add mapping
+        self._node_to_label[node_id] = label
+        self._label_to_node[label] = node_id
+    
+    def _add_nodes_to_graph(
+        self,
+        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]],
+    ) -> None:
+        """
+        Add all nodes to the underlying graph with their attributes.
+        
+        If a node has a 'label' attribute, it is immediately validated and added to
+        the label dictionaries using _add_label_to_dicts. Label validation (string
+        type and uniqueness) is performed during this step.
+        
+        Parameters
+        ----------
+        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]]
+            Node specifications as simple IDs or (node_id, attr_dict) tuples.
+        
+        Raises
+        ------
+        ValueError
+            If a node tuple does not provide a dict of attributes, or if duplicate labels are found.
+        """
+        if not nodes:
+            return
+        
+        for node_spec in nodes:
+            if isinstance(node_spec, tuple) and len(node_spec) == 2:
+                node_id, attrs = node_spec
+                if not isinstance(attrs, dict):
+                    raise ValueError(
+                        f"Node tuple must be (node_id, dict_of_attributes), got {node_spec}"
+                    )
+                self._graph.add_node(node_id, **attrs)
+                # If label is present, validate and add it to dictionaries immediately
+                if 'label' in attrs:
+                    self._add_label_to_dicts(node_id, attrs['label'])
+            else:
+                node_id = node_spec  # type: ignore[assignment]
+                self._graph.add_node(node_id)
+    
+    def _auto_label_unlabeled_leaves(self) -> None:
+        """
+        Auto-label any leaves that do not yet have labels.
+        
+        Generates labels based on node IDs, ensuring no duplicate labels. This method
+        guarantees that all leaves have labels after execution. Labels are validated
+        (string type and uniqueness) via _add_label_to_dicts.
+        
+        The graph node attribute is also updated to store the label.
+        """
         all_leaves: Set[T] = self.leaves
+        labeled_leaves = {leaf for leaf in all_leaves if leaf in self._node_to_label}
+        uncovered_leaves = all_leaves - labeled_leaves
         
-        # Set labels from nodes parameter (for both leaves and internal nodes)
-        for node_id, label in node_labels.items():
-            self._set_label(node_id, label)
-        
-        # Auto-label uncovered leaves
-        covered_leaves = {leaf for leaf in all_leaves if leaf in node_labels}
-        uncovered_leaves = all_leaves - covered_leaves
         for leaf_id in uncovered_leaves:
-            # Auto-generate label based on node_id
             label = str(leaf_id)
-            # If label already exists (e.g., from nodes parameter), make it unique
             if label in self._label_to_node:
                 counter = 1
                 unique_label = f"{label}_{counter}"
@@ -280,10 +317,10 @@ class DirectedPhyNetwork:
                     counter += 1
                     unique_label = f"{label}_{counter}"
                 label = unique_label
-            self._set_label(leaf_id, label)
-        
-        # Note: Internal nodes without explicit labels remain unlabeled
-        # Only leaves are guaranteed to have labels (taxa)
+            # Add to dictionaries using helper (validates string type and uniqueness),
+            # then update graph attribute
+            self._add_label_to_dicts(leaf_id, label)
+            self._graph._graph.nodes[leaf_id]['label'] = label
     
     def _validate_bootstrap_constraints(self) -> None:
         """
@@ -483,17 +520,28 @@ class DirectedPhyNetwork:
         -----
         This method performs comprehensive validation of the network structure
         and edge attributes. See class docstring for detailed validation rules.
-        Empty networks (no nodes) are considered valid.
-        Single-node networks (where root and leaf are the same node) are also valid.
+        Empty networks (no nodes) are considered valid but will raise a warning.
+        Single-node networks (where root and leaf are the same node) are also valid
+        but will raise a warning.
         """
         # Empty networks are valid
         if self.number_of_nodes() == 0:
+            warnings.warn(
+                "Empty network (no nodes) detected. While valid, this may not be useful for phylogenetic analysis.",
+                UserWarning,
+                stacklevel=2
+            )
             return True
 
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
             if has_self_loops(self._graph):
                 raise ValueError("Self-loops are not allowed in DirectedPhyNetwork.")
+            warnings.warn(
+                "Single-node network detected. While valid, this may not be useful for phylogenetic analysis.",
+                UserWarning,
+                stacklevel=2
+            )
             return True
         
         # 1. Check that network is connected (weakly connected)
@@ -609,58 +657,6 @@ class DirectedPhyNetwork:
         1
         """
         return self._label_to_node.get(label)
-    
-    def _set_label(self, node_id: T, label: str) -> None:
-        """
-        Set or update the label for a node (private method for initialization only).
-        
-        Each label must be unique across all nodes. If the label is already
-        used by a different node, a ValueError is raised.
-        
-        Parameters
-        ----------
-        node_id : T
-            Node identifier.
-        label : str
-            Label to set. Must be unique across all nodes.
-        
-        Raises
-        ------
-        ValueError
-            If node_id is not in the network, or if the label is already
-            used by a different node.
-        """
-        if not isinstance(label, str):
-            raise ValueError(
-                "Label must be a string. For non-string metadata, store it under a "
-                "different node attribute instead of 'label'."
-            )
-        if node_id not in self._graph:
-            raise ValueError(f"Node {node_id} is not in the network")
-        
-        old_label = self._node_to_label.get(node_id)
-        
-        # Check if label is already used by a different node
-        # Allow same node to update its own label
-        if label in self._label_to_node:
-            existing_node = self._label_to_node[label]
-            if existing_node != node_id:
-                raise ValueError(
-                    f"Label '{label}' is already used by node {existing_node}. "
-                    f"Each label must be unique."
-                )
-            # Same node, same label - ensure graph attribute is set and return
-            self._graph._graph.nodes[node_id]['label'] = label
-            return
-        
-        # Update mappings
-        self._node_to_label[node_id] = label
-        if old_label and old_label in self._label_to_node and old_label != label:
-            del self._label_to_node[old_label]
-        self._label_to_node[label] = node_id
-        
-        # Also set label in the underlying graph as a node attribute
-        self._graph._graph.nodes[node_id]['label'] = label
     
     # ========== Edge Attribute Access (Read-Only) ==========
     

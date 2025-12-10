@@ -2,6 +2,8 @@
 Tests for LSA-related utilities on DirectedPhyNetwork.
 """
 
+import warnings
+
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork
@@ -45,9 +47,11 @@ class TestFindLSANode:
         """
         Empty network has no LSA node.
         """
-        with pytest.warns(UserWarning, match="empty edges list"):
-            with pytest.raises(ValueError, match="empty network"):
-                find_lsa_node(DirectedPhyNetwork(edges=[]))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
+            with pytest.warns(UserWarning, match="empty edges list"):
+                with pytest.raises(ValueError, match="empty network"):
+                    find_lsa_node(DirectedPhyNetwork(edges=[]))
 
 
 class TestToLSANetwork:
@@ -99,8 +103,10 @@ class TestIsLSANetwork:
         """
         Empty network counts as LSA network.
         """
-        with pytest.warns(UserWarning, match="empty edges list"):
-            net = DirectedPhyNetwork(edges=[])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
+            with pytest.warns(UserWarning, match="empty edges list"):
+                net = DirectedPhyNetwork(edges=[])
         assert is_LSA_network(net) is True
 
     def test_root_is_lsa_true(self) -> None:

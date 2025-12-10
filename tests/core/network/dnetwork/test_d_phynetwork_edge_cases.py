@@ -29,7 +29,8 @@ class TestEmptyNetworkEdgeCases:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(edges=[])
-        assert net.validate() is True
+        with pytest.warns(UserWarning, match="Empty network.*no nodes.*detected"):
+            assert net.validate() is True
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""

@@ -23,12 +23,14 @@ class TestEmptyNetwork:
 
     def test_empty_network_with_warning(self) -> None:
         """Test that empty network raises a warning."""
-        with pytest.warns(UserWarning, match="empty edges list"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore the init warning
             net = DirectedPhyNetwork(edges=[])
         
         assert net.number_of_nodes() == 0
         assert net.number_of_edges() == 0
-        assert net.validate() is True  # Empty networks are valid
+        with pytest.warns(UserWarning, match="Empty network.*no nodes.*detected"):
+            assert net.validate() is True  # Empty networks are valid
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -48,6 +50,17 @@ class TestEmptyNetwork:
 
 class TestMinimalValidNetworks:
     """Test cases for minimal valid network structures."""
+
+    def test_single_node_network_with_warning(self) -> None:
+        """Test that single-node network raises a warning."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore the init warning
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        assert net.number_of_nodes() == 1
+        assert net.number_of_edges() == 0
+        with pytest.warns(UserWarning, match="Single-node network detected"):
+            assert net.validate() is True  # Single-node networks are valid
 
     def test_single_edge_network(self) -> None:
         """Test network with single edge (root -> leaf)."""
@@ -409,10 +422,10 @@ class TestInvalidInitialization:
             )
 
     def test_leaf_in_internal_node_labels(self) -> None:
-        """Test that leaf in internal_node_labels raises ValueError."""
+        """Test that duplicate labels raise ValueError."""
         with pytest.raises(ValueError, match="already used"):
             DirectedPhyNetwork(
-                edges=[(1, 2)],
+                edges=[(1, 2), (1, 3)],
                 nodes=[(2, {"label": "A"}), (3, {"label": "A"})],  # Duplicate label
             )
 
@@ -436,11 +449,13 @@ class TestInvalidInitialization:
 
     def test_self_loop_disallowed(self) -> None:
         """Test that self-loops are rejected during validation."""
-        with pytest.raises(ValueError, match="Self-loops are not allowed"):
-            DirectedPhyNetwork(
-                edges=[(1, 1)],
-                nodes=[(1, {"label": "A"})],
-            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore single-node warning
+            with pytest.raises(ValueError, match="Self-loops are not allowed"):
+                DirectedPhyNetwork(
+                    edges=[(1, 1)],
+                    nodes=[(1, {"label": "A"})],
+                )
 
     def test_invalid_internal_labels_format(self) -> None:
         """Test that invalid internal_node_labels format raises ValueError."""
