@@ -434,6 +434,14 @@ class TestInvalidInitialization:
                 nodes="invalid",  # type: ignore
             )
 
+    def test_self_loop_disallowed(self) -> None:
+        """Test that self-loops are rejected during validation."""
+        with pytest.raises(ValueError, match="Self-loops are not allowed"):
+            DirectedPhyNetwork(
+                edges=[(1, 1)],
+                nodes=[(1, {"label": "A"})],
+            )
+
     def test_invalid_internal_labels_format(self) -> None:
         """Test that invalid internal_node_labels format raises ValueError."""
         with pytest.raises(ValueError, match="must be .*dict"):

@@ -12,7 +12,7 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Uni
 import networkx as nx
 
 from ...primitives.d_multigraph import DirectedMultiGraph
-from ...primitives.d_multigraph.operations import is_connected
+from ...primitives.d_multigraph.operations import is_connected, has_self_loops
 
 T = TypeVar('T')
 
@@ -458,13 +458,14 @@ class DirectedPhyNetwork:
         
         Checks:
         1. Network is connected (weakly connected)
-        2. Directed acyclic graph (no directed cycles)
-        3. Single root node (exactly one node with in-degree 0)
-        4. Leaf nodes: all have in-degree 1 and out-degree 0
-        5. Internal nodes: all have either (in-degree 1 and out-degree >= 2) or
+        2. No self-loops
+        3. Directed acyclic graph (no directed cycles)
+        4. Single root node (exactly one node with in-degree 0)
+        5. Leaf nodes: all have in-degree 1 and out-degree 0
+        6. Internal nodes: all have either (in-degree 1 and out-degree >= 2) or
            (in-degree >= 2 and out-degree 1)
-        6. Bootstrap values: all bootstrap values must be in [0.0, 1.0]
-        7. Gamma constraints: gamma can only be set on hybrid edges, and if any gamma
+        7. Bootstrap values: all bootstrap values must be in [0.0, 1.0]
+        8. Gamma constraints: gamma can only be set on hybrid edges, and if any gamma
            is specified for a hybrid node, all incoming edges must have gamma values
            summing to 1.0
         
@@ -485,8 +486,14 @@ class DirectedPhyNetwork:
         Empty networks (no nodes) are considered valid.
         Single-node networks (where root and leaf are the same node) are also valid.
         """
-        # Empty networks and single-node networks are valid
-        if self.number_of_nodes() in [0,1]:
+        # Empty networks are valid
+        if self.number_of_nodes() == 0:
+            return True
+
+        # Single-node networks are valid only if they have no self-loops
+        if self.number_of_nodes() == 1:
+            if has_self_loops(self._graph):
+                raise ValueError("Self-loops are not allowed in DirectedPhyNetwork.")
             return True
         
         # 1. Check that network is connected (weakly connected)
@@ -494,6 +501,10 @@ class DirectedPhyNetwork:
             raise ValueError(
                 "Network is not connected. All nodes must be in a single weakly connected component."
             )
+        
+        # 2. Disallow self-loops
+        if has_self_loops(self._graph):
+            raise ValueError("Self-loops are not allowed in DirectedPhyNetwork.")
         
         # 3. Check for directed cycles (must be acyclic)
         if not nx.is_directed_acyclic_graph(self._graph._graph):
