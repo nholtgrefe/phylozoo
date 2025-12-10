@@ -5,6 +5,8 @@ This test suite provides comprehensive coverage of all MixedMultiGraph features,
 including edge cases, parallel edges, edge attributes, and larger graphs.
 """
 
+import warnings
+
 import pytest
 from typing import Dict, List, Set, Tuple
 
@@ -1729,4 +1731,117 @@ class TestLargerGraphs:
         # Check connectivity
         components = number_of_connected_components(G)
         print(f"After node removals, number of components: {components}")
+
+
+class TestKeywordWarnings:
+    """Test warnings for Python keyword identifiers on nodes and edge keys."""
+
+    def test_keyword_node_id_directed_warns(self) -> None:
+        """Directed edge with keyword node id should emit a warning."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="Python keyword"):
+            G.add_directed_edge("for", 2)
+        assert ("for", 2, 0) in list(G._directed.edges(keys=True))
+
+    def test_keyword_node_id_undirected_warns(self) -> None:
+        """Undirected edge with keyword node id should emit a warning."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="Python keyword"):
+            G.add_undirected_edge(1, "while")
+        assert (1, "while", 0) in list(G._undirected.edges(keys=True))
+
+    def test_keyword_edge_key_warns(self) -> None:
+        """Edge keys that are Python keywords should emit a warning."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="Python keyword"):
+            key = G.add_directed_edge(1, 2, key="class")
+        assert (1, 2, key) in list(G._directed.edges(keys=True))
+
+    def test_keyword_attribute_name_warns_directed_edge(self) -> None:
+        """Attribute names that are Python keywords should emit a warning for directed edges."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="Attribute name.*Python keyword"):
+            G.add_directed_edge(1, 2, **{"True": "yes"})
+        # Edge should still be added
+        assert (1, 2, 0) in list(G._directed.edges(keys=True))
+        # Attribute should be accessible
+        assert G._directed[1][2][0]["True"] == "yes"
+
+    def test_keyword_attribute_name_warns_undirected_edge(self) -> None:
+        """Attribute names that are Python keywords should emit a warning for undirected edges."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="Attribute name.*Python keyword"):
+            G.add_undirected_edge(1, 2, **{"False": "no"})
+        # Edge should still be added
+        assert (1, 2, 0) in list(G._undirected.edges(keys=True))
+        # Attribute should be accessible
+        assert G._undirected[1][2][0]["False"] == "no"
+
+    def test_keyword_attribute_name_warns_node(self) -> None:
+        """Attribute names that are Python keywords should emit a warning for nodes."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="Attribute name.*Python keyword"):
+            G.add_node(1, **{"None": "nothing"})
+        # Node should still be added
+        assert 1 in G
+        # Attribute should be accessible
+        assert G._undirected.nodes[1]["None"] == "nothing"
+
+    def test_non_keyword_attribute_name_no_warning(self) -> None:
+        """Non-keyword attribute names with keyword values should not warn (except None)."""
+        G = MixedMultiGraph()
+        # Using "yes" as attribute name (not a keyword) with True as value (keyword value)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            G.add_directed_edge(1, 2, yes=True)
+            G.add_undirected_edge(2, 3, no=False)
+        # Edges should be added
+        assert (1, 2, 0) in list(G._directed.edges(keys=True))
+        assert (2, 3, 0) in list(G._undirected.edges(keys=True))
+        # Attributes should be accessible
+        assert G._directed[1][2][0]["yes"] is True
+        assert G._undirected[2][3][0]["no"] is False
+
+    def test_none_attribute_value_warns_directed_edge(self) -> None:
+        """Attribute values that are None should emit a warning for directed edges."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword"):
+            G.add_directed_edge(1, 2, weight=None)
+        # Edge should still be added
+        assert (1, 2, 0) in list(G._directed.edges(keys=True))
+        # Attribute should be accessible
+        assert G._directed[1][2][0]["weight"] is None
+
+    def test_none_attribute_value_warns_undirected_edge(self) -> None:
+        """Attribute values that are None should emit a warning for undirected edges."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword"):
+            G.add_undirected_edge(1, 2, length=None)
+        # Edge should still be added
+        assert (1, 2, 0) in list(G._undirected.edges(keys=True))
+        # Attribute should be accessible
+        assert G._undirected[1][2][0]["length"] is None
+
+    def test_none_attribute_value_warns_node(self) -> None:
+        """Attribute values that are None should emit a warning for nodes."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword"):
+            G.add_node(1, label=None)
+        # Node should still be added
+        assert 1 in G
+        # Attribute should be accessible
+        assert G._undirected.nodes[1]["label"] is None
+
+    def test_none_attribute_value_multiple_warns(self) -> None:
+        """Multiple attributes with None values should each emit a warning."""
+        G = MixedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword") as record:
+            G.add_directed_edge(1, 2, weight=None, length=None)
+        # Should have two warnings (one for each None attribute)
+        assert len(record) == 2
+        # Edge should still be added
+        assert (1, 2, 0) in list(G._directed.edges(keys=True))
+        # Attributes should be accessible
+        assert G._directed[1][2][0]["weight"] is None
+        assert G._directed[1][2][0]["length"] is None
 

@@ -5,10 +5,10 @@ This module provides the DirectedMultiGraph class for working with directed mult
 """
 
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar
-import warnings
-import keyword
 
 import networkx as nx
+
+from phylozoo.utils.identifier_warnings import warn_on_keyword, warn_on_none_value
 
 T = TypeVar('T')
 
@@ -631,6 +631,13 @@ class DirectedMultiGraph:
         >>> 1 in G
         True
         """
+        # Warn on Python keyword identifiers
+        warn_on_keyword(v, "Node id")
+        # Warn on Python keyword attribute names and None values
+        for attr_name, attr_value in attr.items():
+            warn_on_keyword(attr_name, "Attribute name")
+            warn_on_none_value(attr_value, f"Attribute '{attr_name}'")
+        
         self._graph.add_node(v, **attr)
         self._combined.add_node(v, **attr)
 
@@ -736,10 +743,14 @@ class DirectedMultiGraph:
         True
         """
         # Warn on Python keyword identifiers
-        self._warn_on_keyword(u, "Node id")
-        self._warn_on_keyword(v, "Node id")
+        warn_on_keyword(u, "Node id")
+        warn_on_keyword(v, "Node id")
         if key is not None:
-            self._warn_on_keyword(key, "Edge key")
+            warn_on_keyword(key, "Edge key")
+        # Warn on Python keyword attribute names and None values
+        for attr_name, attr_value in attr.items():
+            warn_on_keyword(attr_name, "Attribute name")
+            warn_on_none_value(attr_value, f"Attribute '{attr_name}'")
 
         # Ensure nodes exist
         if u not in self._graph:
@@ -762,20 +773,6 @@ class DirectedMultiGraph:
         self._combined.add_edge(u, v, key=key, **attr)
 
         return key
-
-    @staticmethod
-    def _warn_on_keyword(value: Any, context: str) -> None:
-        """Warn if value is a Python keyword (e.g., None, True, False)."""
-        try:
-            as_str = str(value)
-        except Exception:
-            return
-        if keyword.iskeyword(as_str):
-            warnings.warn(
-                f"{context} '{value}' is a Python keyword; using it as an identifier may cause unexpected behavior.",
-                UserWarning,
-                stacklevel=3,
-            )
 
     def add_edges_from(
         self, edges: List[Tuple[T, T] | Tuple[T, T, int]], **attr: Any

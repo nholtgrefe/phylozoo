@@ -5,6 +5,8 @@ This test suite provides comprehensive coverage of all DirectedMultiGraph featur
 including edge cases, parallel edges, edge attributes, and larger graphs.
 """
 
+import warnings
+
 import pytest
 from typing import Dict, List, Set, Tuple
 
@@ -991,4 +993,90 @@ class TestLargerGraphs:
         assert all(G.outdegree(i) == 3 for i in [1, 2])
         # All nodes in right partition have indegree 2
         assert all(G.indegree(i) == 2 for i in [3, 4, 5])
+
+
+class TestKeywordWarnings:
+    """Test warnings for Python keyword identifiers on nodes and edge keys."""
+
+    def test_keyword_node_id_warns(self) -> None:
+        """Node IDs that are Python keywords should emit a warning."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="Python keyword"):
+            G.add_edge("for", 2)
+        assert G.has_edge("for", 2)
+
+    def test_keyword_edge_key_warns(self) -> None:
+        """Edge keys that are Python keywords should emit a warning."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="Python keyword"):
+            key = G.add_edge(1, 2, key="class")
+        assert G.has_edge(1, 2, key)
+
+    def test_keyword_attribute_name_warns_edge(self) -> None:
+        """Attribute names that are Python keywords should emit a warning."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="Attribute name.*Python keyword"):
+            G.add_edge(1, 2, **{"True": "yes"})
+        # Edge should still be added
+        assert G.has_edge(1, 2)
+        # Attribute should be accessible
+        assert G._graph[1][2][0]["True"] == "yes"
+
+    def test_keyword_attribute_name_warns_node(self) -> None:
+        """Attribute names that are Python keywords should emit a warning for nodes."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="Attribute name.*Python keyword"):
+            G.add_node(1, **{"False": "no"})
+        # Node should still be added
+        assert 1 in G
+        # Attribute should be accessible
+        assert G._graph.nodes[1]["False"] == "no"
+
+    def test_non_keyword_attribute_name_no_warning(self) -> None:
+        """Non-keyword attribute names with keyword values should not warn."""
+        G = DirectedMultiGraph()
+        # Using "yes" as attribute name (not a keyword) with True as value (keyword value)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            G.add_edge(1, 2, yes=True)
+            G.add_node(3, no=False)
+        # Edges and nodes should be added
+        assert G.has_edge(1, 2)
+        assert 3 in G
+        # Attributes should be accessible
+        assert G._graph[1][2][0]["yes"] is True
+        assert G._graph.nodes[3]["no"] is False
+
+    def test_none_attribute_value_warns_edge(self) -> None:
+        """Attribute values that are None should emit a warning."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword"):
+            G.add_edge(1, 2, weight=None)
+        # Edge should still be added
+        assert G.has_edge(1, 2)
+        # Attribute should be accessible
+        assert G._graph[1][2][0]["weight"] is None
+
+    def test_none_attribute_value_warns_node(self) -> None:
+        """Attribute values that are None should emit a warning for nodes."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword"):
+            G.add_node(1, label=None)
+        # Node should still be added
+        assert 1 in G
+        # Attribute should be accessible
+        assert G._graph.nodes[1]["label"] is None
+
+    def test_none_attribute_value_multiple_warns(self) -> None:
+        """Multiple attributes with None values should each emit a warning."""
+        G = DirectedMultiGraph()
+        with pytest.warns(UserWarning, match="has value None.*Python keyword") as record:
+            G.add_edge(1, 2, weight=None, length=None)
+        # Should have two warnings (one for each None attribute)
+        assert len(record) == 2
+        # Edge should still be added
+        assert G.has_edge(1, 2)
+        # Attributes should be accessible
+        assert G._graph[1][2][0]["weight"] is None
+        assert G._graph[1][2][0]["length"] is None
 
