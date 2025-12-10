@@ -134,8 +134,8 @@ class TestNetworksWithHybrids:
         )
         assert net.number_of_nodes() == 7
         assert net.number_of_edges() == 7
-        assert net.hybrid_nodes == [4]
-        assert net.tree_nodes == [5, 6]
+        assert net.hybrid_nodes == {4}
+        assert net.tree_nodes == {5, 6}
         assert net.is_tree() is False
 
     def test_multiple_hybrid_nodes(self) -> None:
@@ -156,7 +156,7 @@ class TestNetworksWithHybrids:
                 (11, {"label": "D"}),
             ],
         )
-        assert net.hybrid_nodes == [4, 5]
+        assert net.hybrid_nodes == {4, 5}
         assert len(net.hybrid_nodes) == 2
         assert net.is_tree() is False
 

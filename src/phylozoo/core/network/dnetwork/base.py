@@ -1062,26 +1062,27 @@ class DirectedPhyNetwork:
         return {self._node_to_label[leaf] for leaf in self.leaves}
     
     @cached_property
-    def internal_nodes(self) -> List[T]:
+    def internal_nodes(self) -> Set[T]:
         """
-        Return a list of all internal (non-root, non-leaf) nodes.
+        Get the set of all internal (non-root, non-leaf) nodes.
         
         Returns
         -------
-        List[T]
-            List of internal node identifiers.
+        Set[T]
+            Set of internal node identifiers. Returns a new set (which is mutable).
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.internal_nodes
-        [3]
+        {3}
         """
         # Handle empty network
         if len(self._graph) == 0:
-            return []
+            return set()
         root = self.root_node
-        return [v for v in self._graph.nodes if v != root and v not in self.leaves]
+        leaves = self.leaves
+        return {v for v in self._graph.nodes if v != root and v not in leaves}
     
     @cached_property
     def root_node(self) -> T:
@@ -1114,27 +1115,27 @@ class DirectedPhyNetwork:
         return roots[0]
     
     @cached_property
-    def hybrid_nodes(self) -> List[T]:
+    def hybrid_nodes(self) -> Set[T]:
         """
-        Return a list of all hybrid nodes.
+        Get the set of all hybrid nodes.
         
         A hybrid node is a node with in-degree >= 2 and out-degree 1.
         
         Returns
         -------
-        List[T]
-            List of hybrid node identifiers.
+        Set[T]
+            Set of hybrid node identifiers. Returns a new set (which is mutable).
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(5, 4), (6, 4), (4, 1)], nodes=[(1, {'label': 'A'})])
         >>> net.hybrid_nodes
-        [4]
+        {4}
         """
-        return [
+        return {
             v for v in self._graph.nodes
             if self._graph.indegree(v) >= 2 and self._graph.outdegree(v) == 1
-        ]
+        }
     
     @cached_property
     def LSA_node(self) -> T:
@@ -1165,72 +1166,72 @@ class DirectedPhyNetwork:
         return find_lsa_node(self)
     
     @cached_property
-    def tree_nodes(self) -> List[T]:
+    def tree_nodes(self) -> Set[T]:
         """
-        Return a list of all tree nodes.
+        Get the set of all tree nodes.
         
         A tree node is an internal node (non-root, non-leaf) with in-degree 1
         and out-degree >= 2.
         
         Returns
         -------
-        List[T]
-            List of tree node identifiers.
+        Set[T]
+            Set of tree node identifiers. Returns a new set (which is mutable).
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.tree_nodes
-        [3]
+        {3}
         """
         # Handle empty network
         if len(self._graph) == 0:
-            return []
+            return set()
         root = self.root_node
         leaves = self.leaves
-        return [
+        return {
             v for v in self._graph.nodes
             if v != root
             and v not in leaves
             and self._graph.indegree(v) == 1
             and self._graph.outdegree(v) >= 2
-        ]
+        }
     
     @cached_property
-    def hybrid_edges(self) -> List[Tuple[T, T]]:
+    def hybrid_edges(self) -> Set[Tuple[T, T]]:
         """
-        Return a list of all hybrid edges.
+        Get the set of all hybrid edges.
         
         Hybrid edges are edges that point into hybrid nodes.
         
         Returns
         -------
-        List[Tuple[T, T]]
-            List of (source, target) tuples for hybrid edges.
+        Set[Tuple[T, T]]
+            Set of (source, target) tuples for hybrid edges. Returns a new set (which is mutable).
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 2), (4, 2)], nodes=[(2, {'label': 'A'})])
         >>> net.hybrid_edges
-        [(3, 2), (4, 2)]
+        {(3, 2), (4, 2)}
         """
-        res = []
+        res = set()
         for v in self.hybrid_nodes:
             for p in self._graph.predecessors(v):
-                res.append((p, v))
+                res.add((p, v))
         return res
     
     @cached_property
-    def tree_edges(self) -> List[Tuple[T, T]]:
+    def tree_edges(self) -> Set[Tuple[T, T]]:
         """
-        Return a list of all tree edges.
+        Get the set of all tree edges.
         
         Tree edges are all edges that are not hybrid edges.
         
         Returns
         -------
-        List[Tuple[T, T]]
-            List of (source, target) tuples for tree edges.
+        Set[Tuple[T, T]]
+            Set of (source, target) tuples for tree edges. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1238,9 +1239,9 @@ class DirectedPhyNetwork:
         >>> len(net.tree_edges)
         2
         """
-        hybrid_edges = set(self.hybrid_edges)
+        hybrid_edges = self.hybrid_edges
         # edges() returns EdgeView which iterates as (u, v) tuples
-        return [(u, v) for (u, v) in self._graph.edges() if (u, v) not in hybrid_edges]
+        return {(u, v) for (u, v) in self._graph.edges() if (u, v) not in hybrid_edges}
     
     @cached_property
     def level(self) -> int:

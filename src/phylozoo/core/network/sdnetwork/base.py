@@ -1147,16 +1147,16 @@ class MixedPhyNetwork:
         return {self._node_to_label[leaf] for leaf in self.leaves}
     
     @cached_property
-    def hybrid_nodes(self) -> List[T]:
+    def hybrid_nodes(self) -> Set[T]:
         """
-        Return a list of all hybrid nodes.
+        Get the set of all hybrid nodes.
         
         A hybrid node is a node with in-degree >= 2 and total degree = in-degree + 1.
         
         Returns
         -------
-        List[T]
-            List of hybrid node identifiers.
+        Set[T]
+            Set of hybrid node identifiers. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1166,25 +1166,25 @@ class MixedPhyNetwork:
         ...     taxa={1: "A"}
         ... )
         >>> net.hybrid_nodes
-        [4]
+        {4}
         """
-        return [
+        return {
             v for v in self._graph.nodes
             if self._graph.indegree(v) >= 2
             and self._graph.degree(v) == self._graph.indegree(v) + 1
-        ]
+        }
     
     @cached_property
-    def hybrid_edges(self) -> List[Tuple[T, T]]:
+    def hybrid_edges(self) -> Set[Tuple[T, T]]:
         """
-        Return a list of all hybrid edges.
+        Get the set of all hybrid edges.
         
         Hybrid edges are all directed edges.
         
         Returns
         -------
-        List[Tuple[T, T]]
-            List of (source, target) tuples for hybrid edges.
+        Set[Tuple[T, T]]
+            Set of (source, target) tuples for hybrid edges. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1194,21 +1194,21 @@ class MixedPhyNetwork:
         ...     taxa={1: "A"}
         ... )
         >>> net.hybrid_edges
-        [(3, 2), (4, 2)]
+        {(3, 2), (4, 2)}
         """
-        return list(self._graph._directed.edges())
+        return set(self._graph._directed.edges())
     
     @cached_property
-    def tree_nodes(self) -> List[T]:
+    def tree_nodes(self) -> Set[T]:
         """
-        Return a list of all tree nodes.
+        Get the set of all tree nodes.
         
         A tree node is a node with in-degree 0 and total degree >= 3.
         
         Returns
         -------
-        List[T]
-            List of tree node identifiers.
+        Set[T]
+            Set of tree node identifiers. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1217,25 +1217,25 @@ class MixedPhyNetwork:
         ...     taxa={2: "A", 3: "B", 4: "C"}
         ... )
         >>> net.tree_nodes
-        [1]
+        {1}
         """
-        return [
+        return {
             v for v in self._graph.nodes
             if self._graph.indegree(v) == 0
             and self._graph.degree(v) >= 3
-        ]
+        }
     
     @cached_property
-    def internal_nodes(self) -> List[T]:
+    def internal_nodes(self) -> Set[T]:
         """
-        Return a list of all internal nodes.
+        Get the set of all internal nodes.
         
         Internal nodes are all nodes that are not leaves.
         
         Returns
         -------
-        List[T]
-            List of internal node identifiers.
+        Set[T]
+            Set of internal node identifiers. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1247,23 +1247,23 @@ class MixedPhyNetwork:
         >>> sorted(net.internal_nodes)
         [4, 5, 6]
         """
-        leaves_set = set(self.leaves)
-        return [
+        leaves = self.leaves
+        return {
             v for v in self._graph.nodes
-            if v not in leaves_set
-        ]
+            if v not in leaves
+        }
     
     @cached_property
-    def tree_edges(self) -> List[Tuple[T, T]]:
+    def tree_edges(self) -> Set[Tuple[T, T]]:
         """
-        Return a list of all tree edges.
+        Get the set of all tree edges.
         
         Tree edges are simply all undirected edges.
         
         Returns
         -------
-        List[Tuple[T, T]]
-            List of (source, target) tuples for tree edges.
+        Set[Tuple[T, T]]
+            Set of (source, target) tuples for tree edges. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1275,7 +1275,7 @@ class MixedPhyNetwork:
         >>> sorted(net.tree_edges)
         [(4, 1)]
         """
-        return list(self._graph._undirected.edges())
+        return set(self._graph._undirected.edges())
 
     def __repr__(self) -> str:
         """

@@ -167,7 +167,7 @@ class TestPropertyConsistency:
             taxa={1: "A", 2: "B", 4: "C"}
             )
         all_nodes = set(net)
-        assert set(net.internal_nodes).issubset(all_nodes)
+        assert net.internal_nodes.issubset(all_nodes)
 
     def test_leaves_and_internal_nodes_disjoint(self) -> None:
         """Test that leaves and internal nodes are disjoint."""
@@ -177,7 +177,7 @@ class TestPropertyConsistency:
             taxa={1: "A", 2: "B", 4: "C"}
             )
         leaves_set = net.leaves
-        internal_set = set(net.internal_nodes)
+        internal_set = net.internal_nodes
         assert leaves_set.isdisjoint(internal_set)
 
     def test_leaves_and_internal_nodes_cover_all_nodes(self) -> None:
@@ -189,7 +189,7 @@ class TestPropertyConsistency:
             )
         all_nodes = set(net)
         leaves_set = net.leaves
-        internal_set = set(net.internal_nodes)
+        internal_set = net.internal_nodes
         assert leaves_set | internal_set == all_nodes
 
     def test_hybrid_nodes_are_subset_of_internal_nodes(self) -> None:
@@ -200,8 +200,8 @@ class TestPropertyConsistency:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
             )
-        internal_set = set(net.internal_nodes)
-        hybrid_set = set(net.hybrid_nodes)
+        internal_set = net.internal_nodes
+        hybrid_set = net.hybrid_nodes
         assert hybrid_set.issubset(internal_set)
 
     def test_tree_nodes_are_subset_of_internal_nodes(self) -> None:
@@ -212,8 +212,8 @@ class TestPropertyConsistency:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
             )
-        internal_set = set(net.internal_nodes)
-        tree_set = set(net.tree_nodes)
+        internal_set = net.internal_nodes
+        tree_set = net.tree_nodes
         assert tree_set.issubset(internal_set)
 
     def test_hybrid_and_tree_nodes_disjoint(self) -> None:
@@ -224,8 +224,8 @@ class TestPropertyConsistency:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
             )
-        hybrid_set = set(net.hybrid_nodes)
-        tree_set = set(net.tree_nodes)
+        hybrid_set = net.hybrid_nodes
+        tree_set = net.tree_nodes
         assert hybrid_set.isdisjoint(tree_set)
 
     def test_taxa_matches_leaves(self) -> None:

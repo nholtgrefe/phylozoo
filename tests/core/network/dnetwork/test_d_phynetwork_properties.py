@@ -172,7 +172,7 @@ class TestPropertyConsistency:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         all_nodes = set(net._graph.nodes)
-        accounted = {net.root_node} | net.leaves | set(net.internal_nodes)
+        accounted = {net.root_node} | net.leaves | net.internal_nodes
         assert all_nodes == accounted
 
     def test_internal_nodes_equals_tree_plus_hybrid(self) -> None:
@@ -181,8 +181,8 @@ class TestPropertyConsistency:
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
-        internal_set = set(net.internal_nodes)
-        tree_hybrid_set = set(net.tree_nodes) | set(net.hybrid_nodes)
+        internal_set = net.internal_nodes
+        tree_hybrid_set = net.tree_nodes | net.hybrid_nodes
         assert internal_set == tree_hybrid_set
 
     def test_taxa_matches_leaves(self) -> None:
@@ -209,7 +209,7 @@ class TestPropertyConsistency:
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
-        all_edges = set(net.tree_edges) | set(net.hybrid_edges)
+        all_edges = net.tree_edges | net.hybrid_edges
         expected_edges = {(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)}
         assert all_edges == expected_edges
 

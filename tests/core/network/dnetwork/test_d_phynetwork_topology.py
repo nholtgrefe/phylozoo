@@ -157,7 +157,7 @@ class TestInternalNodes:
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'})]
         )
         # Node 3 is internal (not root, not leaf)
-        assert net.internal_nodes == [3]
+        assert net.internal_nodes == {3}
 
     def test_internal_nodes_excludes_root(self) -> None:
         """Test that internal_nodes excludes root."""
@@ -206,7 +206,7 @@ class TestHybridNodes:
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
-        assert net.hybrid_nodes == [4]
+        assert net.hybrid_nodes == {4}
 
     def test_hybrid_nodes_multiple(self) -> None:
         """Test multiple hybrid nodes."""
@@ -275,7 +275,7 @@ class TestTreeNodes:
             edges=[(4, 3), (3, 1), (3, 2)],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
-        assert net.tree_nodes == [3]
+        assert net.tree_nodes == {3}
 
     def test_tree_nodes_multiple(self) -> None:
         """Test multiple tree nodes."""
@@ -368,9 +368,8 @@ class TestHybridEdges:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         # Should include both parallel edges
+        # Note: parallel edges appear as same (u, v) tuple in the set
         assert (5, 4) in net.hybrid_edges
-        # Note: parallel edges appear as same (u, v) tuple
-        assert net.hybrid_edges.count((5, 4)) >= 1
 
 
 class TestTreeEdges:
@@ -408,7 +407,7 @@ class TestTreeEdges:
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
-        all_edges = set(net.tree_edges) | set(net.hybrid_edges)
+        all_edges = net.tree_edges | net.hybrid_edges
         expected_edges = {(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)}
         assert all_edges == expected_edges
 
@@ -480,7 +479,7 @@ class TestTopologyConsistency:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         all_nodes = set(net._graph.nodes)
-        accounted = {net.root_node} | net.leaves | set(net.internal_nodes)
+        accounted = {net.root_node} | net.leaves | net.internal_nodes
         assert all_nodes == accounted
 
     def test_internal_nodes_equals_tree_plus_hybrid(self) -> None:
@@ -489,8 +488,8 @@ class TestTopologyConsistency:
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
-        internal_set = set(net.internal_nodes)
-        tree_hybrid_set = set(net.tree_nodes) | set(net.hybrid_nodes)
+        internal_set = net.internal_nodes
+        tree_hybrid_set = net.tree_nodes | net.hybrid_nodes
         assert internal_set == tree_hybrid_set
 
     def test_hybrid_edges_count_matches_hybrid_nodes(self) -> None:
