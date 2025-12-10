@@ -23,61 +23,49 @@ class DirectedPhyNetwork:
     
     A DirectedPhyNetwork is a weakly connected, directed acyclic graph (DAG) representing 
     a phylogenetic network structure. It consists of:
-    
     - **Root node**: Exactly one node with in-degree 0
     - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
     - **Tree nodes**: Internal nodes (non-root, non-leaf) with in-degree 1 and out-degree >= 2
     - **Hybrid nodes**: Internal nodes with in-degree >= 2 and out-degree 1
-    For technical reasons, a single-node network (where root and leaf are the same node) is also valid.
+    For technical reasons, an empty network or single-node network (where root and leaf are the same node) 
+    is also valid. Internal nodes may be unlabeled.
+    
+    Notes
+    -----
+    The class uses composition with ``DirectedMultiGraph`` and is immutable after initialization; 
+    construct via ``nodes``/``edges``, from a prebuilt ``DirectedMultiGraph``, or load from a file/eNewick 
+    string.
 
-    The `validate()` method checks whether the network adheres to this definition upon
-    initialization.
-    
-    This class uses composition with DirectedMultiGraph for graph structure and adds
-    phylogenetic-specific features like taxa labels, node labels, and network topology methods.
-    
-    Leaves refer to node IDs, and taxa refer to the labels of leaves. Leaves must always
-    have labels (taxa). Internal nodes may or may not be labeled. Node IDs are separate
-    from labels, allowing flexible node identification.
-    
-    Each label must be unique across all nodes. Attempting to use a duplicate label
-    will raise a ValueError.
-    
     Parameters
     ----------
     edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
-        List of directed edges. Can be:
+        List of directed edges. Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
-        - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+        - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
         
-        Edge attributes can be set via dict format. Suggested attributes:
-        - branch_length (float): Branch length for the edge
-        - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
-        - gamma (float): For hybrid edges only - inheritance probability (must be in [0.0, 1.0]).
-          **Gamma values can only be set on edges that point into hybrid nodes** (hybrid edges).
-          Attempting to set gamma on a non-hybrid edge will raise a ValueError during validation.
-          If ANY gamma is specified for edges entering a hybrid node,
-          then ALL edges entering that hybrid node must have gamma values summing to 1.0.
-          
-          Note: If you need more forgiving behavior (e.g., partial gamma values that
-          don't sum to 1.0), consider using a different edge attribute name (e.g., 'gamma2')
-          which will not be validated.
+        Edge attributes (validated):
+        - branch_length (float)
+        - bootstrap (float in [0.0, 1.0])
+        - gamma (float in [0.0, 1.0], hybrid edges only; for each hybrid node, all 
+        incoming gammas must sum to 1.0) 
+        Use a different attribute name (e.g., 'gamma2') for non-validated and/or additional
+        attritbutes.
         
-        These attributes are validated during initialization.
-        
-        Other edge attributes are also supported (any key-value pairs can be added),
-        but the above three are suggested for phylogenetic networks.
-        
-        Can be empty list or None for empty/single-node networks. By default None.
+        Can be empty or None for empty/single-node networks. By default None.
     nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
-        List of nodes to add to the graph. Can be:
+        List of nodes. Formats:
         - Simple node IDs: `1`, `"node1"`, etc.
-        - Tuple format: `(node_id, {'label': 'label_name'})` to specify attributes.
-        This matches NetworkX's `add_nodes_from` API pattern.
-        Labels can be specified for any node (leaves or internal nodes).
-        Leaves without labels will get auto-generated labels.
-        By default None.
+        - Tuples: `(node_id, {'label': '...','attr': ...})`
+        
+        Node attributes (validated):
+        - label: string, unique across all nodes; use another key for non-string data.
+        
+        Leaves without labels are auto-labeled. Leaf-labels are referred to as `taxa`.
+        Use a different attribute name (e.g., 'label2') for non-validated and/or additional
+        attritbutes.
+
+        Can be empty or None. By default None.
     
     Attributes
     ----------
@@ -89,12 +77,6 @@ class DirectedPhyNetwork:
         Leaves always have labels (taxa), but internal nodes may be unlabeled.
     _label_to_node : Dict[str, T]
         Reverse mapping from labels to node IDs (for quick lookup).
-    
-    Notes
-    -----
-    This class is immutable after initialization. To create a network,
-    build it using DirectedMultiGraph and then create a DirectedPhyNetwork from it,
-    or initialize it with edges and taxa.
     
     Examples
     --------
@@ -143,16 +125,6 @@ class DirectedPhyNetwork:
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
-    >>> # Single-node network (root and leaf are the same)
-    >>> net5 = DirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
-    >>> net5.root_node
-    1
-    >>> net5.leaves
-    {1}
-    >>> net5.taxa
-    {'A'}
-    >>> # Empty network
-    >>> net6 = DirectedPhyNetwork(edges=[])
     """
     
     def __init__(
@@ -166,15 +138,27 @@ class DirectedPhyNetwork:
         Parameters
         ----------
         edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
-            List of directed edges. Can be empty list or None for empty/single-node networks.
-            By default None.
+            List of directed edges. Formats:
+            - (u, v) tuples (key auto-generated)
+            - (u, v, key) tuples (explicit key)
+            - Dict with 'u', 'v' and optional 'key' plus edge attributes
+            
+            Edge attributes (validated):
+            - branch_length (float)
+            - bootstrap (float in [0.0, 1.0])
+            - gamma (float in [0.0, 1.0], hybrid edges only; all incoming gammas must sum to 1.0)
+              Use a different attribute name (e.g., 'gamma2') for non-validated values.
+            
+            Can be empty list or None for empty/single-node networks. By default None.
         nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
-            List of nodes to add to the graph. Can be:
+            List of nodes. Formats:
             - Simple node IDs: `1`, `"node1"`, etc.
-            - Tuple format: `(node_id, {'label': 'label_name'})` to specify attributes.
-            This matches NetworkX's `add_nodes_from` API pattern.
-            Labels can be specified for any node (leaves or internal nodes).
-            Leaves without labels will get auto-generated labels.
+            - Tuples: `(node_id, {'label': '...','attr': ...})` (NetworkX-style)
+            
+            Node attributes (validated):
+            - label: string, unique across all nodes; use another key for non-string data.
+            
+            Leaves without labels will get auto-generated labels. Can be empty list or None.
             By default None.
         
         Examples
@@ -635,6 +619,11 @@ class DirectedPhyNetwork:
             If node_id is not in the network, or if the label is already
             used by a different node.
         """
+        if not isinstance(label, str):
+            raise ValueError(
+                "Label must be a string. For non-string metadata, store it under a "
+                "different node attribute instead of 'label'."
+            )
         if node_id not in self._graph:
             raise ValueError(f"Node {node_id} is not in the network")
         
@@ -1280,17 +1269,6 @@ class DirectedPhyNetwork:
         """
         return len(self.hybrid_nodes) == 0
     
-    def __len__(self) -> int:
-        """
-        Return the number of nodes in the network.
-        
-        Returns
-        -------
-        int
-            Number of nodes.
-        """
-        return self.number_of_nodes()
-    
     # ========== Graph Operations ==========
     
     def copy(self) -> 'DirectedPhyNetwork':
@@ -1352,6 +1330,17 @@ class DirectedPhyNetwork:
             f"taxa={n_taxa}, "
             f"taxa_list=[{taxa_list_str}])"
         )
+    
+    def __len__(self) -> int:
+        """
+        Return the number of nodes in the network.
+        
+        Returns
+        -------
+        int
+            Number of nodes.
+        """
+        return self.number_of_nodes()
     
     def __contains__(self, node_id: T) -> bool:
         """
