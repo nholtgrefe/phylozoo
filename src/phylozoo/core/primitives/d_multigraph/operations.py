@@ -98,6 +98,35 @@ def connected_components(graph: 'DirectedMultiGraph') -> Iterator[Set[T]]:
     return nx.connected_components(graph._combined)
 
 
+def has_self_loops(graph: 'DirectedMultiGraph') -> bool:
+    """
+    Check whether the directed multigraph contains any self-loops.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The graph to inspect.
+    
+    Returns
+    -------
+    bool
+        True if at least one self-loop exists, False otherwise.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.operations import has_self_loops
+    >>> G = DirectedMultiGraph()
+    >>> has_self_loops(G)
+    False
+    >>> G.add_edge(1, 1)
+    0
+    >>> has_self_loops(G)
+    True
+    """
+    return nx.number_of_selfloops(graph._graph) > 0
+
+
 def identify_two_nodes(graph: 'DirectedMultiGraph', u: T, v: T) -> None:
     """
     Identify two nodes u and v by keeping node u.

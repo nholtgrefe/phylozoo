@@ -17,6 +17,7 @@ from phylozoo.core.primitives.m_multigraph.operations import (
     identify_node_set,
     source_components,
     orient_away_from_vertex,
+    has_self_loops,
 )
 from phylozoo.core.primitives.m_multigraph.conversions import (
     graph_to_mixedmultigraph,
@@ -95,6 +96,7 @@ class TestInitialization:
         assert G._directed.has_edge(1, 1, key=k0)
         assert G._directed.has_edge(1, 1, key=k1)
         assert G.number_of_edges() == 2
+        assert has_self_loops(G) is True
 
     def test_init_with_undirected_edges(self) -> None:
         """Test initialization with undirected edges."""
@@ -125,6 +127,35 @@ class TestInitialization:
         assert G._undirected.has_edge(2, 2, key=k0)
         assert G._undirected.has_edge(2, 2, key=k1)
         assert G.number_of_edges() == 2
+        assert has_self_loops(G) is True
+
+    def test_has_self_loops_false(self) -> None:
+        """has_self_loops returns False when no self-loops exist."""
+        G = MixedMultiGraph(
+            undirected_edges=[(1, 2)],
+            directed_edges=[(2, 3)],
+        )
+        assert has_self_loops(G) is False
+
+    def test_self_loop_mutual_exclusivity(self) -> None:
+        """Directed/undirected self-loops cannot coexist; newer edge replaces older type."""
+        G = MixedMultiGraph()
+        # Start with undirected self-loop
+        k_u0 = G.add_undirected_edge(1, 1, weight=1.0)
+        assert count_undirected_edges(G, 1, 1) == 1
+        assert count_directed_edges(G, 1, 1) == 0
+        assert has_self_loops(G) is True
+        # Add directed self-loop; undirected should be removed
+        k_d0 = G.add_directed_edge(1, 1, weight=2.0)
+        assert count_directed_edges(G, 1, 1) == 1
+        assert count_undirected_edges(G, 1, 1) == 0
+        assert G._directed.has_edge(1, 1, key=k_d0)
+        # Now add undirected self-loop again; directed should be removed
+        k_u1 = G.add_undirected_edge(1, 1, weight=3.0)
+        assert count_undirected_edges(G, 1, 1) == 1
+        assert count_directed_edges(G, 1, 1) == 0
+        assert G._undirected.has_edge(1, 1, key=k_u1)
+        assert has_self_loops(G) is True
 
     def test_init_with_both_edge_types(self) -> None:
         """Test initialization with both directed and undirected edges."""

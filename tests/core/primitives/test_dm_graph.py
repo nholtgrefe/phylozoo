@@ -15,6 +15,7 @@ from phylozoo.core.primitives.d_multigraph.operations import (
     connected_components,
     identify_two_nodes,
     identify_node_set,
+    has_self_loops,
 )
 from phylozoo.core.primitives.d_multigraph.conversions import (
     digraph_to_directedmultigraph,
@@ -72,6 +73,12 @@ class TestInitialization:
         # Combined graph also retains both self-loops
         assert G._combined.has_edge(1, 1, key=k0)
         assert G._combined.has_edge(1, 1, key=k1)
+        assert has_self_loops(G) is True
+
+    def test_has_self_loops_false(self) -> None:
+        """has_self_loops returns False when no self-loops exist."""
+        G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
+        assert has_self_loops(G) is False
 
     def test_init_with_edges_with_keys(self) -> None:
         """Test initialization with edges and explicit keys."""

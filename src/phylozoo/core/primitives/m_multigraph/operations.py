@@ -104,6 +104,50 @@ def connected_components(graph: 'MixedMultiGraph') -> Iterator[Set[T]]:
     return nx.connected_components(graph._combined)
 
 
+def has_self_loops(graph: 'MixedMultiGraph') -> bool:
+    """
+    Check whether the mixed multigraph contains any self-loops (directed or undirected).
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The graph to inspect.
+    
+    Returns
+    -------
+    bool
+        True if at least one self-loop exists, False otherwise.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.operations import has_self_loops
+    >>> G = MixedMultiGraph()
+    >>> has_self_loops(G)
+    False
+    >>> G.add_directed_edge(1, 1)
+    0
+    >>> has_self_loops(G)
+    True
+    >>> G.add_undirected_edge(2, 2)
+    0
+    >>> has_self_loops(G)
+    True
+    
+    Notes
+    -----
+    MixedMultiGraph enforces mutual exclusivity between directed and undirected edges
+    on the same node pair. Adding a directed self-loop to nodes that currently have an
+    undirected self-loop will remove the undirected edge (and vice versa). This function
+    checks both directed and undirected graphs, so it returns True if either side
+    currently contains a self-loop.
+    """
+    return (
+        nx.number_of_selfloops(graph._directed) > 0
+        or nx.number_of_selfloops(graph._undirected) > 0
+    )
+
+
 def identify_two_nodes(graph: 'MixedMultiGraph', u: T, v: T) -> None:
     """
     Identify two nodes u and v by keeping node u.
