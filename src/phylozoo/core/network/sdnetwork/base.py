@@ -265,6 +265,18 @@ class MixedPhyNetwork:
             If taxa or internal_node_labels have invalid format, or if nodes in taxa
             are not leaves, or if nodes in internal_node_labels are leaves.
         """
+        # Add nodes to graph if they're specified in taxa but not in graph yet
+        # This handles single-node networks and isolated nodes
+        if taxa:
+            if isinstance(taxa, dict):
+                for leaf_id in taxa.keys():
+                    if leaf_id not in self._graph:
+                        self._graph.add_node(leaf_id)
+            elif isinstance(taxa, list):
+                for leaf_id, _ in taxa:
+                    if leaf_id not in self._graph:
+                        self._graph.add_node(leaf_id)
+        
         # Identify all leaves (nodes with no outgoing directed edges)
         all_leaves: Set[T] = self.leaves
         
@@ -1119,13 +1131,16 @@ class MixedPhyNetwork:
     @cached_property
     def leaves(self) -> Set[T]:
         """
-        Get the set of leaf node IDs (nodes with no degree-1).
+        Get the set of leaf node IDs (nodes with degree 1, or degree 0 for single-node networks).
         
         Returns
         -------
         Set[T]
             Set of leaf node identifiers. Returns a new set (which is mutable).
         """
+        # Single-node network: the node is a leaf even though it has degree 0
+        if self.number_of_nodes() == 1:
+            return set(self._graph.nodes)
         return {node for node in self._graph.nodes if self._graph.degree(node) == 1}
     
     @cached_property

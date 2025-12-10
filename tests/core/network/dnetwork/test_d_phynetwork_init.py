@@ -600,3 +600,144 @@ class TestAutoLabelingEdgeCases:
         # Should auto-label using string representation
         assert len(net.taxa) == 2
 
+
+class TestSingleNodeNetwork:
+    """Comprehensive tests for single-node networks."""
+
+    def test_root_is_single_node(self) -> None:
+        """Test that the root of a single-node network is that node."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        assert net.root_node == 1
+        assert net.number_of_nodes() == 1
+
+    def test_single_node_is_also_leaf(self) -> None:
+        """Test that the single node is both root and leaf."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        assert net.root_node == 1
+        assert net.leaves == {1}
+        assert net.root_node in net.leaves
+
+    def test_single_node_topology_properties(self) -> None:
+        """Test topology properties for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        # Single node is root and leaf, so not internal
+        assert net.internal_nodes == set()
+        assert net.hybrid_nodes == set()
+        assert net.tree_nodes == set()
+        assert net.hybrid_edges == set()
+        assert net.tree_edges == set()
+
+    def test_single_node_taxa(self) -> None:
+        """Test taxa property for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        assert net.taxa == {"A"}
+        assert net.get_label(1) == "A"
+
+    def test_single_node_degrees(self) -> None:
+        """Test degree properties for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        assert net.indegree(1) == 0
+        assert net.outdegree(1) == 0
+        assert net.degree(1) == 0
+
+    def test_single_node_is_tree(self) -> None:
+        """Test that single-node network is considered a tree."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        assert net.is_tree() is True
+
+    def test_single_node_to_sd_network(self) -> None:
+        """Test conversion to semi-directed network."""
+        from phylozoo.core.network.dnetwork.operations import to_sd_network
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore empty-edge warning in SD init
+            sd_net = to_sd_network(net)
+        assert sd_net.number_of_nodes() == 1
+        assert sd_net.number_of_edges() == 0
+        assert sd_net.leaves == {1}
+        assert sd_net.taxa == {"A"}
+        assert 1 in sd_net
+
+    def test_single_node_copy(self) -> None:
+        """Test copying single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        net_copy = net.copy()
+        assert net_copy.number_of_nodes() == 1
+        assert net_copy.root_node == 1
+        assert net_copy.leaves == {1}
+        assert net_copy.taxa == {"A"}
+        assert net_copy is not net  # Different object
+
+    def test_single_node_iteration(self) -> None:
+        """Test iteration over single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        nodes_list = list(net)
+        assert nodes_list == [1]
+        assert len(net) == 1
+        assert 1 in net
+        assert 2 not in net
+
+    def test_single_node_children_parents(self) -> None:
+        """Test children and parents for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        assert list(net.children(1)) == []
+        assert list(net.parents(1)) == []
+        assert net.outdegree(1) == 0
+        assert net.indegree(1) == 0
+
+
+    def test_single_node_lsa_node(self) -> None:
+        """Test LSA_node property for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        assert net.LSA_node == 1
+        assert net.LSA_node == net.root_node
+        assert net.LSA_node in net.leaves
+
+    def test_single_node_incident_edges(self) -> None:
+        """Test incident edges for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        assert list(net.incident_parent_edges(1)) == []
+        assert list(net.incident_child_edges(1)) == []
+        assert net.number_of_edges() == 0
+
+    def test_single_node_neighbors(self) -> None:
+        """Test neighbors for single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        
+        assert list(net.parents(1)) == []
+        assert list(net.children(1)) == []
+        assert list(net.neighbors(1)) == []
+

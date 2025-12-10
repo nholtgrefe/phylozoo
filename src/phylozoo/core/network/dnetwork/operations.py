@@ -317,6 +317,18 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     if working.number_of_nodes() == 0:
         return SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[], taxa={}, internal_node_labels=None)
     
+    # Single-node network shortcut
+    if working.number_of_nodes() == 1:
+        node = next(iter(working._graph.nodes))
+        label = working.get_label(node)
+        taxa_dict = {node: label} if label else {}
+        return SemiDirectedPhyNetwork(
+            directed_edges=[],
+            undirected_edges=[],
+            taxa=taxa_dict,
+            internal_node_labels=None
+        )
+    
     # 2) Separate hybrid (directed) vs tree (to be undirected) edges
     hybrid_edge_set = set(working.hybrid_edges)
     directed_edges: List[Dict[str, Any]] = []

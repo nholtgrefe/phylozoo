@@ -53,6 +53,19 @@ class TestFindLSANode:
                 with pytest.raises(ValueError, match="empty network"):
                     find_lsa_node(DirectedPhyNetwork(edges=[]))
 
+    def test_single_node_network(self) -> None:
+        """
+        Single-node network has that node as the LSA.
+        
+        In a single-node network, the node is both root and leaf, so it is the LSA.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        assert find_lsa_node(net) == 1
+        assert net.root_node == 1
+        assert net.leaves == {1}
+
 
 class TestToLSANetwork:
     """Tests for to_LSA_network."""
@@ -95,6 +108,19 @@ class TestToLSANetwork:
         assert 6 not in lsa_net._graph.nodes
         assert 4 not in lsa_net._graph.nodes
 
+    def test_single_node_network_returns_copy(self) -> None:
+        """
+        Single-node network returns a copy with the same node.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        lsa_net = to_LSA_network(net)
+        assert lsa_net.root_node == 1
+        assert lsa_net.leaves == {1}
+        assert lsa_net.number_of_nodes() == 1
+        assert lsa_net.number_of_edges() == 0
+
 
 class TestIsLSANetwork:
     """Tests for is_LSA_network classification."""
@@ -114,6 +140,17 @@ class TestIsLSANetwork:
         Tree with root as LSA returns True.
         """
         net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        assert is_LSA_network(net) is True
+
+    def test_single_node_network_true(self) -> None:
+        """
+        Single-node network is an LSA network.
+        
+        In a single-node network, the node is both root and leaf, so it is the LSA.
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
         assert is_LSA_network(net) is True
 
     def test_lsa_below_root_false(self) -> None:
