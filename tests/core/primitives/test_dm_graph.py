@@ -60,6 +60,19 @@ class TestInitialization:
         assert num_edges_1_2 == 2
         assert num_edges_2_3 == 1
 
+    def test_self_loops_and_parallel_self_loops(self) -> None:
+        """Self-loops are allowed and support parallel edges with distinct keys."""
+        G = DirectedMultiGraph()
+        k0 = G.add_edge(1, 1, weight=1.0)
+        k1 = G.add_edge(1, 1, weight=2.0)  # Parallel self-loop
+        assert {k0, k1} == {0, 1}
+        assert G.number_of_edges() == 2
+        assert G._graph.has_edge(1, 1, key=k0)
+        assert G._graph.has_edge(1, 1, key=k1)
+        # Combined graph also retains both self-loops
+        assert G._combined.has_edge(1, 1, key=k0)
+        assert G._combined.has_edge(1, 1, key=k1)
+
     def test_init_with_edges_with_keys(self) -> None:
         """Test initialization with edges and explicit keys."""
         G = DirectedMultiGraph(edges=[(1, 2, 0), (1, 2, 5), (2, 3, 0)])

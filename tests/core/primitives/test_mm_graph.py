@@ -85,6 +85,17 @@ class TestInitialization:
         assert G._directed.has_edge(1, 2, key=5)
         assert G._directed.has_edge(2, 3, key=0)
 
+    def test_directed_self_loops(self) -> None:
+        """Directed self-loops are allowed and support parallel edges."""
+        G = MixedMultiGraph()
+        k0 = G.add_directed_edge(1, 1, weight=1.0)
+        k1 = G.add_directed_edge(1, 1, weight=2.0)
+        assert {k0, k1} == {0, 1}
+        assert count_directed_edges(G, 1, 1) == 2
+        assert G._directed.has_edge(1, 1, key=k0)
+        assert G._directed.has_edge(1, 1, key=k1)
+        assert G.number_of_edges() == 2
+
     def test_init_with_undirected_edges(self) -> None:
         """Test initialization with undirected edges."""
         G = MixedMultiGraph(undirected_edges=[(1, 2), (2, 3), (1, 2)])  # Parallel edge
@@ -103,6 +114,17 @@ class TestInitialization:
         assert G._undirected.has_edge(1, 2, key=0)
         assert G._undirected.has_edge(1, 2, key=5)
         assert G._undirected.has_edge(2, 3, key=0)
+
+    def test_undirected_self_loops(self) -> None:
+        """Undirected self-loops are allowed and support parallel edges."""
+        G = MixedMultiGraph()
+        k0 = G.add_undirected_edge(2, 2, weight=1.0)
+        k1 = G.add_undirected_edge(2, 2, weight=2.0)
+        assert {k0, k1} == {0, 1}
+        assert count_undirected_edges(G, 2, 2) == 2
+        assert G._undirected.has_edge(2, 2, key=k0)
+        assert G._undirected.has_edge(2, 2, key=k1)
+        assert G.number_of_edges() == 2
 
     def test_init_with_both_edge_types(self) -> None:
         """Test initialization with both directed and undirected edges."""

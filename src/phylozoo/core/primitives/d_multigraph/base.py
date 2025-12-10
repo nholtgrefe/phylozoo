@@ -22,8 +22,8 @@ class DirectedMultiGraph:
     - _combined: nx.MultiGraph combining all edges as undirected for connectivity analysis
 
     This class allows parallel directed edges (multiple directed edges between
-    the same nodes), and each parallel edge can have different parameters
-    (weights, attributes, etc.) via edge keys.
+    the same nodes), including self-loops; each parallel edge can have different
+    parameters (weights, attributes, etc.) via edge keys.
 
     Parameters
     ----------

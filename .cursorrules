@@ -90,3 +90,7 @@
 ## Performance
 - Always perform optimizations of code efficiency
 
+## Reuse finding
+- In a `findings.txt` file in the `sandbox` folder, keep track (in a structured way) of any findings you do while trying out things. Also keep track of failed tries.
+- Always consult the findings file to reuse your knowledge
+

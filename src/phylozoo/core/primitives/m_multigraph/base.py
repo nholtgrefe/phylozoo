@@ -25,9 +25,9 @@ class MixedMultiGraph:
     - _directed: nx.MultiDiGraph for directed edges
     - _combined: nx.MultiGraph combining all edges for connectivity analysis
 
-    This class allows parallel edges for both directed and undirected edges.
-    However, edges between the same two nodes must be either all directed or
-    all undirected - mixing is not allowed. This mutual exclusivity is enforced
+    This class allows parallel edges for both directed and undirected edges,
+    including self-loops. However, edges between the same two nodes must be either
+    all directed or all undirected - mixing is not allowed. This mutual exclusivity is enforced
     automatically: adding a directed edge will remove any undirected edges between
     the same nodes, and vice versa. Each parallel edge can have different
     parameters (weights, attributes, etc.) via edge keys.
