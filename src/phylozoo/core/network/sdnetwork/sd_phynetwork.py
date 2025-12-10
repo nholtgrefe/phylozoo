@@ -353,10 +353,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             
             # Build DirectedPhyNetwork - if not valid, raise error immediately
             try:
+                nodes = [(leaf, {"label": label}) for leaf, label in taxa_mapping.items()] if taxa_mapping else None
                 d_network = DirectedPhyNetwork(
                     edges=directed_edges,
-                    taxa=taxa_mapping if taxa_mapping else None,
-                    internal_node_labels=None,
+                    nodes=nodes,
                 )
             except ValueError as e:
                 raise ValueError(

@@ -20,14 +20,14 @@ class TestCachedPropertyBehavior:
 
     def test_leaves_cached(self) -> None:
         """Test that leaves property is cached."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         leaves1 = net.leaves
         leaves2 = net.leaves
         assert leaves1 is leaves2  # Same object (cached)
 
     def test_taxa_cached(self) -> None:
         """Test that taxa property is cached."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         taxa1 = net.taxa
         taxa2 = net.taxa
         assert taxa1 is taxa2  # Same object (cached)
@@ -36,7 +36,7 @@ class TestCachedPropertyBehavior:
         """Test that internal_nodes property is cached."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         internal1 = net.internal_nodes
         internal2 = net.internal_nodes
@@ -44,7 +44,7 @@ class TestCachedPropertyBehavior:
 
     def test_root_node_cached(self) -> None:
         """Test that root_node property is cached."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         root1 = net.root_node
         root2 = net.root_node
         assert root1 == root2  # Same value
@@ -53,7 +53,7 @@ class TestCachedPropertyBehavior:
         """Test that hybrid_nodes property is cached."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         hybrid1 = net.hybrid_nodes
         hybrid2 = net.hybrid_nodes
@@ -63,7 +63,7 @@ class TestCachedPropertyBehavior:
         """Test that tree_nodes property is cached."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         tree1 = net.tree_nodes
         tree2 = net.tree_nodes
@@ -73,7 +73,7 @@ class TestCachedPropertyBehavior:
         """Test that hybrid_edges property is cached."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         hybrid_edges1 = net.hybrid_edges
         hybrid_edges2 = net.hybrid_edges
@@ -81,14 +81,14 @@ class TestCachedPropertyBehavior:
 
     def test_tree_edges_cached(self) -> None:
         """Test that tree_edges property is cached."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         tree_edges1 = net.tree_edges
         tree_edges2 = net.tree_edges
         assert tree_edges1 is tree_edges2  # Same object (cached)
 
     def test_level_cached(self) -> None:
         """Test that level property is cached."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         level1 = net.level
         level2 = net.level
         assert level1 is level2  # Same object (cached)
@@ -99,7 +99,7 @@ class TestPropertyInvalidationOnCopy:
 
     def test_copy_does_not_copy_cache(self) -> None:
         """Test that copy() doesn't copy cached properties."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         # Access property to cache it
         _ = net.leaves
         
@@ -113,7 +113,7 @@ class TestPropertyInvalidationOnCopy:
         """Test that properties are recomputed on copy."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         net_copy = net.copy()
         
@@ -136,7 +136,7 @@ class TestAllCachedProperties:
         """Test that all topology properties use @cached_property."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         
         # Access all properties twice
@@ -169,7 +169,7 @@ class TestPropertyConsistency:
         """Test that leaves + internal_nodes + root = all nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         all_nodes = set(net._graph.nodes)
         accounted = {net.root_node} | net.leaves | set(net.internal_nodes)
@@ -179,7 +179,7 @@ class TestPropertyConsistency:
         """Test that internal_nodes = tree_nodes + hybrid_nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         internal_set = set(net.internal_nodes)
         tree_hybrid_set = set(net.tree_nodes) | set(net.hybrid_nodes)
@@ -189,7 +189,7 @@ class TestPropertyConsistency:
         """Test that taxa count matches leaves count."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
         )
         assert len(net.taxa) == len(net.leaves)
 
@@ -197,7 +197,7 @@ class TestPropertyConsistency:
         """Test that hybrid_edges count matches sum of hybrid in-degrees."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         hybrid_edge_count = len(net.hybrid_edges)
         hybrid_indegree_sum = sum(net.indegree(h) for h in net.hybrid_nodes)
@@ -207,7 +207,7 @@ class TestPropertyConsistency:
         """Test that tree_edges + hybrid_edges = all edges."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         all_edges = set(net.tree_edges) | set(net.hybrid_edges)
         expected_edges = {(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)}
@@ -217,7 +217,7 @@ class TestPropertyConsistency:
         """Test that root is not in internal_nodes."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         assert net.root_node not in net.internal_nodes
 
@@ -225,7 +225,7 @@ class TestPropertyConsistency:
         """Test that leaves are not in internal_nodes."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         for leaf in net.leaves:
             assert leaf not in net.internal_nodes
@@ -234,7 +234,7 @@ class TestPropertyConsistency:
         """Test that hybrid_nodes are in internal_nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         for hybrid in net.hybrid_nodes:
             assert hybrid in net.internal_nodes
@@ -243,7 +243,7 @@ class TestPropertyConsistency:
         """Test that tree_nodes are in internal_nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         for tree_node in net.tree_nodes:
             assert tree_node in net.internal_nodes

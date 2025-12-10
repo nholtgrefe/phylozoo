@@ -52,7 +52,7 @@ def find_lsa_node(network: DirectedPhyNetwork) -> T:
     ...         (4, 10),                        # hybrid 4 (in-degree 4, out-degree 1) to tree node 10
     ...         (10, 1), (10, 2)                # tree node 10 splits to leaves
     ...     ],
-    ...     taxa={1: "A", 2: "B"}
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
     >>> find_lsa_node(net)
     4
@@ -186,28 +186,25 @@ def to_LSA_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             edge_dict.update(data)
             new_edges.append(edge_dict)
     
-    # LSA networks keep the same leaves and taxa as the original network
-    # Use dict comprehension but avoid calling get_label twice
-    new_taxa: Dict[Any, str] = {}
+    # LSA networks keep the same leaves and labels as the original network
+    # Build nodes list with labels in NetworkX-style format
+    new_nodes: List[Union[Any, Tuple[Any, Dict[str, str]]]] = []
     for leaf in network.leaves:
         label = network.get_label(leaf)
         if label is not None:
-            new_taxa[leaf] = label
+            new_nodes.append((leaf, {'label': label}))
     
-    # Collect internal node labels for nodes that are still in the network (dict comprehension)
-    new_internal_labels: Dict[Any, str] = {
-        node: network.get_label(node)
-        for node in descendants
-        if node not in network.leaves
-        and node != lsa_node
-        and network.get_label(node) is not None
-    }
+    # Collect internal node labels for nodes that are still in the network
+    for node in descendants:
+        if node not in network.leaves and node != lsa_node:
+            label = network.get_label(node)
+            if label is not None:
+                new_nodes.append((node, {'label': label}))
     
     # Create new network
     return DirectedPhyNetwork(
         edges=new_edges,
-        taxa=new_taxa,
-        internal_node_labels=new_internal_labels if new_internal_labels else None
+        nodes=new_nodes if new_nodes else None
     )
 
 
@@ -404,6 +401,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     
     # Taxa stay the same (leaves are never suppressed, only internal nodes)
     # Reuse the taxa mapping from the working network (dict comprehension for efficiency)
+    # Note: SemiDirectedPhyNetwork still uses taxa parameter, so we keep dict format
     new_taxa: Dict[Any, str] = {
         leaf: working.get_label(leaf)
         for leaf in working.leaves
@@ -411,6 +409,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     }
     
     # Internal labels: remove any nodes that were suppressed (dict comprehension for efficiency)
+    # Note: SemiDirectedPhyNetwork still uses internal_node_labels parameter
     new_internal_labels: Dict[Any, str] = {
         node: label
         for node, label in working._node_to_label.items()

@@ -30,14 +30,14 @@ class TestNumberOfNodes:
 
     def test_number_of_nodes_small(self) -> None:
         """Test number_of_nodes on small network."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         assert net.number_of_nodes() == 3
 
     def test_number_of_nodes_large(self) -> None:
         """Test number_of_nodes on large network."""
         edges = [(100, i) for i in range(1, 100)]
-        taxa = {i: f"Taxon{i}" for i in range(1, 100)}
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        nodes = [(i, {"label": f"Taxon{i}"}) for i in range(1, 100)]
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 100
 
 
@@ -53,7 +53,7 @@ class TestNumberOfEdges:
 
     def test_number_of_edges_simple(self) -> None:
         """Test number_of_edges on simple network."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         assert net.number_of_edges() == 2
 
     def test_number_of_edges_parallel(self) -> None:
@@ -68,7 +68,7 @@ class TestNumberOfEdges:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 2)   # Hybrid to leaf
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.number_of_edges() == 9  # 2 (root->5, root->6) + 3 (parallel 5->4) + 1 (5->8) + 1 (6->4) + 1 (6->9) + 1 (4->2) = 9
 
@@ -78,12 +78,12 @@ class TestHasEdge:
 
     def test_has_edge_existing(self) -> None:
         """Test has_edge for existing edge."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert net.has_edge(3, 1) is True
 
     def test_has_edge_missing(self) -> None:
         """Test has_edge for missing edge."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert net.has_edge(3, 2) is False
 
     def test_has_edge_with_key(self) -> None:
@@ -98,7 +98,7 @@ class TestHasEdge:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 2)   # Hybrid to leaf
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.has_edge(5, 4, key=0) is True
         assert net.has_edge(5, 4, key=1) is True
@@ -116,7 +116,7 @@ class TestHasEdge:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 2)   # Hybrid to leaf
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         # Should return True if any edge exists (NetworkX behavior)
         assert net.has_edge(5, 4) is True
@@ -127,14 +127,14 @@ class TestDegree:
 
     def test_degree_root(self) -> None:
         """Test degree of root node."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         assert net.indegree(3) == 0
         assert net.outdegree(3) == 2
         assert net.degree(3) == 2
 
     def test_degree_leaf(self) -> None:
         """Test degree of leaf node."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert net.indegree(1) == 1
         assert net.outdegree(1) == 0
         assert net.degree(1) == 1
@@ -143,7 +143,7 @@ class TestDegree:
         """Test degree of tree node."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         assert net.indegree(3) == 1
         assert net.outdegree(3) == 2
@@ -153,7 +153,7 @@ class TestDegree:
         """Test degree of hybrid node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.indegree(4) == 2
         assert net.outdegree(4) == 1
@@ -171,7 +171,7 @@ class TestDegree:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 2)   # Hybrid to leaf
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         # In-degree counts all parallel edges
         assert net.indegree(4) == 4  # 3 from 5, 1 from 6
@@ -183,19 +183,19 @@ class TestParents:
 
     def test_parents_root(self) -> None:
         """Test parents of root (empty)."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert list(net.parents(3)) == []
 
     def test_parents_leaf(self) -> None:
         """Test parents of leaf."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert list(net.parents(1)) == [3]
 
     def test_parents_hybrid(self) -> None:
         """Test parents of hybrid node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         parents = set(net.parents(4))
         assert parents == {5, 6}
@@ -212,7 +212,7 @@ class TestParents:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 2)   # Hybrid to leaf
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         # Parents should only appear once (unique nodes)
         parents = set(net.parents(4))
@@ -224,12 +224,12 @@ class TestChildren:
 
     def test_children_leaf(self) -> None:
         """Test children of leaf (empty)."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert list(net.children(1)) == []
 
     def test_children_root(self) -> None:
         """Test children of root."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         children = set(net.children(3))
         assert children == {1, 2}
 
@@ -237,7 +237,7 @@ class TestChildren:
         """Test children of tree node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         children = set(net.children(5))
         assert children == {4, 8}
@@ -246,7 +246,7 @@ class TestChildren:
         """Test children of hybrid node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         children = list(net.children(4))
         assert children == [2]
@@ -257,13 +257,13 @@ class TestNeighbors:
 
     def test_neighbors_root(self) -> None:
         """Test neighbors of root."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         neighbors = set(net.neighbors(3))
         assert neighbors == {1, 2}  # Only children (no parents)
 
     def test_neighbors_leaf(self) -> None:
         """Test neighbors of leaf."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         neighbors = set(net.neighbors(1))
         assert neighbors == {3}  # Only parent (no children)
 
@@ -271,7 +271,7 @@ class TestNeighbors:
         """Test neighbors of hybrid node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         neighbors = set(net.neighbors(4))
         assert neighbors == {2, 5, 6}  # Parents + children
@@ -280,7 +280,7 @@ class TestNeighbors:
         """Test that neighbors = parents + children."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         for node in net._graph.nodes:
             neighbors = set(net.neighbors(node))
@@ -293,20 +293,20 @@ class TestContains:
 
     def test_contains_existing_node(self) -> None:
         """Test __contains__ for existing node."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert 3 in net
         assert 1 in net
 
     def test_contains_missing_node(self) -> None:
         """Test __contains__ for missing node."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         assert 999 not in net
 
     def test_contains_all_nodes(self) -> None:
         """Test __contains__ for all nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         for node in net._graph.nodes:
             assert node in net
@@ -317,7 +317,7 @@ class TestIter:
 
     def test_iter_all_nodes(self) -> None:
         """Test __iter__ includes all nodes."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         nodes = set(net)
         assert nodes == {1, 2, 3}
 
@@ -333,7 +333,7 @@ class TestIter:
         """Test that __iter__ order matches _graph.nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         iter_nodes = list(net)
         graph_nodes = list(net._graph.nodes)
@@ -345,7 +345,7 @@ class TestLen:
 
     def test_len_consistency(self) -> None:
         """Test that __len__() matches number_of_nodes()."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         assert len(net) == net.number_of_nodes()
 
     def test_len_empty(self) -> None:
@@ -358,8 +358,8 @@ class TestLen:
     def test_len_large(self) -> None:
         """Test __len__ on large network."""
         edges = [(100, i) for i in range(1, 100)]
-        taxa = {i: f"Taxon{i}" for i in range(1, 100)}
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        nodes = [(i, {"label": f"Taxon{i}"}) for i in range(1, 100)]
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net) == 100
 
 
@@ -368,7 +368,7 @@ class TestRepr:
 
     def test_repr_format(self) -> None:
         """Test __repr__ format."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         repr_str = repr(net)
         assert "DirectedPhyNetwork" in repr_str
         assert "nodes=" in repr_str
@@ -379,8 +379,8 @@ class TestRepr:
     def test_repr_truncation(self) -> None:
         """Test __repr__ truncates taxa list at 10."""
         edges = [(100, i) for i in range(1, 21)]
-        taxa = {i: f"Taxon{i}" for i in range(1, 21)}
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        nodes = [(i, {"label": f"Taxon{i}"}) for i in range(1, 21)]
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         repr_str = repr(net)
         # Should show first 10 taxa and "..."
         assert "..." in repr_str
@@ -399,7 +399,7 @@ class TestRepr:
 
     def test_repr_small_taxa_list(self) -> None:
         """Test __repr__ with small taxa list (no truncation)."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         repr_str = repr(net)
         # Should show both taxa
         assert "A" in repr_str or "B" in repr_str

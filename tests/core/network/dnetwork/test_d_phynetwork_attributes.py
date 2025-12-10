@@ -27,25 +27,25 @@ class TestGetEdgeAttribute:
         """Test getting existing edge attribute."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='branch_length') == 0.5
 
     def test_get_edge_attribute_missing(self) -> None:
         """Test getting missing edge attribute."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_edge_attribute(3, 1, attr='branch_length') is None
 
     def test_get_edge_attribute_nonexistent_edge(self) -> None:
         """Test getting attribute from non-existent edge."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_edge_attribute(3, 999, attr='branch_length') is None
 
     def test_get_edge_attribute_custom(self) -> None:
         """Test getting custom edge attribute."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'custom_attr': 'value'}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='custom_attr') == 'value'
 
@@ -53,7 +53,7 @@ class TestGetEdgeAttribute:
         """Test getting one attribute when edge has multiple."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95, 'custom': 'x'}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='branch_length') == 0.5
         assert net.get_edge_attribute(3, 1, attr='bootstrap') == 0.95
@@ -71,7 +71,7 @@ class TestGetEdgeAttribute:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Note: Can't easily set attributes on parallel edges with tuple format
         # This test verifies the method works when key is specified
@@ -92,7 +92,7 @@ class TestGetEdgeAttribute:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         with pytest.raises(ValueError, match="Multiple parallel edges"):
             net.get_edge_attribute(5, 4, attr='branch_length')
@@ -101,7 +101,7 @@ class TestGetEdgeAttribute:
         """Test default attribute name is 'branch_length'."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1) == 0.5  # Default attr='branch_length'
 
@@ -113,20 +113,20 @@ class TestGetBranchLength:
         """Test getting existing branch length."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_branch_length(3, 1) == 0.5
 
     def test_get_branch_length_missing(self) -> None:
         """Test getting missing branch length."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_branch_length(3, 1) is None
 
     def test_get_branch_length_zero(self) -> None:
         """Test branch length of zero."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 0.0}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_branch_length(3, 1) == 0.0
 
@@ -135,7 +135,7 @@ class TestGetBranchLength:
         # Note: branch_length validation is not enforced, so negative values are allowed
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': -0.5}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_branch_length(3, 1) == -0.5
 
@@ -154,7 +154,7 @@ class TestGetBranchLength:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Method should work with keys even if attribute is None
         result0 = net.get_branch_length(5, 4, key=0)
@@ -174,13 +174,13 @@ class TestGetBootstrap:
         """Test getting existing bootstrap value."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'bootstrap': 0.95}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_bootstrap(3, 1) == 0.95
 
     def test_get_bootstrap_missing(self) -> None:
         """Test getting missing bootstrap value."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_bootstrap(3, 1) is None
 
     def test_get_bootstrap_boundary_values(self) -> None:
@@ -190,7 +190,7 @@ class TestGetBootstrap:
                 {'u': 3, 'v': 1, 'bootstrap': 0.0},
                 {'u': 3, 'v': 2, 'bootstrap': 1.0}
             ],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         assert net.get_bootstrap(3, 1) == 0.0
         assert net.get_bootstrap(3, 2) == 1.0
@@ -210,7 +210,7 @@ class TestGetBootstrap:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Method should work with keys even if attribute is None
         result0 = net.get_bootstrap(5, 4, key=0)
@@ -234,7 +234,7 @@ class TestBootstrapValidation:
                 {'u': 3, 'v': 2, 'bootstrap': 0.5},
                 {'u': 3, 'v': 4, 'bootstrap': 1.0}
             ],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})]
         )
         assert net.validate() is True
 
@@ -243,7 +243,7 @@ class TestBootstrapValidation:
         with pytest.raises(ValueError, match="must be in \\[0.0, 1.0\\]"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': -0.1}],
-                taxa={1: "A"}
+                nodes=[(1, {"label": "A"})]
             )
 
     def test_bootstrap_above_one(self) -> None:
@@ -251,7 +251,7 @@ class TestBootstrapValidation:
         with pytest.raises(ValueError, match="must be in \\[0.0, 1.0\\]"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': 1.1}],
-                taxa={1: "A"}
+                nodes=[(1, {"label": "A"})]
             )
 
     def test_bootstrap_non_numeric(self) -> None:
@@ -259,14 +259,14 @@ class TestBootstrapValidation:
         with pytest.raises(ValueError, match="must be numeric"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': 'invalid'}],
-                taxa={1: "A"}
+                nodes=[(1, {"label": "A"})]
             )
 
     def test_bootstrap_integer_zero(self) -> None:
         """Test that integer 0 is valid for bootstrap."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'bootstrap': 0}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_bootstrap(3, 1) == 0
 
@@ -274,7 +274,7 @@ class TestBootstrapValidation:
         """Test that integer 1 is valid for bootstrap."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'bootstrap': 1}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_bootstrap(3, 1) == 1
 
@@ -286,7 +286,7 @@ class TestBootstrapValidation:
                 {'u': 3, 'v': 2, 'bootstrap': 0.9},
                 {'u': 3, 'v': 4, 'bootstrap': 0.7}
             ],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})]
         )
         assert net.validate() is True
 
@@ -304,7 +304,7 @@ class TestBootstrapValidation:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Network should validate (no bootstrap values to validate)
         assert net.validate() is True
@@ -328,7 +328,7 @@ class TestGetGamma:
                 {'u': 6, 'v': 9},  # Tree node 6 also has another child
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         assert net.get_gamma(5, 4) == 0.6
         assert net.get_gamma(6, 4) == 0.4
@@ -342,7 +342,7 @@ class TestGetGamma:
                 (6, 4), (6, 9),  # Tree node 6 splits
                 (4, 1)  # Hybrid to leaf
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         assert net.get_gamma(5, 4) is None
 
@@ -357,7 +357,7 @@ class TestGetGamma:
                 {'u': 6, 'v': 9},  # Tree node 6 also has another child
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         assert net.get_gamma(5, 4) == 0.0
         assert net.get_gamma(6, 4) == 1.0
@@ -375,7 +375,7 @@ class TestGetGamma:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 1)  # Hybrid to leaf
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Method should work with keys even if gamma not set
         result0 = net.get_gamma(5, 4, key=0)
@@ -401,7 +401,7 @@ class TestGammaValidation:
                 {'u': 6, 'v': 9},  # Tree node 6 also has another child
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         assert net.validate() is True
 
@@ -417,7 +417,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_above_one(self) -> None:
@@ -432,7 +432,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_non_numeric(self) -> None:
@@ -447,7 +447,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_sum_must_be_one(self) -> None:
@@ -462,7 +462,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_sum_exceeds_one(self) -> None:
@@ -477,7 +477,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_all_or_none(self) -> None:
@@ -492,7 +492,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_none_allowed(self) -> None:
@@ -504,7 +504,7 @@ class TestGammaValidation:
                 (6, 4), (6, 9),  # Tree node 6 splits
                 (4, 1)  # Hybrid to leaf
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # No gamma values - should be valid
         assert net.validate() is True
@@ -522,7 +522,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
             )
 
     def test_gamma_parallel_edges_sum(self) -> None:
@@ -540,7 +540,7 @@ class TestGammaValidation:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Verify the sum of gammas for hybrid node 4
         assert net.validate() is True
@@ -566,7 +566,7 @@ class TestGammaValidation:
                     (1, 4), (1, 5),  # Tree node 1 splits
                     (2, 6), (2, 7)  # Tree node 2 splits
                 ],
-                taxa={4: "A", 5: "B", 6: "C", 7: "D"}
+                nodes=[(4, {"label": "A"}), (5, {"label": "B"}), (6, {"label": "C"}), (7, {"label": "D"})]
             )
         
         # Try to set gamma on an edge to a leaf (not a hybrid edge)
@@ -575,7 +575,7 @@ class TestGammaValidation:
                 edges=[
                     {'u': 3, 'v': 1, 'gamma': 0.5}  # Gamma on edge to leaf
                 ],
-                taxa={1: "A"}
+                nodes=[(1, {"label": "A"})]
             )
         
         # Valid: gamma on hybrid edge
@@ -588,7 +588,7 @@ class TestGammaValidation:
                 (6, 9),  # Tree node 6 also has another child
                 (4, 1)  # Hybrid to leaf
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         assert net.validate() is True
 
@@ -611,7 +611,7 @@ class TestGammaValidation:
                     {'u': 8, 'v': 14},  # Tree node 8 also has another child
                     {'u': 4, 'v': 1}  # Hybrid to leaf
                 ],
-                taxa={1: "A", 11: "B", 12: "C", 13: "D", 14: "E"}
+                nodes=[(1, {"label": "A"}), (11, {"label": "B"}), (12, {"label": "C"}), (13, {"label": "D"}), (14, {"label": "E"})]
             )
 
     def test_gamma_floating_point_precision(self) -> None:
@@ -628,7 +628,7 @@ class TestGammaValidation:
                 {'u': 7, 'v': 10},
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C", 10: "D"}
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"}), (10, {"label": "D"})]
         )
         # Should pass with tolerance
         assert net.validate() is True
@@ -641,7 +641,7 @@ class TestCustomAttributes:
         """Test custom string attribute."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'label': 'edge1'}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='label') == 'edge1'
 
@@ -649,7 +649,7 @@ class TestCustomAttributes:
         """Test custom list attribute."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'tags': ['a', 'b', 'c']}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='tags') == ['a', 'b', 'c']
 
@@ -657,7 +657,7 @@ class TestCustomAttributes:
         """Test custom dict attribute."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'metadata': {'key': 'value'}}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='metadata') == {'key': 'value'}
 
@@ -672,7 +672,7 @@ class TestCustomAttributes:
                 'custom2': 42,
                 'custom3': [1, 2, 3]
             }],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_edge_attribute(3, 1, attr='custom1') == 'value1'
         assert net.get_edge_attribute(3, 1, attr='custom2') == 42
@@ -686,7 +686,7 @@ class TestAttributeEdgeCases:
         """Test very large branch length values."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 1e10}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_branch_length(3, 1) == 1e10
 
@@ -694,7 +694,7 @@ class TestAttributeEdgeCases:
         """Test very small branch length values."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 1e-10}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         assert net.get_branch_length(3, 1) == 1e-10
 
@@ -703,7 +703,7 @@ class TestAttributeEdgeCases:
         import math
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': float('nan')}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         result = net.get_branch_length(3, 1)
         assert result is not None
@@ -714,7 +714,7 @@ class TestAttributeEdgeCases:
         import math
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': float('inf')}],
-            taxa={1: "A"}
+            nodes=[(1, {"label": "A"})]
         )
         result = net.get_branch_length(3, 1)
         assert result is not None
@@ -725,7 +725,7 @@ class TestAttributeEdgeCases:
         attrs = {f'attr{i}': i for i in range(100)}
         attrs['u'] = 3
         attrs['v'] = 1
-        net = DirectedPhyNetwork(edges=[attrs], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[attrs], nodes=[(1, {"label": "A"})])
         # Check a few attributes
         assert net.get_edge_attribute(3, 1, attr='attr0') == 0
         assert net.get_edge_attribute(3, 1, attr='attr99') == 99

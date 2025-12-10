@@ -19,13 +19,13 @@ class TestIncidentParentEdges:
 
     def test_incident_parent_edges_root(self) -> None:
         """Test incident_parent_edges for root (empty)."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         parent_edges = list(net.incident_parent_edges(3))
         assert len(parent_edges) == 0
 
     def test_incident_parent_edges_leaf(self) -> None:
         """Test incident_parent_edges for leaf."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         parent_edges = list(net.incident_parent_edges(1))
         assert len(parent_edges) == 1
         assert (3, 1) in parent_edges
@@ -34,7 +34,7 @@ class TestIncidentParentEdges:
         """Test incident_parent_edges for tree node."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         parent_edges = list(net.incident_parent_edges(3))
         assert len(parent_edges) == 1
@@ -44,7 +44,7 @@ class TestIncidentParentEdges:
         """Test incident_parent_edges for hybrid node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         parent_edges = list(net.incident_parent_edges(4))
         assert len(parent_edges) == 2
@@ -63,7 +63,7 @@ class TestIncidentParentEdges:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 2}
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         parent_edges = list(net.incident_parent_edges(4, data=True))
         assert len(parent_edges) == 2
@@ -86,7 +86,7 @@ class TestIncidentParentEdges:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         parent_edges = list(net.incident_parent_edges(4, keys=True))
         assert len(parent_edges) >= 2
@@ -107,7 +107,7 @@ class TestIncidentParentEdges:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 2}
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         parent_edges = list(net.incident_parent_edges(4, keys=True, data=True))
         assert len(parent_edges) >= 2
@@ -128,7 +128,7 @@ class TestIncidentParentEdges:
                 (6, 9),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         parent_edges = list(net.incident_parent_edges(4, keys=True))
         # Should have 3 edges from 5, 1 from 6
@@ -141,13 +141,13 @@ class TestIncidentChildEdges:
 
     def test_incident_child_edges_leaf(self) -> None:
         """Test incident_child_edges for leaf (empty)."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         child_edges = list(net.incident_child_edges(1))
         assert len(child_edges) == 0
 
     def test_incident_child_edges_root(self) -> None:
         """Test incident_child_edges for root."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         child_edges = list(net.incident_child_edges(3))
         assert len(child_edges) == 2
         assert (3, 1) in child_edges
@@ -157,7 +157,7 @@ class TestIncidentChildEdges:
         """Test incident_child_edges for tree node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         child_edges = list(net.incident_child_edges(5))
         assert len(child_edges) == 2
@@ -168,7 +168,7 @@ class TestIncidentChildEdges:
         """Test incident_child_edges for hybrid node."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         child_edges = list(net.incident_child_edges(4))
         assert len(child_edges) == 1
@@ -181,7 +181,7 @@ class TestIncidentChildEdges:
                 {'u': 1, 'v': 2, 'branch_length': 0.5, 'bootstrap': 0.95},
                 {'u': 1, 'v': 3, 'branch_length': 0.3, 'bootstrap': 0.87}
             ],
-            taxa={2: "A", 3: "B"}
+            nodes=[(2, {'label': 'A'}), (3, {'label': 'B'})]
         )
         child_edges = list(net.incident_child_edges(1, data=True))
         assert len(child_edges) == 2
@@ -199,7 +199,7 @@ class TestIncidentChildEdges:
                 (1, 3),
                 (2, 5)  # Make 2 a hybrid node
             ],
-            taxa={3: "B", 5: "A"}
+            nodes=[(3, {'label': 'B'}), (5, {'label': 'A'})]
         )
         child_edges = list(net.incident_child_edges(1, keys=True))
         assert len(child_edges) >= 2
@@ -214,7 +214,7 @@ class TestIncidentChildEdges:
                 (5, 8),
                 (4, 2)
             ],
-            taxa={2: "A", 8: "B"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'})]
         )
         child_edges = list(net.incident_child_edges(5, keys=True))
         # Should have 3 edges to 4, 1 to 8
@@ -229,7 +229,7 @@ class TestIncidentEdgesConsistency:
         """Test that incident_parent_edges matches parents()."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         for node in net._graph.nodes:
             parents = set(net.parents(node))
@@ -241,7 +241,7 @@ class TestIncidentEdgesConsistency:
         """Test that incident_child_edges matches children()."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         for node in net._graph.nodes:
             children = set(net.children(node))
@@ -261,7 +261,7 @@ class TestIncidentEdgesConsistency:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 2}
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         # Check parent edges (incoming to hybrid)
         parent_edges = list(net.incident_parent_edges(4, data=True))
@@ -295,7 +295,7 @@ class TestIncidentEdgesEdgeCases:
 
     def test_incident_edges_nonexistent_node(self) -> None:
         """Test incident edges for non-existent node."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         # Should return empty iterator
         parent_edges = list(net.incident_parent_edges(999))
         child_edges = list(net.incident_child_edges(999))
@@ -310,7 +310,7 @@ class TestIncidentEdgesEdgeCases:
         edges.append((6, 4))
         edges.append((6, 9))
         edges.append((4, 2))
-        net = DirectedPhyNetwork(edges=edges, taxa={2: "A", 8: "B", 9: "C"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})])
         parent_edges = list(net.incident_parent_edges(4, keys=True))
         # Should have 10 edges from 5, 1 from 6
         edges_from_5 = [e for e in parent_edges if e[0] == 5]
@@ -329,7 +329,7 @@ class TestIncidentEdgesEdgeCases:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 2}
             ],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         # Test all 4 combinations
         edges_00 = list(net.incident_parent_edges(4, keys=False, data=False))

@@ -61,7 +61,7 @@ class TestSingleEdgeNetwork:
 
     def test_single_edge_network(self) -> None:
         """Test network with single edge."""
-        net = DirectedPhyNetwork(edges=[(1, 2)], taxa={2: "A"})
+        net = DirectedPhyNetwork(edges=[(1, 2)], nodes=[(2, {'label': 'A'})])
         assert net.number_of_nodes() == 2
         assert net.number_of_edges() == 1
         assert net.root_node == 1
@@ -75,8 +75,8 @@ class TestLargeNetworks:
         """Test network with 100 nodes."""
         # Create star tree with 100 leaves
         edges = [(100, i) for i in range(1, 100)]
-        taxa = {i: f"Taxon{i}" for i in range(1, 100)}
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        nodes = [(i, {"label": f"Taxon{i}"}) for i in range(1, 100)]
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 100
         assert net.number_of_edges() == 99
         assert len(net.leaves) == 99
@@ -86,7 +86,7 @@ class TestLargeNetworks:
         """Test network with 100 edges."""
         # Create a simpler structure: root with many children, each leading to a subtree
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         # Root with 50 children, each child has 2 leaves (50 * 2 = 100 edges)
@@ -97,17 +97,17 @@ class TestLargeNetworks:
             edges.append((root, child))
             edges.append((child, leaf1))
             edges.append((child, leaf2))
-            taxa[leaf1] = f"Taxon{2*i}"
-            taxa[leaf2] = f"Taxon{2*i+1}"
+            nodes.append((leaf1, {"label": f"Taxon{2*i}"}))
+            nodes.append((leaf2, {"label": f"Taxon{2*i+1}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_edges() == 150  # 50 + 50 + 50 = 150 edges
         assert net.validate() is True
 
     def test_network_10_hybrid_nodes(self) -> None:
         """Test network with 10 hybrid nodes."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         # Create 10 independent hybrid events
@@ -124,11 +124,11 @@ class TestLargeNetworks:
             edges.append((tree2, hybrid))
             edges.append((tree2, 5000 + i),)  # Tree node 2 also has another child
             edges.append((hybrid, leaf))
-            taxa[leaf] = f"Taxon{i}"
-            taxa[4000 + i] = f"TaxonA{i}"
-            taxa[5000 + i] = f"TaxonB{i}"
+            nodes.append((leaf, {"label": f"Taxon{i}"}))
+            nodes.append((4000 + i, {"label": f"TaxonA{i}"}))
+            nodes.append((5000 + i, {"label": f"TaxonB{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 10
         assert net.validate() is True
 
@@ -140,8 +140,8 @@ class TestHighDegreeNodes:
         """Test node with high out-degree (many children)."""
         # Root with 50 children
         edges = [(1, i) for i in range(2, 52)]
-        taxa = {i: f"Taxon{i}" for i in range(2, 52)}
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        nodes = [(i, {"label": f"Taxon{i}"}) for i in range(2, 52)]
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.outdegree(1) == 50
         assert net.validate() is True
 
@@ -149,7 +149,7 @@ class TestHighDegreeNodes:
         """Test hybrid node with high in-degree (many parents)."""
         # Hybrid with 20 parents
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         for i in range(20):
@@ -158,12 +158,12 @@ class TestHighDegreeNodes:
             edges.append((root, tree_node))
             edges.append((tree_node, 100))  # All point to hybrid
             edges.append((tree_node, leaf))  # Tree node also has another child
-            taxa[leaf] = f"Taxon{i}"
+            nodes.append((leaf, {"label": f"Taxon{i}"}))
         
         edges.append((100, 200))  # Hybrid to leaf
-        taxa[200] = "Leaf"
+        nodes.append((200, {"label": "Leaf"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.indegree(100) == 20
         assert 100 in net.hybrid_nodes
         assert net.validate() is True
@@ -184,7 +184,7 @@ class TestParallelEdges:
         edges.append((6, 4))
         edges.append((6, 9))  # Tree node 6 also has another child
         edges.append((4, 2))  # Hybrid to leaf
-        net = DirectedPhyNetwork(edges=edges, taxa={2: "A", 8: "B", 9: "C"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})])
         # Total edges: 2 (root->5, root->6) + 50 (parallel) + 1 (5->8) + 1 (6->4) + 1 (6->9) + 1 (4->2) = 56
         assert net.number_of_edges() == 56
         assert net.indegree(4) == 51  # 50 from 5, 1 from 6
@@ -200,7 +200,7 @@ class TestParallelEdges:
             (6, 9),  # Tree node 6 also has another child
             (4, 2)  # Hybrid to leaf
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={2: "A", 8: "B", 9: "C"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})])
         # No gamma values set, so validation should pass
         assert net.validate() is True
 
@@ -211,7 +211,7 @@ class TestDeepTrees:
     def test_very_deep_tree(self) -> None:
         """Test very deep tree (chain)."""
         edges = []
-        taxa = {}
+        nodes = []
         node_id = 10000  # Start with high ID to avoid conflicts
         
         def build_deep_tree(parent, level, max_level):
@@ -224,8 +224,8 @@ class TestDeepTrees:
                 node_id += 1
                 edges.append((parent, leaf1))
                 edges.append((parent, leaf2))
-                taxa[leaf1] = f"Taxon{leaf1}"
-                taxa[leaf2] = f"Taxon{leaf2}"
+                nodes.append((leaf1, {"label": f"Taxon{leaf1}"}))
+                nodes.append((leaf2, {"label": f"Taxon{leaf2}"}))
                 return
             
             left = node_id
@@ -241,7 +241,7 @@ class TestDeepTrees:
         root = 1
         build_deep_tree(root, 0, 6)  # 6 levels gives deep tree
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 50
         assert net.number_of_edges() >= 50
         assert net.validate() is True
@@ -251,7 +251,7 @@ class TestDeepTrees:
         """Test deep binary tree."""
         # Binary tree with 10 levels (2^10 = 1024 nodes max)
         edges = []
-        taxa = {}
+        nodes = []
         node_id = 10000
         
         def build_tree(parent, level, max_level):
@@ -264,8 +264,8 @@ class TestDeepTrees:
                 node_id += 1
                 edges.append((parent, leaf1))
                 edges.append((parent, leaf2))
-                taxa[leaf1] = f"Taxon{leaf1}"
-                taxa[leaf2] = f"Taxon{leaf2}"
+                nodes.append((leaf1, {"label": f"Taxon{leaf1}"}))
+                nodes.append((leaf2, {"label": f"Taxon{leaf2}"}))
                 return
             
             left = node_id
@@ -281,7 +281,7 @@ class TestDeepTrees:
         root = 1
         build_tree(root, 0, 6)  # 6 levels
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.validate() is True
         assert net.root_node == root
 
@@ -293,8 +293,8 @@ class TestWideTrees:
         """Test very wide tree (many leaves from root)."""
         # Root with 200 leaves
         edges = [(1, i) for i in range(2, 202)]
-        taxa = {i: f"Taxon{i}" for i in range(2, 202)}
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        nodes = [(i, {"label": f"Taxon{i}"}) for i in range(2, 202)]
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 201
         assert len(net.leaves) == 200
         assert net.validate() is True
@@ -319,7 +319,7 @@ class TestComplexTopologies:
             (9, 2), (9, 14),   # Tree node 9 splits (out-degree 2)
             (4, 1)             # Hybrid to leaf
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={1: "A", 2: "B", 11: "C", 12: "D", 13: "E", 14: "F"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'})])
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
         assert net.validate() is True
@@ -337,7 +337,7 @@ class TestComplexTopologies:
             (9, 2), (9, 14),          # Tree node 9 splits (out-degree 2)
             (4, 1)                    # Hybrid to leaf
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={1: "A", 2: "B", 11: "C", 12: "D", 13: "E", 14: "F"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'})])
         # Both 4 and 5 are hybrids
         assert len(net.hybrid_nodes) == 2
         assert net.validate() is True
@@ -345,7 +345,7 @@ class TestComplexTopologies:
     def test_multiple_independent_hybrids(self) -> None:
         """Test multiple independent hybrid events."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         # 5 independent hybrid events
@@ -362,11 +362,11 @@ class TestComplexTopologies:
             edges.append((t2, h))
             edges.append((t2, 5000 + i))  # Tree node t2 also has another child
             edges.append((h, l))
-            taxa[l] = f"Taxon{i}"
-            taxa[4000 + i] = f"TaxonA{i}"
-            taxa[5000 + i] = f"TaxonB{i}"
+            nodes.append((l, {"label": f"Taxon{i}"}))
+            nodes.append((4000 + i, {"label": f"TaxonA{i}"}))
+            nodes.append((5000 + i, {"label": f"TaxonB{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 5
         assert net.validate() is True
 
@@ -381,7 +381,7 @@ class TestInvalidStructures:
         with pytest.raises(ValueError, match="directed cycles"):
             DirectedPhyNetwork(
                 edges=[(1, 2), (2, 3), (3, 1), (1, 4)],  # Add leaf 4 from node 1
-                taxa={4: "A"}  # Only leaf 4 is in taxa
+                nodes=[(4, {'label': 'A'})]  # Only leaf 4 is in taxa
             )
 
     def test_cycle_complex(self) -> None:
@@ -391,7 +391,7 @@ class TestInvalidStructures:
         with pytest.raises(ValueError, match="directed cycles"):
             DirectedPhyNetwork(
                 edges=[(1, 2), (2, 3), (3, 4), (4, 2), (1, 5)],  # Add leaf 5 from node 1
-                taxa={5: "A"}  # Only leaf 5 is in taxa
+                nodes=[(5, {'label': 'A'})]  # Only leaf 5 is in taxa
             )
 
     def test_multiple_roots(self) -> None:
@@ -399,7 +399,7 @@ class TestInvalidStructures:
         with pytest.raises(ValueError, match="multiple root nodes"):
             DirectedPhyNetwork(
                 edges=[(1, 3), (2, 3)],
-                taxa={3: "A"}
+                nodes=[(3, {'label': 'A'})]
             )
 
     def test_leaf_wrong_indegree(self) -> None:
@@ -409,7 +409,7 @@ class TestInvalidStructures:
         with pytest.raises(ValueError, match="in-degree"):
             DirectedPhyNetwork(
                 edges=[(10, 1), (10, 2), (1, 3), (2, 3)],  # Root 10, nodes 1 and 2 both point to 3
-                taxa={3: "A"}
+                nodes=[(3, {'label': 'A'})]
             )
 
     def test_internal_node_invalid_degrees(self) -> None:
@@ -418,7 +418,7 @@ class TestInvalidStructures:
         with pytest.raises(ValueError, match="Internal node"):
             DirectedPhyNetwork(
                 edges=[(1, 2), (2, 3)],
-                taxa={3: "A"}
+                nodes=[(3, {'label': 'A'})]
             )
 
 
@@ -430,7 +430,7 @@ class TestInvalidAttributes:
         with pytest.raises(ValueError, match="must be in \\[0.0, 1.0\\]"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': -0.1}],
-                taxa={1: "A"}
+                nodes=[(1, {'label': 'A'})]
             )
 
     def test_bootstrap_out_of_range_positive(self) -> None:
@@ -438,7 +438,7 @@ class TestInvalidAttributes:
         with pytest.raises(ValueError, match="must be in \\[0.0, 1.0\\]"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': 1.1}],
-                taxa={1: "A"}
+                nodes=[(1, {'label': 'A'})]
             )
 
     def test_gamma_out_of_range_negative(self) -> None:
@@ -453,7 +453,7 @@ class TestInvalidAttributes:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
             )
 
     def test_gamma_sum_not_one(self) -> None:
@@ -468,7 +468,7 @@ class TestInvalidAttributes:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
             )
 
     def test_gamma_partial_specification(self) -> None:
@@ -483,7 +483,7 @@ class TestInvalidAttributes:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
             )
 
 
@@ -495,7 +495,7 @@ class TestTypeErrors:
         with pytest.raises(ValueError, match="must be numeric"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': 'invalid'}],
-                taxa={1: "A"}
+                nodes=[(1, {'label': 'A'})]
             )
 
     def test_gamma_non_numeric(self) -> None:
@@ -510,7 +510,7 @@ class TestTypeErrors:
                     {'u': 6, 'v': 9},
                     {'u': 4, 'v': 1}
                 ],
-                taxa={1: "A", 8: "B", 9: "C"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
             )
 
     def test_bootstrap_list_type(self) -> None:
@@ -518,7 +518,7 @@ class TestTypeErrors:
         with pytest.raises(ValueError, match="must be numeric"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': [0.5]}],
-                taxa={1: "A"}
+                nodes=[(1, {'label': 'A'})]
             )
 
 
@@ -529,7 +529,7 @@ class TestBoundaryValues:
         """Test bootstrap exactly 0.0."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'bootstrap': 0.0}],
-            taxa={1: "A"}
+            nodes=[(1, {'label': 'A'})]
         )
         assert net.get_bootstrap(3, 1) == 0.0
         assert net.validate() is True
@@ -538,7 +538,7 @@ class TestBoundaryValues:
         """Test bootstrap exactly 1.0."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'bootstrap': 1.0}],
-            taxa={1: "A"}
+            nodes=[(1, {'label': 'A'})]
         )
         assert net.get_bootstrap(3, 1) == 1.0
         assert net.validate() is True
@@ -554,7 +554,7 @@ class TestBoundaryValues:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.get_gamma(5, 4) == 0.0
         assert net.validate() is True
@@ -570,7 +570,7 @@ class TestBoundaryValues:
                 {'u': 6, 'v': 9},
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.get_gamma(5, 4) == 1.0
         assert net.validate() is True
@@ -589,7 +589,7 @@ class TestBoundaryValues:
                 {'u': 7, 'v': 10},
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C", 10: "D"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})]
         )
         # Should pass with tolerance
         assert net.validate() is True
@@ -602,7 +602,7 @@ class TestSpecialValues:
         """Test NaN branch length (should be allowed, not validated)."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': float('nan')}],
-            taxa={1: "A"}
+            nodes=[(1, {'label': 'A'})]
         )
         result = net.get_branch_length(3, 1)
         assert result is not None
@@ -612,7 +612,7 @@ class TestSpecialValues:
         """Test infinity branch length (should be allowed, not validated)."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': float('inf')}],
-            taxa={1: "A"}
+            nodes=[(1, {'label': 'A'})]
         )
         result = net.get_branch_length(3, 1)
         assert result is not None
@@ -625,7 +625,7 @@ class TestSpecialValues:
         with pytest.raises(ValueError, match="must be in \\[0.0, 1.0\\]"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': float('nan')}],
-                taxa={1: "A"}
+                nodes=[(1, {'label': 'A'})]
             )
 
     def test_infinity_bootstrap(self) -> None:
@@ -633,6 +633,6 @@ class TestSpecialValues:
         with pytest.raises(ValueError, match="must be in \\[0.0, 1.0\\]"):
             DirectedPhyNetwork(
                 edges=[{'u': 3, 'v': 1, 'bootstrap': float('inf')}],
-                taxa={1: "A"}
+                nodes=[(1, {'label': 'A'})]
             )
 

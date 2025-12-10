@@ -3,11 +3,15 @@ __repr__ for mixed graph classes
 update doc strings to include Raise.
 use jit and numba etc.
 use cached property
-make subpartitions a generator
-Maybe internal logic to switch to non-multigraph if not necessary?
 Use | instead of Union for typehinting
 Validate MixedPhyNetwork (perhaps remove the second condition from our paper), or for now only validate sd network and not m network.
+reconsider/standardize imports
+
+
 Use validation manager within methods (such as subnetworks)
 Allow single node networks
 Optimize code
-reconsider/standardize imports
+move is cutedge etc. to other module?
+edge and node labels should not be none.
+LSA or lsa
+selfloops, keyword checks

@@ -19,7 +19,7 @@ class TestCopy:
 
     def test_copy_independent_objects(self) -> None:
         """Test that copy creates independent objects."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         net2 = net1.copy()
         
         # Should be different objects
@@ -32,8 +32,7 @@ class TestCopy:
         """Test that labels are copied."""
         net1 = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
         )
         net2 = net1.copy()
         
@@ -44,7 +43,7 @@ class TestCopy:
 
     def test_copy_graph_structure_copied(self) -> None:
         """Test that graph structure is copied."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         net2 = net1.copy()
         
         # Graph structure should be copied
@@ -57,7 +56,7 @@ class TestCopy:
         """Test that copied network has equal properties."""
         net1 = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            taxa={2: "A", 8: "B", 9: "C"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         net2 = net1.copy()
         
@@ -73,7 +72,7 @@ class TestCopy:
 
     def test_copy_cached_properties_recomputed(self) -> None:
         """Test that cached properties are recomputed on copy."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         # Access to cache
         _ = net1.leaves
         _ = net1.taxa
@@ -91,7 +90,7 @@ class TestCopy:
                 {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
                 {'u': 3, 'v': 2, 'branch_length': 0.3}
             ],
-            taxa={1: "A", 2: "B"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         net2 = net1.copy()
         
@@ -111,7 +110,7 @@ class TestCopy:
                 {'u': 6, 'v': 9},  # Tree node 6 also has another child
                 {'u': 4, 'v': 1}
             ],
-            taxa={1: "A", 8: "B", 9: "C"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         net2 = net1.copy()
         
@@ -126,7 +125,7 @@ class TestImmutability:
 
     def test_no_mutation_methods(self) -> None:
         """Test that mutation methods don't exist."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         
         # Verify mutation methods don't exist
         assert not hasattr(net, "add_node")
@@ -141,7 +140,7 @@ class TestImmutability:
 
     def test_graph_not_directly_modifiable(self) -> None:
         """Test that _graph is not directly modifiable (should raise error if tried)."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         
         # _graph exists but should not be modified directly
         # Attempting to modify would require accessing private attributes
@@ -158,8 +157,7 @@ class TestImmutability:
         """Test that label mappings are not directly modifiable."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            taxa={1: "A", 2: "B"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
         )
         
         original_labels = net._node_to_label.copy()
@@ -174,7 +172,7 @@ class TestImmutability:
 
     def test_immutability_after_operations(self) -> None:
         """Test that network remains immutable after operations."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         
         # Perform various read operations
         _ = net.number_of_nodes()
@@ -193,7 +191,7 @@ class TestImmutability:
 
     def test_copy_immutability_preserved(self) -> None:
         """Test that copy preserves immutability."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        net1 = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         net2 = net1.copy()
         
         # Copy should also be immutable

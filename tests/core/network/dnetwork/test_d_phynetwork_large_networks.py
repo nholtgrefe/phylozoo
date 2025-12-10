@@ -25,7 +25,7 @@ class TestBinaryTrees:
     def test_binary_tree_100_leaves(self) -> None:
         """Test binary tree with 100 leaves."""
         edges = []
-        taxa = {}
+        nodes = []
         node_counter = 1
         
         def build_binary_tree(parent, level, max_level):
@@ -38,8 +38,8 @@ class TestBinaryTrees:
                 node_counter += 1
                 edges.append((parent, left_leaf))
                 edges.append((parent, right_leaf))
-                taxa[left_leaf] = f"Taxon{left_leaf}"
-                taxa[right_leaf] = f"Taxon{right_leaf}"
+                nodes.append((left_leaf, {"label": f"Taxon{left_leaf}"}))
+                nodes.append((right_leaf, {"label": f"Taxon{right_leaf}"}))
                 return
             
             left = node_counter
@@ -55,7 +55,7 @@ class TestBinaryTrees:
         root = 10000
         build_binary_tree(root, 0, 7)  # 7 levels gives up to 128 leaves
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 100
         assert len(net.leaves) >= 100
         assert net.validate() is True
@@ -65,7 +65,7 @@ class TestBinaryTrees:
     def test_binary_tree_operations(self) -> None:
         """Test operations on large binary tree."""
         edges = []
-        taxa = {}
+        nodes = []
         node_counter = 1
         
         def build_tree(parent, level, max_level):
@@ -78,8 +78,8 @@ class TestBinaryTrees:
                 node_counter += 1
                 edges.append((parent, left_leaf))
                 edges.append((parent, right_leaf))
-                taxa[left_leaf] = f"Taxon{left_leaf}"
-                taxa[right_leaf] = f"Taxon{right_leaf}"
+                nodes.append((left_leaf, {"label": f"Taxon{left_leaf}"}))
+                nodes.append((right_leaf, {"label": f"Taxon{right_leaf}"}))
                 return
             
             left = node_counter
@@ -95,7 +95,7 @@ class TestBinaryTrees:
         root = 10000
         build_tree(root, 0, 6)  # 6 levels
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         
         # Test all operations complete
         assert net.number_of_nodes() > 0
@@ -113,7 +113,7 @@ class TestTernaryTrees:
     def test_ternary_tree_100_leaves(self) -> None:
         """Test ternary tree with 100 leaves."""
         edges = []
-        taxa = {}
+        nodes = []
         node_counter = 1
         
         def build_ternary_tree(parent, level, max_level):
@@ -129,9 +129,9 @@ class TestTernaryTrees:
                 edges.append((parent, leaf1))
                 edges.append((parent, leaf2))
                 edges.append((parent, leaf3))
-                taxa[leaf1] = f"Taxon{leaf1}"
-                taxa[leaf2] = f"Taxon{leaf2}"
-                taxa[leaf3] = f"Taxon{leaf3}"
+                nodes.append((leaf1, {"label": f"Taxon{leaf1}"}))
+                nodes.append((leaf2, {"label": f"Taxon{leaf2}"}))
+                nodes.append((leaf3, {"label": f"Taxon{leaf3}"}))
                 return
             
             child1 = node_counter
@@ -151,7 +151,7 @@ class TestTernaryTrees:
         root = 10000
         build_ternary_tree(root, 0, 5)  # 5 levels gives up to 243 leaves
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 100
         assert len(net.leaves) >= 100
         assert net.validate() is True
@@ -164,7 +164,7 @@ class TestNetworksWithManyHybrids:
     def test_network_50_hybrid_nodes(self) -> None:
         """Test network with 50 hybrid nodes."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         # Create 50 independent hybrid events
@@ -182,11 +182,11 @@ class TestNetworksWithManyHybrids:
             edges.append((tree2, hybrid))
             edges.append((tree2, leaf2))  # tree2 splits to hybrid and leaf2
             edges.append((hybrid, 4000 + i))  # hybrid has one child
-            taxa[leaf1] = f"Taxon{2*i}"
-            taxa[leaf2] = f"Taxon{2*i+1}"
-            taxa[4000 + i] = f"Taxon{100+i}"
+            nodes.append((leaf1, {"label": f"Taxon{2*i}"}))
+            nodes.append((leaf2, {"label": f"Taxon{2*i+1}"}))
+            nodes.append((4000 + i, {"label": f"Taxon{100+i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 50
         assert net.validate() is True
         assert net.is_tree() is False
@@ -194,7 +194,7 @@ class TestNetworksWithManyHybrids:
     def test_network_100_hybrid_nodes(self) -> None:
         """Test network with 100 hybrid nodes."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 100000
         
         for i in range(100):
@@ -211,11 +211,11 @@ class TestNetworksWithManyHybrids:
             edges.append((tree2, hybrid))
             edges.append((tree2, leaf2))  # tree2 splits to hybrid and leaf2
             edges.append((hybrid, 40000 + i))  # hybrid has one child
-            taxa[leaf1] = f"Taxon{2*i}"
-            taxa[leaf2] = f"Taxon{2*i+1}"
-            taxa[40000 + i] = f"TaxonH{i}"
+            nodes.append((leaf1, {"label": f"Taxon{2*i}"}))
+            nodes.append((leaf2, {"label": f"Taxon{2*i+1}"}))
+            nodes.append((40000 + i, {"label": f"TaxonH{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 100
         assert net.validate() is True
 
@@ -234,7 +234,7 @@ class TestLevelKHybridization:
             (6, 11),  # 6 splits to 4 and 11
             (4, 1), (9, 2), (9, 3)  # To leaves (9 splits to 2 children)
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={1: "A", 2: "B", 3: "C", 11: "D"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'})])
         assert len(net.hybrid_nodes) == 2
         assert net.validate() is True
 
@@ -253,7 +253,7 @@ class TestLevelKHybridization:
             (14, 3), (14, 18),  # 14 splits to 2 children
             (4, 1)  # 4 is hybrid, so it has one child
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={1: "A", 2: "B", 3: "C", 17: "D", 18: "E"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (17, {'label': 'D'}), (18, {'label': 'E'})])
         assert len(net.hybrid_nodes) == 3
         assert net.validate() is True
 
@@ -271,7 +271,7 @@ class TestLevelKHybridization:
             (10, 5), (22, 5),    # Hybrid 5
             (5, 1), (23, 2), (23, 4), (24, 3), (24, 6)  # To leaves (23 and 24 split to 2 children)
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={1: "A", 2: "B", 3: "C", 4: "D", 6: "E"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'}), (6, {'label': 'E'})])
         assert len(net.hybrid_nodes) == 4
         assert net.validate() is True
 
@@ -282,7 +282,7 @@ class TestMultipleIndependentHybrids:
     def test_10_independent_hybrids(self) -> None:
         """Test 10 independent hybrid events."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 1000
         
         for i in range(10):
@@ -299,18 +299,18 @@ class TestMultipleIndependentHybrids:
             edges.append((t2, h))
             edges.append((t2, l2))  # t2 splits to h and l2
             edges.append((h, 400 + i))  # h has one child
-            taxa[l1] = f"Taxon{2*i}"
-            taxa[l2] = f"Taxon{2*i+1}"
-            taxa[400 + i] = f"TaxonH{i}"
+            nodes.append((l1, {"label": f"Taxon{2*i}"}))
+            nodes.append((l2, {"label": f"Taxon{2*i+1}"}))
+            nodes.append((400 + i, {"label": f"TaxonH{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 10
         assert net.validate() is True
 
     def test_20_independent_hybrids(self) -> None:
         """Test 20 independent hybrid events."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         for i in range(20):
@@ -327,11 +327,11 @@ class TestMultipleIndependentHybrids:
             edges.append((t2, h))
             edges.append((t2, l2))  # t2 splits to h and l2
             edges.append((h, 4000 + i))  # h has one child
-            taxa[l1] = f"Taxon{2*i}"
-            taxa[l2] = f"Taxon{2*i+1}"
-            taxa[4000 + i] = f"TaxonH{i}"
+            nodes.append((l1, {"label": f"Taxon{2*i}"}))
+            nodes.append((l2, {"label": f"Taxon{2*i+1}"}))
+            nodes.append((4000 + i, {"label": f"TaxonH{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 20
         assert net.validate() is True
 
@@ -352,7 +352,7 @@ class TestNestedHybridization:
             (12, 14),  # 12 splits to 4 and 14
             (4, 1), (13, 2), (13, 3), (14, 6), (14, 7)  # To leaves (4 is hybrid, so it has one child)
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={1: "A", 2: "B", 3: "C", 6: "D", 7: "E"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (6, {'label': 'D'}), (7, {'label': 'E'})])
         assert len(net.hybrid_nodes) == 3
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
@@ -367,7 +367,7 @@ class TestRealWorldInspiredTopologies:
         """Test caterpillar tree topology (one long branch with leaves)."""
         # Structure: root -> chain -> leaves (each internal node splits to next node and a leaf)
         edges = []
-        taxa = {}
+        nodes = []
         root = 100
         current = root
         
@@ -375,23 +375,23 @@ class TestRealWorldInspiredTopologies:
             next_node = 100 + i
             edges.append((current, next_node))
             edges.append((current, 200 + i))  # Leaf
-            taxa[200 + i] = f"Taxon{i}"
+            nodes.append((200 + i, {"label": f"Taxon{i}"}))
             current = next_node
         
         # Last node splits to 2 leaves
         edges.append((current, 200 + 51))
         edges.append((current, 200 + 52))
-        taxa[200 + 51] = "Taxon51"
-        taxa[200 + 52] = "Taxon52"
+        nodes.append((200 + 51, {"label": "Taxon51"}))
+        nodes.append((200 + 52, {"label": "Taxon52"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.validate() is True
         assert len(net.leaves) == 52
 
     def test_balanced_tree(self) -> None:
         """Test perfectly balanced binary tree."""
         edges = []
-        taxa = {}
+        nodes = []
         node_counter = 1
         
         def build_balanced(parent, level, max_level):
@@ -404,8 +404,8 @@ class TestRealWorldInspiredTopologies:
                 node_counter += 1
                 edges.append((parent, left_leaf))
                 edges.append((parent, right_leaf))
-                taxa[left_leaf] = f"Taxon{left_leaf}"
-                taxa[right_leaf] = f"Taxon{right_leaf}"
+                nodes.append((left_leaf, {"label": f"Taxon{left_leaf}"}))
+                nodes.append((right_leaf, {"label": f"Taxon{right_leaf}"}))
                 return
             
             left = node_counter
@@ -421,14 +421,14 @@ class TestRealWorldInspiredTopologies:
         root = 10000
         build_balanced(root, 0, 7)  # 7 levels = 128 leaves
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.validate() is True
         assert net.is_tree() is True
 
     def test_network_with_mixed_topology(self) -> None:
         """Test network with mixed tree and hybrid regions."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 1000
         
         # Tree region
@@ -438,7 +438,7 @@ class TestRealWorldInspiredTopologies:
         edges.append((100, 2))
         edges.append((101, 3))
         edges.append((101, 4))
-        taxa.update({1: "A", 2: "B", 3: "C", 4: "D"})
+        nodes.extend([(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})])
         
         # Hybrid region
         edges.append((root, 200))
@@ -448,9 +448,9 @@ class TestRealWorldInspiredTopologies:
         edges.append((201, 300))
         edges.append((201, 7))  # 201 splits to 300 and 7
         edges.append((300, 5))
-        taxa.update({5: "E", 6: "F", 7: "G"})
+        nodes.extend([(5, {"label": "E"}), (6, {"label": "F"}), (7, {"label": "G"})])
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.validate() is True
         assert len(net.hybrid_nodes) == 1
         assert len(net.tree_nodes) > 0
@@ -463,7 +463,7 @@ class TestStressTests:
         """Test network with 1000 nodes."""
         # Create a wide tree with 1000 nodes
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         # Root with many children, each leading to a small subtree
@@ -474,16 +474,16 @@ class TestStressTests:
             for j in range(9):
                 leaf = 30000 + i * 9 + j
                 edges.append((child, leaf))
-                taxa[leaf] = f"Taxon{i}_{j}"
+                nodes.append((leaf, {"label": f"Taxon{i}_{j}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 1001  # 1 root + 100 internal + 900 leaves
         assert net.validate() is True
 
     def test_2000_edges(self) -> None:
         """Test network with 2000 edges."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 100000
         
         # Create structure with many edges
@@ -504,14 +504,14 @@ class TestStressTests:
                     node_id += 1
                     edges.append((parent, leaf1))
                     edges.append((parent, leaf2))
-                    taxa[leaf1] = f"Taxon{leaf1}"
-                    taxa[leaf2] = f"Taxon{leaf2}"
+                    nodes.append((leaf1, {"label": f"Taxon{leaf1}"}))
+                    nodes.append((leaf2, {"label": f"Taxon{leaf2}"}))
                     if len(edges) >= 2000:
                         break
             if len(edges) >= 2000:
                 break
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_edges() >= 2000
         assert net.validate() is True
 
@@ -519,7 +519,7 @@ class TestStressTests:
         """Test all operations on large network."""
         # Create large network
         edges = []
-        taxa = {}
+        nodes = []
         root = 100000
         
         # Create 500 independent hybrid events
@@ -537,11 +537,11 @@ class TestStressTests:
             edges.append((t2, h))
             edges.append((t2, l2))  # t2 splits to h and l2
             edges.append((h, 500000 + i))  # h has one child
-            taxa[l1] = f"Taxon{2*i}"
-            taxa[l2] = f"Taxon{2*i+1}"
-            taxa[500000 + i] = f"TaxonH{i}"
+            nodes.append((l1, {"label": f"Taxon{2*i}"}))
+            nodes.append((l2, {"label": f"Taxon{2*i+1}"}))
+            nodes.append((500000 + i, {"label": f"TaxonH{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         
         # Test all operations complete (may be slow, but should complete)
         assert net.number_of_nodes() > 0
@@ -572,7 +572,7 @@ class TestComplexRealWorldScenarios:
     def test_network_with_multiple_hybrid_levels(self) -> None:
         """Test network with hybrid nodes at multiple levels."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 10000
         
         # Level 1: 5 hybrids
@@ -590,8 +590,8 @@ class TestComplexRealWorldScenarios:
             edges.append((t2, h1))
             edges.append((t2, l1b))  # t2 splits to h1 and l1b
             edges.append((h1, 7000 + i))  # h1 has one child (not a leaf, will have children)
-            taxa[l1] = f"Taxon{2*i}"
-            taxa[l1b] = f"Taxon{2*i+1}"
+            nodes.append((l1, {"label": f"Taxon{2*i}"}))
+            nodes.append((l1b, {"label": f"Taxon{2*i+1}"}))
         
         # Level 2: 3 hybrids (children of level 1 hybrid children)
         for i in range(3):
@@ -609,18 +609,18 @@ class TestComplexRealWorldScenarios:
             edges.append((t4, h2))
             edges.append((t4, l2b))  # t4 splits to h2 and l2b
             edges.append((h2, 8000 + i))  # h2 has one child (leaf)
-            taxa[l2] = f"Taxon2_{2*i}"
-            taxa[l2b] = f"Taxon2_{2*i+1}"
-            taxa[8000 + i] = f"TaxonH2{i}"
+            nodes.append((l2, {"label": f"Taxon2_{2*i}"}))
+            nodes.append((l2b, {"label": f"Taxon2_{2*i+1}"}))
+            nodes.append((8000 + i, {"label": f"TaxonH2{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 8  # 5 level-1 + 3 level-2
         assert net.validate() is True
 
     def test_network_with_hybrid_and_tree_regions(self) -> None:
         """Test network with both hybrid and tree regions."""
         edges = []
-        taxa = {}
+        nodes = []
         root = 1000
         
         # Tree region: balanced binary tree
@@ -633,8 +633,8 @@ class TestComplexRealWorldScenarios:
                 node_id[0] += 1
                 edges.append((parent, leaf1))
                 edges.append((parent, leaf2))
-                taxa[leaf1] = f"TreeTaxon{leaf1}"
-                taxa[leaf2] = f"TreeTaxon{leaf2}"
+                nodes.append((leaf1, {"label": f"TreeTaxon{leaf1}"}))
+                nodes.append((leaf2, {"label": f"TreeTaxon{leaf2}"}))
                 return
             
             left = node_id[0]
@@ -665,11 +665,11 @@ class TestComplexRealWorldScenarios:
             edges.append((t2, h))
             edges.append((t2, l2))  # t2 splits to h and l2
             edges.append((h, 400 + i))  # h has one child
-            taxa[l1] = f"HybridTaxon{2*i}"
-            taxa[l2] = f"HybridTaxon{2*i+1}"
-            taxa[400 + i] = f"HybridTaxonH{i}"
+            nodes.append((l1, {"label": f"HybridTaxon{2*i}"}))
+            nodes.append((l2, {"label": f"HybridTaxon{2*i+1}"}))
+            nodes.append((400 + i, {"label": f"HybridTaxonH{i}"}))
         
-        net = DirectedPhyNetwork(edges=edges, taxa=taxa)
+        net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.validate() is True
         assert len(net.hybrid_nodes) == 5
         assert len(net.tree_nodes) > 0

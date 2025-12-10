@@ -22,7 +22,7 @@ class TestToSDNetwork:
                 {"u": 3, "v": 1, "branch_length": 0.5},
                 {"u": 3, "v": 2, "branch_length": 0.7},
             ],
-            taxa={1: "A", 2: "B"},
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
         )
 
         sdnet = to_sd_network(dnet)
@@ -55,7 +55,7 @@ class TestToSDNetwork:
                 (10, 1),
                 (10, 2),
             ],
-            taxa={1: "A", 2: "B", 8: "C", 9: "D"},
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (8, {"label": "C"}), (9, {"label": "D"})],
         )
 
         sdnet = to_sd_network(dnet)
@@ -99,7 +99,7 @@ class TestToSDNetwork:
                 (5, 11),  # ensure tree node 5 has out-degree >= 2
                 (6, 12),  # ensure tree node 6 has out-degree >= 2
             ],
-            taxa={1: "A", 2: "B", 11: "C", 12: "D"},
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (11, {"label": "C"}), (12, {"label": "D"})],
         )
 
         sdnet = to_sd_network(dnet)

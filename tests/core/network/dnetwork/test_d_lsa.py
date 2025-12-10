@@ -19,7 +19,7 @@ class TestFindLSANode:
         """
         A simple binary tree should have its root as the LSA.
         """
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
         assert find_lsa_node(net) == 3
 
     def test_hybrid_lsa_below_root(self) -> None:
@@ -37,7 +37,7 @@ class TestFindLSANode:
             (10, 8),
             (10, 9),
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={8: "A", 9: "B"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
         # Common ancestors of all leaves are {7, 4, 10}; depth(10) > depth(4) > depth(7)
         assert find_lsa_node(net) == 10
 
@@ -57,7 +57,7 @@ class TestToLSANetwork:
         """
         When root is already LSA, to_LSA_network returns a copy rooted at the same node.
         """
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
         lsa_net = to_LSA_network(net)
         assert lsa_net.root_node == 3
         assert set(lsa_net.leaves) == {1, 2}
@@ -77,7 +77,7 @@ class TestToLSANetwork:
             (10, 8),
             (10, 9),
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={8: "A", 9: "B"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
 
         lsa_net = to_LSA_network(net)
 
@@ -107,7 +107,7 @@ class TestIsLSANetwork:
         """
         Tree with root as LSA returns True.
         """
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
         assert is_LSA_network(net) is True
 
     def test_lsa_below_root_false(self) -> None:
@@ -125,6 +125,6 @@ class TestIsLSANetwork:
             (10, 8),
             (10, 9),
         ]
-        net = DirectedPhyNetwork(edges=edges, taxa={8: "A", 9: "B"})
+        net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
         assert is_LSA_network(net) is False
 

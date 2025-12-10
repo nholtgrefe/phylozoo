@@ -28,7 +28,8 @@ class DirectedPhyNetwork:
     - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
     - **Tree nodes**: Internal nodes (non-root, non-leaf) with in-degree 1 and out-degree >= 2
     - **Hybrid nodes**: Internal nodes with in-degree >= 2 and out-degree 1
-    
+    For technical reasons, a single-node network (where root and leaf are the same node) is also valid.
+
     The `validate()` method checks whether the network adheres to this definition upon
     initialization.
     
@@ -44,7 +45,7 @@ class DirectedPhyNetwork:
     
     Parameters
     ----------
-    edges : List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]
+    edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
         List of directed edges. Can be:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -68,20 +69,15 @@ class DirectedPhyNetwork:
         Other edge attributes are also supported (any key-value pairs can be added),
         but the above three are suggested for phylogenetic networks.
         
-        Must be provided (can be empty list for empty network, but a warning will be raised).
-    taxa : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-        Taxon labels for leaves. Can be:
-        - Dict mapping leaf node IDs to taxon labels: {leaf_id: "taxon"}
-        - List of (leaf_id, taxon_label) tuples
-        The IDs in this mapping must be leaves (no outgoing edges).
-        Not all leaves need to be covered - uncovered leaves get auto-generated labels.
+        Can be empty list or None for empty/single-node networks. By default None.
+    nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+        List of nodes to add to the graph. Can be:
+        - Simple node IDs: `1`, `"node1"`, etc.
+        - Tuple format: `(node_id, {'label': 'label_name'})` to specify attributes.
+        This matches NetworkX's `add_nodes_from` API pattern.
+        Labels can be specified for any node (leaves or internal nodes).
+        Leaves without labels will get auto-generated labels.
         By default None.
-    internal_node_labels : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-        Labels for internal nodes (optional). Can be:
-        - Dict mapping node IDs to labels: {node_id: "label"}
-        - List of (node_id, label) tuples
-        Only internal nodes (non-leaves) can be labeled via this parameter.
-        Leaves must be labeled via the 'taxa' parameter. By default None.
     
     Attributes
     ----------
@@ -102,16 +98,22 @@ class DirectedPhyNetwork:
     
     Examples
     --------
-    >>> # Initialize with taxa mapping
-    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+    >>> # Initialize with nodes and labels
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
     >>> net.taxa
     {'A', 'B'}
     >>> net.root_node
     3
     >>> net.is_tree()
     True
-    >>> # Partial taxa mapping - uncovered leaves get auto-generated labels
-    >>> net2 = DirectedPhyNetwork(edges=[(3, 1), (3, 2), (3, 4)], taxa={1: "A"})
+    >>> # Partial labels - uncovered leaves get auto-generated labels
+    >>> net2 = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
     >>> net2.taxa  # 2 and 4 are auto-labeled
     {'A', '2', '4'}
     >>> # Network with branch lengths and bootstrap support
@@ -120,7 +122,7 @@ class DirectedPhyNetwork:
     ...         {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
     ...         {'u': 3, 'v': 2, 'branch_length': 0.3, 'bootstrap': 0.87}
     ...     ],
-    ...     taxa={1: "A", 2: "B"}
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
     >>> net3.get_branch_length(3, 1)
     0.5
@@ -135,61 +137,80 @@ class DirectedPhyNetwork:
     ...         (5, 8), (6, 9),  # Tree nodes also have other children
     ...         (4, 1)  # Hybrid to leaf
     ...     ],
-    ...     taxa={1: "A", 8: "B", 9: "C"}
+    ...     nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
     ... )
     >>> net4.get_gamma(5, 4)
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
+    >>> # Single-node network (root and leaf are the same)
+    >>> net5 = DirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
+    >>> net5.root_node
+    1
+    >>> net5.leaves
+    {1}
+    >>> net5.taxa
+    {'A'}
+    >>> # Empty network
+    >>> net6 = DirectedPhyNetwork(edges=[])
     """
     
     def __init__(
         self,
-        edges: List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]],
-        taxa: Optional[Dict[T, str] | List[Tuple[T, str]]] = None,
-        internal_node_labels: Optional[Dict[T, str] | List[Tuple[T, str]]] = None,
+        edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
+        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]] = None,
     ) -> None:
         """
         Initialize a directed phylogenetic network.
         
         Parameters
         ----------
-        edges : List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]
-            List of directed edges. Must be provided (can be empty list for empty network,
-            but a warning will be raised).
-        taxa : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-            Taxon labels for leaves. Can be:
-            - Dict mapping leaf IDs to taxon labels: {leaf_id: "taxon"}
-            - List of (leaf_id, taxon_label) tuples
-            The IDs must be leaves (no outgoing edges). Not all leaves need to be
-            covered - uncovered leaves get auto-generated labels. By default None.
-        internal_node_labels : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-            Labels for internal nodes (optional). Can be:
-            - Dict mapping node IDs to labels: {node_id: "label"}
-            - List of (node_id, label) tuples
-            Only internal nodes (non-leaves) can be labeled via this parameter.
-            Leaves must be labeled via 'taxa'. By default None.
+        edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+            List of directed edges. Can be empty list or None for empty/single-node networks.
+            By default None.
+        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+            List of nodes to add to the graph. Can be:
+            - Simple node IDs: `1`, `"node1"`, etc.
+            - Tuple format: `(node_id, {'label': 'label_name'})` to specify attributes.
+            This matches NetworkX's `add_nodes_from` API pattern.
+            Labels can be specified for any node (leaves or internal nodes).
+            Leaves without labels will get auto-generated labels.
+            By default None.
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})  # Dict: leaf_id -> taxon
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa=[(1, "A"), (2, "B")])  # List of tuples
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"}, internal_node_labels={3: "root"})
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"}, internal_node_labels=[(3, "root")])
+        >>> # Simple network with labels
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(3, 1), (3, 2)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        ... )
+        >>> # Mix of labeled and unlabeled nodes
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(3, 1), (3, 2)],
+        ...     nodes=[3, (1, {'label': 'A'})]  # 3 has no label, 1 has label 'A'
+        ... )
+        >>> # Single-node network
+        >>> net = DirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
+        >>> # Empty network
+        >>> net = DirectedPhyNetwork(edges=[])
         >>> # With edge attributes
         >>> net = DirectedPhyNetwork(
         ...     edges=[
         ...         {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
         ...         {'u': 3, 'v': 2, 'branch_length': 0.3}
         ...     ],
-        ...     taxa={1: "A", 2: "B"}
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         ... )
         """
-        # Warn if edges is empty
+        # Default to empty list
+        if edges is None:
+            edges = []
+        
+        # Warn if edges is empty (but allow it)
         if not edges:
             warnings.warn(
                 "Initializing DirectedPhyNetwork with empty edges list. "
-                "This creates an empty network.",
+                "This creates an empty network or a network with isolated nodes.",
                 UserWarning,
                 stacklevel=2
             )
@@ -198,76 +219,76 @@ class DirectedPhyNetwork:
         self._node_to_label: Dict[T, str] = {}
         self._label_to_node: Dict[str, T] = {}
         
-        self._initialize_labels(taxa, internal_node_labels)
+        # Process nodes parameter (add nodes and extract labels)
+        node_labels: Dict[T, str] = {}  # All labels from nodes parameter
+        if nodes:
+            for node_spec in nodes:
+                if isinstance(node_spec, tuple) and len(node_spec) == 2:
+                    # Tuple format: (node_id, {'label': 'label_name', ...})
+                    node_id, attrs = node_spec
+                    if not isinstance(attrs, dict):
+                        raise ValueError(
+                            f"Node tuple must be (node_id, dict_of_attributes), got {node_spec}"
+                        )
+                    
+                    # Add node if it doesn't exist, with all attributes
+                    if node_id not in self._graph:
+                        self._graph.add_node(node_id, **attrs)
+                    else:
+                        # Node exists, update attributes
+                        for key, value in attrs.items():
+                            self._graph._graph.nodes[node_id][key] = value
+                    
+                    # Extract label if provided (for later processing)
+                    if 'label' in attrs:
+                        node_labels[node_id] = attrs['label']
+                else:
+                    # Simple node ID
+                    node_id = node_spec
+                    if node_id not in self._graph:
+                        self._graph.add_node(node_id)
+        
+        # Initialize labels: use labels from nodes parameter, auto-label uncovered leaves
+        self._initialize_labels_from_nodes(node_labels)
         
         # Validate the network
         if not self.validate():
             raise ValueError("Network validation failed")
     
-    def _initialize_labels(
+    def _initialize_labels_from_nodes(
         self,
-        taxa: Optional[Dict[T, str] | List[Tuple[T, str]]],
-        internal_node_labels: Optional[Dict[T, str] | List[Tuple[T, str]]],
+        node_labels: Dict[T, str],
     ) -> None:
         """
-        Initialize node labels from taxa and internal node labels.
+        Initialize node labels from nodes parameter and auto-label uncovered leaves.
         
-        This helper method processes taxa labels for leaves, auto-labels uncovered leaves,
-        and processes internal node labels.
+        This method processes labels specified in the nodes parameter, then auto-labels
+        any leaves that don't have labels.
         
         Parameters
         ----------
-        taxa : Optional[Dict[T, str] | List[Tuple[T, str]]]
-            Taxon labels for leaves.
-        internal_node_labels : Optional[Dict[T, str] | List[Tuple[T, str]]]
-            Labels for internal nodes.
+        node_labels : Dict[T, str]
+            Mapping from node IDs to labels (from nodes parameter).
         
         Raises
         ------
         ValueError
-            If taxa or internal_node_labels have invalid format, or if nodes in taxa
-            are not leaves, or if nodes in internal_node_labels are leaves.
+            If labels are not unique.
         """
         # Identify all leaves (nodes with no outgoing edges)
         all_leaves: Set[T] = self.leaves
         
-        # Process taxa (taxon labels for leaves)
-        covered_leaves: Set[T] = set()
-        if taxa:
-            if isinstance(taxa, dict):
-                # Dict: leaf_id -> taxon_label
-                for leaf_id, taxon_label in taxa.items():
-                    # Verify this is indeed a leaf
-                    if leaf_id not in all_leaves:
-                        raise ValueError(
-                            f"Node {leaf_id} in taxa mapping is not a leaf "
-                            f"(has outgoing edges)"
-                        )
-                    self._set_label(leaf_id, taxon_label)
-                    covered_leaves.add(leaf_id)
-            elif isinstance(taxa, list):
-                # List of (leaf_id, taxon_label) tuples
-                for leaf_id, taxon_label in taxa:
-                    # Verify this is indeed a leaf
-                    if leaf_id not in all_leaves:
-                        raise ValueError(
-                            f"Node {leaf_id} in taxa mapping is not a leaf "
-                            f"(has outgoing edges)"
-                        )
-                    self._set_label(leaf_id, taxon_label)
-                    covered_leaves.add(leaf_id)
-            else:
-                raise ValueError(
-                    "taxa must be a dict (leaf_id -> taxon_label) "
-                    "or a list of (leaf_id, taxon_label) tuples"
-                )
+        # Set labels from nodes parameter (for both leaves and internal nodes)
+        for node_id, label in node_labels.items():
+            self._set_label(node_id, label)
         
         # Auto-label uncovered leaves
+        covered_leaves = {leaf for leaf in all_leaves if leaf in node_labels}
         uncovered_leaves = all_leaves - covered_leaves
         for leaf_id in uncovered_leaves:
             # Auto-generate label based on node_id
             label = str(leaf_id)
-            # If label already exists (e.g., from taxa mapping), make it unique
+            # If label already exists (e.g., from nodes parameter), make it unique
             if label in self._label_to_node:
                 counter = 1
                 unique_label = f"{label}_{counter}"
@@ -276,35 +297,6 @@ class DirectedPhyNetwork:
                     unique_label = f"{label}_{counter}"
                 label = unique_label
             self._set_label(leaf_id, label)
-        
-        # Process internal node labels (optional)
-        # Only set labels for internal nodes that are explicitly provided
-        if internal_node_labels:
-            if isinstance(internal_node_labels, dict):
-                # Dict: node_id -> label
-                for node_id, label in internal_node_labels.items():
-                    if node_id in all_leaves:
-                        raise ValueError(
-                            f"Node {node_id} in internal_node_labels is a leaf. "
-                            f"Use the 'taxa' parameter to set leaf labels (taxa)."
-                        )
-                    # Only set labels for internal nodes
-                    self._set_label(node_id, label)
-            elif isinstance(internal_node_labels, list):
-                # List of (node_id, label) tuples
-                for node_id, label in internal_node_labels:
-                    if node_id in all_leaves:
-                        raise ValueError(
-                            f"Node {node_id} in internal_node_labels is a leaf. "
-                            f"Use the 'taxa' parameter to set leaf labels (taxa)."
-                        )
-                    # Only set labels for internal nodes
-                    self._set_label(node_id, label)
-            else:
-                raise ValueError(
-                    "internal_node_labels must be a dict (node_id -> label) "
-                    "or a list of (node_id, label) tuples"
-                )
         
         # Note: Internal nodes without explicit labels remain unlabeled
         # Only leaves are guaranteed to have labels (taxa)
@@ -507,9 +499,10 @@ class DirectedPhyNetwork:
         This method performs comprehensive validation of the network structure
         and edge attributes. See class docstring for detailed validation rules.
         Empty networks (no nodes) are considered valid.
+        Single-node networks (where root and leaf are the same node) are also valid.
         """
-        # Empty networks are valid
-        if self.number_of_nodes() == 0:
+        # Empty networks and single-node networks are valid
+        if self.number_of_nodes() in [0,1]:
             return True
         
         # 1. Check that network is connected (weakly connected)
@@ -518,7 +511,7 @@ class DirectedPhyNetwork:
                 "Network is not connected. All nodes must be in a single weakly connected component."
             )
         
-        # 2. Check for directed cycles (must be acyclic)
+        # 3. Check for directed cycles (must be acyclic)
         if not nx.is_directed_acyclic_graph(self._graph._graph):
             cycles = list(nx.simple_cycles(self._graph._graph))
             raise ValueError(
@@ -556,13 +549,49 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         >>> net.get_label(1)
         'A'
         >>> net.get_label(3) is None
         True
         """
         return self._node_to_label.get(node_id)
+    
+    def get_node_attribute(self, node_id: T, attr: str) -> Optional[Any]:
+        """
+        Get a node attribute value.
+        
+        Parameters
+        ----------
+        node_id : T
+            Node identifier.
+        attr : str
+            Attribute name. Common attributes include 'label'.
+            Any node attribute can be accessed.
+        
+        Returns
+        -------
+        Optional[Any]
+            Attribute value, or None if not set.
+        
+        Examples
+        --------
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(3, 1)],
+        ...     nodes=[(1, {'label': 'A'}), (3, {'label': 'root', 'custom': 42})]
+        ... )
+        >>> net.get_node_attribute(1, 'label')
+        'A'
+        >>> net.get_node_attribute(3, 'label')
+        'root'
+        >>> net.get_node_attribute(3, 'custom')
+        42
+        >>> net.get_node_attribute(1, 'nonexistent') is None
+        True
+        """
+        if node_id not in self._graph:
+            return None
+        return self._graph._graph.nodes[node_id].get(attr)
     
     def get_node_id(self, label: str) -> Optional[T]:
         """
@@ -580,7 +609,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         >>> net.get_node_id("A")
         1
         """
@@ -620,7 +649,8 @@ class DirectedPhyNetwork:
                     f"Label '{label}' is already used by node {existing_node}. "
                     f"Each label must be unique."
                 )
-            # Same node, same label - nothing to do
+            # Same node, same label - ensure graph attribute is set and return
+            self._graph._graph.nodes[node_id]['label'] = label
             return
         
         # Update mappings
@@ -628,6 +658,9 @@ class DirectedPhyNetwork:
         if old_label and old_label in self._label_to_node and old_label != label:
             del self._label_to_node[old_label]
         self._label_to_node[label] = node_id
+        
+        # Also set label in the underlying graph as a node attribute
+        self._graph._graph.nodes[node_id]['label'] = label
     
     # ========== Edge Attribute Access (Read-Only) ==========
     
@@ -664,7 +697,7 @@ class DirectedPhyNetwork:
         ...         {'u': 3, 'v': 2, 'key': 1, 'branch_length': 0.7},  # Parallel edge
         ...         (2, 1)  # Tree node 2 to leaf
         ...     ],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> net.get_edge_attribute(3, 2, key=0, attr='branch_length')
         0.5
@@ -716,7 +749,7 @@ class DirectedPhyNetwork:
         --------
         >>> net = DirectedPhyNetwork(
         ...     edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> net.get_branch_length(3, 1)
         0.5
@@ -745,7 +778,7 @@ class DirectedPhyNetwork:
         --------
         >>> net = DirectedPhyNetwork(
         ...     edges=[{'u': 3, 'v': 1, 'bootstrap': 0.95}],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> net.get_bootstrap(3, 1)
         0.95
@@ -783,7 +816,7 @@ class DirectedPhyNetwork:
         ...         (5, 8), (6, 9),  # Tree nodes also have other children
         ...         (4, 1)  # Hybrid to leaf
         ...     ],
-        ...     taxa={1: "A", 8: "B", 9: "C"}
+        ...     nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         ... )
         >>> net.get_gamma(5, 4)
         0.6
@@ -957,7 +990,7 @@ class DirectedPhyNetwork:
         ...         {'u': 1, 'v': 2, 'branch_length': 0.5},
         ...         {'u': 3, 'v': 2, 'branch_length': 0.3}
         ...     ],
-        ...     taxa={2: "A"}
+        ...     nodes=[(2, {'label': 'A'})]
         ... )
         >>> list(net.incident_parent_edges(2))
         [(1, 2), (3, 2)]
@@ -991,7 +1024,7 @@ class DirectedPhyNetwork:
         ...         {'u': 1, 'v': 2, 'branch_length': 0.5},
         ...         {'u': 1, 'v': 3, 'branch_length': 0.3}
         ...     ],
-        ...     taxa={2: "A", 3: "B"}
+        ...     nodes=[(2, {'label': 'A'}), (3, {'label': 'B'})]
         ... )
         >>> list(net.incident_child_edges(1))
         [(1, 2), (1, 3)]
@@ -1026,7 +1059,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.taxa
         {'A', 'B'}
         """
@@ -1044,7 +1077,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.internal_nodes
         [3]
         """
@@ -1073,7 +1106,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.root_node
         3
         """
@@ -1098,7 +1131,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(5, 4), (6, 4), (4, 1)], taxa={1: "A"})
+        >>> net = DirectedPhyNetwork(edges=[(5, 4), (6, 4), (4, 1)], nodes=[(1, {'label': 'A'})])
         >>> net.hybrid_nodes
         [4]
         """
@@ -1128,7 +1161,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.LSA_node
         3
         """
@@ -1150,7 +1183,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.tree_nodes
         [3]
         """
@@ -1181,7 +1214,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 2), (4, 2)], taxa={2: "A"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 2), (4, 2)], nodes=[(2, {'label': 'A'})])
         >>> net.hybrid_edges
         [(3, 2), (4, 2)]
         """
@@ -1205,7 +1238,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> len(net.tree_edges)
         2
         """
@@ -1241,7 +1274,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.is_tree()
         True
         """
@@ -1274,7 +1307,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1)], taxa={1: "A"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         >>> net2 = net.copy()
         >>> net.number_of_nodes()
         2
@@ -1299,7 +1332,7 @@ class DirectedPhyNetwork:
         
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> repr(net)
         'DirectedPhyNetwork(nodes=3, edges=2, level=0, taxa=2, taxa_list=[A, B])'
         """

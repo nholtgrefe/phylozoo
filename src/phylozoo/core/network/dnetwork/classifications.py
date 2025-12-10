@@ -33,7 +33,7 @@ def is_LSA_network(network: 'DirectedPhyNetwork') -> bool:
     
     Examples
     --------
-    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> is_LSA_network(net)
     True
     """
