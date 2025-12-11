@@ -4,7 +4,6 @@ Standard things:
 - Use validation manager within methods (such as subnetworks)
 
 Rename phylozoo to phyloweb?
-__repr__ for mixed graph classes
 update doc strings to include Raise.
 use jit and numba etc.
 Use | instead of Union for typehinting
@@ -12,3 +11,5 @@ Validate MixedPhyNetwork (perhaps remove the second condition from our paper), o
 reconsider/standardize imports
 
 move is cutedge etc. to other module?
+
+test nested validations, test fnwors, make sure fnwords only chooses from allowed. add more tests. Add example in docs.
