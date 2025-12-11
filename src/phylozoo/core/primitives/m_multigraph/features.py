@@ -228,3 +228,135 @@ def source_components(graph: 'MixedMultiGraph') -> list[tuple[list[T], list[tupl
     
     return source_comps
 
+
+def is_cutedge(graph: 'MixedMultiGraph', u: T, v: T, key: int | None = None) -> bool:
+    """
+    Check if edge (u, v) is a cut-edge.
+    
+    A cut-edge is an edge whose removal increases the number of
+    connected components.
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The graph to analyze.
+    u : T
+        Source node.
+    v : T
+        Target node.
+    key : int | None, optional
+        Edge key. If None, checks the first edge found. By default None.
+    
+    Returns
+    -------
+    bool
+        True if (u, v) is a cut-edge, False otherwise.
+    
+    Raises
+    ------
+    ValueError
+        If (u, v) is not an edge in the graph.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.features import is_cutedge
+    >>> G = MixedMultiGraph()
+    >>> G.add_undirected_edge(1, 2)
+    0
+    >>> G.add_undirected_edge(2, 3)
+    0
+    >>> is_cutedge(G, 2, 3)
+    True
+    """
+    if not graph.has_edge(u, v, key):
+        raise ValueError(f"Edge ({u}, {v}, {key}) is not in the graph.")
+    
+    # Find edge key if not provided
+    if key is None:
+        if graph._undirected.has_edge(u, v):
+            key = next(iter(graph._undirected[u][v].keys()))
+        elif graph._directed.has_edge(u, v):
+            key = next(iter(graph._directed[u][v].keys()))
+        else:
+            raise ValueError(f"Edge ({u}, {v}) is not in the graph.")
+    
+    num_before = nx.number_connected_components(graph._combined)
+    
+    # Temporarily remove and check
+    graph._combined.remove_edge(u, v, key)
+    num_after = nx.number_connected_components(graph._combined)
+    
+    # Restore edge
+    if graph._undirected.has_edge(u, v, key):
+        edge_data = dict(graph._undirected[u][v][key])
+        graph._combined.add_edge(u, v, key=key, **edge_data)
+    elif graph._directed.has_edge(u, v, key):
+        edge_data = dict(graph._directed[u][v][key])
+        graph._combined.add_edge(u, v, key=key, **edge_data)
+    
+    return num_after != num_before
+
+
+def is_cutvertex(graph: 'MixedMultiGraph', v: T) -> bool:
+    """
+    Check if v is a cut-vertex.
+    
+    A cut-vertex is a vertex whose removal increases the number of
+    connected components.
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The graph to analyze.
+    v : T
+        Vertex.
+    
+    Returns
+    -------
+    bool
+        True if v is a cut-vertex, False otherwise.
+    
+    Raises
+    ------
+    ValueError
+        If v is not a vertex in the graph.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.features import is_cutvertex
+    >>> G = MixedMultiGraph()
+    >>> G.add_undirected_edge(1, 2)
+    0
+    >>> G.add_undirected_edge(2, 3)
+    0
+    >>> is_cutvertex(G, 2)
+    True
+    """
+    if v not in graph:
+        raise ValueError(f"Vertex {v} is not in the graph.")
+    
+    num_before = nx.number_connected_components(graph._combined)
+    
+    # Temporarily remove and check
+    graph._combined.remove_node(v)
+    num_after = nx.number_connected_components(graph._combined)
+    
+    # Restore node and its edges
+    graph._combined.add_node(v)
+    # Restore edges incident to v
+    if v in graph._undirected:
+        for neighbor in graph._undirected.neighbors(v):
+            for k, data in graph._undirected[v][neighbor].items():
+                graph._combined.add_edge(v, neighbor, key=k, **data)
+    if v in graph._directed:
+        for predecessor in graph._directed.predecessors(v):
+            for k, data in graph._directed[predecessor][v].items():
+                graph._combined.add_edge(predecessor, v, key=k, **data)
+        for successor in graph._directed.successors(v):
+            for k, data in graph._directed[v][successor].items():
+                graph._combined.add_edge(v, successor, key=k, **data)
+    
+    return num_after != num_before
+

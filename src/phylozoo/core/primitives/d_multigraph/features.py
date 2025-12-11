@@ -126,3 +126,124 @@ def has_self_loops(graph: 'DirectedMultiGraph') -> bool:
     """
     return nx.number_of_selfloops(graph._graph) > 0
 
+
+def is_cutedge(graph: 'DirectedMultiGraph', u: T, v: T, key: int | None = None) -> bool:
+    """
+    Check if edge (u, v) is a cut-edge.
+    
+    A cut-edge is an edge whose removal increases the number of
+    weakly connected components.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The graph to analyze.
+    u : T
+        Source node.
+    v : T
+        Target node.
+    key : int | None, optional
+        Edge key. If None, checks the first edge found. By default None.
+    
+    Returns
+    -------
+    bool
+        True if (u, v) is a cut-edge, False otherwise.
+    
+    Raises
+    ------
+    ValueError
+        If (u, v) is not an edge in the graph.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.features import is_cutedge
+    >>> G = DirectedMultiGraph()
+    >>> G.add_edge(1, 2)
+    0
+    >>> G.add_edge(2, 3)
+    0
+    >>> is_cutedge(G, 2, 3)
+    True
+    """
+    if not graph.has_edge(u, v, key):
+        raise ValueError(f"Edge ({u}, {v}, {key}) is not in the graph.")
+    
+    # Find edge key if not provided
+    if key is None:
+        if u in graph._graph and v in graph._graph[u]:
+            key = next(iter(graph._graph[u][v].keys()))
+        else:
+            raise ValueError(f"Edge ({u}, {v}) is not in the graph.")
+    
+    num_before = nx.number_connected_components(graph._combined)
+    
+    # Temporarily remove and check
+    graph._combined.remove_edge(u, v, key)
+    num_after = nx.number_connected_components(graph._combined)
+    
+    # Restore edge
+    edge_data = dict(graph._graph[u][v][key])
+    graph._combined.add_edge(u, v, key=key, **edge_data)
+    
+    return num_after != num_before
+
+
+def is_cutvertex(graph: 'DirectedMultiGraph', v: T) -> bool:
+    """
+    Check if v is a cut-vertex.
+    
+    A cut-vertex is a vertex whose removal increases the number of
+    weakly connected components.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The graph to analyze.
+    v : T
+        Vertex.
+    
+    Returns
+    -------
+    bool
+        True if v is a cut-vertex, False otherwise.
+    
+    Raises
+    ------
+    ValueError
+        If v is not a vertex in the graph.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+    >>> from phylozoo.core.primitives.d_multigraph.features import is_cutvertex
+    >>> G = DirectedMultiGraph()
+    >>> G.add_edge(1, 2)
+    0
+    >>> G.add_edge(2, 3)
+    0
+    >>> is_cutvertex(G, 2)
+    True
+    """
+    if v not in graph:
+        raise ValueError(f"Vertex {v} is not in the graph.")
+    
+    num_before = nx.number_connected_components(graph._combined)
+    
+    # Temporarily remove and check
+    graph._combined.remove_node(v)
+    num_after = nx.number_connected_components(graph._combined)
+    
+    # Restore node and its edges
+    graph._combined.add_node(v)
+    # Restore edges incident to v
+    for predecessor in graph._graph.predecessors(v):
+        for k, data in graph._graph[predecessor][v].items():
+            graph._combined.add_edge(predecessor, v, key=k, **data)
+    for successor in graph._graph.successors(v):
+        for k, data in graph._graph[v][successor].items():
+            graph._combined.add_edge(v, successor, key=k, **data)
+    
+    return num_after != num_before
+

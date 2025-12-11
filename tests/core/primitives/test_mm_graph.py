@@ -17,6 +17,8 @@ from phylozoo.core.primitives.m_multigraph.features import (
     connected_components,
     source_components,
     has_self_loops,
+    is_cutedge,
+    is_cutvertex,
 )
 from phylozoo.core.primitives.m_multigraph.transformations import (
     identify_two_nodes,
@@ -1149,30 +1151,30 @@ class TestConnectivity:
         assert {4, 5} in comp_sets
 
     def test_is_cutedge(self) -> None:
-        """Test is_cutedge method."""
+        """Test is_cutedge function."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(3, 4)
         # Edge (2, 3) is a cut edge
         key = next(iter(G._undirected[2][3].keys()))
-        assert G.is_cutedge(2, 3, key=key)
+        assert is_cutedge(G, 2, 3, key=key)
         # Edge (1, 2) is not a cut edge (there's another path)
         key = next(iter(G._undirected[1][2].keys()))
         # Actually, in a path graph, all edges are cut edges except in a cycle
-        result = G.is_cutedge(1, 2, key=key)
+        result = is_cutedge(G, 1, 2, key=key)
         print(f"Is (1,2) a cut edge? {result}")
 
     def test_is_cutvertex(self) -> None:
-        """Test is_cutvertex method."""
+        """Test is_cutvertex function."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(2, 4)
         # Node 2 is a cut vertex
-        assert G.is_cutvertex(2)
+        assert is_cutvertex(G, 2)
         # Node 1 is not a cut vertex
-        assert not G.is_cutvertex(1)
+        assert not is_cutvertex(G, 1)
 
 
 class TestGraphOperations:

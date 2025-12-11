@@ -16,6 +16,8 @@ from phylozoo.core.primitives.d_multigraph.features import (
     is_connected,
     connected_components,
     has_self_loops,
+    is_cutedge,
+    is_cutvertex,
 )
 from phylozoo.core.primitives.d_multigraph.transformations import (
     identify_two_nodes,
@@ -770,15 +772,15 @@ class TestConnectivity:
         assert {3, 4} in components
 
     def test_is_cutedge(self) -> None:
-        """Test is_cutedge method."""
+        """Test is_cutedge function."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         # Edge (2, 3) is a cut-edge
-        assert G.is_cutedge(2, 3)
+        assert is_cutedge(G, 2, 3)
         # Edge (1, 2) is also a cut-edge (removing it disconnects node 1)
         # Behavior: In a chain 1->2->3, both edges are cut-edges
-        result = G.is_cutedge(1, 2)
+        result = is_cutedge(G, 1, 2)
         print(f"is_cutedge(1, 2) in chain 1->2->3: {result}")
         # Report behavior rather than assert
 
@@ -789,35 +791,35 @@ class TestConnectivity:
         key2 = G.add_edge(1, 2)  # Parallel edge
         G.add_edge(2, 3)
         # Behavior: Check if parallel edges are cut-edges
-        result1 = G.is_cutedge(1, 2, key=key1)
-        result2 = G.is_cutedge(1, 2, key=key2)
+        result1 = is_cutedge(G, 1, 2, key=key1)
+        result2 = is_cutedge(G, 1, 2, key=key2)
         print(f"is_cutedge(1, 2, key={key1}): {result1}")
         print(f"is_cutedge(1, 2, key={key2}): {result2}")
         # Report behavior rather than assert specific outcome
 
     def test_is_cutvertex(self) -> None:
-        """Test is_cutvertex method."""
+        """Test is_cutvertex function."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         # Node 2 is a cut-vertex
-        assert G.is_cutvertex(2)
+        assert is_cutvertex(G, 2)
         # Node 1 is not a cut-vertex
-        assert not G.is_cutvertex(1)
+        assert not is_cutvertex(G, 1)
 
     def test_is_cutedge_nonexistent(self) -> None:
         """Test is_cutedge raises error for non-existent edge."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         with pytest.raises(ValueError):
-            G.is_cutedge(1, 3)
+            is_cutedge(G, 1, 3)
 
     def test_is_cutvertex_nonexistent(self) -> None:
         """Test is_cutvertex raises error for non-existent node."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         with pytest.raises(ValueError):
-            G.is_cutvertex(99)
+            is_cutvertex(G, 99)
 
 
 class TestGraphOperations:
@@ -966,9 +968,9 @@ class TestLargerGraphs:
         assert is_connected(G)
         assert number_of_connected_components(G) == 1
         # No cut-edges in a cycle
-        assert not G.is_cutedge(1, 2)
-        assert not G.is_cutedge(2, 3)
-        assert not G.is_cutedge(3, 1)
+        assert not is_cutedge(G, 1, 2)
+        assert not is_cutedge(G, 2, 3)
+        assert not is_cutedge(G, 3, 1)
 
     def test_star_graph(self) -> None:
         """Test star graph structure."""
@@ -981,9 +983,9 @@ class TestLargerGraphs:
         assert G.outdegree(0) == 5
         assert all(G.indegree(i) == 1 for i in range(1, 6))
         # Center is cut-vertex
-        assert G.is_cutvertex(0)
+        assert is_cutvertex(G, 0)
         # All edges are cut-edges
-        assert all(G.is_cutedge(0, i) for i in range(1, 6))
+        assert all(is_cutedge(G, 0, i) for i in range(1, 6))
 
     def test_complete_bipartite(self) -> None:
         """Test complete bipartite structure."""
