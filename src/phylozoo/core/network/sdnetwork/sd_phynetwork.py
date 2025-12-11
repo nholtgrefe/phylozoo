@@ -4,7 +4,6 @@ Semi-directed network module.
 This module provides classes and functions for working with semi-directed phylogenetic networks.
 """
 
-import threading
 import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
@@ -15,14 +14,10 @@ from ...primitives.m_multigraph.operations import (
     orient_away_from_vertex,
     source_components,
 )
-from ....utils.validation import validation_aware
+from ....utils.validation import no_validation, validation_aware
 from .base import MixedPhyNetwork
 
 T = TypeVar('T')
-
-# Thread-local flag to prevent infinite recursion in _validate_semidir_constraint
-_validating_semidir = threading.local()
-
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
 class SemiDirectedPhyNetwork(MixedPhyNetwork):
@@ -217,7 +212,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             nodes=nodes
         )
     
-    def _validate_semidir_constraint(self) -> bool:
+    def _validate_semidir_constraint(self) -> None:
         """
         Validate semi-directed network constraint.
         
@@ -235,11 +230,6 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         Note: Any non-leaf node in the source component should yield the same result
         (becomes the LSA when oriented). We only need to check one.
         
-        Returns
-        -------
-        bool
-            True if the semi-directed constraints are satisfied.
-        
         Raises
         ------
         ValueError
@@ -253,13 +243,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         - The network can be oriented and converted back to the same structure
         """
         # Skip validation if we're already inside _validate_semidir_constraint (prevents infinite recursion)
-        if getattr(_validating_semidir, 'active', False):
-            return True
-        
         # Handle trivial cases: 0 or 1 node networks are always valid
         n_nodes = self.number_of_nodes()
         if n_nodes <= 1:
-            return True
+            return
         
         # Handle two-node case: only valid if it's an undirected edge with two leaves
         if n_nodes == 2:
@@ -285,61 +272,54 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
                     "Two-node semi-directed network cannot have directed edges"
                 )
             
-            return True
+            return
         
-        # Set flag to prevent infinite recursion
-        _validating_semidir.active = True
-        try:
-            # Step 1: find source components (do this before imports to fail fast)
-            components = source_components(self._graph)
-            if len(components) != 1:
-                raise ValueError(
-                    f"Semi-directed network must have exactly one source component; found {len(components)}"
-                )
-            nodes_in_component, _, _ = components[0]
-            if not nodes_in_component:
-                raise ValueError("Source component is empty")
-            
-            # Local imports to avoid circular dependencies
-            from ...network.dnetwork.operations import to_sd_network
-            from ...network.dnetwork import DirectedPhyNetwork
-            from ...network.dnetwork.classifications import is_lsa_network
-            
-            # Step 2: Pick a non-leaf vertex r from the source component
-            # We cannot pick a leaf node as root, as it won't become the LSA when oriented
-            # Pick any internal node (non-leaf based on the network's definition)
-            internal_in_component = [node for node in nodes_in_component if node in self.internal_nodes]
-            if not internal_in_component:
-                raise ValueError(
-                    "Semi-directed network constraint validation failed: "
-                    "source component contains only leaf nodes."
-                )
-            root = internal_in_component[0]
-            
-            # Step 3: Orient away from r
-            # If not fully directed or not valid, raise error immediately
-            oriented_dm = orient_away_from_vertex(self._graph, root)
-            
-            # Step 4: Build a DirectedPhyNetwork from the oriented graph
-            directed_edges: List[Dict[str, Any]] = []
-            for u, v, key, data in oriented_dm.edges(keys=True, data=True):
-                edge_dict: Dict[str, Any] = {"u": u, "v": v}
-                if key != 0:
-                    edge_dict["key"] = key
-                if data:
-                    edge_dict.update(data)
-                directed_edges.append(edge_dict)
-            
-            # Build taxa mapping based on the oriented graph (leaf = outdegree 0)
-            oriented_leaves: Set[Any] = {
-                node for node in oriented_dm.nodes() if oriented_dm.outdegree(node) == 0
-            }
-            taxa_mapping: Dict[Any, str] = {
-                leaf: self.get_label(leaf) or str(leaf)
-                for leaf in oriented_leaves
-            }
-            
-            # Build DirectedPhyNetwork - if not valid, raise error immediately
+        # Step 1: find source components (do this before imports to fail fast)
+        components = source_components(self._graph)
+        if len(components) != 1:
+            raise ValueError(
+                f"Semi-directed network must have exactly one source component; found {len(components)}"
+            )
+        nodes_in_component, _, _ = components[0]
+        if not nodes_in_component:
+            raise ValueError("Source component is empty")
+        
+        # Local imports to avoid circular dependencies
+        from ...network.dnetwork.operations import to_sd_network
+        from ...network.dnetwork import DirectedPhyNetwork
+        from ...network.dnetwork.classifications import is_lsa_network
+        
+        # Step 2: Pick a non-leaf vertex r from the source component
+        internal_in_component = [node for node in nodes_in_component if node in self.internal_nodes]
+        if not internal_in_component:
+            raise ValueError(
+                "Semi-directed network constraint validation failed: "
+                "source component contains only leaf nodes."
+            )
+        root = internal_in_component[0]
+        
+        # Step 3: Orient away from r
+        oriented_dm = orient_away_from_vertex(self._graph, root)
+        
+        # Step 4: Build a DirectedPhyNetwork from the oriented graph
+        directed_edges: List[Dict[str, Any]] = []
+        for u, v, key, data in oriented_dm.edges(keys=True, data=True):
+            edge_dict: Dict[str, Any] = {"u": u, "v": v}
+            if key != 0:
+                edge_dict["key"] = key
+            if data:
+                edge_dict.update(data)
+            directed_edges.append(edge_dict)
+        
+        oriented_leaves: Set[Any] = {
+            node for node in oriented_dm.nodes() if oriented_dm.outdegree(node) == 0
+        }
+        taxa_mapping: Dict[Any, str] = {
+            leaf: self.get_label(leaf) or str(leaf)
+            for leaf in oriented_leaves
+        }
+        
+        with no_validation(only=["validate", "_validate_*"]):
             try:
                 nodes = [(leaf, {"label": label}) for leaf, label in taxa_mapping.items()] if taxa_mapping else None
                 d_network = DirectedPhyNetwork(
@@ -361,61 +341,49 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
                 )
             
             # Step 6: Convert back to semi-directed using to_sd_network
-            # Since the network is already an LSA network, to_sd_network won't need to convert it
-            # to an LSA network again.
             try:
                 sd_roundtrip = to_sd_network(d_network)
             except ValueError as e:
-                # If conversion fails, the SD network is invalid
                 raise ValueError(
                     f"Semi-directed network constraint validation failed: "
                     f"conversion back to semi-directed failed: {e}"
                 )
-            
-            # Step 7: Compare structure only (nodes, directed edges, undirected edges)
-            # Compare nodes
-            if set(self._graph.nodes()) != set(sd_roundtrip._graph.nodes()):
-                raise ValueError(
-                    "Semi-directed network constraint validation failed: "
-                    "nodes do not match after round-trip conversion"
-                )
-            
-            # Compare directed edges (only structure, not attributes)
-            orig_directed = {
-                (u, v, key if key is not None else 0)
-                for u, v, key in self._graph.directed_edges_iter(keys=True)
-            }
-            roundtrip_directed = {
-                (u, v, key if key is not None else 0)
-                for u, v, key in sd_roundtrip._graph.directed_edges_iter(keys=True)
-            }
-            if orig_directed != roundtrip_directed:
-                raise ValueError(
-                    "Semi-directed network constraint validation failed: "
-                    "directed edges do not match after round-trip conversion"
-                )
-            
-            # Compare undirected edges (only structure, not attributes)
-            orig_undirected = {
-                (min(u, v), max(u, v), key if key is not None else 0)
-                for u, v, key in self._graph.undirected_edges_iter(keys=True)
-            }
-            roundtrip_undirected = {
-                (min(u, v), max(u, v), key if key is not None else 0)
-                for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
-            }
-            if orig_undirected != roundtrip_undirected:
-                raise ValueError(
-                    "Semi-directed network constraint validation failed: "
-                    "undirected edges do not match after round-trip conversion"
-                )
-            
-            # All checks passed
-            return True
-            
-        finally:
-            # Clear flag
-            _validating_semidir.active = False
+
+        # Step 7: Compare structure only (nodes, directed edges, undirected edges)
+        if set(self._graph.nodes()) != set(sd_roundtrip._graph.nodes()):
+            raise ValueError(
+                "Semi-directed network constraint validation failed: "
+                "nodes do not match after round-trip conversion"
+            )
+        
+        orig_directed = {
+            (u, v, key if key is not None else 0)
+            for u, v, key in self._graph.directed_edges_iter(keys=True)
+        }
+        roundtrip_directed = {
+            (u, v, key if key is not None else 0)
+            for u, v, key in sd_roundtrip._graph.directed_edges_iter(keys=True)
+        }
+        if orig_directed != roundtrip_directed:
+            raise ValueError(
+                "Semi-directed network constraint validation failed: "
+                "directed edges do not match after round-trip conversion"
+            )
+        
+        orig_undirected = {
+            (min(u, v), max(u, v), key if key is not None else 0)
+            for u, v, key in self._graph.undirected_edges_iter(keys=True)
+        }
+        roundtrip_undirected = {
+            (min(u, v), max(u, v), key if key is not None else 0)
+            for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
+        }
+        if orig_undirected != roundtrip_undirected:
+            raise ValueError(
+                "Semi-directed network constraint validation failed: "
+                "undirected edges do not match after round-trip conversion"
+            )
+        # All checks passed (return None)
     
     def validate(self) -> None:
         """
