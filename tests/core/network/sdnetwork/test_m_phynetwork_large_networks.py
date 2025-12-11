@@ -36,7 +36,7 @@ class TestLargeTrees:
         assert len(net.leaves) == 100  # Nodes 1-99 and 101 are leaves
         assert 100 not in net.leaves  # Node 100 is internal (center)
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_binary_tree_structure(self) -> None:
         """Test binary tree structure."""
@@ -79,7 +79,7 @@ class TestLargeTrees:
             net = MixedPhyNetwork(undirected_edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 50
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
 
 class TestManyHybrids:
@@ -121,7 +121,7 @@ class TestManyHybrids:
             )
         assert len(net.hybrid_nodes) == 10
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_20_hybrids(self) -> None:
         """Test network with 20 hybrid nodes."""
@@ -159,7 +159,7 @@ class TestManyHybrids:
             )
         assert len(net.hybrid_nodes) == 20
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
 
 class TestNestedHybridization:
@@ -193,7 +193,7 @@ class TestNestedHybridization:
             )
         assert len(net.hybrid_nodes) == 4
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
 
 class TestComplexTopologies:
@@ -226,7 +226,7 @@ class TestComplexTopologies:
         assert len(net.hybrid_nodes) == 2
         assert len(net.tree_nodes) >= 1
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_network_with_attributes(self) -> None:
         """Test large network with edge attributes."""
@@ -246,5 +246,5 @@ class TestComplexTopologies:
         assert net.number_of_nodes() == 51
         assert net.get_branch_length(100, 1) == 0.01
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 

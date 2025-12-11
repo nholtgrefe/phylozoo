@@ -30,7 +30,7 @@ class TestEmptyNetworkEdgeCases:
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(edges=[])
         with pytest.warns(UserWarning, match="Empty network.*no nodes.*detected"):
-            assert net.validate() is True
+            net.validate()
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -81,7 +81,7 @@ class TestLargeNetworks:
         assert net.number_of_nodes() == 100
         assert net.number_of_edges() == 99
         assert len(net.leaves) == 99
-        assert net.validate() is True
+        net.validate()
 
     def test_network_100_edges(self) -> None:
         """Test network with 100 edges."""
@@ -103,7 +103,7 @@ class TestLargeNetworks:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_edges() == 150  # 50 + 50 + 50 = 150 edges
-        assert net.validate() is True
+        net.validate()
 
     def test_network_10_hybrid_nodes(self) -> None:
         """Test network with 10 hybrid nodes."""
@@ -131,7 +131,7 @@ class TestLargeNetworks:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 10
-        assert net.validate() is True
+        net.validate()
 
 
 class TestHighDegreeNodes:
@@ -144,7 +144,7 @@ class TestHighDegreeNodes:
         nodes = [(i, {"label": f"Taxon{i}"}) for i in range(2, 52)]
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.outdegree(1) == 50
-        assert net.validate() is True
+        net.validate()
 
     def test_high_indegree_hybrid(self) -> None:
         """Test hybrid node with high in-degree (many parents)."""
@@ -167,7 +167,7 @@ class TestHighDegreeNodes:
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.indegree(100) == 20
         assert 100 in net.hybrid_nodes
-        assert net.validate() is True
+        net.validate()
 
 
 class TestParallelEdges:
@@ -189,7 +189,7 @@ class TestParallelEdges:
         # Total edges: 2 (root->5, root->6) + 50 (parallel) + 1 (5->8) + 1 (6->4) + 1 (6->9) + 1 (4->2) = 56
         assert net.number_of_edges() == 56
         assert net.indegree(4) == 51  # 50 from 5, 1 from 6
-        assert net.validate() is True
+        net.validate()
 
     def test_parallel_edges_to_hybrid_with_gamma(self) -> None:
         """Test parallel edges to hybrid with gamma values."""
@@ -203,7 +203,7 @@ class TestParallelEdges:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})])
         # No gamma values set, so validation should pass
-        assert net.validate() is True
+        net.validate()
 
 
 class TestDeepTrees:
@@ -245,7 +245,7 @@ class TestDeepTrees:
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 50
         assert net.number_of_edges() >= 50
-        assert net.validate() is True
+        net.validate()
         assert net.root_node == root
 
     def test_deep_binary_tree(self) -> None:
@@ -283,7 +283,7 @@ class TestDeepTrees:
         build_tree(root, 0, 6)  # 6 levels
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert net.root_node == root
 
 
@@ -298,7 +298,7 @@ class TestWideTrees:
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 201
         assert len(net.leaves) == 200
-        assert net.validate() is True
+        net.validate()
 
 
 class TestComplexTopologies:
@@ -323,7 +323,7 @@ class TestComplexTopologies:
         net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'})])
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
-        assert net.validate() is True
+        net.validate()
 
     def test_nested_hybridization(self) -> None:
         """Test nested hybridization."""
@@ -341,7 +341,7 @@ class TestComplexTopologies:
         net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'})])
         # Both 4 and 5 are hybrids
         assert len(net.hybrid_nodes) == 2
-        assert net.validate() is True
+        net.validate()
 
     def test_multiple_independent_hybrids(self) -> None:
         """Test multiple independent hybrid events."""
@@ -369,7 +369,7 @@ class TestComplexTopologies:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 5
-        assert net.validate() is True
+        net.validate()
 
 
 class TestInvalidStructures:
@@ -533,7 +533,7 @@ class TestBoundaryValues:
             nodes=[(1, {'label': 'A'})]
         )
         assert net.get_bootstrap(3, 1) == 0.0
-        assert net.validate() is True
+        net.validate()
 
     def test_bootstrap_exactly_one(self) -> None:
         """Test bootstrap exactly 1.0."""
@@ -542,7 +542,7 @@ class TestBoundaryValues:
             nodes=[(1, {'label': 'A'})]
         )
         assert net.get_bootstrap(3, 1) == 1.0
-        assert net.validate() is True
+        net.validate()
 
     def test_gamma_exactly_zero(self) -> None:
         """Test gamma exactly 0.0."""
@@ -558,7 +558,7 @@ class TestBoundaryValues:
             nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.get_gamma(5, 4) == 0.0
-        assert net.validate() is True
+        net.validate()
 
     def test_gamma_exactly_one(self) -> None:
         """Test gamma exactly 1.0."""
@@ -574,7 +574,7 @@ class TestBoundaryValues:
             nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         assert net.get_gamma(5, 4) == 1.0
-        assert net.validate() is True
+        net.validate()
 
     def test_gamma_sum_floating_point_precision(self) -> None:
         """Test gamma sum with floating point precision issues."""
@@ -593,7 +593,7 @@ class TestBoundaryValues:
             nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})]
         )
         # Should pass with tolerance
-        assert net.validate() is True
+        net.validate()
 
 
 class TestSpecialValues:

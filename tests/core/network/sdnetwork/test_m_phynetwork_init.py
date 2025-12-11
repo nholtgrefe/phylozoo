@@ -32,7 +32,7 @@ class TestEmptyNetwork:
         assert net.number_of_edges() == 0
         # Empty networks skip validation, so no validity warning
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
-            assert net.validate() is True  # Empty networks are valid
+            net.validate()  # Empty networks are valid
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -393,7 +393,7 @@ class TestValidation:
                 nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
             )
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_disconnected_network(self) -> None:
         """Test that disconnected network raises error."""

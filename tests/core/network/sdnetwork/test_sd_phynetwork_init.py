@@ -32,7 +32,7 @@ class TestEmptyNetwork:
         assert net.number_of_edges() == 0
         # Empty networks skip validation, so no validity warning
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
-            assert net.validate() is True  # Empty networks are valid
+            net.validate()  # Empty networks are valid
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -190,12 +190,8 @@ class TestSemiDirectedConstraints:
             undirected_edges=[(5, 6), (4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
         )
-        # Validation should pass (SemiDirectedPhyNetwork doesn't raise validity warning)
-        try:
-            result = net.validate()
-            assert isinstance(result, bool)
-        except (ValueError, NotImplementedError):
-            pass  # Expected if validation is not fully implemented
+        # Validation should pass without raising
+        net.validate()
 
 
 class TestEdgeFormats:
@@ -283,7 +279,7 @@ class TestValidation:
             nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
         )
         # SemiDirectedPhyNetwork doesn't raise the validity warning
-        assert net.validate() is True
+        net.validate()
 
     def test_disconnected_network(self) -> None:
         """Test that disconnected network raises error."""

@@ -58,7 +58,7 @@ class TestBinaryTrees:
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 100
         assert len(net.leaves) >= 100
-        assert net.validate() is True
+        net.validate()
         assert net.is_tree() is True
         assert net.root_node == root
 
@@ -154,7 +154,7 @@ class TestTernaryTrees:
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() >= 100
         assert len(net.leaves) >= 100
-        assert net.validate() is True
+        net.validate()
         assert net.is_tree() is True
 
 
@@ -188,7 +188,7 @@ class TestNetworksWithManyHybrids:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 50
-        assert net.validate() is True
+        net.validate()
         assert net.is_tree() is False
 
     def test_network_100_hybrid_nodes(self) -> None:
@@ -217,7 +217,7 @@ class TestNetworksWithManyHybrids:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 100
-        assert net.validate() is True
+        net.validate()
 
 
 class TestLevelKHybridization:
@@ -236,7 +236,7 @@ class TestLevelKHybridization:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'})])
         assert len(net.hybrid_nodes) == 2
-        assert net.validate() is True
+        net.validate()
 
     def test_level_3_hybridization(self) -> None:
         """Test network with level-3 hybridization."""
@@ -255,7 +255,7 @@ class TestLevelKHybridization:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (17, {'label': 'D'}), (18, {'label': 'E'})])
         assert len(net.hybrid_nodes) == 3
-        assert net.validate() is True
+        net.validate()
 
     def test_level_4_hybridization(self) -> None:
         """Test network with level-4 hybridization."""
@@ -273,7 +273,7 @@ class TestLevelKHybridization:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'}), (6, {'label': 'E'})])
         assert len(net.hybrid_nodes) == 4
-        assert net.validate() is True
+        net.validate()
 
 
 class TestMultipleIndependentHybrids:
@@ -305,7 +305,7 @@ class TestMultipleIndependentHybrids:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 10
-        assert net.validate() is True
+        net.validate()
 
     def test_20_independent_hybrids(self) -> None:
         """Test 20 independent hybrid events."""
@@ -333,7 +333,7 @@ class TestMultipleIndependentHybrids:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 20
-        assert net.validate() is True
+        net.validate()
 
 
 class TestNestedHybridization:
@@ -357,7 +357,7 @@ class TestNestedHybridization:
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
         assert 10 in net.hybrid_nodes
-        assert net.validate() is True
+        net.validate()
 
 
 class TestRealWorldInspiredTopologies:
@@ -385,7 +385,7 @@ class TestRealWorldInspiredTopologies:
         nodes.append((200 + 52, {"label": "Taxon52"}))
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert len(net.leaves) == 52
 
     def test_balanced_tree(self) -> None:
@@ -422,7 +422,7 @@ class TestRealWorldInspiredTopologies:
         build_balanced(root, 0, 7)  # 7 levels = 128 leaves
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert net.is_tree() is True
 
     def test_network_with_mixed_topology(self) -> None:
@@ -451,7 +451,7 @@ class TestRealWorldInspiredTopologies:
         nodes.extend([(5, {"label": "E"}), (6, {"label": "F"}), (7, {"label": "G"})])
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert len(net.hybrid_nodes) == 1
         assert len(net.tree_nodes) > 0
 
@@ -478,7 +478,7 @@ class TestStressTests:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 1001  # 1 root + 100 internal + 900 leaves
-        assert net.validate() is True
+        net.validate()
 
     def test_2000_edges(self) -> None:
         """Test network with 2000 edges."""
@@ -513,7 +513,7 @@ class TestStressTests:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert net.number_of_edges() >= 2000
-        assert net.validate() is True
+        net.validate()
 
     def test_large_network_all_operations(self) -> None:
         """Test all operations on large network."""
@@ -553,7 +553,7 @@ class TestStressTests:
         assert len(net.tree_nodes) == 1000
         assert len(net.hybrid_edges) == 1000
         assert net.is_tree() is False
-        assert net.validate() is True
+        net.validate()
         
         # Test iteration
         nodes = list(net)
@@ -615,7 +615,7 @@ class TestComplexRealWorldScenarios:
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
         assert len(net.hybrid_nodes) == 8  # 5 level-1 + 3 level-2
-        assert net.validate() is True
+        net.validate()
 
     def test_network_with_hybrid_and_tree_regions(self) -> None:
         """Test network with both hybrid and tree regions."""
@@ -670,7 +670,7 @@ class TestComplexRealWorldScenarios:
             nodes.append((400 + i, {"label": f"HybridTaxonH{i}"}))
         
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert len(net.hybrid_nodes) == 5
         assert len(net.tree_nodes) > 0
 

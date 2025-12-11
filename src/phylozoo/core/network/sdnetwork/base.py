@@ -233,8 +233,7 @@ class MixedPhyNetwork:
         self._auto_label_unlabeled_leaves()
         
         # Step 3: Validate the network structure
-        if not self.validate():
-            raise ValueError("Network validation failed")
+        self.validate()
     
     def _add_label_to_dicts(self, node_id: T, label: str) -> None:
         """
@@ -564,7 +563,7 @@ class MixedPhyNetwork:
                     f"Each node must have indegree either 0 or total_degree-1."
                 )
     
-    def validate(self) -> bool:
+    def validate(self) -> None:
         """
         Validate the network structure and edge attributes.
         
@@ -576,11 +575,6 @@ class MixedPhyNetwork:
         5. Mixed network constraint (issues warning that additional checks may be added)
         6. Bootstrap values are in [0.0, 1.0]
         7. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
-        
-        Returns
-        -------
-        bool
-            True if the network is valid, False otherwise.
         
         Raises
         ------
@@ -608,7 +602,7 @@ class MixedPhyNetwork:
                 UserWarning,
                 stacklevel=2
             )
-            return True
+            return
 
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
@@ -619,17 +613,9 @@ class MixedPhyNetwork:
                 UserWarning,
                 stacklevel=2
             )
-            return True
-        
-        # 1. Check that network is connected (weakly connected)
-        if not is_connected(self._graph):
-            raise ValueError(
-                "Network is not connected. All nodes must be in a single connected component."
-            )
-        
-        # 2. Disallow self-loops
-        if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in MixedPhyNetwork.")
+            return
+
+        self._validate_structural_constraints()
         
         # 3. Validate degree constraints
         self._validate_degree_constraints()
@@ -642,8 +628,25 @@ class MixedPhyNetwork:
         
         # 6. Validate gamma constraints
         self._validate_gamma_constraints()
+    
+    def _validate_structural_constraints(self) -> None:
+        """
+        Validate structural constraints (emptiness, connectivity, self-loops).
         
-        return True
+        Raises
+        ------
+        ValueError
+            If connectivity or self-loop constraints are violated.
+        """
+        # 1. Check that network is connected (weakly connected)
+        if not is_connected(self._graph):
+            raise ValueError(
+                "Network is not connected. All nodes must be in a single connected component."
+            )
+        
+        # 2. Disallow self-loops
+        if has_self_loops(self._graph):
+            raise ValueError("Self-loops are not allowed in MixedPhyNetwork.")
     
     # ========== Label Operations ==========
     

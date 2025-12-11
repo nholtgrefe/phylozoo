@@ -203,8 +203,7 @@ class DirectedPhyNetwork:
         self._auto_label_unlabeled_leaves()
         
         # Step 3: Validate the network structure
-        if not self.validate():
-            raise ValueError("Network validation failed")
+        self.validate()
     
     def _add_label_to_dicts(self, node_id: T, label: str) -> None:
         """
@@ -480,7 +479,7 @@ class DirectedPhyNetwork:
                     f"or (in-degree >= 2 and out-degree 1)."
                 )
     
-    def validate(self) -> bool:
+    def validate(self) -> None:
         """
         Validate the network structure and edge attributes.
         
@@ -496,11 +495,6 @@ class DirectedPhyNetwork:
         8. Gamma constraints: gamma can only be set on hybrid edges, and if any gamma
            is specified for a hybrid node, all incoming edges must have gamma values
            summing to 1.0
-        
-        Returns
-        -------
-        bool
-            True if the network is valid, False otherwise.
         
         Raises
         ------
@@ -522,7 +516,7 @@ class DirectedPhyNetwork:
                 UserWarning,
                 stacklevel=2
             )
-            return True
+            return
 
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
@@ -533,8 +527,28 @@ class DirectedPhyNetwork:
                 UserWarning,
                 stacklevel=2
             )
-            return True
+            return
+
+        self._validate_structural_constraints()
         
+        # 3. Validate degree constraints (includes root check)
+        self._validate_degree_constraints()
+        
+        # 4. Validate bootstrap constraints
+        self._validate_bootstrap_constraints()
+        
+        # 5. Validate gamma constraints
+        self._validate_gamma_constraints()
+    
+    def _validate_structural_constraints(self) -> None:
+        """
+        Validate structural constraints (emptiness, connectivity, acyclicity, self-loops).
+        
+        Raises
+        ------
+        ValueError
+            If connectivity, self-loop, or acyclicity constraints are violated.
+        """
         # 1. Check that network is connected (weakly connected)
         if not is_connected(self._graph):
             raise ValueError(
@@ -552,17 +566,6 @@ class DirectedPhyNetwork:
                 f"Network contains directed cycles. Found {len(cycles)} cycle(s). "
                 f"First cycle: {cycles[0] if cycles else 'unknown'}"
             )
-        
-        # 3. Validate degree constraints (includes root check)
-        self._validate_degree_constraints()
-        
-        # 4. Validate bootstrap constraints
-        self._validate_bootstrap_constraints()
-        
-        # 5. Validate gamma constraints
-        self._validate_gamma_constraints()
-        
-        return True
     
     # ========== Label Operations ==========
     

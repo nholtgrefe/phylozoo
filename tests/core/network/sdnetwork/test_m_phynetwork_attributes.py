@@ -315,7 +315,7 @@ class TestBootstrapValidation:
                 nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_bootstrap_below_zero_raises_error(self) -> None:
         """Test that bootstrap < 0.0 raises error."""
@@ -372,7 +372,7 @@ class TestGammaValidation:
                 nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_gamma_sum_to_one(self) -> None:
         """Test that gamma values sum to 1.0."""
@@ -386,7 +386,7 @@ class TestGammaValidation:
                 nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_gamma_sum_not_one_raises_error(self) -> None:
         """Test that gamma values not summing to 1.0 raise error."""
@@ -438,7 +438,7 @@ class TestGammaValidation:
             )
         # Sum should be 0.3 + 0.3 + 0.4 = 1.0
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_gamma_in_valid_range(self) -> None:
         """Test that gamma values in [0.0, 1.0] are valid."""
@@ -452,7 +452,7 @@ class TestGammaValidation:
                 nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_gamma_below_zero_raises_error(self) -> None:
         """Test that gamma < 0.0 raises error."""

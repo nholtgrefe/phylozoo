@@ -560,7 +560,7 @@ class TestToSDNetworkValidation:
         sdnet = to_sd_network(dnet)
 
         # Should validate successfully (already validated in __init__)
-        assert sdnet.validate() is True
+        sdnet.validate()
 
     def test_hybrid_network_validates(self) -> None:
         """Hybrid network should produce valid SD network."""
@@ -579,7 +579,7 @@ class TestToSDNetworkValidation:
         sdnet = to_sd_network(dnet)
 
         # Should validate successfully
-        assert sdnet.validate() is True
+        sdnet.validate()
 
     def test_complex_network_validates(self) -> None:
         """Complex network with multiple hybrids should validate."""
@@ -601,7 +601,7 @@ class TestToSDNetworkValidation:
         sdnet = to_sd_network(dnet)
 
         # Should validate successfully
-        assert sdnet.validate() is True
+        sdnet.validate()
 
 
 class TestToSDNetworkStructurePreservation:

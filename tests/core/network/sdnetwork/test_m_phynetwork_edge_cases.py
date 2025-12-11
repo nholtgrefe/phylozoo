@@ -30,7 +30,7 @@ class TestEmptyNetworkEdgeCases:
             # Empty networks don't raise validity warning (validation is skipped)
             net = MixedPhyNetwork(directed_edges=[], undirected_edges=[])
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
-            assert net.validate() is True
+            net.validate()
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -87,7 +87,7 @@ class TestLargeNetworks:
         assert net.number_of_edges() == 99
         assert len(net.leaves) == 99
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_network_many_hybrids(self) -> None:
         """Test network with many hybrid nodes."""
@@ -130,7 +130,7 @@ class TestLargeNetworks:
             )
         assert len(net.hybrid_nodes) == 10
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
 
 class TestHighDegreeNodes:
@@ -160,7 +160,7 @@ class TestHighDegreeNodes:
             net = MixedPhyNetwork(undirected_edges=edges, nodes=nodes)
         assert net.degree(100) == 50
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
 
 class TestManyParallelEdges:
@@ -255,7 +255,7 @@ class TestDeepTrees:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(undirected_edges=edges, nodes=nodes)
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
         assert net.number_of_nodes() >= 50
 
 
@@ -287,7 +287,7 @@ class TestComplexTopologies:
             )
         assert len(net.hybrid_nodes) == 2
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
     def test_nested_hybridization(self) -> None:
         """Test nested hybridization."""
@@ -312,7 +312,7 @@ class TestComplexTopologies:
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
         with expect_mixed_network_warning():
-            assert net.validate() is True
+            net.validate()
 
 
 class TestInvalidStructures:

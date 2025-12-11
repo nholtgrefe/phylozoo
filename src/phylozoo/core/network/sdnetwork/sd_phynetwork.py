@@ -415,18 +415,13 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             # Clear flag
             _validating_semidir.active = False
     
-    def validate(self) -> bool:
+    def validate(self) -> None:
         """
         Validate the network structure and edge attributes.
         
         Checks all constraints from MixedPhyNetwork plus additional semi-directed network constraints:
         - All hybrid edges are directed
         - All non-hybrid edges are undirected
-        
-        Returns
-        -------
-        bool
-            True if the network is valid, False otherwise.
         
         Raises
         ------
@@ -445,7 +440,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
                 UserWarning,
                 stacklevel=2
             )
-            return True
+            return
 
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
@@ -456,17 +451,9 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
                 UserWarning,
                 stacklevel=2
             )
-            return True
-        
-        # 1. Check that network is connected (weakly connected)
-        if not is_connected(self._graph):
-            raise ValueError(
-                "Network is not connected. All nodes must be in a single connected component."
-            )
-        
-        # 2. Disallow self-loops
-        if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
+            return
+
+        self._validate_structural_constraints()
         
         # 3. Validate degree constraints
         self._validate_degree_constraints()
@@ -479,8 +466,25 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         
         # 6. Validate gamma constraints
         self._validate_gamma_constraints()
+    
+    def _validate_structural_constraints(self) -> None:
+        """
+        Validate structural constraints (emptiness, connectivity, self-loops).
         
-        return True
+        Raises
+        ------
+        ValueError
+            If connectivity or self-loop constraints are violated.
+        """
+        # 1. Check that network is connected (weakly connected)
+        if not is_connected(self._graph):
+            raise ValueError(
+                "Network is not connected. All nodes must be in a single connected component."
+            )
+        
+        # 2. Disallow self-loops
+        if has_self_loops(self._graph):
+            raise ValueError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
     
     def copy(self) -> 'SemiDirectedPhyNetwork':
         """

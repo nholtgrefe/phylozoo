@@ -236,7 +236,7 @@ class TestBootstrapValidation:
             ],
             nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})]
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_bootstrap_below_zero(self) -> None:
         """Test that bootstrap < 0.0 raises ValueError."""
@@ -288,7 +288,7 @@ class TestBootstrapValidation:
             ],
             nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})]
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_bootstrap_parallel_edges_validation(self) -> None:
         """Test bootstrap validation on parallel edges."""
@@ -307,7 +307,7 @@ class TestBootstrapValidation:
             nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Network should validate (no bootstrap values to validate)
-        assert net.validate() is True
+        net.validate()
         # Note: To test bootstrap validation on parallel edges with actual values,
         # we would need a way to set attributes on parallel edges, which may require
         # direct access to the underlying graph or a different initialization method
@@ -384,7 +384,7 @@ class TestGetGamma:
         assert result0 is None
         assert result1 is None
         # Verify method works without raising errors
-        assert net.validate() is True
+        net.validate()
 
 
 class TestGammaValidation:
@@ -403,7 +403,7 @@ class TestGammaValidation:
             ],
             nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_gamma_below_zero(self) -> None:
         """Test that gamma < 0.0 raises ValueError."""
@@ -507,7 +507,7 @@ class TestGammaValidation:
             nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # No gamma values - should be valid
-        assert net.validate() is True
+        net.validate()
 
     def test_gamma_parallel_edges_all_must_have(self) -> None:
         """Test that parallel edges to hybrid must all have gamma."""
@@ -543,7 +543,7 @@ class TestGammaValidation:
             nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
         # Verify the sum of gammas for hybrid node 4
-        assert net.validate() is True
+        net.validate()
         # Check that gamma values were set correctly
         gamma_0 = net.get_gamma(5, 4, key=0)
         gamma_1 = net.get_gamma(5, 4, key=1)
@@ -590,7 +590,7 @@ class TestGammaValidation:
             ],
             nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})]
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_gamma_multiple_hybrids(self) -> None:
         """Test gamma validation with multiple hybrid nodes."""
@@ -631,7 +631,7 @@ class TestGammaValidation:
             nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"}), (10, {"label": "D"})]
         )
         # Should pass with tolerance
-        assert net.validate() is True
+        net.validate()
 
 
 class TestCustomAttributes:

@@ -30,7 +30,7 @@ class TestEmptyNetwork:
         assert net.number_of_nodes() == 0
         assert net.number_of_edges() == 0
         with pytest.warns(UserWarning, match="Empty network.*no nodes.*detected"):
-            assert net.validate() is True  # Empty networks are valid
+            net.validate()  # Empty networks are valid
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -60,7 +60,7 @@ class TestMinimalValidNetworks:
         assert net.number_of_nodes() == 1
         assert net.number_of_edges() == 0
         with pytest.warns(UserWarning, match="Single-node network detected"):
-            assert net.validate() is True  # Single-node networks are valid
+            net.validate()  # Single-node networks are valid
 
     def test_single_edge_network(self) -> None:
         """Test network with single edge (root -> leaf)."""
@@ -520,7 +520,7 @@ class TestValidationEdgeCases:
         # Leaves are nodes 15-30
         nodes = [(i, {"label": f"Taxon{i}"}) for i in range(15, 31)]
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert net.root_node == 100
 
     def test_wide_tree(self) -> None:
@@ -529,7 +529,7 @@ class TestValidationEdgeCases:
         edges = [(1, i) for i in range(2, 52)]
         nodes = [(i, {"label": f"Taxon{i}"}) for i in range(2, 52)]
         net = DirectedPhyNetwork(edges=edges, nodes=nodes)
-        assert net.validate() is True
+        net.validate()
         assert len(net.leaves) == 50
 
     def test_complex_hybrid_structure(self) -> None:
@@ -546,7 +546,7 @@ class TestValidationEdgeCases:
             edges=edges,
             nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (8, {"label": "D"})],
         )
-        assert net.validate() is True
+        net.validate()
         assert len(net.hybrid_nodes) == 2
 
     def test_parallel_edges_validation(self) -> None:
@@ -562,7 +562,7 @@ class TestValidationEdgeCases:
             ],
             nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
-        assert net.validate() is True
+        net.validate()
         # Node 4 should still be a hybrid (in-degree >= 2, out-degree 1)
         assert 4 in net.hybrid_nodes
 

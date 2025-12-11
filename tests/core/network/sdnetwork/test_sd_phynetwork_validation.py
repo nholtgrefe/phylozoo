@@ -26,7 +26,7 @@ class TestValidSemiDirectedNetworks:
             undirected_edges=[(4, 1), (4, 2), (4, 3)],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_larger_tree(self) -> None:
         """Larger tree with all internal nodes having degree >= 3 should be valid."""
@@ -44,7 +44,7 @@ class TestValidSemiDirectedNetworks:
             ],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'}), (8, {'label': 'E'}), (9, {'label': 'F'}), (10, {'label': 'G'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_single_hybrid(self) -> None:
         """Network with single hybrid node should be valid."""
@@ -63,7 +63,7 @@ class TestValidSemiDirectedNetworks:
             ],
             nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_multiple_hybrids(self) -> None:
         """Network with multiple hybrid nodes should be valid."""
@@ -85,7 +85,7 @@ class TestValidSemiDirectedNetworks:
             ],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_star_tree(self) -> None:
         """Star tree should be valid."""
@@ -93,7 +93,7 @@ class TestValidSemiDirectedNetworks:
             undirected_edges=[(10, i) for i in range(1, 6)],
             nodes=[(i, {'label': f"Taxon{i}"}) for i in range(1, 6)],
         )
-        assert net.validate() is True
+        net.validate()
 
 
 class TestInvalidConnectivity:
@@ -319,7 +319,7 @@ class TestEdgeCases:
             )
         # Empty networks skip full validation
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
-            assert net.validate() is True
+            net.validate()
 
     def test_single_node_network(self) -> None:
         """Single-node semi-directed network is valid but warns."""
@@ -333,7 +333,7 @@ class TestEdgeCases:
         assert net.number_of_edges() == 0
         assert net.leaves == {1}
         with pytest.warns(UserWarning, match="Single-node network detected"):
-            assert net.validate() is True
+            net.validate()
 
     def test_two_nodes_undirected_edge(self) -> None:
         """Two nodes with undirected edge should be valid."""
@@ -341,7 +341,7 @@ class TestEdgeCases:
             undirected_edges=[(1, 2)],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_two_nodes_directed_edge_invalid(self) -> None:
         """Two nodes with directed edge should be invalid (doesn't meet 2-node special case)."""
@@ -382,7 +382,7 @@ class TestComplexValidation:
             ],
             nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_parallel_hybrid_edges_valid(self) -> None:
         """Network with parallel hybrid edges should validate."""
@@ -402,7 +402,7 @@ class TestComplexValidation:
             ],
             nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
         )
-        assert net.validate() is True
+        net.validate()
 
     def test_deep_tree_valid(self) -> None:
         """Deep tree structure should validate."""
@@ -426,7 +426,7 @@ class TestComplexValidation:
             ],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'}), (14, {'label': 'G'}), (15, {'label': 'H'}), (16, {'label': 'I'})],
         )
-        assert net.validate() is True
+        net.validate()
 
 
 class TestValidationMessages:
@@ -528,7 +528,7 @@ class TestValidationPerformance:
 
         # Validation should complete in less than 1 second
         assert elapsed < 1.0
-        assert net.validate() is True
+        net.validate()
 
 
 class TestInvalidSemiDirectedStructures:

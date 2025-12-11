@@ -117,7 +117,7 @@ class TestCopy:
         # Gamma values should be copied
         assert net2.get_gamma(5, 4) == 0.6
         assert net2.get_gamma(6, 4) == 0.4
-        assert net2.validate() is True
+        net2.validate()
 
 
 class TestImmutability:
