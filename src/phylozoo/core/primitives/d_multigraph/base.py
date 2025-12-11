@@ -939,6 +939,20 @@ class DirectedMultiGraph:
         """
         return self._graph.number_of_edges()
 
+    def __repr__(self) -> str:
+        """
+        Return a concise representation.
+        
+        Returns
+        -------
+        str
+            Representation containing counts of nodes and edges.
+        """
+        return (
+            f"DirectedMultiGraph(nodes={self.number_of_nodes()}, "
+            f"edges={self.number_of_edges()})"
+        )
+
     def degree(self, v: T) -> int:
         """
         Return the total degree of vertex v.

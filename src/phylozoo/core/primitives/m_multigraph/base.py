@@ -1306,6 +1306,23 @@ class MixedMultiGraph:
         """
         return self._directed.number_of_edges() + self._undirected.number_of_edges()
 
+    def __repr__(self) -> str:
+        """
+        Return a concise representation.
+        
+        Returns
+        -------
+        str
+            Representation containing counts of nodes, directed edges, and undirected edges.
+        """
+        return (
+            "MixedMultiGraph("
+            f"nodes={self.number_of_nodes()}, "
+            f"directed_edges={self._directed.number_of_edges()}, "
+            f"undirected_edges={self._undirected.number_of_edges()}"
+            ")"
+        )
+
     def degree(self, v: T) -> int:
         """
         Return the total degree of vertex v.

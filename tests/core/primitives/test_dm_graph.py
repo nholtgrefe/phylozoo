@@ -110,6 +110,11 @@ class TestInitialization:
         edge_data = G._graph[3][4][10]
         assert edge_data['weight'] == 10.0
 
+    def test_repr_counts(self) -> None:
+        """__repr__ reports node and edge counts."""
+        G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
+        assert repr(G) == "DirectedMultiGraph(nodes=3, edges=2)"
+
 
 class TestFactoryMethods:
     """Test cases for factory methods."""

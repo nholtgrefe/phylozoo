@@ -68,6 +68,14 @@ class TestInitialization:
         assert len(list(G.nodes())) == 0
         assert len(list(G.edges())) == 0
 
+    def test_repr_counts(self) -> None:
+        """__repr__ reports node and edge counts by type."""
+        G = MixedMultiGraph(directed_edges=[(1, 2)], undirected_edges=[(2, 3), (3, 4)])
+        assert (
+            repr(G)
+            == "MixedMultiGraph(nodes=4, directed_edges=1, undirected_edges=2)"
+        )
+
     def test_init_with_directed_edges(self) -> None:
         """Test initialization with directed edges."""
         G = MixedMultiGraph(directed_edges=[(1, 2), (2, 3), (1, 2)])  # Parallel edge
