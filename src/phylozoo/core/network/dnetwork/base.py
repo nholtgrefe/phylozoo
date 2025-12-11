@@ -12,7 +12,7 @@ from typing import Any, Iterator, TypeVar
 import networkx as nx
 
 from ...primitives.d_multigraph import DirectedMultiGraph
-from ...primitives.d_multigraph.operations import is_connected, has_self_loops
+from ...primitives.d_multigraph.features import is_connected, has_self_loops
 from ....utils.validation import validation_aware
 
 T = TypeVar('T')
@@ -1158,7 +1158,7 @@ class DirectedPhyNetwork:
         >>> net.LSA_node
         3
         """
-        from .operations import find_lsa_node
+        from .features import find_lsa_node
         return find_lsa_node(self)
     
     @cached_property

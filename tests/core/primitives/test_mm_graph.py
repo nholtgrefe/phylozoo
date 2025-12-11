@@ -11,15 +11,17 @@ import pytest
 from typing import Dict, List, Set, Tuple
 
 from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-from phylozoo.core.primitives.m_multigraph.operations import (
+from phylozoo.core.primitives.m_multigraph.features import (
     number_of_connected_components,
     is_connected,
     connected_components,
+    source_components,
+    has_self_loops,
+)
+from phylozoo.core.primitives.m_multigraph.transformations import (
     identify_two_nodes,
     identify_node_set,
-    source_components,
     orient_away_from_vertex,
-    has_self_loops,
 )
 from phylozoo.core.primitives.m_multigraph.conversions import (
     graph_to_mixedmultigraph,

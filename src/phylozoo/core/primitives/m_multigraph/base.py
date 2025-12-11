@@ -77,7 +77,7 @@ class MixedMultiGraph:
     0
     >>> G.add_undirected_edge(2, 3)  # Parallel undirected edge
     1
-    >>> from phylozoo.core.primitives.m_multigraph.operations import number_of_connected_components
+    >>> from phylozoo.core.primitives.m_multigraph.features import number_of_connected_components
     >>> number_of_connected_components(G)
     1
     >>> # Initialize with edges (including attributes)

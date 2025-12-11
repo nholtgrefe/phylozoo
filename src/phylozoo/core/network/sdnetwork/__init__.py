@@ -6,9 +6,15 @@ This module provides classes for working with semi-directed and mixed phylogenet
 
 from .base import MixedPhyNetwork
 from .sd_phynetwork import SemiDirectedPhyNetwork
+from . import classifications, features, transformations, derivations, io
 
 __all__ = [
     "SemiDirectedPhyNetwork",
     "MixedPhyNetwork",
+    "classifications",
+    "features",
+    "transformations",
+    "derivations",
+    "io",
 ]
 

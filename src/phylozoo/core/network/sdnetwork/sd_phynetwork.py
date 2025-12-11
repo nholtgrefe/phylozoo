@@ -8,12 +8,12 @@ import warnings
 from functools import cached_property
 from typing import Any, Iterator, TypeVar
 
-from ...primitives.m_multigraph.operations import (
+from ...primitives.m_multigraph.features import (
     has_self_loops,
     is_connected,
-    orient_away_from_vertex,
     source_components,
 )
+from ...primitives.m_multigraph.transformations import orient_away_from_vertex
 from ....utils.validation import no_validation, validation_aware
 from .base import MixedPhyNetwork
 
@@ -285,7 +285,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             raise ValueError("Source component is empty")
         
         # Local imports to avoid circular dependencies
-        from ...network.dnetwork.operations import to_sd_network
+        from ...network.dnetwork.transformations import to_sd_network
         from ...network.dnetwork import DirectedPhyNetwork
         from ...network.dnetwork.classifications import is_lsa_network
         

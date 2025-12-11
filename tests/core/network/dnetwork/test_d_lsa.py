@@ -7,8 +7,8 @@ import warnings
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.operations import (
-    find_lsa_node,
+from phylozoo.core.network.dnetwork.features import find_lsa_node
+from phylozoo.core.network.dnetwork.transformations import (
     to_lsa_network,
 )
 from phylozoo.core.network.dnetwork.classifications import is_lsa_network

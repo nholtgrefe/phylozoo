@@ -11,13 +11,15 @@ import pytest
 from typing import Dict, List, Set, Tuple
 
 from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-from phylozoo.core.primitives.d_multigraph.operations import (
+from phylozoo.core.primitives.d_multigraph.features import (
     number_of_connected_components,
     is_connected,
     connected_components,
+    has_self_loops,
+)
+from phylozoo.core.primitives.d_multigraph.transformations import (
     identify_two_nodes,
     identify_node_set,
-    has_self_loops,
 )
 from phylozoo.core.primitives.d_multigraph.conversions import (
     digraph_to_directedmultigraph,

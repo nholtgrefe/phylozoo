@@ -10,7 +10,7 @@ from functools import cached_property
 from typing import Any, Iterator, TypeVar
 
 from ...primitives.m_multigraph import MixedMultiGraph
-from ...primitives.m_multigraph.operations import is_connected, has_self_loops
+from ...primitives.m_multigraph.features import is_connected, has_self_loops
 from ....utils.validation import validation_aware
 
 T = TypeVar('T')

@@ -9,7 +9,7 @@ import pytest
 from typing import Dict, List, Set, Tuple
 
 from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-from phylozoo.core.primitives.m_multigraph.operations import orient_away_from_vertex
+from phylozoo.core.primitives.m_multigraph.transformations import orient_away_from_vertex
 from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 
 
@@ -397,4 +397,212 @@ class TestOrientMixedGraphFromRoot:
         assert dm.has_edge(3, 2)  # 3->2 (away from root)
         assert dm.has_edge(2, 1)  # 2->1 (away from root)
         assert dm.number_of_edges() == 4
+    
+    def test_no_duplicate_edges_bug_fix(self) -> None:
+        """
+        Test that duplicate edges are not created (bug fix verification).
+        
+        This test specifically verifies that the fix for duplicate edge processing
+        works correctly. Previously, undirected edges could be processed twice
+        (once from each endpoint), creating duplicate edges in the result.
+        """
+        G = MixedMultiGraph()
+        # Create a structure where edges could be processed from multiple directions
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        G.add_undirected_edge(2, 5)  # Branch from node 2
+        G.add_undirected_edge(3, 6)  # Branch from node 3
+        
+        dm = orient_away_from_vertex(G, 1)
+        
+        # Verify exact edge count matches (no duplicates)
+        assert dm.number_of_edges() == G.number_of_edges()
+        assert dm.number_of_edges() == 5
+        
+        # Verify each edge appears exactly once
+        edges_list = list(dm.edges())
+        edges_set = set(edges_list)
+        assert len(edges_list) == len(edges_set), "Duplicate edges found!"
+        
+        # Verify all expected edges exist
+        assert dm.has_edge(1, 2)
+        assert dm.has_edge(2, 3)
+        assert dm.has_edge(3, 4)
+        assert dm.has_edge(2, 5)
+        assert dm.has_edge(3, 6)
+    
+    def test_no_duplicate_edges_with_parallel_edges(self) -> None:
+        """
+        Test that parallel edges are not duplicated (bug fix verification).
+        
+        This test verifies that parallel undirected edges are correctly handled
+        and not duplicated during orientation.
+        """
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, key=0, weight=1.0)
+        G.add_undirected_edge(1, 2, key=1, weight=2.0)  # Parallel edge
+        G.add_undirected_edge(2, 3, key=0, weight=3.0)
+        
+        dm = orient_away_from_vertex(G, 1)
+        
+        # Verify exact edge count (should have both parallel edges)
+        assert dm.number_of_edges() == G.number_of_edges()
+        assert dm.number_of_edges() == 3
+        
+        # Verify both parallel edges exist
+        assert dm.has_edge(1, 2, key=0)
+        assert dm.has_edge(1, 2, key=1)
+        assert dm.has_edge(2, 3, key=0)
+        
+        # Verify no duplicates
+        edges_list = list(dm.edges(keys=True))
+        edges_set = set(edges_list)
+        assert len(edges_list) == len(edges_set), "Duplicate edges found!"
+    
+    def test_node_attributes_preserved_comprehensive(self) -> None:
+        """
+        Test that node attributes are correctly copied (bug fix verification).
+        
+        This test verifies the fix for node attribute copying. Previously,
+        attributes weren't being copied because the code tried to access
+        a non-existent _node attribute.
+        """
+        G = MixedMultiGraph()
+        # Add nodes with various attributes
+        G.add_node(1, label='root', color='red', weight=10.0)
+        G.add_node(2, label='internal', color='blue', weight=5.0)
+        G.add_node(3, label='leaf1', color='green')
+        G.add_node(4, label='leaf2', color='yellow', weight=1.0)
+        
+        # Add edges
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(2, 4)
+        
+        dm = orient_away_from_vertex(G, 1)
+        
+        # Verify all nodes have their attributes
+        node_data = dict(dm.nodes(data=True))
+        
+        assert node_data[1].get('label') == 'root'
+        assert node_data[1].get('color') == 'red'
+        assert node_data[1].get('weight') == 10.0
+        
+        assert node_data[2].get('label') == 'internal'
+        assert node_data[2].get('color') == 'blue'
+        assert node_data[2].get('weight') == 5.0
+        
+        assert node_data[3].get('label') == 'leaf1'
+        assert node_data[3].get('color') == 'green'
+        assert 'weight' not in node_data[3] or node_data[3].get('weight') is None
+        
+        assert node_data[4].get('label') == 'leaf2'
+        assert node_data[4].get('color') == 'yellow'
+        assert node_data[4].get('weight') == 1.0
+    
+    def test_node_attributes_from_both_graphs(self) -> None:
+        """
+        Test that node attributes from both _undirected and _directed graphs are preserved.
+        
+        This test verifies that when a node exists in both underlying graphs,
+        attributes from both are correctly merged.
+        """
+        G = MixedMultiGraph()
+        # Add node with attributes via add_node
+        G.add_node(1, label='node1', attr1='value1')
+        # Node will be in both _undirected and _directed after adding edges
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(1, 3)
+        
+        # Add attributes to node via the underlying graphs (simulating real usage)
+        G._undirected.nodes[1]['attr2'] = 'value2'
+        G._directed.nodes[1]['attr3'] = 'value3'
+        
+        dm = orient_away_from_vertex(G, 1)
+        
+        node_data = dict(dm.nodes(data=True))
+        
+        # Verify all attributes are present
+        assert node_data[1].get('label') == 'node1'
+        assert node_data[1].get('attr1') == 'value1'
+        assert node_data[1].get('attr2') == 'value2'
+        assert node_data[1].get('attr3') == 'value3'
+    
+    def test_edge_count_always_matches(self) -> None:
+        """
+        Test that edge count always matches input graph (comprehensive bug fix verification).
+        
+        This test verifies that in various scenarios, the output graph always
+        has exactly the same number of edges as the input graph, ensuring
+        no duplicates and no missing edges.
+        """
+        test_cases = [
+            # (description, graph_setup_function, valid_roots)
+            ("Simple tree", lambda: self._create_simple_tree(), [1, 2, 3, 4, 5]),
+            ("Star graph", lambda: self._create_star_graph(), [1, 2, 3, 4, 5]),
+            ("Mixed directed/undirected", lambda: self._create_mixed_graph(), [1]),  # Only root 1 is valid
+            ("Complex branching", lambda: self._create_complex_branching(), [1, 2, 3]),
+        ]
+        
+        for desc, graph_func, valid_roots in test_cases:
+            G = graph_func()
+            original_edge_count = G.number_of_edges()
+            
+            # Test with valid roots only (some graphs have constraints on valid roots)
+            for root in valid_roots:
+                if root not in G.nodes():
+                    continue
+                    
+                dm = orient_away_from_vertex(G, root)
+                assert dm.number_of_edges() == original_edge_count, \
+                    f"Edge count mismatch for {desc} with root {root}: " \
+                    f"expected {original_edge_count}, got {dm.number_of_edges()}"
+                
+                # Also verify no duplicate edges
+                edges_list = list(dm.edges(keys=True))
+                edges_set = set(edges_list)
+                assert len(edges_list) == len(edges_set), \
+                    f"Duplicate edges found for {desc} with root {root}"
+    
+    def _create_simple_tree(self) -> MixedMultiGraph:
+        """Helper to create a simple tree."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 3)
+        G.add_undirected_edge(2, 4)
+        G.add_undirected_edge(2, 5)
+        return G
+    
+    def _create_star_graph(self) -> MixedMultiGraph:
+        """Helper to create a star graph."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 3)
+        G.add_undirected_edge(1, 4)
+        G.add_undirected_edge(1, 5)
+        return G
+    
+    def _create_mixed_graph(self) -> MixedMultiGraph:
+        """Helper to create a mixed directed/undirected graph."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(2, 4)
+        G.add_directed_edge(3, 5)
+        G.add_undirected_edge(4, 6)
+        return G
+    
+    def _create_complex_branching(self) -> MixedMultiGraph:
+        """Helper to create a complex branching structure."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 3)
+        G.add_undirected_edge(2, 4)
+        G.add_undirected_edge(2, 5)
+        G.add_undirected_edge(3, 6)
+        G.add_undirected_edge(3, 7)
+        G.add_undirected_edge(4, 8)
+        G.add_undirected_edge(5, 9)
+        return G
 
