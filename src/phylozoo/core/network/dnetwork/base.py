@@ -13,10 +13,12 @@ import networkx as nx
 
 from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.d_multigraph.operations import is_connected, has_self_loops
+from ....utils.validation import validation_aware
 
 T = TypeVar('T')
 
 
+@validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
 class DirectedPhyNetwork:
     """
     A directed phylogenetic network.

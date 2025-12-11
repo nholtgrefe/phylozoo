@@ -15,6 +15,7 @@ from ...primitives.m_multigraph.operations import (
     orient_away_from_vertex,
     source_components,
 )
+from ....utils.validation import validation_aware
 from .base import MixedPhyNetwork
 
 T = TypeVar('T')
@@ -23,6 +24,7 @@ T = TypeVar('T')
 _validating_semidir = threading.local()
 
 
+@validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
 class SemiDirectedPhyNetwork(MixedPhyNetwork):
     """
     A semi-directed phylogenetic network.

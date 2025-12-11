@@ -11,10 +11,12 @@ from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Uni
 
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.operations import is_connected, has_self_loops
+from ....utils.validation import validation_aware
 
 T = TypeVar('T')
 
 
+@validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
 class MixedPhyNetwork:
     """
     A mixed phylogenetic network.
