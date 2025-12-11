@@ -29,7 +29,7 @@ class TestGetEdgeAttribute:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 1, attr='branch_length') == 0.5
 
@@ -40,7 +40,7 @@ class TestGetEdgeAttribute:
             net = MixedPhyNetwork(
             directed_edges=[{'u': 3, 'v': 4, 'branch_length': 0.5}, (5, 4)],
             undirected_edges=[(4, 1), (3, 2), (3, 6), (5, 7), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         assert net.get_edge_attribute(3, 4, attr='branch_length') == 0.5
 
@@ -49,7 +49,7 @@ class TestGetEdgeAttribute:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 1, attr='branch_length') is None
 
@@ -58,7 +58,7 @@ class TestGetEdgeAttribute:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 999, attr='branch_length') is None
 
@@ -67,7 +67,7 @@ class TestGetEdgeAttribute:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[{'u': 3, 'v': 1, 'custom_attr': 'value'}, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 1, attr='custom_attr') == 'value'
 
@@ -76,7 +76,7 @@ class TestGetEdgeAttribute:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[{'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95, 'custom': 'x'}, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 1, attr='branch_length') == 0.5
         assert net.get_edge_attribute(3, 1, attr='bootstrap') == 0.95
@@ -94,7 +94,7 @@ class TestGetEdgeAttribute:
             (3, 1), (3, 2),  # Additional edges from 3
             (4, 5), (4, 6)   # Additional edges from 4
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         assert net.get_edge_attribute(3, 4, key=0, attr='branch_length') == 0.5
         assert net.get_edge_attribute(3, 4, key=1, attr='branch_length') == 0.7
@@ -109,7 +109,7 @@ class TestGetEdgeAttribute:
             (3, 1), (3, 2),  # Additional edges from 3
             (4, 5), (4, 6)   # Additional edges from 4
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         with pytest.raises(ValueError, match="Multiple parallel"):
             net.get_edge_attribute(3, 4, attr='branch_length')
@@ -122,7 +122,7 @@ class TestGetEdgeAttribute:
             net = MixedPhyNetwork(
             directed_edges=[{'u': 3, 'v': 5, 'branch_length': 0.5}, (6, 5)],
             undirected_edges=[{'u': 2, 'v': 3, 'branch_length': 0.3}, (2, 4), (2, 11), (5, 1), (3, 7), (3, 8), (6, 9), (6, 10)],
-            taxa={1: "A", 4: "B", 7: "C", 8: "D", 9: "E", 10: "F", 11: "G"}
+            nodes=[(1, {'label': 'A'}), (4, {'label': 'B'}), (7, {'label': 'C'}), (8, {'label': 'D'}), (9, {'label': 'E'}), (10, {'label': 'F'}), (11, {'label': 'G'})]
             )
         # For directed edge (hybrid edge), should work
         assert net.get_edge_attribute(3, 5, attr='branch_length') == 0.5
@@ -138,7 +138,7 @@ class TestGetBranchLength:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_branch_length(3, 1) == 0.5
 
@@ -147,7 +147,7 @@ class TestGetBranchLength:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_branch_length(3, 1) is None
 
@@ -162,7 +162,7 @@ class TestGetBranchLength:
             (3, 1), (3, 2),  # Additional edges from 3
             (4, 5), (4, 6)   # Additional edges from 4
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         assert net.get_branch_length(3, 4, key=0) == 0.5
         assert net.get_branch_length(3, 4, key=1) == 0.7
@@ -174,7 +174,7 @@ class TestGetBranchLength:
             net = MixedPhyNetwork(
             directed_edges=[{'u': 3, 'v': 4, 'branch_length': 0.5}, (5, 4)],
             undirected_edges=[(4, 1), (3, 2), (3, 7), (5, 6), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         assert net.get_branch_length(3, 4) == 0.5
 
@@ -187,7 +187,7 @@ class TestGetBootstrap:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[{'u': 3, 'v': 1, 'bootstrap': 0.95}, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_bootstrap(3, 1) == 0.95
 
@@ -196,7 +196,7 @@ class TestGetBootstrap:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_bootstrap(3, 1) is None
 
@@ -211,7 +211,7 @@ class TestGetBootstrap:
             (3, 1), (3, 2),  # Additional edges from 3
             (4, 5), (4, 6)   # Additional edges from 4
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         assert net.get_bootstrap(3, 4, key=0) == 0.95
         assert net.get_bootstrap(3, 4, key=1) == 0.87
@@ -223,7 +223,7 @@ class TestGetBootstrap:
             net = MixedPhyNetwork(
             directed_edges=[{'u': 3, 'v': 4, 'bootstrap': 0.95}, (5, 4)],
             undirected_edges=[(4, 1), (3, 2), (3, 7), (5, 6), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         assert net.get_bootstrap(3, 4) == 0.95
 
@@ -241,7 +241,7 @@ class TestGetGamma:
             {'u': 6, 'v': 4, 'gamma': 0.4}
             ],
             undirected_edges=[(4, 1), (5, 7), (5, 8), (6, 9), (6, 10)],
-            taxa={1: "A", 7: "B", 8: "C", 9: "D", 10: "E"}
+            nodes=[(1, {'label': 'A'}), (7, {'label': 'B'}), (8, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'})]
             )
         assert net.get_gamma(5, 4) == 0.6
         assert net.get_gamma(6, 4) == 0.4
@@ -254,7 +254,7 @@ class TestGetGamma:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 1), (5, 7), (5, 8), (6, 9), (6, 10)],
-            taxa={1: "A", 7: "B", 8: "C", 9: "D", 10: "E"}
+            nodes=[(1, {'label': 'A'}), (7, {'label': 'B'}), (8, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'})]
             )
         assert net.get_gamma(5, 4) is None
         assert net.get_gamma(6, 4) is None
@@ -269,7 +269,7 @@ class TestGetGamma:
             {'u': 6, 'v': 4, 'gamma': 0.4}
             ],
             undirected_edges=[(4, 1), (5, 8), (5, 9), (6, 10), (6, 11)],
-            taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         assert net.get_gamma(5, 4, key=0) == 0.4
         assert net.get_gamma(5, 4, key=1) == 0.2
@@ -280,7 +280,7 @@ class TestGetGamma:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         with pytest.raises(ValueError, match="cannot be set on undirected edges"):
             net.get_gamma(3, 1)
@@ -293,7 +293,7 @@ class TestGetGamma:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],  # Node 4 is hybrid
             undirected_edges=[(4, 1), (3, 2), (3, 7), (3, 5), (5, 8), (5, 9), (6, 10), (6, 11)],
-            taxa={1: "A", 2: "B", 7: "C", 8: "D", 9: "E", 10: "F", 11: "G"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (7, {'label': 'C'}), (8, {'label': 'D'}), (9, {'label': 'E'}), (10, {'label': 'F'}), (11, {'label': 'G'})]
             )
         # (3, 2) is undirected, so get_gamma should raise error
         with pytest.raises(ValueError, match="cannot be set on undirected edges"):
@@ -312,7 +312,7 @@ class TestBootstrapValidation:
                     {'u': 3, 'v': 2, 'bootstrap': 0.5},
                     {'u': 3, 'v': 4, 'bootstrap': 1.0}
                 ],
-                taxa={1: "A", 2: "B", 4: "C"}
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         with expect_mixed_network_warning():
             assert net.validate() is True
@@ -323,7 +323,7 @@ class TestBootstrapValidation:
             with pytest.raises(ValueError, match="Bootstrap value.*must be in"):
                 MixedPhyNetwork(
                     undirected_edges=[{'u': 3, 'v': 1, 'bootstrap': -0.1}, (3, 2), (3, 4)],
-                    taxa={1: "A", 2: "B", 4: "C"}
+                    nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
                 )
 
     def test_bootstrap_above_one_raises_error(self) -> None:
@@ -332,7 +332,7 @@ class TestBootstrapValidation:
             with pytest.raises(ValueError, match="Bootstrap value.*must be in"):
                 MixedPhyNetwork(
                     undirected_edges=[{'u': 3, 'v': 1, 'bootstrap': 1.1}, (3, 2), (3, 4)],
-                    taxa={1: "A", 2: "B", 4: "C"}
+                    nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
                 )
 
     def test_bootstrap_nan_raises_error(self) -> None:
@@ -341,7 +341,7 @@ class TestBootstrapValidation:
             with pytest.raises(ValueError, match="Bootstrap value.*must be in"):
                 MixedPhyNetwork(
                     undirected_edges=[{'u': 3, 'v': 1, 'bootstrap': float('nan')}, (3, 2), (3, 4)],
-                    taxa={1: "A", 2: "B", 4: "C"}
+                    nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
                 )
 
     def test_bootstrap_on_directed_edge(self) -> None:
@@ -351,7 +351,7 @@ class TestBootstrapValidation:
             net = MixedPhyNetwork(
             directed_edges=[{'u': 3, 'v': 4, 'bootstrap': 0.95}, (5, 4)],
             undirected_edges=[(4, 1), (3, 2), (3, 7), (5, 6), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         assert net.get_bootstrap(3, 4) == 0.95
 
@@ -369,7 +369,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 4, 'gamma': 0.4}
                 ],
                 undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         with expect_mixed_network_warning():
             assert net.validate() is True
@@ -383,7 +383,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 4, 'gamma': 0.4}
                 ],
                 undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         with expect_mixed_network_warning():
             assert net.validate() is True
@@ -398,7 +398,7 @@ class TestGammaValidation:
                         {'u': 6, 'v': 4, 'gamma': 0.3}  # Sum = 0.9
                     ],
                     undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
                 )
 
     def test_gamma_on_undirected_edge_raises_error(self) -> None:
@@ -407,7 +407,7 @@ class TestGammaValidation:
             with pytest.raises(ValueError, match="not a directed edge|cannot have gamma"):
                 MixedPhyNetwork(
                     undirected_edges=[{'u': 3, 'v': 1, 'gamma': 0.5}, (3, 2), (3, 4)],
-                    taxa={1: "A", 2: "B", 4: "C"}
+                    nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
                 )
 
     def test_gamma_partial_raises_error(self) -> None:
@@ -420,7 +420,7 @@ class TestGammaValidation:
                         (6, 4)  # Missing gamma
                     ],
                     undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                    taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                    nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
                 )
 
     def test_gamma_parallel_edges_sum(self) -> None:
@@ -434,7 +434,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 4, 'gamma': 0.4}
                 ],
                 undirected_edges=[(4, 1), (5, 7), (5, 8), (6, 9), (6, 10)],
-                taxa={1: "A", 7: "B", 8: "C", 9: "D", 10: "E"}
+                nodes=[(1, {'label': 'A'}), (7, {'label': 'B'}), (8, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'})]
             )
         # Sum should be 0.3 + 0.3 + 0.4 = 1.0
         with expect_mixed_network_warning():
@@ -449,7 +449,7 @@ class TestGammaValidation:
                     {'u': 6, 'v': 4, 'gamma': 1.0}
                 ],
                 undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         with expect_mixed_network_warning():
             assert net.validate() is True
@@ -464,7 +464,7 @@ class TestGammaValidation:
                         {'u': 6, 'v': 4, 'gamma': 1.1}
                     ],
                     undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
                 )
 
     def test_gamma_above_one_raises_error(self) -> None:
@@ -477,7 +477,7 @@ class TestGammaValidation:
                         {'u': 6, 'v': 4, 'gamma': -0.1}
                     ],
                     undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-                taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
                 )
 
 
@@ -489,7 +489,7 @@ class TestCustomAttributes:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[{'u': 3, 'v': 1, 'custom': 'value', 'number': 42}, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 1, attr='custom') == 'value'
         assert net.get_edge_attribute(3, 1, attr='number') == 42
@@ -506,7 +506,7 @@ class TestCustomAttributes:
             'custom2': 123,
             'custom3': [1, 2, 3]
             }, (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_edge_attribute(3, 1, attr='custom1') == 'a'
         assert net.get_edge_attribute(3, 1, attr='custom2') == 123

@@ -26,7 +26,7 @@ class TestIncidentParentEdges:
             net = MixedPhyNetwork(
             directed_edges=[(3, 4), (5, 4)],  # Hybrid 4
             undirected_edges=[(4, 1), (3, 2), (3, 6), (5, 7), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         # Node 1 is a leaf with indegree 0, so no parent edges
         parent_edges = list(net.incident_parent_edges(1))
@@ -38,7 +38,7 @@ class TestIncidentParentEdges:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         parent_edges = list(net.incident_parent_edges(4))
         assert len(parent_edges) == 2
@@ -50,7 +50,7 @@ class TestIncidentParentEdges:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Tree nodes have indegree 0, so no parent edges
         parent_edges = list(net.incident_parent_edges(3))
@@ -65,7 +65,7 @@ class TestIncidentParentEdges:
             {'u': 6, 'v': 4, 'branch_length': 0.3, 'bootstrap': 0.87}
             ],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         parent_edges = list(net.incident_parent_edges(4, data=True))
         assert len(parent_edges) == 2
@@ -85,7 +85,7 @@ class TestIncidentParentEdges:
             (6, 4)
             ],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         parent_edges = list(net.incident_parent_edges(4, keys=True))
         assert len(parent_edges) >= 2
@@ -106,7 +106,7 @@ class TestIncidentChildEdges:
             net = MixedPhyNetwork(
             directed_edges=[(3, 4), (5, 4)],
             undirected_edges=[(3, 1), (3, 2), (4, 6), (5, 7), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         child_edges = list(net.incident_child_edges(3))
         assert len(child_edges) == 1  # Only (3, 4) directed edge
@@ -119,7 +119,7 @@ class TestIncidentChildEdges:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         child_edges = list(net.incident_child_edges(1))
         assert len(child_edges) == 0  # Leaves have no outgoing directed edges
@@ -136,7 +136,7 @@ class TestIncidentChildEdges:
             {'u': 5, 'v': 4, 'branch_length': 0.3}
             ],
             undirected_edges=[(3, 1), (3, 2), (4, 6), (5, 7), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         child_edges = list(net.incident_child_edges(3, data=True))
         assert len(child_edges) == 1  # Only (3, 4) directed edge
@@ -156,7 +156,7 @@ class TestIncidentUndirectedEdges:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         undir_edges = list(net.incident_undirected_edges(1))
         assert len(undir_edges) == 1
@@ -167,7 +167,7 @@ class TestIncidentUndirectedEdges:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         undir_edges = list(net.incident_undirected_edges(3))
         assert len(undir_edges) == 3
@@ -182,7 +182,7 @@ class TestIncidentUndirectedEdges:
             {'u': 3, 'v': 2, 'branch_length': 0.3},
             (3, 4)
             ],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         undir_edges = list(net.incident_undirected_edges(3, data=True))
         assert len(undir_edges) == 3
@@ -199,7 +199,7 @@ class TestIncidentUndirectedEdges:
             (3, 4, 0), (3, 4, 1),  # Parallel edges between internal nodes
             (3, 1), (3, 2), (4, 5), (4, 6)
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         undir_edges = list(net.incident_undirected_edges(3, keys=True))
         assert len(undir_edges) >= 3  # (3, 4) with 2 keys, (3, 1), (3, 2)
@@ -220,7 +220,7 @@ class TestIncidentEdgesConsistency:
             net = MixedPhyNetwork(
             directed_edges=[(3, 4), (5, 4)],  # Hybrid 4
             undirected_edges=[(4, 1), (3, 2), (3, 6), (5, 7), (5, 8)],
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         # Node 4 has parent edges from 3 and 5
         parent_edges_4 = list(net.incident_parent_edges(4))
@@ -236,7 +236,7 @@ class TestIncidentEdgesConsistency:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Node 3: 0 incoming directed, 0 outgoing directed, 3 undirected
         parent_edges = list(net.incident_parent_edges(3))

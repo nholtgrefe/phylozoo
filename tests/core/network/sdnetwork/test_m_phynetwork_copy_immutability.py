@@ -23,7 +23,7 @@ class TestCopy:
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         net2 = net1.copy()
         
@@ -38,8 +38,7 @@ class TestCopy:
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         net2 = net1.copy()
         
@@ -53,7 +52,7 @@ class TestCopy:
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         net2 = net1.copy()
         
@@ -69,7 +68,7 @@ class TestCopy:
             net1 = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         net2 = net1.copy()
         
@@ -87,7 +86,7 @@ class TestCopy:
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Access to cache
         _ = net1.leaves
@@ -109,7 +108,7 @@ class TestCopy:
             {'u': 3, 'v': 2, 'branch_length': 0.3},
             (3, 4)
             ],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         net2 = net1.copy()
         
@@ -129,7 +128,7 @@ class TestCopy:
             {'u': 6, 'v': 4, 'gamma': 0.4}
             ],
             undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         net2 = net1.copy()
         
@@ -142,7 +141,7 @@ class TestCopy:
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         net2 = net1.copy()
         assert isinstance(net2, MixedPhyNetwork)
@@ -156,7 +155,7 @@ class TestImmutability:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Verify mutation methods don't exist
         assert not hasattr(net, "add_undirected_edge")
@@ -170,7 +169,7 @@ class TestImmutability:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Direct modification should be possible but discouraged
         # We test that the network structure remains consistent

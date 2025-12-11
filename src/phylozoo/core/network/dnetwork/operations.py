@@ -315,18 +315,17 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     
     # Empty network shortcut
     if working.number_of_nodes() == 0:
-        return SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[], taxa={}, internal_node_labels=None)
+        return SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[], nodes=None)
     
     # Single-node network shortcut
     if working.number_of_nodes() == 1:
         node = next(iter(working._graph.nodes))
         label = working.get_label(node)
-        taxa_dict = {node: label} if label else {}
+        nodes_list = [(node, {'label': label})] if label else None
         return SemiDirectedPhyNetwork(
             directed_edges=[],
             undirected_edges=[],
-            taxa=taxa_dict,
-            internal_node_labels=None
+            nodes=nodes_list
         )
     
     # 2) Separate hybrid (directed) vs tree (to be undirected) edges
@@ -411,22 +410,21 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
                 if neighbor in mixed.nodes() and mixed.degree(neighbor) == 2:
                     degree2_nodes.add(neighbor)
     
-    # Taxa stay the same (leaves are never suppressed, only internal nodes)
-    # Reuse the taxa mapping from the working network (dict comprehension for efficiency)
-    # Note: SemiDirectedPhyNetwork still uses taxa parameter, so we keep dict format
-    new_taxa: Dict[Any, str] = {
-        leaf: working.get_label(leaf)
-        for leaf in working.leaves
-        if working.get_label(leaf) is not None
-    }
+    # Build nodes list with labels (leaves are never suppressed, only internal nodes)
+    # Leaves: all leaves from working network
+    # Internal nodes: only those not suppressed
+    nodes_list: List[Union[Any, Tuple[Any, Dict[str, str]]]] = []
     
-    # Internal labels: remove any nodes that were suppressed (dict comprehension for efficiency)
-    # Note: SemiDirectedPhyNetwork still uses internal_node_labels parameter
-    new_internal_labels: Dict[Any, str] = {
-        node: label
-        for node, label in working._node_to_label.items()
-        if node not in working.leaves and node not in suppressed_nodes
-    }
+    # Add leaves with labels
+    for leaf in working.leaves:
+        label = working.get_label(leaf)
+        if label is not None:
+            nodes_list.append((leaf, {'label': label}))
+    
+    # Add internal nodes with labels (excluding suppressed nodes)
+    for node, label in working._node_to_label.items():
+        if node not in working.leaves and node not in suppressed_nodes:
+            nodes_list.append((node, {'label': label}))
     
     # Rebuild directed/undirected edges from mixed graph to pass to SD network
     # Use public API methods
@@ -448,6 +446,5 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     return SemiDirectedPhyNetwork(
         directed_edges=final_directed,
         undirected_edges=final_undirected,
-        taxa=new_taxa,
-        internal_node_labels=new_internal_labels if new_internal_labels else None,
+        nodes=nodes_list if nodes_list else None,
     )

@@ -10,7 +10,7 @@ from functools import cached_property
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
 
 from ...primitives.m_multigraph import MixedMultiGraph
-from ...primitives.m_multigraph.operations import is_connected
+from ...primitives.m_multigraph.operations import is_connected, has_self_loops
 
 T = TypeVar('T')
 
@@ -19,98 +19,71 @@ class MixedPhyNetwork:
     """
     A mixed phylogenetic network.
     
-    A MixedPhyNetwork is a mixed multigraph (with both directed and undirected edges)
-    representing a phylogenetic network structure. This is an abstract network type which
-    may have undirected cycles, used for canonical forms and to address unidentifiability
-    issues. For semi-directed phylogenetic networks without undirected cycles, use the
-    SemiDirectedPhyNetwork subclass.
+    A MixedPhyNetwork is a weakly connected, mixed multigraph (with both directed and 
+    undirected edges) representing a phylogenetic network structure. This is an abstract 
+    network type which may have undirected cycles, used for canonical forms and to address 
+    unidentifiability issues. For semi-directed phylogenetic networks without undirected 
+    cycles, use the SemiDirectedPhyNetwork subclass.
     
-    A MixedPhyNetwork can be obtained from a directed phylogenetic LSA (Least Stable
-    Ancestor) network by:
-    
-    1. Undirecting all non-hybrid edges
-    2. Optionally undirecting all hybrid edges for selected hybrid nodes
-       (i.e., if one hybrid edge is undirected, all partner hybrid edges are undirected)
-    3. Suppressing degree-2 nodes
-
-    The network consists of:
-    
+    It consists of:
     - **Leaf nodes**: Nodes with no outgoing directed edges, each with a taxon label
     - **Tree nodes**: Internal nodes with in-degree 0 and total degree >= 3
     - **Hybrid nodes**: Internal nodes with in-degree >= 2 and total degree = in-degree + 1
     
-    The `validate()` method checks whether the network adheres to structural constraints
-    upon initialization.
+    A MixedPhyNetwork is obtained from a directed phylogenetic LSA (Least Stable
+    Ancestor) network by undirecting all non-hybrid edges, optionally undirecting all 
+    hybrid edges for selected hybrid nodes (if one hybrid edge is undirected, all partner 
+    hybrid edges are undirected), and suppressing degree-2 nodes.
     
-    This class uses composition with MixedMultiGraph for graph structure and adds
-    phylogenetic-specific features like taxa labels, node labels, and network topology methods.
-    
-    Leaves refer to node IDs, and taxa refer to the labels of leaves. Leaves must always
-    have labels (taxa). Internal nodes may or may not be labeled. Node IDs are separate
-    from labels, allowing flexible node identification.
-    
-    Each label must be unique across all nodes. Attempting to use a duplicate label
-    will raise a ValueError.
-    
+    Notes
+    -----
+    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
+    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
+    ``MixedMultiGraph``, or load from a file/eNewick string.
+
     Parameters
     ----------
     directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
-        List of directed edges. Can be:
+        List of directed edges. Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
-        - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+        - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
         
-        Edge attributes can be set via dict format. Suggested attributes:
-        - branch_length (float): Branch length for the edge
-        - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
-        - gamma (float): For hybrid edges only - inheritance probability (must be in [0.0, 1.0]).
-          **Gamma values can only be set on directed edges that point into hybrid nodes**
-          (hybrid edges). Undirected edges cannot have gamma values.
-          Attempting to set gamma on an undirected or non-hybrid edge will raise a
-          ValueError during validation. If ANY gamma is specified for edges entering a hybrid node,
-          then ALL edges entering that hybrid node must have gamma values summing to 1.0.
-          
-          Note: If you need more forgiving behavior (e.g., partial gamma values that
-          don't sum to 1.0), consider using a different edge attribute name (e.g., 'gamma2')
-          which will not be validated.
+        Edge attributes (validated):
+        - branch_length (float)
+        - bootstrap (float in [0.0, 1.0])
+        - gamma (float in [0.0, 1.0], hybrid edges only; for each hybrid node, all 
+        incoming gammas must sum to 1.0) 
+        Use a different attribute name (e.g., 'gamma2') for non-validated and/or additional
+        attributes.
         
-        These attributes are validated during initialization.
-        
-        Other edge attributes are also supported (any key-value pairs can be added),
-        but the above three are suggested for phylogenetic networks.
-        
-        By default None.
+        Can be empty or None for empty/single-node networks. By default None.
     undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
-        List of undirected edges. Can be:
+        List of undirected edges. Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
-        - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+        - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
         
-        Edge attributes can be set via dict format. Suggested attributes:
-        - branch_length (float): Branch length for the edge
-        - bootstrap (float): Bootstrap support value (must be in [0.0, 1.0])
+        Edge attributes (validated):
+        - branch_length (float)
+        - bootstrap (float in [0.0, 1.0])
         
-        **Note: Undirected edges cannot have gamma values.**
+        Note: Undirected edges cannot have gamma values.
         
-        These attributes are validated during initialization.
+        Can be empty or None for empty/single-node networks. By default None.
+    nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+        List of nodes. Formats:
+        - Simple node IDs: `1`, `"node1"`, etc.
+        - Tuples: `(node_id, {'label': '...','attr': ...})`
         
-        Other edge attributes are also supported (any key-value pairs can be added),
-        but the above two are suggested for phylogenetic networks.
+        Node attributes (validated):
+        - label: string, unique across all nodes; use another key for non-string data.
         
-        By default None.
-    taxa : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-        Taxon labels for leaves. Can be:
-        - Dict mapping leaf node IDs to taxon labels: {leaf_id: "taxon"}
-        - List of (leaf_id, taxon_label) tuples
-        The IDs in this mapping must be leaves (no outgoing directed edges).
-        Not all leaves need to be covered - uncovered leaves get auto-generated labels.
-        By default None.
-    internal_node_labels : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-        Labels for internal nodes (optional). Can be:
-        - Dict mapping node IDs to labels: {node_id: "label"}
-        - List of (node_id, label) tuples
-        Only internal nodes (non-leaves) can be labeled via this parameter.
-        Leaves must be labeled via the 'taxa' parameter. By default None.
+        Leaves without labels are auto-labeled. Leaf-labels are referred to as `taxa`.
+        Use a different attribute name (e.g., 'label2') for non-validated and/or additional
+        attributes.
+
+        Can be empty or None. By default None.
     
     Attributes
     ----------
@@ -123,25 +96,19 @@ class MixedPhyNetwork:
     _label_to_node : Dict[str, T]
         Reverse mapping from labels to node IDs (for quick lookup).
     
-    Notes
-    -----
-    This class is immutable after initialization. To create a network,
-    build it using MixedMultiGraph and then create a MixedPhyNetwork from it,
-    or initialize it with edges and taxa.
-    
     Examples
     --------
-    >>> # Initialize with taxa mapping
+    >>> # Initialize with nodes and labels
     >>> net = MixedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
-    ...     taxa={1: "A", 2: "B", 4: "C"}
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
     ... )
     >>> net.taxa
     {'A', 'B', 'C'}
-    >>> # Partial taxa mapping - uncovered leaves get auto-generated labels
+    >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = MixedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
-    ...     taxa={1: "A"}
+    ...     nodes=[(1, {'label': 'A'})]
     ... )
     >>> net2.taxa  # 2, 4, and 5 are auto-labeled
     {'A', '2', '4', '5'}
@@ -152,7 +119,7 @@ class MixedPhyNetwork:
     ...         {'u': 3, 'v': 2, 'branch_length': 0.3, 'bootstrap': 0.87},
     ...         (3, 4)
     ...     ],
-    ...     taxa={1: "A", 2: "B", 4: "C"}
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
     ... )
     >>> net3.get_branch_length(3, 1)
     0.5
@@ -165,7 +132,7 @@ class MixedPhyNetwork:
     ...         {'u': 6, 'v': 4, 'gamma': 0.4}  # Hybrid edge (Sum = 1.0)
     ...     ],
     ...     undirected_edges=[(4, 1), (4, 2), (4, 3)],  # Tree edges
-    ...     taxa={1: "A", 2: "B", 3: "C"}
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
     ... )
     >>> net4.get_gamma(5, 4)
     0.6
@@ -177,8 +144,7 @@ class MixedPhyNetwork:
         self,
         directed_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
         undirected_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
-        taxa: Optional[Dict[T, str] | List[Tuple[T, str]]] = None,
-        internal_node_labels: Optional[Dict[T, str] | List[Tuple[T, str]]] = None,
+        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]] = None,
     ) -> None:
         """
         Initialize a mixed phylogenetic network.
@@ -186,138 +152,194 @@ class MixedPhyNetwork:
         Parameters
         ----------
         directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
-            List of directed edges. Must be provided (can be empty list for empty network,
-            but a warning will be raised). By default None.
+            List of directed edges. Formats:
+            - (u, v) tuples (key auto-generated)
+            - (u, v, key) tuples (explicit key)
+            - Dict with 'u', 'v' and optional 'key' plus edge attributes
+            
+            Edge attributes (validated):
+            - branch_length (float)
+            - bootstrap (float in [0.0, 1.0])
+            - gamma (float in [0.0, 1.0], hybrid edges only; all incoming gammas must sum to 1.0)
+              Use a different attribute name (e.g., 'gamma2') for non-validated values.
+            
+            Can be empty list or None for empty/single-node networks. By default None.
         undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
-            List of undirected edges. Must be provided (can be empty list for empty network).
+            List of undirected edges. Formats:
+            - (u, v) tuples (key auto-generated)
+            - (u, v, key) tuples (explicit key)
+            - Dict with 'u', 'v' and optional 'key' plus edge attributes
+            
+            Edge attributes (validated):
+            - branch_length (float)
+            - bootstrap (float in [0.0, 1.0])
+            
+            Can be empty list or None for empty/single-node networks. By default None.
+        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+            List of nodes. Formats:
+            - Simple node IDs: `1`, `"node1"`, etc.
+            - Tuples: `(node_id, {'label': '...','attr': ...})` (NetworkX-style)
+            
+            Node attributes (validated):
+            - label: string, unique across all nodes; use another key for non-string data.
+            
+            Leaves without labels will get auto-generated labels. Can be empty list or None.
             By default None.
-        taxa : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-            Taxon labels for leaves. Can be:
-            - Dict mapping leaf IDs to taxon labels: {leaf_id: "taxon"}
-            - List of (leaf_id, taxon_label) tuples
-            The IDs must be leaves (no outgoing directed edges). Not all leaves need to be
-            covered - uncovered leaves get auto-generated labels. By default None.
-        internal_node_labels : Optional[Dict[T, str] | List[Tuple[T, str]]], optional
-            Labels for internal nodes (optional). Can be:
-            - Dict mapping node IDs to labels: {node_id: "label"}
-            - List of (node_id, label) tuples
-            Only internal nodes (non-leaves) can be labeled via this parameter.
-            Leaves must be labeled via 'taxa'. By default None.
         
         Examples
         --------
+        >>> # Simple network with labels
         >>> net = MixedPhyNetwork(
         ...     undirected_edges=[(3, 1), (3, 2)],
-        ...     taxa={1: "A", 2: "B"}
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         ... )
+        >>> # Mix of labeled and unlabeled nodes
         >>> net = MixedPhyNetwork(
-        ...     directed_edges=[(5, 4)],
-        ...     undirected_edges=[(4, 1)],
-        ...     taxa={1: "A"}
+        ...     undirected_edges=[(3, 1), (3, 2)],
+        ...     nodes=[3, (1, {'label': 'A'})]  # 3 has no label, 1 has label 'A'
+        ... )
+        >>> # Single-node network
+        >>> net = MixedPhyNetwork(nodes=[(1, {'label': 'A'})])
+        >>> # Empty network
+        >>> net = MixedPhyNetwork(directed_edges=[], undirected_edges=[])
+        >>> # With edge attributes
+        >>> net = MixedPhyNetwork(
+        ...     undirected_edges=[
+        ...         {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
+        ...         {'u': 3, 'v': 2, 'branch_length': 0.3}
+        ...     ],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         ... )
         """
-        # Warn if both edge lists are empty
-        directed_list = directed_edges if directed_edges is not None else []
-        undirected_list = undirected_edges if undirected_edges is not None else []
+        # Default to empty lists
+        if directed_edges is None:
+            directed_edges = []
+        if undirected_edges is None:
+            undirected_edges = []
         
-        if not directed_list and not undirected_list:
+        # Warn if both edge lists are empty (but allow it)
+        if not directed_edges and not undirected_edges:
             warnings.warn(
                 "Initializing MixedPhyNetwork with empty edges lists. "
-                "This creates an empty network.",
+                "This creates an empty network or a network with isolated nodes.",
                 UserWarning,
                 stacklevel=2
             )
         
         self._graph: MixedMultiGraph[T] = MixedMultiGraph(
-            directed_edges=directed_list,
-            undirected_edges=undirected_list
+            directed_edges=directed_edges,
+            undirected_edges=undirected_edges
         )
         self._node_to_label: Dict[T, str] = {}
         self._label_to_node: Dict[str, T] = {}
         
-        self._initialize_labels(taxa, internal_node_labels)
+        # Step 1: Add all nodes to the graph (including attributes like label)
+        # Labels are validated and added to dictionaries during this step
+        self._add_nodes_to_graph(nodes)
         
-        # Validate the network
+        # Step 2: Auto-label any uncovered leaves
+        # All leaves are guaranteed to have labels after this step
+        self._auto_label_unlabeled_leaves()
+        
+        # Step 3: Validate the network structure
         if not self.validate():
             raise ValueError("Network validation failed")
     
-    def _initialize_labels(
-        self,
-        taxa: Optional[Dict[T, str] | List[Tuple[T, str]]],
-        internal_node_labels: Optional[Dict[T, str] | List[Tuple[T, str]]],
-    ) -> None:
+    def _add_label_to_dicts(self, node_id: T, label: str) -> None:
         """
-        Initialize node labels from taxa and internal node labels.
+        Add a node-label mapping to both label dictionaries with validation.
         
-        This helper method processes taxa labels for leaves, auto-labels uncovered leaves,
-        and processes internal node labels.
+        This helper method validates the label (string type, uniqueness) and adds
+        it to both _node_to_label and _label_to_node dictionaries. This is the
+        primary validation point for label constraints.
         
         Parameters
         ----------
-        taxa : Optional[Dict[T, str] | List[Tuple[T, str]]]
-            Taxon labels for leaves.
-        internal_node_labels : Optional[Dict[T, str] | List[Tuple[T, str]]]
-            Labels for internal nodes.
+        node_id : T
+            Node identifier.
+        label : str
+            Label to add. Must be a string and unique.
         
         Raises
         ------
         ValueError
-            If taxa or internal_node_labels have invalid format, or if nodes in taxa
-            are not leaves, or if nodes in internal_node_labels are leaves.
+            If label is not a string, or if the label is already used by a different node.
         """
-        # Add nodes to graph if they're specified in taxa but not in graph yet
-        # This handles single-node networks and isolated nodes
-        if taxa:
-            if isinstance(taxa, dict):
-                for leaf_id in taxa.keys():
-                    if leaf_id not in self._graph:
-                        self._graph.add_node(leaf_id)
-            elif isinstance(taxa, list):
-                for leaf_id, _ in taxa:
-                    if leaf_id not in self._graph:
-                        self._graph.add_node(leaf_id)
+        # Validate string type
+        if not isinstance(label, str):
+            raise ValueError(
+                f"Node {node_id} has non-string label '{label}' (type: {type(label).__name__}). "
+                f"Labels must be strings. For non-string metadata, store it under a "
+                f"different node attribute instead of 'label'."
+            )
         
-        # Identify all leaves (nodes with no outgoing directed edges)
-        all_leaves: Set[T] = self.leaves
+        # Check for duplicate labels
+        if label in self._label_to_node and self._label_to_node[label] != node_id:
+            existing_node = self._label_to_node[label]
+            raise ValueError(
+                f"Label '{label}' is already used by node {existing_node}. "
+                f"Each label must be unique."
+            )
         
-        # Process taxa (taxon labels for leaves)
-        covered_leaves: Set[T] = set()
-        if taxa:
-            if isinstance(taxa, dict):
-                # Dict: leaf_id -> taxon_label
-                for leaf_id, taxon_label in taxa.items():
-                    # Verify this is indeed a leaf
-                    if leaf_id not in all_leaves:
-                        raise ValueError(
-                            f"Node {leaf_id} in taxa mapping is not a leaf "
-                            f"(has outgoing directed edges)"
-                        )
-                    self._set_label(leaf_id, taxon_label)
-                    covered_leaves.add(leaf_id)
-            elif isinstance(taxa, list):
-                # List of (leaf_id, taxon_label) tuples
-                for leaf_id, taxon_label in taxa:
-                    # Verify this is indeed a leaf
-                    if leaf_id not in all_leaves:
-                        raise ValueError(
-                            f"Node {leaf_id} in taxa mapping is not a leaf "
-                            f"(has outgoing directed edges)"
-                        )
-                    self._set_label(leaf_id, taxon_label)
-                    covered_leaves.add(leaf_id)
+        # Add mapping
+        self._node_to_label[node_id] = label
+        self._label_to_node[label] = node_id
+    
+    def _add_nodes_to_graph(
+        self,
+        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]],
+    ) -> None:
+        """
+        Add all nodes to the underlying graph with their attributes.
+        
+        If a node has a 'label' attribute, it is immediately validated and added to
+        the label dictionaries using _add_label_to_dicts. Label validation (string
+        type and uniqueness) is performed during this step.
+        
+        Parameters
+        ----------
+        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]]
+            Node specifications as simple IDs or (node_id, attr_dict) tuples.
+        
+        Raises
+        ------
+        ValueError
+            If a node tuple does not provide a dict of attributes, or if duplicate labels are found.
+        """
+        if not nodes:
+            return
+        
+        for node_spec in nodes:
+            if isinstance(node_spec, tuple) and len(node_spec) == 2:
+                node_id, attrs = node_spec
+                if not isinstance(attrs, dict):
+                    raise ValueError(
+                        f"Node tuple must be (node_id, dict_of_attributes), got {node_spec}"
+                    )
+                self._graph.add_node(node_id, **attrs)
+                # If label is present, validate and add it to dictionaries immediately
+                if 'label' in attrs:
+                    self._add_label_to_dicts(node_id, attrs['label'])
             else:
-                raise ValueError(
-                    "taxa must be a dict (leaf_id -> taxon_label) "
-                    "or a list of (leaf_id, taxon_label) tuples"
-                )
+                node_id = node_spec  # type: ignore[assignment]
+                self._graph.add_node(node_id)
+    
+    def _auto_label_unlabeled_leaves(self) -> None:
+        """
+        Auto-label any leaves that do not yet have labels.
         
-        # Auto-label uncovered leaves
-        uncovered_leaves = all_leaves - covered_leaves
+        Generates labels based on node IDs, ensuring no duplicate labels. This method
+        guarantees that all leaves have labels after execution. Labels are validated
+        (string type and uniqueness) via _add_label_to_dicts.
+        
+        The graph node attribute is also updated to store the label.
+        """
+        all_leaves: Set[T] = self.leaves
+        labeled_leaves = {leaf for leaf in all_leaves if leaf in self._node_to_label}
+        uncovered_leaves = all_leaves - labeled_leaves
         
         for leaf_id in uncovered_leaves:
-            # Auto-generate label based on node_id
             label = str(leaf_id)
-            # If label already exists (e.g., from taxa mapping), make it unique
             if label in self._label_to_node:
                 counter = 1
                 unique_label = f"{label}_{counter}"
@@ -325,39 +347,16 @@ class MixedPhyNetwork:
                     counter += 1
                     unique_label = f"{label}_{counter}"
                 label = unique_label
-            self._set_label(leaf_id, label)
-        
-        # Process internal node labels (optional)
-        # Only set labels for internal nodes that are explicitly provided
-        if internal_node_labels:
-            if isinstance(internal_node_labels, dict):
-                # Dict: node_id -> label
-                for node_id, label in internal_node_labels.items():
-                    if node_id in all_leaves:
-                        raise ValueError(
-                            f"Node {node_id} in internal_node_labels is a leaf. "
-                            f"Use the 'taxa' parameter to set leaf labels (taxa)."
-                        )
-                    # Only set labels for internal nodes
-                    self._set_label(node_id, label)
-            elif isinstance(internal_node_labels, list):
-                # List of (node_id, label) tuples
-                for node_id, label in internal_node_labels:
-                    if node_id in all_leaves:
-                        raise ValueError(
-                            f"Node {node_id} in internal_node_labels is a leaf. "
-                            f"Use the 'taxa' parameter to set leaf labels (taxa)."
-                        )
-                    # Only set labels for internal nodes
-                    self._set_label(node_id, label)
-            else:
-                raise ValueError(
-                    "internal_node_labels must be a dict (node_id -> label) "
-                    "or a list of (node_id, label) tuples"
-                )
-        
-        # Note: Internal nodes without explicit labels remain unlabeled
-        # Only leaves are guaranteed to have labels (taxa)
+            # Add to dictionaries using helper (validates string type and uniqueness),
+            # then update graph attribute
+            self._add_label_to_dicts(leaf_id, label)
+            # Update graph node attribute (need to update both directed and undirected graphs)
+            if leaf_id in self._graph._directed:
+                self._graph._directed.nodes[leaf_id]['label'] = label
+            if leaf_id in self._graph._undirected:
+                self._graph._undirected.nodes[leaf_id]['label'] = label
+            if leaf_id in self._graph._combined:
+                self._graph._combined.nodes[leaf_id]['label'] = label
     
     def _validate_bootstrap_constraints(self) -> None:
         """
@@ -580,11 +579,12 @@ class MixedPhyNetwork:
         
         Checks:
         1. Network is connected (weakly connected)
-        2. All internal nodes have degree >= 3
-        3. Each node has indegree either 0 or undirected_degree-1
-        4. Mixed network constraint (issues warning that additional checks may be added)
-        5. Bootstrap values are in [0.0, 1.0]
-        6. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
+        2. No self-loops
+        3. All internal nodes have degree >= 3
+        4. Each node has indegree either 0 or total_degree-1
+        5. Mixed network constraint (issues warning that additional checks may be added)
+        6. Bootstrap values are in [0.0, 1.0]
+        7. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
         
         Returns
         -------
@@ -600,15 +600,34 @@ class MixedPhyNetwork:
         -----
         UserWarning
             Always issued to indicate that additional validation checks may be added later.
+            Also issued for empty and single-node networks.
         
         Notes
         -----
         This method performs validation checks but issues a warning that additional
         checks may be added later. For fully validated networks with additional
         constraints, use SemiDirectedPhyNetwork.
+        Empty networks (no nodes) are considered valid but will raise a warning.
+        Single-node networks are also valid but will raise a warning.
         """
         # Empty networks are valid
         if self.number_of_nodes() == 0:
+            warnings.warn(
+                "Empty network (no nodes) detected. While valid, this may not be useful for phylogenetic analysis.",
+                UserWarning,
+                stacklevel=2
+            )
+            return True
+
+        # Single-node networks are valid only if they have no self-loops
+        if self.number_of_nodes() == 1:
+            if has_self_loops(self._graph):
+                raise ValueError("Self-loops are not allowed in MixedPhyNetwork.")
+            warnings.warn(
+                "Single-node network detected. While valid, this may not be useful for phylogenetic analysis.",
+                UserWarning,
+                stacklevel=2
+            )
             return True
         
         # 1. Check that network is connected (weakly connected)
@@ -617,16 +636,20 @@ class MixedPhyNetwork:
                 "Network is not connected. All nodes must be in a single connected component."
             )
         
-        # 2. Validate degree constraints
+        # 2. Disallow self-loops
+        if has_self_loops(self._graph):
+            raise ValueError("Self-loops are not allowed in MixedPhyNetwork.")
+        
+        # 3. Validate degree constraints
         self._validate_degree_constraints()
         
-        # 3. Validate mixed network constraint (issues warning)
+        # 4. Validate mixed network constraint (issues warning)
         self._validate_mixednetwork_constraint()
         
-        # 4. Validate bootstrap constraints
+        # 5. Validate bootstrap constraints
         self._validate_bootstrap_constraints()
         
-        # 5. Validate gamma constraints
+        # 6. Validate gamma constraints
         self._validate_gamma_constraints()
         
         return True
@@ -650,7 +673,7 @@ class MixedPhyNetwork:
         
         Examples
         --------
-        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], taxa={1: "A"})
+        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         >>> net.get_label(1)
         'A'
         >>> net.get_label(3) is None
@@ -674,54 +697,11 @@ class MixedPhyNetwork:
         
         Examples
         --------
-        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], taxa={1: "A"})
+        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         >>> net.get_node_id("A")
         1
         """
         return self._label_to_node.get(label)
-    
-    def _set_label(self, node_id: T, label: str) -> None:
-        """
-        Set or update the label for a node (private method for initialization only).
-        
-        Each label must be unique across all nodes. If the label is already
-        used by a different node, a ValueError is raised.
-        
-        Parameters
-        ----------
-        node_id : T
-            Node identifier.
-        label : str
-            Label to set. Must be unique across all nodes.
-        
-        Raises
-        ------
-        ValueError
-            If node_id is not in the network, or if the label is already
-            used by a different node.
-        """
-        if node_id not in self._graph:
-            raise ValueError(f"Node {node_id} is not in the network")
-        
-        old_label = self._node_to_label.get(node_id)
-        
-        # Check if label is already used by a different node
-        # Allow same node to update its own label
-        if label in self._label_to_node:
-            existing_node = self._label_to_node[label]
-            if existing_node != node_id:
-                raise ValueError(
-                    f"Label '{label}' is already used by node {existing_node}. "
-                    f"Each label must be unique."
-                )
-            # Same node, same label - nothing to do
-            return
-        
-        # Update mappings
-        self._node_to_label[node_id] = label
-        if old_label and old_label in self._label_to_node and old_label != label:
-            del self._label_to_node[old_label]
-        self._label_to_node[label] = node_id
     
     # ========== Edge Attribute Access (Read-Only) ==========
     
@@ -1119,7 +1099,7 @@ class MixedPhyNetwork:
         >>> net = MixedPhyNetwork(
         ...     directed_edges=[(1, 2)],
         ...     undirected_edges=[(2, 3)],
-        ...     taxa={3: "A"}
+        ...     nodes=[(3, {'label': 'A'})]
         ... )
         >>> sorted(net.neighbors(2))
         [1, 3]
@@ -1155,7 +1135,7 @@ class MixedPhyNetwork:
         
         Examples
         --------
-        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> net.taxa
         {'A', 'B'}
         """
@@ -1178,7 +1158,7 @@ class MixedPhyNetwork:
         >>> net = MixedPhyNetwork(
         ...     directed_edges=[(5, 4), (6, 4)],
         ...     undirected_edges=[(4, 1)],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> net.hybrid_nodes
         {4}
@@ -1206,7 +1186,7 @@ class MixedPhyNetwork:
         >>> net = MixedPhyNetwork(
         ...     directed_edges=[(3, 2), (4, 2)],
         ...     undirected_edges=[(2, 1)],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> net.hybrid_edges
         {(3, 2), (4, 2)}
@@ -1229,7 +1209,7 @@ class MixedPhyNetwork:
         --------
         >>> net = MixedPhyNetwork(
         ...     undirected_edges=[(1, 2), (1, 3), (1, 4)],
-        ...     taxa={2: "A", 3: "B", 4: "C"}
+        ...     nodes=[(2, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
         ... )
         >>> net.tree_nodes
         {1}
@@ -1257,7 +1237,7 @@ class MixedPhyNetwork:
         >>> net = MixedPhyNetwork(
         ...     directed_edges=[(5, 4), (6, 4)],
         ...     undirected_edges=[(4, 1)],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> sorted(net.internal_nodes)
         [4, 5, 6]
@@ -1285,7 +1265,7 @@ class MixedPhyNetwork:
         >>> net = MixedPhyNetwork(
         ...     directed_edges=[(5, 4), (6, 4)],
         ...     undirected_edges=[(4, 1)],
-        ...     taxa={1: "A"}
+        ...     nodes=[(1, {'label': 'A'})]
         ... )
         >>> sorted(net.tree_edges)
         [(4, 1)]
@@ -1303,7 +1283,7 @@ class MixedPhyNetwork:
         
         Examples
         --------
-        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], taxa={1: "A", 2: "B"})
+        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> repr(net)
         'MixedPhyNetwork(nodes=3, edges=2, taxa=2, taxa_list=[A, B])'
         """
@@ -1377,7 +1357,7 @@ class MixedPhyNetwork:
         
         Examples
         --------
-        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], taxa={1: "A"})
+        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
         >>> net2 = net.copy()
         >>> net.number_of_nodes()
         2

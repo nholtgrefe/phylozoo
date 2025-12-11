@@ -26,7 +26,7 @@ class TestGetLabel:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_label(1) == "A"
 
@@ -35,8 +35,7 @@ class TestGetLabel:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_label(3) == "root"
 
@@ -45,7 +44,7 @@ class TestGetLabel:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_label(3) is None
 
@@ -54,7 +53,7 @@ class TestGetLabel:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}  # Only 1 labeled
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]  # Only 1 labeled
             )
         # Leaf 2 should be auto-labeled
         label2 = net.get_label(2)
@@ -66,7 +65,7 @@ class TestGetLabel:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_label(999) is None
 
@@ -79,7 +78,7 @@ class TestGetNodeId:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_node_id("A") == 1
 
@@ -88,8 +87,7 @@ class TestGetNodeId:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_node_id("root") == 3
 
@@ -98,7 +96,7 @@ class TestGetNodeId:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_node_id("Nonexistent") is None
 
@@ -107,7 +105,7 @@ class TestGetNodeId:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A"}  # Only 1 labeled, 2 and 4 auto-labeled
+            nodes=[(1, {'label': 'A'})]  # Only 1 labeled, 2 and 4 auto-labeled
             )
         # Leaf 2 should be auto-labeled with "2"
         node_id = net.get_node_id("2")
@@ -122,7 +120,7 @@ class TestTaxaLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}  # Partial mapping
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]  # Partial mapping
             )
         for leaf in net.leaves:
             assert net.get_label(leaf) is not None
@@ -132,7 +130,7 @@ class TestTaxaLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         labels = [net.get_label(leaf) for leaf in net.leaves]
         assert len(labels) == len(set(labels))  # All unique
@@ -142,7 +140,7 @@ class TestTaxaLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert len(net.taxa) == len(net.leaves)
 
@@ -155,7 +153,7 @@ class TestInternalNodeLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.get_label(3) is None  # No label
 
@@ -164,8 +162,7 @@ class TestInternalNodeLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_label(3) == "root"
 
@@ -175,8 +172,7 @@ class TestInternalNodeLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(4, 3), (3, 1), (3, 2), (4, 5), (4, 6)],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"},
-            internal_node_labels={3: "internal1", 4: "internal2"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'}), (3, {'label': 'internal1'}), (4, {'label': 'internal2'})],
             )
         labels = [net.get_label(3), net.get_label(4)]
         assert len(labels) == len(set(labels))  # All unique
@@ -186,18 +182,9 @@ class TestInternalNodeLabels:
         with pytest.raises(ValueError, match="already used|duplicate"):
             MixedPhyNetwork(
                 undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "B", 4: "C"},
-                internal_node_labels={3: "A"}  # Duplicate
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'A'})],
             )
 
-    def test_internal_node_label_cannot_be_leaf(self) -> None:
-        """Test that internal_node_labels cannot label a leaf."""
-        with pytest.raises(ValueError, match="not an internal node|is a leaf"):
-            MixedPhyNetwork(
-                undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "B", 4: "C"},
-                internal_node_labels={1: "internal"}  # 1 is a leaf
-            )
 
 
 class TestAutoLabeling:
@@ -208,7 +195,7 @@ class TestAutoLabeling:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}  # Only one labeled
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]  # Only one labeled
             )
         # All leaves should have labels
         assert net.get_label(1) == "A"
@@ -220,7 +207,7 @@ class TestAutoLabeling:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa=None
+            nodes=None
             )
         # All leaves should be auto-labeled
         assert net.get_label(1) is not None
@@ -231,7 +218,7 @@ class TestAutoLabeling:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Auto-generated label should be string representation of node ID
         label2 = net.get_label(2)
@@ -246,7 +233,7 @@ class TestLabelUniqueness:
         with pytest.raises(ValueError, match="already used|duplicate"):
             MixedPhyNetwork(
                 undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "A", 4: "B"}  # Duplicate
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'A'}), (4, {'label': 'B'})]  # Duplicate
             )
 
     def test_duplicate_internal_labels_raises_error(self) -> None:
@@ -254,8 +241,7 @@ class TestLabelUniqueness:
         with pytest.raises(ValueError, match="already used|duplicate"):
             MixedPhyNetwork(
                 undirected_edges=[(4, 3), (3, 1), (3, 2), (4, 5), (4, 6)],
-                taxa={1: "A", 2: "B", 5: "C", 6: "D"},
-                internal_node_labels={3: "label", 4: "label"}  # Duplicate
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'}), (3, {'label': 'label'}), (4, {'label': 'label'})],
             )
 
     def test_taxon_and_internal_label_cannot_duplicate(self) -> None:
@@ -263,8 +249,7 @@ class TestLabelUniqueness:
         with pytest.raises(ValueError, match="already used|duplicate"):
             MixedPhyNetwork(
                 undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "B", 4: "C"},
-                internal_node_labels={3: "A"}  # Duplicate with taxon
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'A'})],
             )
 
 
@@ -276,8 +261,7 @@ class TestLabelRetrieval:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_label(1) == "A"
         assert net.get_label(2) == "B"
@@ -288,8 +272,7 @@ class TestLabelRetrieval:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_node_id("A") == 1
         assert net.get_node_id("B") == 2
@@ -300,8 +283,7 @@ class TestLabelRetrieval:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         for node in net:  # Use __iter__ instead of nodes()
             label = net.get_label(node)

@@ -24,7 +24,7 @@ class TestCachedPropertyBehavior:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         leaves1 = net.leaves
         leaves2 = net.leaves
@@ -35,7 +35,7 @@ class TestCachedPropertyBehavior:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         taxa1 = net.taxa
         taxa2 = net.taxa
@@ -46,7 +46,7 @@ class TestCachedPropertyBehavior:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(4, 3), (3, 1), (3, 2)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         internal1 = net.internal_nodes
         internal2 = net.internal_nodes
@@ -58,7 +58,7 @@ class TestCachedPropertyBehavior:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         hybrid1 = net.hybrid_nodes
         hybrid2 = net.hybrid_nodes
@@ -70,7 +70,7 @@ class TestCachedPropertyBehavior:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         tree1 = net.tree_nodes
         tree2 = net.tree_nodes
@@ -82,7 +82,7 @@ class TestCachedPropertyBehavior:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         hybrid_edges1 = net.hybrid_edges
         hybrid_edges2 = net.hybrid_edges
@@ -93,7 +93,7 @@ class TestCachedPropertyBehavior:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         tree_edges1 = net.tree_edges
         tree_edges2 = net.tree_edges
@@ -105,7 +105,7 @@ class TestCachedPropertyBehavior:
         from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
         )
         level1 = net.level
         level2 = net.level
@@ -120,7 +120,7 @@ class TestPropertyInvalidationOnCopy:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         leaves1 = net.leaves
         copy_net = net.copy()
@@ -136,7 +136,7 @@ class TestPropertyInvalidationOnCopy:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         copy_net = net.copy()
         
@@ -154,7 +154,7 @@ class TestPropertyConsistency:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         all_nodes = set(net)
         assert net.leaves.issubset(all_nodes)
@@ -164,7 +164,7 @@ class TestPropertyConsistency:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         all_nodes = set(net)
         assert net.internal_nodes.issubset(all_nodes)
@@ -174,7 +174,7 @@ class TestPropertyConsistency:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         leaves_set = net.leaves
         internal_set = net.internal_nodes
@@ -185,7 +185,7 @@ class TestPropertyConsistency:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         all_nodes = set(net)
         leaves_set = net.leaves
@@ -198,7 +198,7 @@ class TestPropertyConsistency:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         internal_set = net.internal_nodes
         hybrid_set = net.hybrid_nodes
@@ -210,7 +210,7 @@ class TestPropertyConsistency:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         internal_set = net.internal_nodes
         tree_set = net.tree_nodes
@@ -222,7 +222,7 @@ class TestPropertyConsistency:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         hybrid_set = net.hybrid_nodes
         tree_set = net.tree_nodes
@@ -233,7 +233,7 @@ class TestPropertyConsistency:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert len(net.taxa) == len(net.leaves)
 
@@ -243,7 +243,7 @@ class TestPropertyConsistency:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         for u, v in net.hybrid_edges:
             assert net._graph._directed.has_edge(u, v)
@@ -255,7 +255,7 @@ class TestPropertyConsistency:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         for u, v in net.tree_edges:
             assert net._graph._undirected.has_edge(u, v)
@@ -270,7 +270,7 @@ class TestPropertyValues:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         for leaf in net.leaves:
             assert net.outdegree(leaf) == 0
@@ -281,7 +281,7 @@ class TestPropertyValues:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         for hybrid in net.hybrid_nodes:
             assert net._graph.indegree(hybrid) >= 2
@@ -292,7 +292,7 @@ class TestPropertyValues:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         for hybrid in net.hybrid_nodes:
             indegree = net._graph.indegree(hybrid)
@@ -305,7 +305,7 @@ class TestPropertyValues:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         for tree_node in net.tree_nodes:
             assert net._graph.indegree(tree_node) == 0
@@ -317,7 +317,7 @@ class TestPropertyValues:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         for tree_node in net.tree_nodes:
             total_degree = net._graph.degree(tree_node)
@@ -328,7 +328,7 @@ class TestPropertyValues:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         for internal in net.internal_nodes:
             degree = net._graph.degree(internal)

@@ -24,15 +24,15 @@ class TestEmptyNetwork:
 
     def test_empty_network_with_warning(self) -> None:
         """Test that empty network raises a warning."""
-        # Empty networks only raise the "empty edges list" warning, not the validity warning
-        # because validation is skipped for empty networks
-        with pytest.warns(UserWarning, match="empty edges list"):
+        # Empty networks raise warnings during initialization and validation
+        with pytest.warns(UserWarning, match="empty edges lists|Empty network.*no nodes"):
             net = MixedPhyNetwork(directed_edges=[], undirected_edges=[])
         
         assert net.number_of_nodes() == 0
         assert net.number_of_edges() == 0
         # Empty networks skip validation, so no validity warning
-        assert net.validate() is True  # Empty networks are valid
+        with pytest.warns(UserWarning, match="Empty network.*no nodes"):
+            assert net.validate() is True  # Empty networks are valid
 
     def test_empty_network_properties(self) -> None:
         """Test properties of empty network."""
@@ -58,7 +58,7 @@ class TestMinimalValidNetworks:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.number_of_nodes() == 4
         assert net.number_of_edges() == 3
@@ -74,7 +74,7 @@ class TestMinimalValidNetworks:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.number_of_nodes() == 4
         assert net.number_of_edges() == 3
@@ -89,7 +89,7 @@ class TestMinimalValidNetworks:
             net = MixedPhyNetwork(
             directed_edges=[(1, 4), (2, 4)],  # Two hybrid edges into node 4
             undirected_edges=[(4, 3), (1, 5), (1, 6), (2, 7), (2, 8)],  # Undirected edges
-            taxa={3: "A", 5: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(3, {'label': 'A'}), (5, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         assert net.number_of_nodes() == 8
         assert net.number_of_edges() == 7
@@ -106,7 +106,7 @@ class TestSimpleTrees:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(4, 3), (3, 1), (3, 2), (4, 5), (4, 6)],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         assert net.number_of_nodes() == 6
         assert net.number_of_edges() == 5
@@ -117,7 +117,7 @@ class TestSimpleTrees:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(4, 1), (4, 2), (4, 3)],
-            taxa={1: "A", 2: "B", 3: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
             )
         assert net.number_of_nodes() == 4
         assert net.number_of_edges() == 3
@@ -126,9 +126,9 @@ class TestSimpleTrees:
     def test_star_tree_undirected(self) -> None:
         """Test a star tree with many leaves."""
         edges = [(10, i) for i in range(1, 10)]
-        taxa = {i: f"Taxon{i}" for i in range(1, 10)}
+        nodes = [(i, {'label': f"Taxon{i}"}) for i in range(1, 10)]
         with expect_mixed_network_warning():
-            net = MixedPhyNetwork(undirected_edges=edges, taxa=taxa)
+            net = MixedPhyNetwork(undirected_edges=edges, nodes=nodes)
         assert net.number_of_nodes() == 10
         assert net.number_of_edges() == 9
         assert len(net.leaves) == 9
@@ -145,7 +145,7 @@ class TestNetworksWithHybrids:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         assert net.number_of_nodes() == 8
         assert net.number_of_edges() == 7
@@ -166,7 +166,7 @@ class TestNetworksWithHybrids:
             undirected_edges=[
             (4, 1), (6, 11), (6, 12), (6, 9), (7, 13), (7, 14), (8, 15), (8, 16), (9, 2), (9, 3)
             ],
-            taxa={1: "A", 2: "B", 3: "C", 11: "D", 12: "E", 13: "F", 14: "G", 15: "H", 16: "I"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'}), (14, {'label': 'G'}), (15, {'label': 'H'}), (16, {'label': 'I'})]
             )
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
@@ -187,7 +187,7 @@ class TestNetworksWithHybrids:
             undirected_edges=[
             (4, 1), (6, 11), (6, 12), (6, 9), (7, 13), (7, 14), (8, 15), (8, 16), (9, 2), (9, 3)
             ],
-            taxa={1: "A", 2: "B", 3: "C", 11: "D", 12: "E", 13: "F", 14: "G", 15: "H", 16: "I"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'}), (14, {'label': 'G'}), (15, {'label': 'H'}), (16, {'label': 'I'})]
             )
         assert 4 in net.hybrid_nodes
         assert 5 in net.hybrid_nodes
@@ -208,7 +208,7 @@ class TestParallelEdges:
             (3, 4, 0), (3, 4, 1),  # Two parallel edges between internal nodes
             (3, 1), (3, 2), (4, 5), (4, 6)
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         # Check that parallel edges exist between 3 and 4
         assert net.has_edge(3, 4, key=0)
@@ -224,7 +224,7 @@ class TestParallelEdges:
             (6, 4)
             ],
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            taxa={2: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         assert net.has_edge(5, 4, key=0)
         assert net.has_edge(5, 4, key=1)
@@ -241,7 +241,7 @@ class TestParallelEdges:
             (3, 4, 0), (3, 4, 1),  # Parallel edges between internal nodes
             (3, 1), (3, 2), (4, 5), (4, 6)
             ],
-            taxa={1: "A", 2: "B", 5: "C", 6: "D"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'})]
             )
         assert net.has_edge(3, 4, key=0)
         assert net.has_edge(3, 4, key=1)
@@ -256,7 +256,7 @@ class TestEdgeFormats:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(1, 2), (2, 3), (2, 4)],
-            taxa={1: "A", 3: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.number_of_edges() == 3
 
@@ -266,7 +266,7 @@ class TestEdgeFormats:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(1, 2, 0), (2, 3, 0), (2, 4)],
-            taxa={1: "A", 3: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.number_of_edges() == 3
 
@@ -280,7 +280,7 @@ class TestEdgeFormats:
             {'u': 2, 'v': 3, 'branch_length': 0.5},
             {'u': 2, 'v': 4}
             ],
-            taxa={1: "A", 3: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.number_of_edges() == 3
 
@@ -294,7 +294,7 @@ class TestEdgeFormats:
             {'u': 2, 'v': 3, 'branch_length': 0.5},
             (2, 4)
             ],
-            taxa={1: "A", 3: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.number_of_edges() == 3
 
@@ -307,7 +307,7 @@ class TestTaxaHandling:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         assert net.taxa == {"A", "B", "C"}
         assert net.get_label(1) == "A"
@@ -319,7 +319,7 @@ class TestTaxaHandling:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # Leaves 2 and 4 should get auto-generated labels
         assert "A" in net.taxa
@@ -333,7 +333,7 @@ class TestTaxaHandling:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa=[(1, "A"), (2, "B")]
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
             )
         # Node 4 will get auto-labeled
         assert "A" in net.taxa
@@ -345,16 +345,9 @@ class TestTaxaHandling:
         with pytest.raises(ValueError, match="already used|duplicate"):
             MixedPhyNetwork(
                 undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "A", 4: "B"}  # Duplicate
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'A'}), (4, {'label': 'B'})]  # Duplicate
             )
 
-    def test_taxa_non_leaf_node(self) -> None:
-        """Test that taxa mapping to non-leaf raises error."""
-        with pytest.raises(ValueError, match="not a leaf"):
-            MixedPhyNetwork(
-                undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={3: "A"}  # 3 is not a leaf
-            )
 
 
 class TestInternalNodeLabels:
@@ -365,8 +358,7 @@ class TestInternalNodeLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels={3: "root"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_label(3) == "root"
 
@@ -375,8 +367,7 @@ class TestInternalNodeLabels:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"},
-            internal_node_labels=[(3, "root")]
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
             )
         assert net.get_label(3) == "root"
 
@@ -385,18 +376,9 @@ class TestInternalNodeLabels:
         with pytest.raises(ValueError, match="already used|duplicate"):
             MixedPhyNetwork(
                 undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "B", 4: "C"},
-                internal_node_labels={3: "A"}  # Duplicate with taxon
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'A'})],
             )
 
-    def test_internal_node_label_leaf(self) -> None:
-        """Test that labeling a leaf via internal_node_labels raises error."""
-        with pytest.raises(ValueError, match="not an internal node|is a leaf"):
-            MixedPhyNetwork(
-                undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                taxa={1: "A", 2: "B", 4: "C"},
-                internal_node_labels={1: "internal"}  # 1 is a leaf
-            )
 
 
 class TestValidation:
@@ -408,7 +390,7 @@ class TestValidation:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
                 undirected_edges=[(1, 2), (2, 3), (2, 4)],
-                taxa={1: "A", 3: "B", 4: "C"}
+                nodes=[(1, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'})]
             )
         with expect_mixed_network_warning():
             assert net.validate() is True
@@ -418,7 +400,7 @@ class TestValidation:
         with pytest.raises(ValueError, match="not connected"):
             MixedPhyNetwork(
                 undirected_edges=[(1, 2), (3, 4)],
-                taxa={1: "A", 2: "B", 3: "C", 4: "D"}
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
             )
 
     def test_internal_node_degree_less_than_three(self) -> None:
@@ -426,7 +408,7 @@ class TestValidation:
         with pytest.raises(ValueError, match="degree"):
             MixedPhyNetwork(
                 undirected_edges=[(1, 2), (2, 3)],  # Node 2 has degree 2
-                taxa={1: "A", 3: "B"}
+                nodes=[(1, {'label': 'A'}), (3, {'label': 'B'})]
             )
 
     def test_node_indegree_constraint(self) -> None:
@@ -437,7 +419,7 @@ class TestValidation:
             MixedPhyNetwork(
                 directed_edges=[(1, 2)],
                 undirected_edges=[(2, 3), (1, 4), (1, 5)],
-                taxa={3: "A", 4: "B", 5: "C"}
+                nodes=[(3, {'label': 'A'}), (4, {'label': 'B'}), (5, {'label': 'C'})]
             )
 
     def test_validation_warning(self) -> None:
@@ -445,7 +427,7 @@ class TestValidation:
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            taxa={1: "A", 2: "B", 4: "C"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
         # validate() also raises the warning
         with expect_mixed_network_warning():
@@ -474,7 +456,7 @@ class TestInvalidInitialization:
             MixedPhyNetwork(
                 directed_edges=[(1, 2)],  # Leaf 2 has indegree 1
                 undirected_edges=[(1, 3), (1, 4), (1, 5)],  # Node 1 needs degree >= 3
-                taxa={2: "A", 3: "B", 4: "C", 5: "D"}
+                nodes=[(2, {'label': 'A'}), (3, {'label': 'B'}), (4, {'label': 'C'}), (5, {'label': 'D'})]
             )
 
 
@@ -489,7 +471,7 @@ class TestMixedDirectedUndirected:
             net = MixedPhyNetwork(
             directed_edges=[(5, 4), (6, 4)],  # Hybrid 4
             undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],  # Only 1 outgoing from 4
-            taxa={1: "A", 8: "B", 9: "C", 10: "D", 11: "E"}
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
         assert 4 in net.hybrid_nodes
         assert net.number_of_edges() == 7
@@ -503,7 +485,7 @@ class TestMixedDirectedUndirected:
             net = MixedPhyNetwork(
             directed_edges=[(3, 4), (5, 4)],  # Node 4 is hybrid
             undirected_edges=[(3, 1), (3, 2), (4, 6), (5, 7), (5, 8)],  # Undirected edges
-            taxa={1: "A", 2: "B", 6: "C", 7: "D", 8: "E"}
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (8, {'label': 'E'})]
             )
         # Node 3 should be a tree node if it has indegree 0 and degree >= 3
         assert net.number_of_edges() == 7
