@@ -217,15 +217,6 @@ class MixedPhyNetwork:
         if undirected_edges is None:
             undirected_edges = []
         
-        # Warn if both edge lists are empty (but allow it)
-        if not directed_edges and not undirected_edges:
-            warnings.warn(
-                "Initializing MixedPhyNetwork with empty edges lists. "
-                "This creates an empty network or a network with isolated nodes.",
-                UserWarning,
-                stacklevel=2
-            )
-        
         self._graph: MixedMultiGraph[T] = MixedMultiGraph(
             directed_edges=directed_edges,
             undirected_edges=undirected_edges

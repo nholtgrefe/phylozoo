@@ -190,15 +190,6 @@ class DirectedPhyNetwork:
         if edges is None:
             edges = []
         
-        # Warn if edges is empty (but allow it)
-        if not edges:
-            warnings.warn(
-                "Initializing DirectedPhyNetwork with empty edges list. "
-                "This creates an empty network or a network with isolated nodes.",
-                UserWarning,
-                stacklevel=2
-            )
-        
         self._graph: DirectedMultiGraph[T] = DirectedMultiGraph(edges=edges)
         self._node_to_label: Dict[T, str] = {}
         self._label_to_node: Dict[str, T] = {}

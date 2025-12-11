@@ -25,7 +25,7 @@ class TestEmptyNetwork:
     def test_empty_network_with_warning(self) -> None:
         """Test that empty network raises a warning."""
         # Empty networks raise warnings during initialization and validation
-        with pytest.warns(UserWarning, match="empty edges lists|Empty network.*no nodes"):
+        with pytest.warns(UserWarning, match="Empty network.*no nodes"):
             net = MixedPhyNetwork(directed_edges=[], undirected_edges=[])
         
         assert net.number_of_nodes() == 0

@@ -49,7 +49,7 @@ class TestFindLSANode:
         """
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
-            with pytest.warns(UserWarning, match="empty edges list"):
+            with pytest.warns(UserWarning, match="Empty network.*no nodes"):
                 with pytest.raises(ValueError, match="empty network"):
                     find_lsa_node(DirectedPhyNetwork(edges=[]))
 
@@ -131,7 +131,7 @@ class TestIsLSANetwork:
         """
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
-            with pytest.warns(UserWarning, match="empty edges list"):
+            with pytest.warns(UserWarning, match="Empty network.*no nodes"):
                 net = DirectedPhyNetwork(edges=[])
         assert is_LSA_network(net) is True
 

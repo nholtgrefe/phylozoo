@@ -312,7 +312,7 @@ class TestEdgeCases:
 
     def test_empty_network(self) -> None:
         """Empty network should be valid (special case)."""
-        with pytest.warns(UserWarning, match="empty edges list|Empty network.*no nodes"):
+        with pytest.warns(UserWarning, match="Empty network.*no nodes"):
             net = SemiDirectedPhyNetwork(
                 directed_edges=[],
                 undirected_edges=[], nodes=[],
