@@ -301,7 +301,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             # Local imports to avoid circular dependencies
             from ...network.dnetwork.operations import to_sd_network
             from ...network.dnetwork import DirectedPhyNetwork
-            from ...network.dnetwork.classifications import is_LSA_network
+            from ...network.dnetwork.classifications import is_lsa_network
             
             # Step 2: Pick a non-leaf vertex r from the source component
             # We cannot pick a leaf node as root, as it won't become the LSA when oriented
@@ -352,7 +352,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             
             # Step 5: Check if r is the LSA of the DirectedPhyNetwork
             # If not, raise error immediately
-            if not is_LSA_network(d_network):
+            if not is_lsa_network(d_network):
                 raise ValueError(
                     "Semi-directed network constraint validation failed: "
                     "the chosen root is not the LSA node of the oriented network."

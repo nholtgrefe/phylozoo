@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from . import DirectedPhyNetwork
 
-def is_LSA_network(network: 'DirectedPhyNetwork') -> bool:
+def is_lsa_network(network: 'DirectedPhyNetwork') -> bool:
     """
     Check whether a directed phylogenetic network is an LSA network.
     
@@ -34,7 +34,7 @@ def is_LSA_network(network: 'DirectedPhyNetwork') -> bool:
     Examples
     --------
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-    >>> is_LSA_network(net)
+    >>> is_lsa_network(net)
     True
     """
     if network.number_of_nodes() == 0:

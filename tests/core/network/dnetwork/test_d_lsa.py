@@ -9,9 +9,9 @@ import pytest
 from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.operations import (
     find_lsa_node,
-    to_LSA_network,
+    to_lsa_network,
 )
-from phylozoo.core.network.dnetwork.classifications import is_LSA_network
+from phylozoo.core.network.dnetwork.classifications import is_lsa_network
 
 
 class TestFindLSANode:
@@ -68,20 +68,20 @@ class TestFindLSANode:
 
 
 class TestToLSANetwork:
-    """Tests for to_LSA_network."""
+    """Tests for to_lsa_network."""
 
     def test_returns_copy_if_root_is_lsa(self) -> None:
         """
-        When root is already LSA, to_LSA_network returns a copy rooted at the same node.
+        When root is already LSA, to_lsa_network returns a copy rooted at the same node.
         """
         net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
-        lsa_net = to_LSA_network(net)
+        lsa_net = to_lsa_network(net)
         assert lsa_net.root_node == 3
         assert set(lsa_net.leaves) == {1, 2}
 
     def test_trims_above_lsa(self) -> None:
         """
-        to_LSA_network removes nodes/edges above LSA and preserves leaves and attributes below.
+        to_lsa_network removes nodes/edges above LSA and preserves leaves and attributes below.
         """
         edges = [
             (7, 5),
@@ -96,7 +96,7 @@ class TestToLSANetwork:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
 
-        lsa_net = to_LSA_network(net)
+        lsa_net = to_lsa_network(net)
 
         # LSA becomes the root (deepest common ancestor is node 10)
         assert lsa_net.root_node == 10
@@ -115,7 +115,7 @@ class TestToLSANetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        lsa_net = to_LSA_network(net)
+        lsa_net = to_lsa_network(net)
         assert lsa_net.root_node == 1
         assert lsa_net.leaves == {1}
         assert lsa_net.number_of_nodes() == 1
@@ -123,7 +123,7 @@ class TestToLSANetwork:
 
 
 class TestIsLSANetwork:
-    """Tests for is_LSA_network classification."""
+    """Tests for is_lsa_network classification."""
 
     def test_empty_network_true(self) -> None:
         """
@@ -133,14 +133,14 @@ class TestIsLSANetwork:
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
             with pytest.warns(UserWarning, match="Empty network.*no nodes"):
                 net = DirectedPhyNetwork(edges=[])
-        assert is_LSA_network(net) is True
+        assert is_lsa_network(net) is True
 
     def test_root_is_lsa_true(self) -> None:
         """
         Tree with root as LSA returns True.
         """
         net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
-        assert is_LSA_network(net) is True
+        assert is_lsa_network(net) is True
 
     def test_single_node_network_true(self) -> None:
         """
@@ -151,7 +151,7 @@ class TestIsLSANetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        assert is_LSA_network(net) is True
+        assert is_lsa_network(net) is True
 
     def test_lsa_below_root_false(self) -> None:
         """
@@ -169,5 +169,5 @@ class TestIsLSANetwork:
             (10, 9),
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
-        assert is_LSA_network(net) is False
+        assert is_lsa_network(net) is False
 

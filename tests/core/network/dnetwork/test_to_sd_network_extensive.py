@@ -18,7 +18,7 @@ import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork, SemiDirectedPhyNetwork
 from phylozoo.core.network.dnetwork.operations import to_sd_network
-from phylozoo.core.network.dnetwork.classifications import is_LSA_network
+from phylozoo.core.network.dnetwork.classifications import is_lsa_network
 
 
 class TestToSDNetworkBasicTrees:

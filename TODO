@@ -13,5 +13,3 @@ Allow single node networks
 Optimize code
 move is cutedge etc. to other module?
 LSA or lsa
-selfloops
-remove the toplevel empty warnings

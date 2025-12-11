@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar
 import networkx as nx
 
 from . import DirectedPhyNetwork
-from .classifications import is_LSA_network
+from .classifications import is_lsa_network
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.operations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork
@@ -115,7 +115,7 @@ def find_lsa_node(network: DirectedPhyNetwork) -> T:
     return max(common_ancestors, key=lambda node: depths.get(node, 0))
 
 
-def to_LSA_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
+def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     """
     Create a new LSA-network by removing everything above the LSA node.
     
@@ -154,7 +154,7 @@ def to_LSA_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     ...     ],
     ...     taxa={1: "A", 2: "B"}
     ... )
-    >>> lsa_net = to_LSA_network(net)
+    >>> lsa_net = to_lsa_network(net)
     >>> lsa_net.root_node
     4
     >>> sorted(lsa_net.leaves)
@@ -311,7 +311,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
         The corresponding semi-directed phylogenetic network.
     """
     # 1) Ensure LSA network
-    working = d_network if is_LSA_network(d_network) else to_LSA_network(d_network)
+    working = d_network if is_lsa_network(d_network) else to_lsa_network(d_network)
     
     # Empty network shortcut
     if working.number_of_nodes() == 0:
