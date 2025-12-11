@@ -61,7 +61,7 @@ import contextlib
 import contextvars
 import fnmatch
 from functools import wraps
-from typing import Callable, Iterable, Iterator, List, Optional, Sequence, Type, TypeVar
+from typing import Callable, Iterable, Iterator, List, Sequence, Type, TypeVar
 
 
 T = TypeVar("T")
@@ -69,12 +69,12 @@ T = TypeVar("T")
 _validation_disabled: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "_validation_disabled", default=False
 )
-_suppression_stack: contextvars.ContextVar[List[List[str]]] = contextvars.ContextVar(
+_suppression_stack: contextvars.ContextVar[list[list[str]]] = contextvars.ContextVar(
     "_suppression_stack", default=[]
 )
 
 
-def _active_patterns(default_patterns: Sequence[str]) -> List[str]:
+def _active_patterns(default_patterns: Sequence[str]) -> list[str]:
     """
     Return the active suppression patterns for the current context.
 
@@ -85,7 +85,7 @@ def _active_patterns(default_patterns: Sequence[str]) -> List[str]:
 
     Returns
     -------
-    List[str]
+    list[str]
         Patterns currently active for suppression.
     """
     stack = _suppression_stack.get()
@@ -95,7 +95,7 @@ def _active_patterns(default_patterns: Sequence[str]) -> List[str]:
 
 
 @contextlib.contextmanager
-def no_validation(only: Optional[Iterable[str]] = None) -> Iterator[None]:
+def no_validation(only: Iterable[str] | None = None) -> Iterator[None]:
     """
     Temporarily disable validation within the current context.
 
@@ -131,7 +131,7 @@ def no_validation(only: Optional[Iterable[str]] = None) -> Iterator[None]:
 
 def validation_aware(
     allowed: Sequence[str],
-    default: Optional[Sequence[str]] = None,
+    default: Sequence[str] | None = None,
 ) -> Callable[[Type[T]], Type[T]]:
     """
     Decorate a class so selected methods honor validation suppression.

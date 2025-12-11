@@ -6,7 +6,7 @@ This module provides classes and functions for working with semi-directed phylog
 
 import warnings
 from functools import cached_property
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, Iterator, TypeVar
 
 from ...primitives.m_multigraph.operations import (
     has_self_loops,
@@ -45,7 +45,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
 
     Parameters
     ----------
-    directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+    directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of directed edges (hybrid edges only). Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -60,7 +60,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         attributes.
         
         Can be empty or None for empty/single-node networks. By default None.
-    undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+    undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of undirected edges (non-hybrid edges only). Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -73,7 +73,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         Note: Undirected edges cannot have gamma values.
         
         Can be empty or None for empty/single-node networks. By default None.
-    nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+    nodes : list[T | tuple[T | dict[str | Any | None]]], optional
         List of nodes. Formats:
         - Simple node IDs: `1`, `"node1"`, etc.
         - Tuples: `(node_id, {'label': '...','attr': ...})`
@@ -92,10 +92,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
     _graph : MixedMultiGraph[T]
         Internal graph structure using MixedMultiGraph.
         **Warning:** Do not modify directly. Use class methods instead.
-    _node_to_label : Dict[T, str]
+    _node_to_label : dict[T, str]
         Mapping from node IDs to labels. Only nodes with explicit labels are included.
         Leaves always have labels (taxa), but internal nodes may be unlabeled.
-    _label_to_node : Dict[str, T]
+    _label_to_node : dict[str, T]
         Reverse mapping from labels to node IDs (for quick lookup).
     
     Examples
@@ -144,16 +144,16 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
     
     def __init__(
         self,
-        directed_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
-        undirected_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
-        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]] = None,
+        directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
+        undirected_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
+        nodes: list[T | tuple[T | dict[str | Any | None]]] = None,
     ) -> None:
         """
         Initialize a semi-directed phylogenetic network.
         
         Parameters
         ----------
-        directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+        directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of directed edges. Formats:
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
@@ -166,7 +166,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
               Use a different attribute name (e.g., 'gamma2') for non-validated values.
             
             Can be empty list or None for empty/single-node networks. By default None.
-        undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+        undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of undirected edges. Formats:
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
@@ -177,7 +177,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             - bootstrap (float in [0.0, 1.0])
             
             Can be empty list or None for empty/single-node networks. By default None.
-        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+        nodes : list[T | tuple[T | dict[str | Any | None]]], optional
             List of nodes. Formats:
             - Simple node IDs: `1`, `"node1"`, etc.
             - Tuples: `(node_id, {'label': '...','attr': ...})` (NetworkX-style)
@@ -302,19 +302,19 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         oriented_dm = orient_away_from_vertex(self._graph, root)
         
         # Step 4: Build a DirectedPhyNetwork from the oriented graph
-        directed_edges: List[Dict[str, Any]] = []
+        directed_edges: list[dict[str, Any]] = []
         for u, v, key, data in oriented_dm.edges(keys=True, data=True):
-            edge_dict: Dict[str, Any] = {"u": u, "v": v}
+            edge_dict: dict[str, Any] = {"u": u, "v": v}
             if key != 0:
                 edge_dict["key"] = key
             if data:
                 edge_dict.update(data)
             directed_edges.append(edge_dict)
         
-        oriented_leaves: Set[Any] = {
+        oriented_leaves: set[Any] = {
             node for node in oriented_dm.nodes() if oriented_dm.outdegree(node) == 0
         }
-        taxa_mapping: Dict[Any, str] = {
+        taxa_mapping: dict[Any, str] = {
             leaf: self.get_label(leaf) or str(leaf)
             for leaf in oriented_leaves
         }

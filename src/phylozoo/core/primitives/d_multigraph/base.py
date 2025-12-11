@@ -4,7 +4,7 @@ Directed multi-graph module.
 This module provides the DirectedMultiGraph class for working with directed multi-graphs.
 """
 
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar
+from typing import Any, Dict, Iterator, List, Set, Tuple, TypeVar
 
 import networkx as nx
 
@@ -27,7 +27,7 @@ class DirectedMultiGraph:
 
     Parameters
     ----------
-    edges : Optional[List[Tuple[T, T] | Tuple[T, T, int] | Dict[str, Any]]], optional
+    edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of directed edges. Can be:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -70,14 +70,14 @@ class DirectedMultiGraph:
 
     def __init__(
         self,
-        edges: Optional[List[Tuple[T, T] | Tuple[T, T, int] | Dict[str, Any]]] = None,
+        edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
     ) -> None:
         """
         Initialize a directed multi-graph.
 
         Parameters
         ----------
-        edges : Optional[List[Tuple[T, T] | Tuple[T, T, int] | Dict[str, Any]]], optional
+        edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of directed edges. Can be:
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
@@ -112,7 +112,7 @@ class DirectedMultiGraph:
 
     # ========== NetworkX Compatibility Methods ==========
 
-    def nodes_iter(self, data: bool = False) -> Iterator[T] | Dict[T, Dict[str, Any]]:
+    def nodes_iter(self, data: bool = False) -> Iterator[T] | dict[T, dict[str, Any]]:
         """
         Return an iterator over nodes or a dict of node data.
 
@@ -124,7 +124,7 @@ class DirectedMultiGraph:
 
         Returns
         -------
-        Iterator[T] | Dict[T, Dict[str, Any]]
+        Iterator[T] | dict[T, dict[str, Any]]
             Iterator over nodes or dict of node data.
 
         Examples
@@ -140,7 +140,7 @@ class DirectedMultiGraph:
             return self._graph.nodes(data=True)
         return iter(self._graph.nodes())
 
-    def edges_iter(self, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+    def edges_iter(self, keys: bool = False, data: bool = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over edges.
 
@@ -194,7 +194,7 @@ class DirectedMultiGraph:
         >>> list(G.neighbors(2))
         [1, 3]
         """
-        neighbors_set: Set[T] = set()
+        neighbors_set: set[T] = set()
         if v in self._graph:
             neighbors_set.update(self._graph.predecessors(v))
             neighbors_set.update(self._graph.successors(v))
@@ -252,7 +252,7 @@ class DirectedMultiGraph:
         """
         return self._graph.successors(v)
     
-    def incident_parent_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+    def incident_parent_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over edges entering node v (from parent nodes).
         
@@ -286,7 +286,7 @@ class DirectedMultiGraph:
             return iter([])
         return self._graph.in_edges(v, keys=keys, data=data)
     
-    def incident_child_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+    def incident_child_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over edges leaving node v (to child nodes).
         
@@ -381,7 +381,7 @@ class DirectedMultiGraph:
         """
         return len(self._graph)
 
-    def __getitem__(self, v: T) -> Dict[T, Dict[int, Dict[str, Any]]]:
+    def __getitem__(self, v: T) -> dict[T, dict[int, dict[str, Any]]]:
         """
         Return adjacency dict for node v.
 
@@ -392,7 +392,7 @@ class DirectedMultiGraph:
 
         Returns
         -------
-        Dict[T, Dict[int, Dict[str, Any]]]
+        dict[T, dict[int, dict[str, Any]]]
             Adjacency dict (actually returns NetworkX's AdjacencyView, which is
             dict-like and supports all dict operations).
 
@@ -437,13 +437,13 @@ class DirectedMultiGraph:
         This class provides a set-like interface for nodes while also being callable
         as a method to get iterators or node data.
         """
-        def __init__(self, items: Set[T], callable_func: callable):
+        def __init__(self, items: set[T], callable_func: callable):
             """
             Initialize a node view.
             
             Parameters
             ----------
-            items : Set[T]
+            items : set[T]
                 Set of nodes.
             callable_func : callable
                 Function to call when used as method.
@@ -462,7 +462,7 @@ class DirectedMultiGraph:
             
             Returns
             -------
-            Iterator[T] | Dict[T, Dict[str, Any]]
+            Iterator[T] | dict[T, dict[str, Any]]
                 Iterator over nodes or dict of node data.
             """
             return self._callable_func(data)
@@ -502,13 +502,13 @@ class DirectedMultiGraph:
         This class provides a list-like interface for edges while also being callable
         as a method to get iterators with keys or data.
         """
-        def __init__(self, items: List[Tuple[T, T]], callable_func: callable):
+        def __init__(self, items: list[tuple[T, T]], callable_func: callable):
             """
             Initialize an edge view.
             
             Parameters
             ----------
-            items : List[Tuple[T, T]]
+            items : list[tuple[T, T]]
                 List of edges.
             callable_func : callable
                 Function to call when used as method.
@@ -538,7 +538,7 @@ class DirectedMultiGraph:
             """Iterate over edges."""
             return iter(self._items)
         
-        def __contains__(self, item: Tuple[T, T]) -> bool:
+        def __contains__(self, item: tuple[T, T]) -> bool:
             """Check if edge in view."""
             return item in self._items
         
@@ -641,13 +641,13 @@ class DirectedMultiGraph:
         self._graph.add_node(v, **attr)
         self._combined.add_node(v, **attr)
 
-    def add_nodes_from(self, nodes: List[T] | Set[T], **attr: Any) -> None:
+    def add_nodes_from(self, nodes: list[T] | set[T], **attr: Any) -> None:
         """
         Add nodes from iterable.
 
         Parameters
         ----------
-        nodes : List[T] | Set[T]
+        nodes : list[T] | set[T]
             Iterable of nodes.
         **attr
             Attributes to add to all nodes.
@@ -687,13 +687,13 @@ class DirectedMultiGraph:
         self._graph.remove_node(v)
         self._combined.remove_node(v)
 
-    def remove_nodes_from(self, nodes: List[T] | Set[T]) -> None:
+    def remove_nodes_from(self, nodes: list[T] | set[T]) -> None:
         """
         Remove all nodes in 'nodes' from the graph.
 
         Parameters
         ----------
-        nodes : List[T] | Set[T]
+        nodes : list[T] | set[T]
             Iterable of nodes to remove.
 
         Examples
@@ -711,7 +711,7 @@ class DirectedMultiGraph:
 
     # ========== Edge Operations ==========
 
-    def add_edge(self, u: T, v: T, key: Optional[int] = None, **attr: Any) -> int:
+    def add_edge(self, u: T, v: T, key: int | None = None, **attr: Any) -> int:
         """
         Add directed edge (u, v) to the graph.
 
@@ -724,7 +724,7 @@ class DirectedMultiGraph:
             Source node.
         v : T
             Target node.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key. If None, auto-generates a key. By default None.
         **attr
             Edge attributes (e.g., weight, label, etc.).
@@ -775,14 +775,14 @@ class DirectedMultiGraph:
         return key
 
     def add_edges_from(
-        self, edges: List[Tuple[T, T] | Tuple[T, T, int]], **attr: Any
+        self, edges: list[tuple[T, T] | tuple[T, T, int]], **attr: Any
     ) -> None:
         """
         Add all edges in 'edges' to the graph.
 
         Parameters
         ----------
-        edges : List[Tuple[T, T] | Tuple[T, T, int]]
+        edges : list[tuple[T, T] | tuple[T, T, int]]
             List of edges. Can be (u, v) or (u, v, key) tuples.
         **attr
             Edge attributes applied to all edges.
@@ -802,7 +802,7 @@ class DirectedMultiGraph:
             else:
                 raise ValueError(f"Invalid edge format: {edge}")
 
-    def remove_edge(self, u: T, v: T, key: Optional[int] = None) -> None:
+    def remove_edge(self, u: T, v: T, key: int | None = None) -> None:
         """
         Remove edge (u, v) from the graph.
 
@@ -812,7 +812,7 @@ class DirectedMultiGraph:
             Source node.
         v : T
             Target node.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key. If None, removes one edge. By default None.
 
         Raises
@@ -839,14 +839,14 @@ class DirectedMultiGraph:
         self._combined.remove_edge(u, v, key)
 
     def remove_edges_from(
-        self, edges: List[Tuple[T, T] | Tuple[T, T, int]]
+        self, edges: list[tuple[T, T] | tuple[T, T, int]]
     ) -> None:
         """
         Remove all edges in 'edges' from the graph.
 
         Parameters
         ----------
-        edges : List[Tuple[T, T] | Tuple[T, T, int]]
+        edges : list[tuple[T, T] | tuple[T, T, int]]
             List of edges to remove. Can be (u, v) or (u, v, key) tuples.
 
         Examples
@@ -870,7 +870,7 @@ class DirectedMultiGraph:
 
     # ========== Query Operations ==========
 
-    def has_edge(self, u: T, v: T, key: Optional[int] = None) -> bool:
+    def has_edge(self, u: T, v: T, key: int | None = None) -> bool:
         """
         Check if edge exists.
 
@@ -880,7 +880,7 @@ class DirectedMultiGraph:
             Source node.
         v : T
             Target node.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key. By default None.
 
         Returns
@@ -1053,7 +1053,7 @@ class DirectedMultiGraph:
     # Note: number_of_connected_components, is_connected, and connected_components
     # are now functions in dm_operations module (NetworkX-style API)
 
-    def is_cutedge(self, u: T, v: T, key: Optional[int] = None) -> bool:
+    def is_cutedge(self, u: T, v: T, key: int | None = None) -> bool:
         """
         Check if edge (u, v) is a cut-edge.
 
@@ -1066,7 +1066,7 @@ class DirectedMultiGraph:
             Source node.
         v : T
             Target node.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key. If None, checks the first edge found. By default None.
 
         Returns

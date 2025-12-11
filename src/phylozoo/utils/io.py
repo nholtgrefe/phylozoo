@@ -45,7 +45,7 @@ def check_file_exists(filepath: str | Path) -> Path:
     return path
 
 
-def validate_file_extension(filepath: str | Path, allowed_extensions: List[str]) -> None:
+def validate_file_extension(filepath: str | Path, allowed_extensions: list[str]) -> None:
     """
     Validate that a file has an allowed extension.
     
@@ -53,7 +53,7 @@ def validate_file_extension(filepath: str | Path, allowed_extensions: List[str])
     ----------
     filepath : str | Path
         Path to the file to validate.
-    allowed_extensions : List[str]
+    allowed_extensions : list[str]
         List of allowed extensions (e.g., ['.fasta', '.fa', '.fas']).
     
     Raises

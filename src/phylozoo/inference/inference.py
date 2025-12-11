@@ -5,7 +5,7 @@ This module provides functions for inferring phylogenetic networks from data
 (e.g., sequence data, distance matrices, splits, etc.).
 """
 
-from typing import List, Optional
+
 
 
 class NetworkInferrer:
@@ -19,7 +19,7 @@ class NetworkInferrer:
         """Initialize a network inferrer."""
         pass
 
-    def infer_network(self, data=None, method: str = "default") -> Optional[object]:
+    def infer_network(self, data=None, method: str = "default") -> object | None:
         """
         Infer a phylogenetic network from data.
 

@@ -4,7 +4,7 @@ Multiple Sequence Alignment (MSA) module.
 This module provides classes and functions for working with multiple sequence alignments.
 """
 
-from typing import Dict, List, Optional
+
 
 
 class MSA:
@@ -14,16 +14,16 @@ class MSA:
     This is a placeholder class for MSA functionality.
     """
 
-    def __init__(self, sequences: Optional[Dict[str, str]] = None) -> None:
+    def __init__(self, sequences: dict[str, str] | None = None) -> None:
         """
         Initialize an MSA object.
 
         Parameters
         ----------
-        sequences : Optional[Dict[str, str]], optional
+        sequences : dict[str, str] | None, optional
             Dictionary mapping sequence names to sequences, by default None
         """
-        self.sequences: Dict[str, str] = sequences or {}
+        self.sequences: dict[str, str] = sequences or {}
 
     def add_sequence(self, name: str, sequence: str) -> None:
         """
@@ -38,7 +38,7 @@ class MSA:
         """
         self.sequences[name] = sequence
 
-    def get_sequence(self, name: str) -> Optional[str]:
+    def get_sequence(self, name: str) -> str | None:
         """
         Get a sequence by name.
 
@@ -49,7 +49,7 @@ class MSA:
 
         Returns
         -------
-        Optional[str]
+        str | None
             Sequence data if found, None otherwise
         """
         return self.sequences.get(name)

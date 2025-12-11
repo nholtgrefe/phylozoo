@@ -4,7 +4,7 @@ Network plotting functions.
 This module provides functions for plotting and visualizing phylogenetic networks.
 """
 
-from typing import Optional
+from typing import 
 
 
 def plot_network(network, ax=None, **kwargs):

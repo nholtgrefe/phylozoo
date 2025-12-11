@@ -4,10 +4,10 @@ Data loading module.
 This module provides functions for loading phylogenetic data from various formats.
 """
 
-from typing import Any, List, Optional
+from typing import Any
 
 
-def load_quarnets_from_invariants(filepath: str) -> List[Any]:
+def load_quarnets_from_invariants(filepath: str) -> list[Any]:
     """
     Load quarnets from an invariants file.
 
@@ -18,7 +18,7 @@ def load_quarnets_from_invariants(filepath: str) -> List[Any]:
 
     Returns
     -------
-    List[Any]
+    list[Any]
         List of loaded quarnets (placeholder - returns empty list)
 
     Notes
@@ -29,7 +29,7 @@ def load_quarnets_from_invariants(filepath: str) -> List[Any]:
     return []
 
 
-def load_quarnets_from_SVM(filepath: str) -> List[Any]:
+def load_quarnets_from_SVM(filepath: str) -> list[Any]:
     """
     Load quarnets from an SVM format file.
 
@@ -40,7 +40,7 @@ def load_quarnets_from_SVM(filepath: str) -> List[Any]:
 
     Returns
     -------
-    List[Any]
+    list[Any]
         List of loaded quarnets (placeholder - returns empty list)
 
     Notes

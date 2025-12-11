@@ -5,7 +5,7 @@ This module provides functions for working with DirectedMultiGraph instances,
 following NetworkX-style function-based API.
 """
 
-from typing import Any, Dict, Iterator, List, Optional, Set, TypeVar
+from typing import Any, Dict, Iterator, List, Set, TypeVar
 
 import networkx as nx
 
@@ -70,7 +70,7 @@ def is_connected(graph: 'DirectedMultiGraph') -> bool:
     return nx.is_connected(graph._combined)
 
 
-def connected_components(graph: 'DirectedMultiGraph') -> Iterator[Set[T]]:
+def connected_components(graph: 'DirectedMultiGraph') -> Iterator[set[T]]:
     """
     Get weakly connected components.
     
@@ -81,7 +81,7 @@ def connected_components(graph: 'DirectedMultiGraph') -> Iterator[Set[T]]:
     
     Returns
     -------
-    Iterator[Set[T]]
+    Iterator[set[T]]
         Iterator over sets of nodes in each component.
     
     Examples
@@ -166,7 +166,7 @@ def identify_two_nodes(graph: 'DirectedMultiGraph', u: T, v: T) -> None:
             graph._combined.remove_edge(u, u, key=k)
 
 
-def identify_node_set(graph: 'DirectedMultiGraph', nodes: List[T] | Set[T]) -> None:
+def identify_node_set(graph: 'DirectedMultiGraph', nodes: list[T] | set[T]) -> None:
     """
     Identify all nodes in the set by keeping the first node.
     
@@ -176,7 +176,7 @@ def identify_node_set(graph: 'DirectedMultiGraph', nodes: List[T] | Set[T]) -> N
     ----------
     graph : DirectedMultiGraph
         The graph to modify.
-    nodes : List[T] | Set[T]
+    nodes : list[T] | set[T]
         Iterable of nodes to identify. The first node will be kept.
     
     Examples
@@ -199,7 +199,7 @@ def identify_node_set(graph: 'DirectedMultiGraph', nodes: List[T] | Set[T]) -> N
         identify_two_nodes(graph, nodes_list[0], nodes_list[i])
 
 
-def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: Optional[Dict[str, Any]] = None) -> None:
+def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: dict[str, Any] | None = None) -> None:
     """
     Suppress a single degree-2 node in a directed multigraph in place.
     
@@ -226,7 +226,7 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: Op
         The directed multigraph to modify. **This function modifies the graph in place.**
     node : T
         The degree-2 node to suppress.
-    merged_attrs : Optional[Dict[str, Any]], optional
+    merged_attrs : dict[str, Any] | None, optional
         Pre-merged attributes to use for the resulting edge. If None, attributes are merged
         by taking incoming edge data first, then outgoing edge data overriding.
         

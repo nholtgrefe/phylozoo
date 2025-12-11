@@ -5,7 +5,7 @@ This module provides functions for visualizing graph structures with support
 for parallel edges displayed as curved arcs.
 """
 
-from typing import Optional, Tuple, TypeVar
+from typing import Tuple, TypeVar
 import math
 
 import matplotlib.pyplot as plt
@@ -18,8 +18,8 @@ T = TypeVar('T')
 
 def plot_directed_multigraph(
     graph: 'DirectedMultiGraph',
-    ax: Optional[plt.Axes] = None,
-    pos: Optional[dict] = None,
+    ax: plt.Axes | None = None,
+    pos: dict | None = None,
     node_color: str = 'lightblue',
     node_size: int = 500,
     edge_color: str = 'blue',
@@ -92,7 +92,7 @@ def plot_directed_multigraph(
     )
     
     # Group edges by (u, v) to handle parallel edges
-    edge_groups: dict[Tuple[T, T], list[Tuple[T, T, int]]] = {}
+    edge_groups: dict[tuple[T, T], list[tuple[T, T, int]]] = {}
     for u, v, key in graph.edges(keys=True):
         edge_key = (u, v)
         if edge_key not in edge_groups:
@@ -160,8 +160,8 @@ def plot_directed_multigraph(
 
 def plot_mixed_multigraph(
     graph: 'MixedMultiGraph',
-    ax: Optional[plt.Axes] = None,
-    pos: Optional[dict] = None,
+    ax: plt.Axes | None = None,
+    pos: dict | None = None,
     node_color: str = 'lightblue',
     node_size: int = 500,
     directed_edge_color: str = 'red',
@@ -242,7 +242,7 @@ def plot_mixed_multigraph(
     )
     
     # Draw undirected edges with curvature for parallel edges
-    undirected_groups: dict[Tuple[T, T], list[Tuple[T, T, int]]] = {}
+    undirected_groups: dict[tuple[T, T], list[tuple[T, T, int]]] = {}
     for u, v, key in graph._undirected.edges(keys=True):
         edge_key = (min(u, v), max(u, v))  # Canonical form
         if edge_key not in undirected_groups:
@@ -278,7 +278,7 @@ def plot_mixed_multigraph(
                 ax.add_patch(arrow)
     
     # Draw directed edges with curvature for parallel edges
-    directed_groups: dict[Tuple[T, T], list[Tuple[T, T, int]]] = {}
+    directed_groups: dict[tuple[T, T], list[tuple[T, T, int]]] = {}
     for u, v, key in graph._directed.edges(keys=True):
         edge_key = (u, v)
         if edge_key not in directed_groups:

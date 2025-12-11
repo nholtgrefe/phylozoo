@@ -4,7 +4,7 @@ Distance matrix module.
 This module provides classes for working with distance matrices.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 
 class DistanceMatrix:
@@ -14,18 +14,18 @@ class DistanceMatrix:
     This is a placeholder class for distance matrix functionality.
     """
 
-    def __init__(self, distances: Optional[Dict[Tuple[str, str], float]] = None) -> None:
+    def __init__(self, distances: dict[tuple[str, str], float] | None = None) -> None:
         """
         Initialize a distance matrix.
 
         Parameters
         ----------
-        distances : Optional[Dict[Tuple[str, str], float]], optional
+        distances : dict[tuple[str, str], float] | None, optional
             Dictionary mapping pairs of elements to distances, by default None
         """
-        self.distances: Dict[Tuple[str, str], float] = distances or {}
+        self.distances: dict[tuple[str, str], float] = distances or {}
 
-    def get_distance(self, element1: str, element2: str) -> Optional[float]:
+    def get_distance(self, element1: str, element2: str) -> float | None:
         """
         Get the distance between two elements.
 
@@ -38,7 +38,7 @@ class DistanceMatrix:
 
         Returns
         -------
-        Optional[float]
+        float | None
             Distance if found, None otherwise
         """
         return self.distances.get((element1, element2)) or self.distances.get((element2, element1))

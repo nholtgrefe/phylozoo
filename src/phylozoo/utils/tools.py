@@ -6,10 +6,10 @@ This module provides various utility functions.
 
 import random
 import string
-from typing import List, Optional
 
 
-def id_generator(size: int = 6, chars: Optional[str] = None) -> str:
+
+def id_generator(size: int = 6, chars: str | None = None) -> str:
     """
     Generate a random identifier string.
 
@@ -17,7 +17,7 @@ def id_generator(size: int = 6, chars: Optional[str] = None) -> str:
     ----------
     size : int, optional
         Length of the identifier, by default 6
-    chars : Optional[str], optional
+    chars : str | None, optional
         Characters to use for generation. If None, uses ASCII letters and digits, by default None
 
     Returns
@@ -30,13 +30,13 @@ def id_generator(size: int = 6, chars: Optional[str] = None) -> str:
     return "".join(random.choice(chars) for _ in range(size))
 
 
-def normalized_l_p_norm(vector: List[float], p: float = 2.0) -> float:
+def normalized_l_p_norm(vector: list[float], p: float = 2.0) -> float:
     """
     Calculate the normalized L-p norm of a vector.
 
     Parameters
     ----------
-    vector : List[float]
+    vector : list[float]
         Input vector
     p : float, optional
         Norm parameter (p=2 is Euclidean norm), by default 2.0

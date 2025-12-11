@@ -4,7 +4,7 @@ Phylogenetic diversity calculations.
 This module provides functions for computing various phylogenetic diversity metrics.
 """
 
-from typing import List, Optional, Set
+from typing import List, Set
 
 
 class DiversityCalculator:
@@ -20,14 +20,14 @@ class DiversityCalculator:
         pass
 
     def calculate_diversity(
-        self, elements: Optional[Set[str]] = None
+        self, elements: set[str] | None = None
     ) -> float:
         """
         Calculate phylogenetic diversity for a set of elements.
 
         Parameters
         ----------
-        elements : Optional[Set[str]], optional
+        elements : set[str] | None, optional
             Set of elements (e.g., species, taxa) to calculate diversity for,
             by default None
 
@@ -46,14 +46,14 @@ class DiversityCalculator:
 
 
 def phylogenetic_diversity(
-    elements: Set[str], network=None
+    elements: set[str], network=None
 ) -> float:
     """
     Calculate phylogenetic diversity for a set of elements.
 
     Parameters
     ----------
-    elements : Set[str]
+    elements : set[str]
         Set of elements to calculate diversity for
     network : optional
         Phylogenetic network or tree to use for calculation

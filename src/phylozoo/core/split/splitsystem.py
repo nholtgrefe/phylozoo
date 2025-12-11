@@ -4,7 +4,7 @@ Split systems module.
 This module provides classes for working with split systems.
 """
 
-from typing import Iterator, Optional, Set, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING
 
 from ...utils.tools import id_generator
 from .split import Split
@@ -23,7 +23,7 @@ class SplitSystem:
         
     Parameters
     ----------
-    splits : Set[Split] | List[Split], optional
+    splits : set[Split] | list[Split], optional
         Set or list of splits. If a list is provided, it will be converted
         to a set to ensure uniqueness. By default None (empty set).
     
@@ -60,13 +60,13 @@ class SplitSystem:
     
     __slots__ = ('_splits', '_elements', '_initialized')
     
-    def __init__(self, splits: Optional[Set[Split] | list[Split]] = None) -> None:
+    def __init__(self, splits: (set[Split] | list[Split]) | None = None) -> None:
         """
         Initialize a split system.
         
         Parameters
         ----------
-        splits : Set[Split] | List[Split], optional
+        splits : set[Split] | list[Split], optional
             Set or list of splits. If a list is provided, it will be converted
             to a set to ensure uniqueness. By default None (empty set).
         
@@ -244,7 +244,7 @@ class SplitSystem:
         
         return tree
     
-    def induced_quartetsplits(self) -> Set[Split]:
+    def induced_quartetsplits(self) -> set[Split]:
         """
         Return a set of all subsplits of size 4 of all splits in the system.
         
@@ -253,7 +253,7 @@ class SplitSystem:
         
         Returns
         -------
-        Set[Split]
+        set[Split]
             A set of quartet splits induced from this split system.
         
         Examples
@@ -267,10 +267,10 @@ class SplitSystem:
         
         Notes
         -----
-        This method returns a Set[Split] instead of QuartetSplitSet
+        This method returns a set[Split] instead of QuartetSplitSet
         since QuartetSplitSet has been temporarily removed.
         """
-        res: Set[Split] = set()
+        res: set[Split] = set()
         for split in self._splits:
             quartet_splits = split.induced_quartetsplits()
             res.update(quartet_splits)

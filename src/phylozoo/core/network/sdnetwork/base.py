@@ -7,7 +7,7 @@ This module provides classes and functions for working with mixed phylogenetic n
 import math
 import warnings
 from functools import cached_property
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, Iterator, TypeVar
 
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.operations import is_connected, has_self_loops
@@ -45,7 +45,7 @@ class MixedPhyNetwork:
 
     Parameters
     ----------
-    directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+    directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of directed edges. Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -60,7 +60,7 @@ class MixedPhyNetwork:
         attributes.
         
         Can be empty or None for empty/single-node networks. By default None.
-    undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+    undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of undirected edges. Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
@@ -73,7 +73,7 @@ class MixedPhyNetwork:
         Note: Undirected edges cannot have gamma values.
         
         Can be empty or None for empty/single-node networks. By default None.
-    nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+    nodes : list[T | tuple[T | dict[str | Any | None]]], optional
         List of nodes. Formats:
         - Simple node IDs: `1`, `"node1"`, etc.
         - Tuples: `(node_id, {'label': '...','attr': ...})`
@@ -92,10 +92,10 @@ class MixedPhyNetwork:
     _graph : MixedMultiGraph[T]
         Internal graph structure using MixedMultiGraph.
         **Warning:** Do not modify directly. Use class methods instead.
-    _node_to_label : Dict[T, str]
+    _node_to_label : dict[T, str]
         Mapping from node IDs to labels. Only nodes with explicit labels are included.
         Leaves always have labels (taxa), but internal nodes may be unlabeled.
-    _label_to_node : Dict[str, T]
+    _label_to_node : dict[str, T]
         Reverse mapping from labels to node IDs (for quick lookup).
     
     Examples
@@ -144,16 +144,16 @@ class MixedPhyNetwork:
 
     def __init__(
         self,
-        directed_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
-        undirected_edges: Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]] = None,
-        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]] = None,
+        directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
+        undirected_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
+        nodes: list[T | tuple[T | dict[str | Any | None]]] = None,
     ) -> None:
         """
         Initialize a mixed phylogenetic network.
         
         Parameters
         ----------
-        directed_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+        directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of directed edges. Formats:
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
@@ -166,7 +166,7 @@ class MixedPhyNetwork:
               Use a different attribute name (e.g., 'gamma2') for non-validated values.
             
             Can be empty list or None for empty/single-node networks. By default None.
-        undirected_edges : Optional[List[Union[Tuple[T, T], Tuple[T, T, int], Dict[str, Any]]]], optional
+        undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of undirected edges. Formats:
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
@@ -177,7 +177,7 @@ class MixedPhyNetwork:
             - bootstrap (float in [0.0, 1.0])
             
             Can be empty list or None for empty/single-node networks. By default None.
-        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]], optional
+        nodes : list[T | tuple[T | dict[str | Any | None]]], optional
             List of nodes. Formats:
             - Simple node IDs: `1`, `"node1"`, etc.
             - Tuples: `(node_id, {'label': '...','attr': ...})` (NetworkX-style)
@@ -223,8 +223,8 @@ class MixedPhyNetwork:
             directed_edges=directed_edges,
             undirected_edges=undirected_edges
         )
-        self._node_to_label: Dict[T, str] = {}
-        self._label_to_node: Dict[str, T] = {}
+        self._node_to_label: dict[T, str] = {}
+        self._label_to_node: dict[str, T] = {}
         
         # Step 1: Add all nodes to the graph (including attributes like label)
         # Labels are validated and added to dictionaries during this step
@@ -279,7 +279,7 @@ class MixedPhyNetwork:
     
     def _add_nodes_to_graph(
         self,
-        nodes: Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]],
+        nodes: list[T | tuple[T | dict[str | Any | None]]],
     ) -> None:
         """
         Add all nodes to the underlying graph with their attributes.
@@ -290,7 +290,7 @@ class MixedPhyNetwork:
         
         Parameters
         ----------
-        nodes : Optional[List[Union[T, Tuple[T, Dict[str, Any]]]]]
+        nodes : list[T | tuple[T | dict[str | Any | None]]]
             Node specifications as simple IDs or (node_id, attr_dict) tuples.
         
         Raises
@@ -326,7 +326,7 @@ class MixedPhyNetwork:
         
         The graph node attribute is also updated to store the label.
         """
-        all_leaves: Set[T] = self.leaves
+        all_leaves: set[T] = self.leaves
         labeled_leaves = {leaf for leaf in all_leaves if leaf in self._node_to_label}
         uncovered_leaves = all_leaves - labeled_leaves
         
@@ -456,8 +456,8 @@ class MixedPhyNetwork:
         
         # Then validate gamma constraints for hybrid nodes
         for hybrid_node in self.hybrid_nodes:
-            gamma_values: List[float] = []
-            incoming_edges: List[Tuple[T, T, int]] = []
+            gamma_values: list[float] = []
+            incoming_edges: list[tuple[T, T, int]] = []
             
             # Use incident_parent_edges to get all incoming directed edges (including parallel edges)
             for edge in self.incident_parent_edges(hybrid_node, keys=True, data=True):
@@ -483,7 +483,7 @@ class MixedPhyNetwork:
             # If any gamma values are set, ALL edges must have gamma values
             if len(gamma_values) > 0:
                 # Check if all incoming edges have gamma values
-                missing_edges: List[str] = []
+                missing_edges: list[str] = []
                 for u, v, key in incoming_edges:
                     gamma = self.get_edge_attribute(u, v, key, 'gamma')
                     if gamma is None:
@@ -652,7 +652,7 @@ class MixedPhyNetwork:
     
     # ========== Label Operations ==========
     
-    def get_label(self, node_id: T) -> Optional[str]:
+    def get_label(self, node_id: T) -> str | None:
         """
         Get the label for a node.
         
@@ -663,7 +663,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Optional[str]
+        str | None
             Label for the node. Returns None if node has no label.
             Leaves always have labels (taxa), but internal nodes may be unlabeled.
         
@@ -677,7 +677,7 @@ class MixedPhyNetwork:
         """
         return self._node_to_label.get(node_id)
     
-    def get_node_id(self, label: str) -> Optional[T]:
+    def get_node_id(self, label: str) -> T | None:
         """
         Get the node ID for a label.
         
@@ -688,7 +688,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Optional[T]
+        T | None
             Node ID if found, None otherwise.
         
         Examples
@@ -705,9 +705,9 @@ class MixedPhyNetwork:
         self,
         u: T,
         v: T,
-        key: Optional[int] = None,
+        key: int | None = None,
         attr: str = 'branch_length'
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Get an edge attribute value (read-only).
         
@@ -715,7 +715,7 @@ class MixedPhyNetwork:
         ----------
         u, v : T
             Edge endpoints.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key for parallel edges. If None and multiple parallel edges exist,
             raises ValueError. Must specify key when parallel edges exist.
         attr : str, default 'branch_length'
@@ -724,7 +724,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Optional[Any]
+        Any | None
             Attribute value, or None if not set.
         
         Raises
@@ -789,8 +789,8 @@ class MixedPhyNetwork:
         self,
         u: T,
         v: T,
-        key: Optional[int] = None
-    ) -> Optional[float]:
+        key: int | None = None
+    ) -> float | None:
         """
         Get branch length for an edge.
         
@@ -798,12 +798,12 @@ class MixedPhyNetwork:
         ----------
         u, v : T
             Edge endpoints.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key for parallel edges. Required if multiple parallel edges exist.
         
         Returns
         -------
-        Optional[float]
+        float | None
             Branch length, or None if not set.
         """
         return self.get_edge_attribute(u, v, key, 'branch_length')
@@ -812,8 +812,8 @@ class MixedPhyNetwork:
         self,
         u: T,
         v: T,
-        key: Optional[int] = None
-    ) -> Optional[float]:
+        key: int | None = None
+    ) -> float | None:
         """
         Get bootstrap support for an edge.
         
@@ -823,12 +823,12 @@ class MixedPhyNetwork:
         ----------
         u, v : T
             Edge endpoints.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key for parallel edges. Required if multiple parallel edges exist.
         
         Returns
         -------
-        Optional[float]
+        float | None
             Bootstrap support value (typically 0.0 to 1.0), or None if not set.
         """
         return self.get_edge_attribute(u, v, key, 'bootstrap')
@@ -837,8 +837,8 @@ class MixedPhyNetwork:
         self,
         u: T,
         v: T,
-        key: Optional[int] = None
-    ) -> Optional[float]:
+        key: int | None = None
+    ) -> float | None:
         """
         Get gamma value for a hybrid edge.
         
@@ -852,12 +852,12 @@ class MixedPhyNetwork:
         ----------
         u, v : T
             Edge endpoints (v must be a hybrid node, edge must be directed).
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key for parallel edges. Required if multiple parallel edges exist.
         
         Returns
         -------
-        Optional[float]
+        float | None
             Gamma value, or None if not set.
         
         Raises
@@ -904,8 +904,8 @@ class MixedPhyNetwork:
         self,
         u: T,
         v: T,
-        key: Optional[int] = None,
-        directed: Optional[bool] = None
+        key: int | None = None,
+        directed: bool | None = None
     ) -> bool:
         """
         Check if edge exists.
@@ -916,9 +916,9 @@ class MixedPhyNetwork:
             Source node.
         v : T
             Target node.
-        key : Optional[int], optional
+        key : int | None, optional
             Edge key. By default None.
-        directed : Optional[bool], optional
+        directed : bool | None, optional
             If True, only check directed edges. If False, only check undirected edges.
             If None, check both. By default None.
         
@@ -1004,7 +1004,7 @@ class MixedPhyNetwork:
         v: T,
         keys: bool = False,
         data: bool = False
-    ) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+    ) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over directed edges entering node v (from parent nodes).
         
@@ -1029,7 +1029,7 @@ class MixedPhyNetwork:
         v: T,
         keys: bool = False,
         data: bool = False
-    ) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+    ) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over directed edges leaving node v (to child nodes).
         
@@ -1054,7 +1054,7 @@ class MixedPhyNetwork:
         v: T,
         keys: bool = False,
         data: bool = False
-    ) -> Iterator[Tuple[T, T] | Tuple[T, T, int] | Tuple[T, T, int, Dict[str, Any]]]:
+    ) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over undirected edges incident to node v.
         
@@ -1105,13 +1105,13 @@ class MixedPhyNetwork:
     # ========== Phylogenetic-Specific Methods ==========
     
     @cached_property
-    def leaves(self) -> Set[T]:
+    def leaves(self) -> set[T]:
         """
         Get the set of leaf node IDs (nodes with degree 1, or degree 0 for single-node networks).
         
         Returns
         -------
-        Set[T]
+        set[T]
             Set of leaf node identifiers. Returns a new set (which is mutable).
         """
         # Single-node network: the node is a leaf even though it has degree 0
@@ -1120,13 +1120,13 @@ class MixedPhyNetwork:
         return {node for node in self._graph.nodes if self._graph.degree(node) == 1}
     
     @cached_property
-    def taxa(self) -> Set[str]:
+    def taxa(self) -> set[str]:
         """
         Get the set of taxon labels (labels of leaves).
         
         Returns
         -------
-        Set[str]
+        set[str]
             Set of taxon labels.
         
         Examples
@@ -1138,7 +1138,7 @@ class MixedPhyNetwork:
         return {self._node_to_label[leaf] for leaf in self.leaves}
     
     @cached_property
-    def hybrid_nodes(self) -> Set[T]:
+    def hybrid_nodes(self) -> set[T]:
         """
         Get the set of all hybrid nodes.
         
@@ -1146,7 +1146,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Set[T]
+        set[T]
             Set of hybrid node identifiers. Returns a new set (which is mutable).
         
         Examples
@@ -1166,7 +1166,7 @@ class MixedPhyNetwork:
         }
     
     @cached_property
-    def hybrid_edges(self) -> Set[Tuple[T, T]]:
+    def hybrid_edges(self) -> set[tuple[T, T]]:
         """
         Get the set of all hybrid edges.
         
@@ -1174,7 +1174,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Set[Tuple[T, T]]
+        set[tuple[T, T]]
             Set of (source, target) tuples for hybrid edges. Returns a new set (which is mutable).
         
         Examples
@@ -1190,7 +1190,7 @@ class MixedPhyNetwork:
         return set(self._graph._directed.edges())
     
     @cached_property
-    def tree_nodes(self) -> Set[T]:
+    def tree_nodes(self) -> set[T]:
         """
         Get the set of all tree nodes.
         
@@ -1198,7 +1198,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Set[T]
+        set[T]
             Set of tree node identifiers. Returns a new set (which is mutable).
         
         Examples
@@ -1217,7 +1217,7 @@ class MixedPhyNetwork:
         }
     
     @cached_property
-    def internal_nodes(self) -> Set[T]:
+    def internal_nodes(self) -> set[T]:
         """
         Get the set of all internal nodes.
         
@@ -1225,7 +1225,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Set[T]
+        set[T]
             Set of internal node identifiers. Returns a new set (which is mutable).
         
         Examples
@@ -1245,7 +1245,7 @@ class MixedPhyNetwork:
         }
     
     @cached_property
-    def tree_edges(self) -> Set[Tuple[T, T]]:
+    def tree_edges(self) -> set[tuple[T, T]]:
         """
         Get the set of all tree edges.
         
@@ -1253,7 +1253,7 @@ class MixedPhyNetwork:
         
         Returns
         -------
-        Set[Tuple[T, T]]
+        set[tuple[T, T]]
             Set of (source, target) tuples for tree edges. Returns a new set (which is mutable).
         
         Examples

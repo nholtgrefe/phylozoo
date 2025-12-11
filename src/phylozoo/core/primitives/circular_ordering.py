@@ -6,7 +6,7 @@ This module provides classes for working with circular orderings of sets and ele
 
 import itertools
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, Set, TypeVar, Union, Generator
+from typing import Any, Dict, Iterator, List, Set, TypeVar, Generator
 
 from .partition import Partition
 
@@ -27,7 +27,7 @@ class CircularSetOrdering(Partition):
     
     Parameters
     ----------
-    setorder : List[Set[T]]
+    setorder : list[set[T]]
         List of sets in circular order. The sets must be disjoint.
     
     Attributes
@@ -74,11 +74,11 @@ class CircularSetOrdering(Partition):
         # Use parent's __setattr__ for everything else
         super().__setattr__(name, value)
     
-    def __init__(self, setorder: List[Set[T]]) -> None:
+    def __init__(self, setorder: list[set[T]]) -> None:
         # Convert to frozensets, compute elements, and validate in one pass
         # (using optimized Partition approach)
-        parts_frozen: List[frozenset] = []
-        elements_set: Set[T] = set()
+        parts_frozen: list[frozenset] = []
+        elements_set: set[T] = set()
         total_size: int = 0
         
         for part in setorder:
@@ -328,7 +328,7 @@ class CircularSetOrdering(Partition):
         return CircularOrdering(elements)
     
     def are_neighbors(
-        self, set1: Union[Set[T], frozenset], set2: Union[Set[T], frozenset]
+        self, set1: set[T, frozenset], set2: set[T, frozenset]
     ) -> bool:
         """
         Check if two sets are neighbors in the circular ordering.
@@ -338,9 +338,9 @@ class CircularSetOrdering(Partition):
         
         Parameters
         ----------
-        set1 : Union[Set[T], frozenset]
+        set1 : set[T, frozenset]
             First set to check.
-        set2 : Union[Set[T], frozenset]
+        set2 : set[T, frozenset]
             Second set to check.
         
         Returns
@@ -449,7 +449,7 @@ class CircularOrdering(CircularSetOrdering):
     
     Parameters
     ----------
-    order : List[T]
+    order : list[T]
         List of elements in circular order.
     
     Attributes
@@ -496,7 +496,7 @@ class CircularOrdering(CircularSetOrdering):
         # Use parent's __setattr__ for everything else
         super().__setattr__(name, value)
     
-    def __init__(self, order: List[T]) -> None:
+    def __init__(self, order: list[T]) -> None:
         # Check for duplicates before creating partition
         if len(order) != len(set(order)):
             raise ValueError("Elements in CircularOrdering must be unique")
@@ -671,7 +671,7 @@ class CircularOrdering(CircularSetOrdering):
             yield CircularOrdering(list(comb))
     
     def to_circular_setordering(
-        self, mapping: Optional[Dict[T, Set[T]]] = None
+        self, mapping: dict[T, set[T]] | None = None
     ) -> CircularSetOrdering:
         """
         Convert to CircularSetOrdering with optional mapping.
@@ -681,7 +681,7 @@ class CircularOrdering(CircularSetOrdering):
         
         Parameters
         ----------
-        mapping : Optional[Dict[T, Set[T]]], optional
+        mapping : dict[T, set[T]] | None, optional
             Dictionary mapping elements to sets. If None, elements are mapped
             to singleton sets, by default None.
         

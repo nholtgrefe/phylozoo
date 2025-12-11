@@ -4,7 +4,7 @@ Quarnet module.
 This module provides classes for working with quarnets (4-leaf networks).
 """
 
-from typing import Any, List, Optional, Set
+from typing import Any, List, Set
 
 
 class Quarnet:
@@ -14,16 +14,16 @@ class Quarnet:
     This is a placeholder class for quarnet functionality.
     """
 
-    def __init__(self, leaves: Optional[Set[str]] = None) -> None:
+    def __init__(self, leaves: set[str] | None = None) -> None:
         """
         Initialize a quarnet.
 
         Parameters
         ----------
-        leaves : Optional[Set[str]], optional
+        leaves : set[str] | None, optional
             Set of leaf labels, by default None
         """
-        self.leaves: Set[str] = leaves or set()
+        self.leaves: set[str] = leaves or set()
 
     def __repr__(self) -> str:
         """

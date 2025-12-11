@@ -5,7 +5,7 @@ This module provides functions for working with MixedMultiGraph instances,
 following NetworkX-style function-based API.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Set, Tuple, TypeVar
 from collections import deque
 
 import networkx as nx
@@ -76,7 +76,7 @@ def is_connected(graph: 'MixedMultiGraph') -> bool:
     return nx.is_connected(graph._combined)
 
 
-def connected_components(graph: 'MixedMultiGraph') -> Iterator[Set[T]]:
+def connected_components(graph: 'MixedMultiGraph') -> Iterator[set[T]]:
     """
     Get weakly connected components.
     
@@ -87,7 +87,7 @@ def connected_components(graph: 'MixedMultiGraph') -> Iterator[Set[T]]:
     
     Returns
     -------
-    Iterator[Set[T]]
+    Iterator[set[T]]
         Iterator over sets of nodes in each component.
     
     Examples
@@ -193,7 +193,7 @@ def identify_two_nodes(graph: 'MixedMultiGraph', u: T, v: T) -> None:
             graph._combined.remove_edge(u, u, key=k)
 
 
-def identify_node_set(graph: 'MixedMultiGraph', nodes: List[T] | Set[T]) -> None:
+def identify_node_set(graph: 'MixedMultiGraph', nodes: list[T] | set[T]) -> None:
     """
     Identify all nodes in the set by keeping the first node.
     
@@ -203,7 +203,7 @@ def identify_node_set(graph: 'MixedMultiGraph', nodes: List[T] | Set[T]) -> None
     ----------
     graph : MixedMultiGraph
         The graph to modify.
-    nodes : List[T] | Set[T]
+    nodes : list[T] | set[T]
         Iterable of nodes to identify. The first node will be kept.
     
     Examples
@@ -226,7 +226,7 @@ def identify_node_set(graph: 'MixedMultiGraph', nodes: List[T] | Set[T]) -> None
         identify_two_nodes(graph, nodes_list[0], nodes_list[i])
 
 
-def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tuple[T, T, int]], List[Tuple[T, T, int]]]]:
+def source_components(graph: 'MixedMultiGraph') -> list[tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]]:
     """
     Find all source components of a mixed multigraph.
     
@@ -242,7 +242,7 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
     
     Returns
     -------
-    List[Tuple[List[T], List[Tuple[T, T, int]], List[Tuple[T, T, int]]]]
+    list[tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]]
         For each source component, returns a tuple containing:
         - List of nodes in the component
         - List of undirected edges (u, v, key) within the component (includes all parallel edges)
@@ -270,7 +270,7 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
     >>> outgoing_edges
     [(3, 4, 0)]
     """
-    source_comps: List[Tuple[List[T], List[Tuple[T, T, int]], List[Tuple[T, T, int]]]] = []
+    source_comps: list[tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]] = []
     
     # Get all connected components of the undirected graph
     undirected_components = list(nx.connected_components(graph._undirected))
@@ -292,7 +292,7 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
             nodes = list(component)
             
             # Collect undirected edges within the component (including all parallel edges with keys)
-            undirected_edges: List[Tuple[T, T, int]] = []
+            undirected_edges: list[tuple[T, T, int]] = []
             for u, v, key in graph._undirected.edges(keys=True):
                 if u in component_set and v in component_set:
                     # Include all parallel edges (each with its key)
@@ -302,7 +302,7 @@ def source_components(graph: 'MixedMultiGraph') -> List[Tuple[List[T], List[Tupl
             
             # Collect directed edges (u, v, key) with u in component and v not in component
             # (includes all parallel edges with keys)
-            outgoing_edges: List[Tuple[T, T, int]] = []
+            outgoing_edges: list[tuple[T, T, int]] = []
             for u, v, key in graph._directed.edges(keys=True):
                 if u in component_set and v not in component_set:
                     # Include all parallel edges (each with its key)
@@ -368,10 +368,10 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
         raise ValueError(f"Root vertex {root} not found in the graph.")
     
     # Mapping of undirected edges to their orientation: (min(u,v), max(u,v), key) -> (u, v)
-    edge_orientations: Dict[Tuple[T, T, int], Tuple[T, T]] = {}
+    edge_orientations: dict[tuple[T, T, int], tuple[T, T]] = {}
     
     # Track visited nodes
-    visited: Set[T] = set()
+    visited: set[T] = set()
     
     # BFS queue for processing undirected edges
     bfs_queue = deque([root])
@@ -488,7 +488,7 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
     return dm
 
 
-def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: Optional[Dict[str, Any]] = None) -> None:
+def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[str, Any] | None = None) -> None:
     """
     Suppress a single degree-2 node in a mixed multigraph in place.
     
@@ -524,7 +524,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: Optio
         The mixed multigraph to modify. **This function modifies the graph in place.**
     node : T
         The degree-2 node to suppress.
-    merged_attrs : Optional[Dict[str, Any]], optional
+    merged_attrs : dict[str, Any] | None, optional
         Pre-merged attributes to use for the resulting edge. If None, attributes are merged
         by taking edge1_data first, then edge2_data overriding. 
         

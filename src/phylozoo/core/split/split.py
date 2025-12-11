@@ -21,16 +21,16 @@ class Split(Partition):
     
     Parameters
     ----------
-    set1 : Set[T]
+    set1 : set[T]
         First set of elements in the split.
-    set2 : Set[T]
+    set2 : set[T]
         Second set of elements in the split.
     
     Attributes
     ----------
-    set1 : Set[T]
+    set1 : set[T]
         First set of elements in the split.
-    set2 : Set[T]
+    set2 : set[T]
         Second set of elements in the split.
     elements : frozenset
         Set containing all elements from both sides of the split (inherited from Partition).
@@ -52,15 +52,15 @@ class Split(Partition):
     True
     """
     
-    def __init__(self, set1: Set[T], set2: Set[T]) -> None:
+    def __init__(self, set1: set[T], set2: set[T]) -> None:
         """
         Initialize a split.
         
         Parameters
         ----------
-        set1 : Set[T]
+        set1 : set[T]
             First set of elements in the split.
-        set2 : Set[T]
+        set2 : set[T]
             Second set of elements in the split.
         
         Raises
@@ -210,7 +210,7 @@ class Split(Partition):
         return (self.set1.issubset(other.set1) and self.set2.issubset(other.set2)) or \
                (self.set1.issubset(other.set2) and self.set2.issubset(other.set1))
     
-    def induced_quartetsplits(self, include_trivial: bool = False) -> Set['Split']:
+    def induced_quartetsplits(self, include_trivial: bool = False) -> set['Split']:
         """
         Return a set of all subsplits of size 4 of the split.
         
@@ -225,7 +225,7 @@ class Split(Partition):
         
         Returns
         -------
-        Set[Split[T]]
+        set[Split[T]]
             A set of quartet splits induced from this split.
         
         Examples
@@ -237,7 +237,7 @@ class Split(Partition):
         
         Notes
         -----
-        This method returns a Set[Split[T]] instead of QuartetSplitSet
+        This method returns a set[Split[T]] instead of QuartetSplitSet
         since QuartetSplitSet has been temporarily removed.
         """
         res: list[Split] = []

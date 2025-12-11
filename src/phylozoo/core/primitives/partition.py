@@ -6,7 +6,7 @@ This module provides a class for working with partitions of sets.
 
 import itertools
 import warnings
-from typing import Any, Iterator, List, Set, TypeVar, Union
+from typing import Any, Iterator, TypeVar
 
 T = TypeVar('T')
 
@@ -23,13 +23,13 @@ class Partition:
     
     Parameters
     ----------
-    parts : List[Set[T]]
+    parts : list[set[T]]
         List of sets of elements. The sets must be disjoint (no overlapping
         elements).
     
     Attributes
     ----------
-    parts : Tuple[frozenset, ...]
+    parts : tuple[frozenset, ...]
         Tuple of frozen sets representing the partition blocks in canonical form (read-only).
     elements : frozenset
         Frozen set containing the union of all elements in the partition (read-only).
@@ -61,10 +61,10 @@ class Partition:
     
     __slots__ = ('_parts', '_elements', '_initialized')
     
-    def __init__(self, parts: List[Set[T]]) -> None:
+    def __init__(self, parts: list[set[T]]) -> None:
         # Convert to frozensets, compute elements, and validate in one pass
-        parts_frozen: List[frozenset] = []
-        elements_set: Set[T] = set()
+        parts_frozen: list[frozenset] = []
+        elements_set: set[T] = set()
         total_size: int = 0
         
         for part in parts:
@@ -241,13 +241,13 @@ class Partition:
         """
         return hash(self._parts)
     
-    def __contains__(self, subset: Union[Set[T], frozenset]) -> bool:
+    def __contains__(self, subset: set[T, frozenset]) -> bool:
         """
         Check if a subset is one of the parts in the partition.
         
         Parameters
         ----------
-        subset : Union[Set[T], frozenset]
+        subset : set[T, frozenset]
             Subset to check.
         
         Returns

@@ -5,7 +5,7 @@ This module provides operations for DirectedPhyNetwork instances.
 """
 
 from collections import deque
-from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar, Union
+from typing import Any, TypeVar
 
 import networkx as nx
 
@@ -100,7 +100,7 @@ def find_lsa_node(network: DirectedPhyNetwork) -> T:
     root = network.root_node
     
     # Compute depths using BFS from root (use deque for O(1) popleft)
-    depths: Dict[T, int] = {}
+    depths: dict[T, int] = {}
     queue = deque([root])
     depths[root] = 0
     
@@ -188,7 +188,7 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     # LSA networks keep the same leaves and labels as the original network
     # Build nodes list with labels in NetworkX-style format
-    new_nodes: List[Union[Any, Tuple[Any, Dict[str, str]]]] = []
+    new_nodes: list[Any | tuple[Any | dict[str | str]]] = []
     for leaf in network.leaves:
         label = network.get_label(leaf)
         if label is not None:
@@ -209,11 +209,11 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
 
 
 def _merge_edge_attributes_for_suppression(
-    edge1_data: Dict[str, Any],
-    edge2_data: Dict[str, Any],
+    edge1_data: dict[str, Any],
+    edge2_data: dict[str, Any],
     edge1_is_directed: bool,
     edge2_is_directed: bool,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Merge edge attributes for suppressing a degree-2 node.
     
@@ -225,9 +225,9 @@ def _merge_edge_attributes_for_suppression(
     
     Parameters
     ----------
-    edge1_data : Dict[str, Any]
+    edge1_data : dict[str, Any]
         Attributes of the first edge.
-    edge2_data : Dict[str, Any]
+    edge2_data : dict[str, Any]
         Attributes of the second edge.
     edge1_is_directed : bool
         Whether the first edge is directed.
@@ -236,7 +236,7 @@ def _merge_edge_attributes_for_suppression(
     
     Returns
     -------
-    Dict[str, Any]
+    dict[str, Any]
         Merged attributes with special handling for gamma and branch_length.
     """
     merged = {}
@@ -342,11 +342,11 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     
     # 2) Separate hybrid (directed) vs tree (to be undirected) edges
     hybrid_edge_set = set(working.hybrid_edges)
-    directed_edges: List[Dict[str, Any]] = []
-    undirected_edges: List[Dict[str, Any]] = []
+    directed_edges: list[dict[str, Any]] = []
+    undirected_edges: list[dict[str, Any]] = []
     
     for u, v, key, data in working._graph.edges(keys=True, data=True):
-        edge_dict: Dict[str, Any] = {"u": u, "v": v}
+        edge_dict: dict[str, Any] = {"u": u, "v": v}
         if key != 0:
             edge_dict["key"] = key
         edge_dict.update(data)
@@ -359,11 +359,11 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     mixed = MixedMultiGraph(directed_edges=directed_edges, undirected_edges=undirected_edges)
     
     # Track which nodes are suppressed (leaves are never suppressed, only internal nodes)
-    suppressed_nodes: Set[Any] = set()
+    suppressed_nodes: set[Any] = set()
     
     # Maintain a set of degree-2 nodes for efficient lookup and updates
     # Initialize by scanning all nodes once
-    degree2_nodes: Set[Any] = {node for node in mixed.nodes() if mixed.degree(node) == 2}
+    degree2_nodes: set[Any] = {node for node in mixed.nodes() if mixed.degree(node) == 2}
     
     # Suppress all degree-2 nodes (iteratively, as suppression may create new ones)
     # Before suppression, merge attributes with special handling for gamma and branch_length
@@ -385,7 +385,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
             
             # Since we know degree is 2, we expect exactly 2 edges total
             # Build edges_info directly (we know there are exactly 2)
-            edges_info: List[Tuple[Dict[str, Any], bool]] = []
+            edges_info: list[tuple[dict[str, Any], bool]] = []
             for u, v, key, data in directed_in:
                 edges_info.append((data, True))  # (data, is_directed)
             for u, v, key, data in directed_out:
@@ -425,7 +425,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     # Build nodes list with labels (leaves are never suppressed, only internal nodes)
     # Leaves: all leaves from working network
     # Internal nodes: only those not suppressed
-    nodes_list: List[Union[Any, Tuple[Any, Dict[str, str]]]] = []
+    nodes_list: list[Any | tuple[Any | dict[str | str]]] = []
     
     # Add leaves with labels
     for leaf in working.leaves:

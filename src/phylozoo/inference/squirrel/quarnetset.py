@@ -4,7 +4,7 @@ Quarnet set module.
 This module provides classes for working with sets of quarnets.
 """
 
-from typing import List, Optional, Set
+from typing import List, Set
 
 from .quarnet import Quarnet
 
@@ -16,16 +16,16 @@ class QuarnetSet:
     This is a placeholder class for quarnet set functionality.
     """
 
-    def __init__(self, quarnets: Optional[List[Quarnet]] = None) -> None:
+    def __init__(self, quarnets: list[Quarnet] | None = None) -> None:
         """
         Initialize a quarnet set.
 
         Parameters
         ----------
-        quarnets : Optional[List[Quarnet]], optional
+        quarnets : list[Quarnet] | None, optional
             List of quarnets, by default None
         """
-        self.quarnets: List[Quarnet] = quarnets or []
+        self.quarnets: list[Quarnet] = quarnets or []
 
     def add(self, quarnet: Quarnet) -> None:
         """
