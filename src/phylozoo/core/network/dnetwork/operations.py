@@ -5,7 +5,7 @@ This module provides operations for DirectedPhyNetwork instances.
 """
 
 from collections import deque
-from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar
+from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar, Union
 
 import networkx as nx
 
@@ -310,12 +310,24 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     SemiDirectedPhyNetwork
         The corresponding semi-directed phylogenetic network.
     """
-    # 1) Ensure LSA network
-    working = d_network if is_lsa_network(d_network) else to_lsa_network(d_network)
+    # Single-leaf shortcut: the LSA of a single-leaf network is that leaf,
+    # so the semi-directed network collapses to a single node with no edges.
+    if len(d_network.leaves) == 1:
+        leaf = next(iter(d_network.leaves))
+        label = d_network.get_label(leaf)
+        nodes_list = [(leaf, {'label': label})] if label is not None else None
+        return SemiDirectedPhyNetwork(
+            directed_edges=[],
+            undirected_edges=[],
+            nodes=nodes_list,
+        )
     
     # Empty network shortcut
-    if working.number_of_nodes() == 0:
+    if d_network.number_of_nodes() == 0:
         return SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[], nodes=None)
+    
+    # 1) Ensure LSA network
+    working = d_network if is_lsa_network(d_network) else to_lsa_network(d_network)
     
     # Single-node network shortcut
     if working.number_of_nodes() == 1:

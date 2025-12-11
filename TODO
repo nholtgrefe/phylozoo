@@ -12,4 +12,3 @@ Use validation manager within methods (such as subnetworks)
 Allow single node networks
 Optimize code
 move is cutedge etc. to other module?
-LSA or lsa

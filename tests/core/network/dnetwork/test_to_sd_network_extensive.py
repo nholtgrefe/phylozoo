@@ -400,12 +400,26 @@ class TestToSDNetworkEdgeCases:
 
     def test_single_edge_tree(self) -> None:
         """Tree with single edge."""
-        dnet = DirectedPhyNetwork(edges=[(2, 1)], nodes=[(1, {'label': 'A'})])
-        sdnet = to_sd_network(dnet)
+        with pytest.warns(UserWarning, match="Single-node network detected"):
+            sdnet = to_sd_network(
+                DirectedPhyNetwork(edges=[(2, 1)], nodes=[(1, {'label': 'A'})])
+            )
 
-        assert sdnet.number_of_nodes() == 2
-        assert sdnet.number_of_edges() == 1
-        assert len(list(sdnet._graph.undirected_edges_iter())) == 1
+        # LSA of a single-leaf tree is the leaf; conversion yields a single-node network
+        assert sdnet.number_of_nodes() == 1
+        assert sdnet.number_of_edges() == 0
+        assert sdnet.leaves == {1}
+        assert sdnet.get_label(1) == "A"
+
+    def test_single_node_directed_network(self) -> None:
+        """Single-node directed network converts to single-node semi-directed network."""
+        with pytest.warns(UserWarning, match="Single-node network detected"):
+            sdnet = to_sd_network(DirectedPhyNetwork(nodes=[(1, {"label": "A"})]))
+
+        assert sdnet.number_of_nodes() == 1
+        assert sdnet.number_of_edges() == 0
+        assert sdnet.leaves == {1}
+        assert sdnet.get_label(1) == "A"
 
     def test_star_tree(self) -> None:
         """Star tree with one internal node and many leaves."""

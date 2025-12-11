@@ -321,6 +321,20 @@ class TestEdgeCases:
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
             assert net.validate() is True
 
+    def test_single_node_network(self) -> None:
+        """Single-node semi-directed network is valid but warns."""
+        with pytest.warns(UserWarning, match="Single-node network detected"):
+            net = SemiDirectedPhyNetwork(
+                directed_edges=[],
+                undirected_edges=[],
+                nodes=[(1, {"label": "A"})],
+            )
+        assert net.number_of_nodes() == 1
+        assert net.number_of_edges() == 0
+        assert net.leaves == {1}
+        with pytest.warns(UserWarning, match="Single-node network detected"):
+            assert net.validate() is True
+
     def test_two_nodes_undirected_edge(self) -> None:
         """Two nodes with undirected edge should be valid."""
         net = SemiDirectedPhyNetwork(
