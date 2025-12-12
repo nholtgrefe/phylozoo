@@ -172,6 +172,67 @@ class TestIsKalmanson:
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
         assert is_kalmanson(dm, ['A', 'B', 'C']) is True
+    
+    def test_kalmanson_invalid_type(self) -> None:
+        """Test that non-list circular_order raises TypeError."""
+        matrix = np.array([[0, 1], [1, 0]])
+        dm = DistanceMatrix(matrix, labels=['A', 'B'])
+        with pytest.raises(TypeError, match="must be a list"):
+            is_kalmanson(dm, ('A', 'B'))  # type: ignore
+    
+    def test_kalmanson_empty_order(self) -> None:
+        """Test that empty circular_order raises ValueError."""
+        matrix = np.array([[0, 1], [1, 0]])
+        dm = DistanceMatrix(matrix, labels=['A', 'B'])
+        with pytest.raises(ValueError, match="cannot be empty"):
+            is_kalmanson(dm, [])
+    
+    def test_kalmanson_very_small_matrices(self) -> None:
+        """Test that matrices with < 4 elements are trivially Kalmanson."""
+        # Matrix with 2 elements
+        matrix = np.array([[0, 1], [1, 0]])
+        dm = DistanceMatrix(matrix, labels=['A', 'B'])
+        assert is_kalmanson(dm, ['A', 'B']) is True
+        
+        # Matrix with 1 element
+        matrix = np.array([[0]])
+        dm = DistanceMatrix(matrix, labels=['A'])
+        assert is_kalmanson(dm, ['A']) is True
+    
+    def test_kalmanson_large_matrix_performance(self) -> None:
+        """Test that is_kalmanson is fast on larger matrices with numba."""
+        import time
+        
+        # Create a large Kalmanson matrix (circular distances)
+        size = 50
+        matrix = np.zeros((size, size))
+        for i in range(size):
+            for j in range(size):
+                # Circular distance
+                dist = min(abs(i - j), size - abs(i - j))
+                matrix[i, j] = float(dist)
+        
+        labels = [f'L{i}' for i in range(size)]
+        dm = DistanceMatrix(matrix, labels=labels)
+        circular_order = labels.copy()
+        
+        # Warmup
+        _ = is_kalmanson(dm, circular_order)
+        
+        # Time the check
+        start = time.perf_counter()
+        result = is_kalmanson(dm, circular_order)
+        elapsed = time.perf_counter() - start
+        
+        # Should complete in reasonable time (< 1 second for 50x50)
+        assert elapsed < 1.0, f"is_kalmanson took {elapsed:.3f}s, expected < 1.0s"
+        assert result is True, "Large matrix should be Kalmanson"
+        
+        # With numba, should be quite fast (< 0.5s)
+        assert elapsed < 0.5, (
+            f"is_kalmanson took {elapsed:.3f}s for {size}x{size} matrix, "
+            f"expected < 0.5s with numba optimization"
+        )
 
 
 class TestClassificationEdgeCases:

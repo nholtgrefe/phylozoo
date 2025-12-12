@@ -249,6 +249,8 @@ def is_kalmanson(
     ValueError
         If circular_order does not contain all labels, or if the matrix is not
         a pseudo-metric.
+    TypeError
+        If circular_order is not a list.
     
     Examples
     --------
@@ -268,9 +270,22 @@ def is_kalmanson(
     >>> is_kalmanson(dm, ['A', 'B', 'C', 'D', 'E'])
     True
     """
+    # Input validation
+    if not isinstance(circular_order, list):
+        raise TypeError("circular_order must be a list")
+    
+    if len(circular_order) == 0:
+        raise ValueError("circular_order cannot be empty")
+    
     if not set(circular_order) == set(distance_matrix.labels):
         raise ValueError(
             "circular_order must contain all labels of the distance matrix"
+        )
+    
+    if len(circular_order) != len(distance_matrix.labels):
+        raise ValueError(
+            f"circular_order has {len(circular_order)} elements, but distance matrix "
+            f"has {len(distance_matrix.labels)} labels"
         )
     
     if not is_pseudo_metric(distance_matrix):
@@ -278,31 +293,59 @@ def is_kalmanson(
             "Distance matrix must be pseudo-metric to check Kalmanson property"
         )
     
-    # Get ordered indices
-    ordered_indices = [distance_matrix.get_index(label) for label in circular_order]
+    # Early exit for small matrices (need at least 4 elements for Kalmanson check)
     n = len(distance_matrix)
-    matrix = distance_matrix._matrix
+    if n < 4:
+        # Trivially Kalmanson if less than 4 elements
+        return True
     
-    # Check all combinations of 4 indices
-    for i, j, k, l in itertools.combinations(range(n), 4):
-        ii = ordered_indices[i]
-        jj = ordered_indices[j]
-        kk = ordered_indices[k]
-        ll = ordered_indices[l]
-        
-        d_ij = matrix[ii, jj]
-        d_kl = matrix[kk, ll]
-        d_ik = matrix[ii, kk]
-        d_il = matrix[ii, ll]
-        d_jk = matrix[jj, kk]
-        d_jl = matrix[jj, ll]
-        
-        # Kalmanson conditions
-        cond1 = d_ij + d_kl - d_ik - d_jl
-        cond2 = d_il + d_jk - d_ik - d_jl
-        
-        if cond1 > 0 or cond2 > 0:
-            return False
+    # Get ordered indices
+    try:
+        ordered_indices = np.array(
+            [distance_matrix.get_index(label) for label in circular_order],
+            dtype=np.int64
+        )
+    except ValueError as e:
+        raise ValueError(
+            f"circular_order contains invalid labels: {e}"
+        ) from e
     
-    return True
+    @njit(cache=True)
+    def _check_kalmanson_conditions(
+        matrix: np.ndarray,
+        ordered_indices: np.ndarray,
+        n: int
+    ) -> bool:
+        """Numba-accelerated Kalmanson condition check."""
+        # Check all combinations of 4 indices (i < j < k < l)
+        for i in range(n):
+            for j in range(i + 1, n):
+                for k in range(j + 1, n):
+                    for l in range(k + 1, n):
+                        ii = ordered_indices[i]
+                        jj = ordered_indices[j]
+                        kk = ordered_indices[k]
+                        ll = ordered_indices[l]
+                        
+                        # Bounds checking
+                        if ii < 0 or ii >= n or jj < 0 or jj >= n or \
+                           kk < 0 or kk >= n or ll < 0 or ll >= n:
+                            return False
+                        
+                        d_ij = matrix[ii, jj]
+                        d_kl = matrix[kk, ll]
+                        d_ik = matrix[ii, kk]
+                        d_il = matrix[ii, ll]
+                        d_jk = matrix[jj, kk]
+                        d_jl = matrix[jj, ll]
+                        
+                        # Kalmanson conditions
+                        cond1 = d_ij + d_kl - d_ik - d_jl
+                        cond2 = d_il + d_jk - d_ik - d_jl
+                        
+                        if cond1 > 0 or cond2 > 0:
+                            return False
+        return True
+    
+    return _check_kalmanson_conditions(distance_matrix._matrix, ordered_indices, n)
 
