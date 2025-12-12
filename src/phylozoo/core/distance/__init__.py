@@ -1,12 +1,15 @@
 """
 Distance module.
 
-This module provides classes for working with distance matrices.
+This module provides classes and functions for working with distance matrices.
 """
 
-from .matrix import DistanceMatrix
+from .base import DistanceMatrix
+from . import classifications, operations, io
 
 __all__ = [
     "DistanceMatrix",
+    "classifications",
+    "operations",
+    "io",
 ]
-
