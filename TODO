@@ -8,3 +8,4 @@ update doc strings to include Raise.
 use jit and numba etc.
 Validate MixedPhyNetwork (perhaps remove the second condition from our paper), or for now only validate sd network and not m network.
 reconsider/standardize imports
+Fix eNewick parser and writer / Fix plotting
