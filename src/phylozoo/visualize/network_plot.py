@@ -13,6 +13,15 @@ import matplotlib.patches as mpatches
 import networkx as nx
 import numpy as np
 
+from .layout import compute_directed_layout, compute_semidirected_layout
+
+# Try to import pyqtgraph (optional dependency)
+try:
+    import pyqtgraph as pg
+    HAS_PYQTGAPH = True
+except ImportError:
+    HAS_PYQTGAPH = False
+
 T = TypeVar('T')
 
 
@@ -598,3 +607,665 @@ def plot_tree(
         The axes object containing the plot.
     """
     return plot_network(tree, ax=ax, **kwargs)
+
+
+# ========== New Layout-Based Plotting Functions ==========
+
+
+def plot_network_with_layout(
+    network: 'DirectedPhyNetwork | MixedPhyNetwork | SemiDirectedPhyNetwork',
+    ax: plt.Axes | None = None,
+    pos: dict[T, tuple[float, float]] | None = None,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 500,
+    leaf_size: int = 600,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    arrow_size: int = 20,
+    with_labels: bool = True,
+    label_offset: float = 0.1,
+    orientation: str = 'top-bottom',
+    use_branch_lengths: bool = False,
+    backend: str = 'matplotlib',
+    **kwargs
+) -> plt.Axes | Any:
+    """
+    Plot a phylogenetic network using optimal layout algorithms.
+    
+    This function uses the new layout computation functions for better
+    crossing minimization and parallel edge handling. For DirectedPhyNetwork,
+    it uses hierarchical layout with crossing minimization. For SemiDirectedPhyNetwork,
+    it uses force-directed layout with leaf repulsion.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork | MixedPhyNetwork | SemiDirectedPhyNetwork
+        The phylogenetic network to plot.
+    ax : matplotlib.axes.Axes, optional
+        Matplotlib axes to plot on. If None, creates a new figure.
+    pos : dict, optional
+        Dictionary of node positions. If None, computes optimal layout.
+    node_color : str, optional
+        Color for internal nodes. Default is 'lightblue'.
+    leaf_color : str, optional
+        Color for leaf nodes. Default is 'lightgreen'.
+    hybrid_color : str, optional
+        Color for hybrid nodes. Default is 'salmon'.
+    node_size : int, optional
+        Size of internal nodes. Default is 500.
+    leaf_size : int, optional
+        Size of leaf nodes. Default is 600.
+    edge_color : str, optional
+        Color for regular edges. Default is 'gray'.
+    hybrid_edge_color : str, optional
+        Color for hybrid edges. Default is 'red'.
+    edge_width : float, optional
+        Width of edges. Default is 2.0.
+    arrow_size : int, optional
+        Size of arrows. Default is 20.
+    with_labels : bool, optional
+        Whether to show node labels. Default is True.
+    label_offset : float, optional
+        Offset for labels from nodes. Default is 0.1.
+    orientation : str, optional
+        Layout orientation: 'top-bottom' or 'left-right'. Default is 'top-bottom'.
+    use_branch_lengths : bool, optional
+        If True, scale node positions based on branch lengths (DirectedPhyNetwork only).
+        Default is False.
+    backend : str, optional
+        Backend to use: 'matplotlib' or 'pyqtgraph'. Default is 'matplotlib'.
+        If pyqtgraph is not available, falls back to matplotlib.
+    **kwargs
+        Additional keyword arguments passed to plotting functions.
+    
+    Returns
+    -------
+    matplotlib.axes.Axes | Any
+        The axes object (matplotlib) or plot widget (pyqtgraph).
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+    >>> from phylozoo.visualize.network_plot import plot_network_with_layout
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> plot_network_with_layout(net)
+    <Axes: >
+    """
+    # Auto-detect backend if pyqtgraph is available
+    if backend == 'pyqtgraph' and not HAS_PYQTGAPH:
+        backend = 'matplotlib'
+    
+    # Determine network type and call appropriate function
+    network_type = type(network).__name__
+    
+    if network_type == 'DirectedPhyNetwork':
+        if backend == 'pyqtgraph':
+            return plot_directed_network_pyqtgraph(
+                network, pos=pos, node_color=node_color, leaf_color=leaf_color,
+                hybrid_color=hybrid_color, node_size=node_size, leaf_size=leaf_size,
+                edge_color=edge_color, hybrid_edge_color=hybrid_edge_color,
+                edge_width=edge_width, arrow_size=arrow_size, with_labels=with_labels,
+                label_offset=label_offset, orientation=orientation,
+                use_branch_lengths=use_branch_lengths, **kwargs
+            )
+        else:
+            return plot_directed_network_with_layout(
+                network, ax=ax, pos=pos, node_color=node_color, leaf_color=leaf_color,
+                hybrid_color=hybrid_color, node_size=node_size, leaf_size=leaf_size,
+                edge_color=edge_color, hybrid_edge_color=hybrid_edge_color,
+                edge_width=edge_width, arrow_size=arrow_size, with_labels=with_labels,
+                label_offset=label_offset, orientation=orientation,
+                use_branch_lengths=use_branch_lengths, **kwargs
+            )
+    elif network_type in ('MixedPhyNetwork', 'SemiDirectedPhyNetwork'):
+        if backend == 'pyqtgraph':
+            return plot_semidirected_network_pyqtgraph(
+                network, pos=pos, node_color=node_color, leaf_color=leaf_color,
+                hybrid_color=hybrid_color, node_size=node_size, leaf_size=leaf_size,
+                edge_color=edge_color, hybrid_edge_color=hybrid_edge_color,
+                edge_width=edge_width, arrow_size=arrow_size, with_labels=with_labels,
+                label_offset=label_offset, **kwargs
+            )
+        else:
+            return plot_semidirected_network_with_layout(
+                network, ax=ax, pos=pos, node_color=node_color, leaf_color=leaf_color,
+                hybrid_color=hybrid_color, node_size=node_size, leaf_size=leaf_size,
+                edge_color=edge_color, hybrid_edge_color=hybrid_edge_color,
+                edge_width=edge_width, arrow_size=arrow_size, with_labels=with_labels,
+                label_offset=label_offset, **kwargs
+            )
+    else:
+        raise ValueError(f"Unsupported network type: {network_type}")
+
+
+def plot_directed_network_with_layout(
+    network: 'DirectedPhyNetwork',
+    ax: plt.Axes | None = None,
+    pos: dict[T, tuple[float, float]] | None = None,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 500,
+    leaf_size: int = 600,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    arrow_size: int = 20,
+    with_labels: bool = True,
+    label_offset: float = 0.1,
+    orientation: str = 'top-bottom',
+    use_branch_lengths: bool = False,
+    **kwargs
+) -> plt.Axes:
+    """
+    Plot a DirectedPhyNetwork using optimal hierarchical layout.
+    
+    Uses `compute_directed_layout()` for crossing minimization and optimal positioning.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to plot.
+    ax : matplotlib.axes.Axes, optional
+        Matplotlib axes to plot on. If None, creates a new figure.
+    pos : dict, optional
+        Dictionary of node positions. If None, computes optimal layout.
+    orientation : str, optional
+        'top-bottom' (default) or 'left-right'.
+    use_branch_lengths : bool, optional
+        If True, scale positions based on branch lengths. Default is False.
+    **kwargs
+        Additional keyword arguments (see plot_network_with_layout for full list).
+    
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(12, 10))
+    
+    # Get network properties
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
+    
+    # Compute optimal layout if not provided
+    if pos is None:
+        pos = compute_directed_layout(
+            network,
+            orientation=orientation,
+            use_branch_lengths=use_branch_lengths,
+        )
+    
+    # Create NetworkX DiGraph for drawing
+    G_nx = nx.DiGraph()
+    for node in network._graph.nodes:
+        G_nx.add_node(node)
+    for u, v, key in network._graph.edges(keys=True):
+        G_nx.add_edge(u, v)
+    
+    # Group edges by (u, v) for parallel edge handling
+    edge_groups: dict[tuple[T, T], list[tuple[T, T, int]]] = {}
+    for u, v, key in network._graph.edges(keys=True):
+        edge_key = (u, v)
+        if edge_key not in edge_groups:
+            edge_groups[edge_key] = []
+        edge_groups[edge_key].append((u, v, key))
+    
+    # Draw edges with curvature for parallel edges
+    for (u, v), edges in edge_groups.items():
+        is_hybrid_edge = v in hybrid_nodes
+        edge_col = hybrid_edge_color if is_hybrid_edge else edge_color
+        
+        num_parallel = len(edges)
+        
+        if num_parallel == 1:
+            # Single edge - draw straight
+            nx.draw_networkx_edges(
+                G_nx, pos, edgelist=[(u, v)], ax=ax,
+                edge_color=edge_col, width=edge_width,
+                arrows=True, arrowsize=arrow_size,
+                arrowstyle='->', alpha=0.7, **kwargs
+            )
+        else:
+            # Multiple parallel edges - draw with curvature
+            for idx, (u_edge, v_edge, key) in enumerate(edges):
+                curvature = (idx - (num_parallel - 1) / 2) * 0.3
+                
+                x1, y1 = pos[u_edge]
+                x2, y2 = pos[v_edge]
+                
+                # Create curved path
+                arrow = mpatches.FancyArrowPatch(
+                    (x1, y1), (x2, y2),
+                    connectionstyle=f"arc3,rad={curvature}",
+                    color=edge_col, linewidth=edge_width,
+                    arrowstyle='->', mutation_scale=arrow_size,
+                    alpha=0.7, zorder=1
+                )
+                ax.add_patch(arrow)
+    
+    # Draw nodes with different colors for leaves and hybrids
+    node_colors_map = {}
+    node_sizes_map = {}
+    for node in network._graph.nodes:
+        if node in leaves:
+            node_colors_map[node] = leaf_color
+            node_sizes_map[node] = leaf_size
+        elif node in hybrid_nodes:
+            node_colors_map[node] = hybrid_color
+            node_sizes_map[node] = node_size
+        else:
+            node_colors_map[node] = node_color
+            node_sizes_map[node] = node_size
+    
+    nx.draw_networkx_nodes(
+        G_nx, pos, ax=ax, node_color=[node_colors_map[n] for n in G_nx.nodes],
+        node_size=[node_sizes_map[n] for n in G_nx.nodes], alpha=0.9, **kwargs
+    )
+    
+    # Draw labels
+    if with_labels:
+        labels = {}
+        for node in network._graph.nodes:
+            label = network.get_label(node)
+            if label:
+                labels[node] = label
+            else:
+                labels[node] = str(node)
+        
+        # Position labels offset from nodes
+        label_pos = {}
+        if orientation == 'top-bottom':
+            for node, (x, y) in pos.items():
+                if node in leaves:
+                    label_pos[node] = (x, y - label_offset)
+                else:
+                    label_pos[node] = (x, y + label_offset)
+        else:  # left-right
+            for node, (x, y) in pos.items():
+                if node in leaves:
+                    label_pos[node] = (x + label_offset, y)
+                else:
+                    label_pos[node] = (x - label_offset, y)
+        
+        nx.draw_networkx_labels(G_nx, label_pos, labels=labels, ax=ax, font_size=10, font_weight='bold')
+    
+    ax.set_title('Directed Phylogenetic Network', fontsize=14, fontweight='bold')
+    ax.axis('off')
+    
+    return ax
+
+
+def plot_semidirected_network_with_layout(
+    network: 'MixedPhyNetwork | SemiDirectedPhyNetwork',
+    ax: plt.Axes | None = None,
+    pos: dict[T, tuple[float, float]] | None = None,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 500,
+    leaf_size: int = 600,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    arrow_size: int = 20,
+    with_labels: bool = True,
+    label_offset: float = 0.15,
+    **kwargs
+) -> plt.Axes:
+    """
+    Plot a MixedPhyNetwork or SemiDirectedPhyNetwork using optimal force-directed layout.
+    
+    Uses `compute_semidirected_layout()` for leaf repulsion and optimal positioning.
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork | SemiDirectedPhyNetwork
+        The mixed/semi-directed phylogenetic network to plot.
+    ax : matplotlib.axes.Axes, optional
+        Matplotlib axes to plot on. If None, creates a new figure.
+    pos : dict, optional
+        Dictionary of node positions. If None, computes optimal layout.
+    **kwargs
+        Additional keyword arguments (see plot_network_with_layout for full list).
+    
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(12, 10))
+    
+    # Get network properties
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
+    
+    # Compute optimal layout if not provided
+    if pos is None:
+        pos = compute_semidirected_layout(network)
+    
+    # Create NetworkX MultiGraph for drawing
+    G_nx = nx.MultiGraph()
+    for node in network._graph.nodes:
+        G_nx.add_node(node)
+    # Add all edges for drawing
+    for edge_tuple in network._graph.directed_edges_iter(keys=True):
+        if len(edge_tuple) >= 3:
+            u, v, key = edge_tuple[:3]
+            G_nx.add_edge(u, v, key=key)
+    for edge_tuple in network._graph.undirected_edges_iter(keys=True):
+        if len(edge_tuple) >= 3:
+            u, v, key = edge_tuple[:3]
+            G_nx.add_edge(u, v, key=key)
+    
+    # Draw undirected edges with curvature for parallel edges
+    undirected_groups: dict[tuple[T, T], list[tuple[T, T, int]]] = {}
+    for edge_tuple in network._graph.undirected_edges_iter(keys=True):
+        if len(edge_tuple) >= 3:
+            u, v, key = edge_tuple[:3]
+            edge_key = (min(u, v), max(u, v))
+            if edge_key not in undirected_groups:
+                undirected_groups[edge_key] = []
+            undirected_groups[edge_key].append((u, v, key))
+    
+    for (u, v), edges in undirected_groups.items():
+        num_parallel = len(edges)
+        
+        if num_parallel == 1:
+            nx.draw_networkx_edges(
+                G_nx, pos, edgelist=[(u, v)], ax=ax,
+                edge_color=edge_color, width=edge_width,
+                style='dashed', alpha=0.7, **kwargs
+            )
+        else:
+            for idx, (u_edge, v_edge, key) in enumerate(edges):
+                curvature = (idx - (num_parallel - 1) / 2) * 0.3
+                x1, y1 = pos[u_edge]
+                x2, y2 = pos[v_edge]
+                
+                arrow = mpatches.FancyArrowPatch(
+                    (x1, y1), (x2, y2),
+                    connectionstyle=f"arc3,rad={curvature}",
+                    color=edge_color, linewidth=edge_width,
+                    linestyle='dashed', alpha=0.7, zorder=1,
+                    arrowstyle='-'
+                )
+                ax.add_patch(arrow)
+    
+    # Draw directed edges (hybrid edges) with curvature
+    directed_groups: dict[tuple[T, T], list[tuple[T, T, int]]] = {}
+    for edge_tuple in network._graph.directed_edges_iter(keys=True):
+        if len(edge_tuple) >= 3:
+            u, v, key = edge_tuple[:3]
+            edge_key = (u, v)
+            if edge_key not in directed_groups:
+                directed_groups[edge_key] = []
+            directed_groups[edge_key].append((u, v, key))
+    
+    for (u, v), edges in directed_groups.items():
+        num_parallel = len(edges)
+        
+        if num_parallel == 1:
+            nx.draw_networkx_edges(
+                G_nx, pos, edgelist=[(u, v)], ax=ax,
+                edge_color=hybrid_edge_color, width=edge_width,
+                arrows=True, arrowsize=arrow_size,
+                arrowstyle='->', alpha=0.7, **kwargs
+            )
+        else:
+            for idx, (u_edge, v_edge, key) in enumerate(edges):
+                curvature = (idx - (num_parallel - 1) / 2) * 0.3
+                x1, y1 = pos[u_edge]
+                x2, y2 = pos[v_edge]
+                
+                arrow = mpatches.FancyArrowPatch(
+                    (x1, y1), (x2, y2),
+                    connectionstyle=f"arc3,rad={curvature}",
+                    color=hybrid_edge_color, linewidth=edge_width,
+                    arrowstyle='->', mutation_scale=arrow_size,
+                    alpha=0.7, zorder=2
+                )
+                ax.add_patch(arrow)
+    
+    # Draw nodes with different colors
+    node_colors_map = {}
+    node_sizes_map = {}
+    for node in network._graph.nodes:
+        if node in leaves:
+            node_colors_map[node] = leaf_color
+            node_sizes_map[node] = leaf_size
+        elif node in hybrid_nodes:
+            node_colors_map[node] = hybrid_color
+            node_sizes_map[node] = node_size
+        else:
+            node_colors_map[node] = node_color
+            node_sizes_map[node] = node_size
+    
+    nx.draw_networkx_nodes(
+        G_nx, pos, ax=ax, node_color=[node_colors_map[n] for n in G_nx.nodes],
+        node_size=[node_sizes_map[n] for n in G_nx.nodes], alpha=0.9, **kwargs
+    )
+    
+    # Draw labels positioned on outside
+    if with_labels:
+        labels = {}
+        for node in network._graph.nodes:
+            label = network.get_label(node)
+            if label:
+                labels[node] = label
+            else:
+                labels[node] = str(node)
+        
+        # Position labels on outside (radial from center)
+        label_pos = _position_labels_outside(pos, leaves)
+        
+        nx.draw_networkx_labels(G_nx, label_pos, labels=labels, ax=ax, font_size=10, font_weight='bold')
+    
+    network_type = 'Semi-Directed' if type(network).__name__ == 'SemiDirectedPhyNetwork' else 'Mixed'
+    ax.set_title(f'{network_type} Phylogenetic Network', fontsize=14, fontweight='bold')
+    ax.axis('off')
+    
+    return ax
+
+
+# ========== PyQtGraph Backend (Optional) ==========
+
+
+def plot_directed_network_pyqtgraph(
+    network: 'DirectedPhyNetwork',
+    pos: dict[T, tuple[float, float]] | None = None,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 10,
+    leaf_size: int = 12,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    with_labels: bool = True,
+    orientation: str = 'top-bottom',
+    use_branch_lengths: bool = False,
+    **kwargs
+) -> Any:
+    """
+    Plot a DirectedPhyNetwork using PyQtGraph backend.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to plot.
+    pos : dict, optional
+        Dictionary of node positions. If None, computes optimal layout.
+    **kwargs
+        Additional keyword arguments (see plot_network_with_layout for full list).
+    
+    Returns
+    -------
+    Any
+        PyQtGraph plot widget.
+    
+    Raises
+    ------
+    ImportError
+        If pyqtgraph is not installed.
+    """
+    if not HAS_PYQTGAPH:
+        raise ImportError("pyqtgraph is not installed. Install it with: pip install pyqtgraph")
+    
+    # Compute optimal layout if not provided
+    if pos is None:
+        pos = compute_directed_layout(
+            network,
+            orientation=orientation,
+            use_branch_lengths=use_branch_lengths,
+        )
+    
+    # Create plot widget
+    win = pg.GraphicsLayoutWidget(show=True, title="Directed Phylogenetic Network")
+    plot = win.addPlot(title="Directed Phylogenetic Network")
+    
+    # Get network properties
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
+    
+    # Extract positions
+    x_coords = [pos[node][0] for node in network._graph.nodes]
+    y_coords = [pos[node][1] for node in network._graph.nodes]
+    
+    # Plot nodes with different colors
+    for node in network._graph.nodes:
+        x, y = pos[node]
+        if node in leaves:
+            color = leaf_color
+            size = leaf_size
+        elif node in hybrid_nodes:
+            color = hybrid_color
+            size = node_size
+        else:
+            color = node_color
+            size = node_size
+        
+        plot.plot([x], [y], pen=None, symbol='o', symbolSize=size, symbolBrush=color)
+    
+    # Plot edges
+    for u, v, key in network._graph.edges(keys=True):
+        is_hybrid_edge = v in hybrid_nodes
+        edge_col = hybrid_edge_color if is_hybrid_edge else edge_color
+        
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+        plot.plot([x1, x2], [y1, y2], pen={'color': edge_col, 'width': edge_width})
+    
+    # Add labels if requested
+    if with_labels:
+        for node in network._graph.nodes:
+            label = network.get_label(node) or str(node)
+            x, y = pos[node]
+            text = pg.TextItem(label)
+            text.setPos(x, y)
+            plot.addItem(text)
+    
+    return win
+
+
+def plot_semidirected_network_pyqtgraph(
+    network: 'MixedPhyNetwork | SemiDirectedPhyNetwork',
+    pos: dict[T, tuple[float, float]] | None = None,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 10,
+    leaf_size: int = 12,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    with_labels: bool = True,
+    **kwargs
+) -> Any:
+    """
+    Plot a MixedPhyNetwork or SemiDirectedPhyNetwork using PyQtGraph backend.
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork | SemiDirectedPhyNetwork
+        The mixed/semi-directed phylogenetic network to plot.
+    pos : dict, optional
+        Dictionary of node positions. If None, computes optimal layout.
+    **kwargs
+        Additional keyword arguments (see plot_network_with_layout for full list).
+    
+    Returns
+    -------
+    Any
+        PyQtGraph plot widget.
+    
+    Raises
+    ------
+    ImportError
+        If pyqtgraph is not installed.
+    """
+    if not HAS_PYQTGAPH:
+        raise ImportError("pyqtgraph is not installed. Install it with: pip install pyqtgraph")
+    
+    # Compute optimal layout if not provided
+    if pos is None:
+        pos = compute_semidirected_layout(network)
+    
+    # Create plot widget
+    network_type = 'Semi-Directed' if type(network).__name__ == 'SemiDirectedPhyNetwork' else 'Mixed'
+    win = pg.GraphicsLayoutWidget(show=True, title=f"{network_type} Phylogenetic Network")
+    plot = win.addPlot(title=f"{network_type} Phylogenetic Network")
+    
+    # Get network properties
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
+    
+    # Plot nodes with different colors
+    for node in network._graph.nodes:
+        x, y = pos[node]
+        if node in leaves:
+            color = leaf_color
+            size = leaf_size
+        elif node in hybrid_nodes:
+            color = hybrid_color
+            size = node_size
+        else:
+            color = node_color
+            size = node_size
+        
+        plot.plot([x], [y], pen=None, symbol='o', symbolSize=size, symbolBrush=color)
+    
+    # Plot undirected edges
+    for edge_tuple in network._graph.undirected_edges_iter(keys=True):
+        if len(edge_tuple) >= 3:
+            u, v, key = edge_tuple[:3]
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            plot.plot([x1, x2], [y1, y2], pen={'color': edge_color, 'width': edge_width, 'style': 2})  # Dashed
+    
+    # Plot directed edges (hybrid edges)
+    for edge_tuple in network._graph.directed_edges_iter(keys=True):
+        if len(edge_tuple) >= 3:
+            u, v, key = edge_tuple[:3]
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            plot.plot([x1, x2], [y1, y2], pen={'color': hybrid_edge_color, 'width': edge_width})
+    
+    # Add labels if requested
+    if with_labels:
+        for node in network._graph.nodes:
+            label = network.get_label(node) or str(node)
+            x, y = pos[node]
+            text = pg.TextItem(label)
+            text.setPos(x, y)
+            plot.addItem(text)
+    
+    return win

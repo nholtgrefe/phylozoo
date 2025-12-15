@@ -6,12 +6,20 @@ and graph structures.
 """
 
 from .graph_plot import plot_directed_multigraph, plot_mixed_multigraph
-from .network_plot import plot_network, plot_tree
+from .layout import compute_directed_layout, compute_semidirected_layout
+from .network_plot import (
+    plot_network,
+    plot_network_with_layout,
+    plot_tree,
+)
 
 __all__ = [
     'plot_directed_multigraph',
     'plot_mixed_multigraph',
     'plot_network',
+    'plot_network_with_layout',
     'plot_tree',
+    'compute_directed_layout',
+    'compute_semidirected_layout',
 ]
 

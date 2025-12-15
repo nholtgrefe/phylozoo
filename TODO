@@ -11,3 +11,5 @@ reconsider/standardize imports
 Fix eNewick parser and writer / Fix plotting
 rename split to base in the file
 permute method for dsitances
+biopython
+Make a network test suite with example networks to be reused etc.
