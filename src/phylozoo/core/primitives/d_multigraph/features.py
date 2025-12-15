@@ -98,6 +98,41 @@ def connected_components(graph: 'DirectedMultiGraph') -> Iterator[set[T]]:
     return nx.connected_components(graph._combined)
 
 
+def biconnected_components(graph: 'DirectedMultiGraph') -> Iterator[set[T]]:
+    """
+    Get biconnected components of the underlying undirected graph.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The graph to analyze.
+    
+    Returns
+    -------
+    Iterator[set[T]]
+        Iterator over sets of nodes in each biconnected component.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+    >>> G = DirectedMultiGraph()
+    >>> # Single connected component with two biconnected components:
+    >>> # Cycle 1: 1-2-3-1 and Cycle 2: 3-4-5-3 (articulation at 3)
+    >>> _ = G.add_edge(1, 2)
+    >>> _ = G.add_edge(2, 3)
+    >>> _ = G.add_edge(3, 1)
+    >>> _ = G.add_edge(3, 4)
+    >>> _ = G.add_edge(4, 5)
+    >>> _ = G.add_edge(5, 3)
+    >>> comps = list(biconnected_components(G))
+    >>> {1, 2, 3} in comps  # first cycle
+    True
+    >>> {3, 4, 5} in comps  # second cycle sharing articulation 3
+    True
+    """
+    return nx.biconnected_components(graph._combined)
+
+
 def has_self_loops(graph: 'DirectedMultiGraph') -> bool:
     """
     Check whether the directed multigraph contains any self-loops.

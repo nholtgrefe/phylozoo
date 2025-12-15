@@ -13,3 +13,5 @@ rename split to base in the file
 permute method for dsitances
 biopython
 Make a network test suite with example networks to be reused etc.
+Allow degree-2 nodes?
+Is cut-vertex or is articulation?
