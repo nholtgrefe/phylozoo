@@ -14,6 +14,7 @@ from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 from phylozoo.core.primitives.m_multigraph.features import (
     biconnected_components,
     connected_components,
+    has_parallel_edges,
     has_self_loops,
     is_connected,
     is_cutedge,
@@ -2119,4 +2120,85 @@ class TestKeywordWarnings:
         # Attributes should be accessible
         assert G._directed[1][2][0]["weight"] is None
         assert G._directed[1][2][0]["length"] is None
+
+
+class TestHasParallelEdges:
+    """Test cases for has_parallel_edges function."""
+
+    def test_no_parallel_edges(self) -> None:
+        """Test graph with no parallel edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        assert not has_parallel_edges(G)
+
+    def test_parallel_directed_edges(self) -> None:
+        """Test graph with parallel directed edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(1, 2)  # Parallel directed edge
+        assert has_parallel_edges(G)
+
+    def test_parallel_undirected_edges(self) -> None:
+        """Test graph with parallel undirected edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Parallel undirected edge
+        assert has_parallel_edges(G)
+
+    def test_directed_and_undirected_not_parallel(self) -> None:
+        """Test that directed and undirected edges between same nodes are not parallel."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Not parallel (different edge types)
+        assert not has_parallel_edges(G)
+
+    def test_opposite_direction_directed_not_parallel(self) -> None:
+        """Test that directed edges in opposite directions are not parallel."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(2, 1)  # Different direction, not parallel
+        assert not has_parallel_edges(G)
+
+    def test_empty_graph(self) -> None:
+        """Test empty graph has no parallel edges."""
+        G = MixedMultiGraph()
+        assert not has_parallel_edges(G)
+
+    def test_single_directed_edge(self) -> None:
+        """Test graph with single directed edge has no parallel edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        assert not has_parallel_edges(G)
+
+    def test_single_undirected_edge(self) -> None:
+        """Test graph with single undirected edge has no parallel edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        assert not has_parallel_edges(G)
+
+    def test_parallel_edges_with_attributes(self) -> None:
+        """Test that parallel edges with different attributes are still parallel."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.0)
+        G.add_directed_edge(1, 2, weight=2.0)  # Parallel with different attribute
+        assert has_parallel_edges(G)
+
+    def test_multiple_types_of_parallel_edges(self) -> None:
+        """Test graph with both parallel directed and undirected edges."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(1, 2)  # Parallel directed
+        G.add_undirected_edge(3, 4)
+        G.add_undirected_edge(3, 4)  # Parallel undirected
+        assert has_parallel_edges(G)
+
+    def test_three_parallel_edges(self) -> None:
+        """Test graph with three parallel edges between same nodes."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)
+        assert has_parallel_edges(G)
 

@@ -334,3 +334,39 @@ class TestPropertyValues:
             degree = net._graph.degree(internal)
             assert degree >= 3
 
+
+class TestHasParallelEdges:
+    """Test cases for has_parallel_edges property."""
+
+    def test_no_parallel_edges(self) -> None:
+        """Test network with no parallel edges."""
+        from phylozoo.core.network.sdnetwork.classifications import has_parallel_edges
+        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+        # Valid SemiDirectedPhyNetwork with one source component
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[{'u': 5, 'v': 4, 'gamma': 0.6}, {'u': 6, 'v': 4, 'gamma': 0.4}],
+            undirected_edges=[
+                (7, 5), (7, 6), (7, 8),  # Connect nodes 5, 6 to common source via node 7
+                (4, 2), (5, 10), (6, 11)
+            ],
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (10, {'label': 'C'}), (11, {'label': 'D'})]
+        )
+        assert not has_parallel_edges(net)
+
+    def test_with_parallel_undirected_edges(self) -> None:
+        """Test network with parallel undirected edges."""
+        from phylozoo.core.network.sdnetwork.classifications import has_parallel_edges
+        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+        # Valid SemiDirectedPhyNetwork with parallel undirected edges
+        # Node 7 has degree 4 (2 parallel to node 5, plus 2 others) - satisfies degree >= 3
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[{'u': 5, 'v': 4, 'gamma': 0.6}, {'u': 6, 'v': 4, 'gamma': 0.4}],
+            undirected_edges=[
+                (7, 5, 0), (7, 5, 1),  # Parallel undirected edges
+                (7, 6), (7, 8),  # Additional edges to satisfy degree constraints
+                (4, 2), (6, 9), (5, 10)
+            ],
+            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})]
+        )
+        assert has_parallel_edges(net)
+

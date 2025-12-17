@@ -14,6 +14,7 @@ from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 from phylozoo.core.primitives.d_multigraph.features import (
     biconnected_components,
     connected_components,
+    has_parallel_edges,
     has_self_loops,
     is_connected,
     is_cutedge,
@@ -1270,4 +1271,65 @@ class TestKeywordWarnings:
         # Attributes should be accessible
         assert G._graph[1][2][0]["weight"] is None
         assert G._graph[1][2][0]["length"] is None
+
+
+class TestHasParallelEdges:
+    """Test cases for has_parallel_edges function."""
+
+    def test_no_parallel_edges(self) -> None:
+        """Test graph with no parallel edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(2, 3)
+        G.add_edge(3, 4)
+        assert not has_parallel_edges(G)
+
+    def test_with_parallel_edges(self) -> None:
+        """Test graph with parallel edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(1, 2)  # Parallel edge
+        assert has_parallel_edges(G)
+
+    def test_multiple_parallel_edges(self) -> None:
+        """Test graph with multiple pairs of parallel edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(1, 2)  # Parallel edge
+        G.add_edge(2, 3)
+        G.add_edge(2, 3)  # Another parallel edge
+        assert has_parallel_edges(G)
+
+    def test_parallel_edges_different_directions(self) -> None:
+        """Test that edges in different directions are not considered parallel."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(2, 1)  # Different direction, not parallel
+        assert not has_parallel_edges(G)
+
+    def test_empty_graph(self) -> None:
+        """Test empty graph has no parallel edges."""
+        G = DirectedMultiGraph()
+        assert not has_parallel_edges(G)
+
+    def test_single_edge(self) -> None:
+        """Test graph with single edge has no parallel edges."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        assert not has_parallel_edges(G)
+
+    def test_parallel_edges_with_attributes(self) -> None:
+        """Test that parallel edges with different attributes are still parallel."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2, weight=1.0)
+        G.add_edge(1, 2, weight=2.0)  # Parallel with different attribute
+        assert has_parallel_edges(G)
+
+    def test_three_parallel_edges(self) -> None:
+        """Test graph with three parallel edges between same nodes."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(1, 2)
+        G.add_edge(1, 2)
+        assert has_parallel_edges(G)
 

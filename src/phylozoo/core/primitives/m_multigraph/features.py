@@ -70,6 +70,51 @@ def is_connected(graph: 'MixedMultiGraph') -> bool:
     return nx.is_connected(graph._combined)
 
 
+def has_parallel_edges(graph: 'MixedMultiGraph') -> bool:
+    """
+    Check if the graph has any parallel edges.
+    
+    Parallel edges are multiple edges between the same pair of nodes,
+    either as multiple directed edges in the same direction or multiple undirected edges.
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The graph to check.
+    
+    Returns
+    -------
+    bool
+        True if the graph has at least one pair of parallel edges, False otherwise.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> G = MixedMultiGraph()
+    >>> G.add_directed_edge(1, 2)
+    0
+    >>> G.add_undirected_edge(2, 3)
+    0
+    >>> has_parallel_edges(G)
+    False
+    >>> G.add_directed_edge(1, 2)  # Add parallel directed edge
+    1
+    >>> has_parallel_edges(G)
+    True
+    """
+    # Check directed edges
+    for u, v in graph._directed.edges():
+        if graph._directed.number_of_edges(u, v) > 1:
+            return True
+    
+    # Check undirected edges
+    for u, v in graph._undirected.edges():
+        if graph._undirected.number_of_edges(u, v) > 1:
+            return True
+    
+    return False
+
+
 def connected_components(graph: 'MixedMultiGraph') -> Iterator[set[T]]:
     """
     Get weakly connected components.

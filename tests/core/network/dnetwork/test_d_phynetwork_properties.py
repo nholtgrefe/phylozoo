@@ -248,3 +248,34 @@ class TestPropertyConsistency:
         for tree_node in net.tree_nodes:
             assert tree_node in net.internal_nodes
 
+
+class TestHasParallelEdges:
+    """Test cases for has_parallel_edges property."""
+
+    def test_no_parallel_edges(self) -> None:
+        """Test network with no parallel edges."""
+        from phylozoo.core.network.dnetwork.classifications import has_parallel_edges
+        # Use a simple tree structure (no hybrid nodes, no parallel edges)
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert not has_parallel_edges(net)
+
+    def test_with_parallel_edges(self) -> None:
+        """Test network with parallel edges."""
+        from phylozoo.core.network.dnetwork.classifications import has_parallel_edges
+        # Valid network with parallel edges from root to internal node
+        # Root 5 has 2 parallel edges to node 3 (out-degree 2)
+        # Node 3 has in-degree 2, so must have out-degree 1
+        # Node 3 connects to node 4 which splits to leaves
+        net = DirectedPhyNetwork(
+            edges=[
+                (5, 3, 0), (5, 3, 1),  # Parallel edges from root to internal node
+                (3, 4),  # Internal node 3 -> 4
+                (4, 1), (4, 2)  # Internal node 4 splits to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert has_parallel_edges(net)
+
