@@ -1099,6 +1099,202 @@ class TestIterators:
         assert key1 in keys_found
         assert key2 in keys_found
 
+    def test_nodes_iter_with_attribute(self) -> None:
+        """Test nodes_iter with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_node(1, weight=2.0, label='A')
+        G.add_node(2, weight=3.5, label='B')
+        G.add_node(3, weight=1.0)  # No label
+        
+        # Test with data='weight'
+        nodes_weight = list(G.nodes_iter(data='weight'))
+        assert isinstance(nodes_weight[0], tuple)
+        assert len(nodes_weight[0]) == 2
+        
+        weight_dict = dict(nodes_weight)
+        assert weight_dict[1] == 2.0
+        assert weight_dict[2] == 3.5
+        assert weight_dict[3] == 1.0
+        
+        # Test with data='label'
+        nodes_label = list(G.nodes_iter(data='label'))
+        label_dict = dict(nodes_label)
+        assert label_dict[1] == 'A'
+        assert label_dict[2] == 'B'
+        assert label_dict[3] is None  # Missing attribute returns None
+
+    def test_edges_iter_with_attribute(self) -> None:
+        """Test edges_iter with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.5, color='red')
+        G.add_directed_edge(2, 3, weight=2.5, color='blue')
+        G.add_undirected_edge(3, 4, weight=3.0)  # No color
+        
+        # Test with data='weight'
+        edges_weight = list(G.edges_iter(data='weight'))
+        assert isinstance(edges_weight[0], tuple)
+        assert len(edges_weight[0]) == 3  # (u, v, weight)
+        
+        # Check values (handle both orderings for undirected edges)
+        edge_weights = {}
+        for u, v, w in edges_weight:
+            edge_weights[(min(u, v), max(u, v))] = w
+        
+        assert edge_weights[(1, 2)] == 1.5
+        assert edge_weights[(2, 3)] == 2.5
+        assert edge_weights[(3, 4)] == 3.0
+        
+        # Test with data='color'
+        edges_color = list(G.edges_iter(data='color'))
+        edge_colors = {}
+        for u, v, c in edges_color:
+            edge_colors[(min(u, v), max(u, v))] = c
+        
+        assert edge_colors[(1, 2)] == 'red'
+        assert edge_colors[(2, 3)] == 'blue'
+        assert edge_colors[(3, 4)] is None  # Missing attribute returns None
+
+    def test_edges_iter_with_keys_and_attribute(self) -> None:
+        """Test edges_iter with keys=True and data='attribute'."""
+        G = MixedMultiGraph()
+        key1 = G.add_undirected_edge(1, 2, weight=1.5)
+        key2 = G.add_undirected_edge(1, 2, weight=2.5)  # Parallel edge
+        G.add_directed_edge(2, 3, weight=3.0)
+        
+        # Test with keys=True and data='weight'
+        edges = list(G.edges_iter(keys=True, data='weight'))
+        assert isinstance(edges[0], tuple)
+        assert len(edges[0]) == 4  # (u, v, key, weight)
+        
+        # Find the parallel edges (handle both orderings)
+        parallel_edges = [(k, w) for u, v, k, w in edges if (u, v) == (1, 2) or (u, v) == (2, 1)]
+        assert len(parallel_edges) == 2
+        
+        weights = {k: w for k, w in parallel_edges}
+        assert weights[key1] == 1.5
+        assert weights[key2] == 2.5
+
+    def test_directed_edges_iter_with_attribute(self) -> None:
+        """Test directed_edges_iter with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.5)
+        G.add_directed_edge(2, 3, weight=2.5)
+        G.add_undirected_edge(3, 4, weight=3.0)  # Should not appear
+        
+        # Test with data='weight'
+        edges_weight = list(G.directed_edges_iter(data='weight'))
+        assert len(edges_weight) == 2
+        assert isinstance(edges_weight[0], tuple)
+        assert len(edges_weight[0]) == 3  # (u, v, weight)
+        
+        edge_weights = {(u, v): w for u, v, w in edges_weight}
+        assert edge_weights[(1, 2)] == 1.5
+        assert edge_weights[(2, 3)] == 2.5
+        assert (3, 4) not in edge_weights  # Undirected edge not included
+
+    def test_undirected_edges_iter_with_attribute(self) -> None:
+        """Test undirected_edges_iter with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.5)
+        G.add_undirected_edge(2, 3, weight=2.5)
+        G.add_directed_edge(3, 4, weight=3.0)  # Should not appear
+        
+        # Test with data='weight'
+        edges_weight = list(G.undirected_edges_iter(data='weight'))
+        assert len(edges_weight) == 2
+        assert isinstance(edges_weight[0], tuple)
+        assert len(edges_weight[0]) == 3  # (u, v, weight)
+        
+        edge_weights = {}
+        for u, v, w in edges_weight:
+            edge_weights[(min(u, v), max(u, v))] = w
+        
+        assert edge_weights[(1, 2)] == 1.5
+        assert edge_weights[(2, 3)] == 2.5
+
+    def test_incident_parent_edges_with_attribute(self) -> None:
+        """Test incident_parent_edges with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 3, weight=1.0)
+        G.add_directed_edge(2, 3, weight=2.0)
+        
+        # Test with data='weight'
+        parent_edges = list(G.incident_parent_edges(3, data='weight'))
+        assert len(parent_edges) == 2
+        assert isinstance(parent_edges[0], tuple)
+        assert len(parent_edges[0]) == 3  # (u, v, weight)
+        
+        edge_weights = {u: w for u, v, w in parent_edges}
+        assert edge_weights[1] == 1.0
+        assert edge_weights[2] == 2.0
+
+    def test_incident_child_edges_with_attribute(self) -> None:
+        """Test incident_child_edges with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2, weight=1.0)
+        G.add_directed_edge(1, 3, weight=2.0)
+        
+        # Test with data='weight'
+        child_edges = list(G.incident_child_edges(1, data='weight'))
+        assert len(child_edges) == 2
+        assert isinstance(child_edges[0], tuple)
+        assert len(child_edges[0]) == 3  # (u, v, weight)
+        
+        edge_weights = {v: w for u, v, w in child_edges}
+        assert edge_weights[2] == 1.0
+        assert edge_weights[3] == 2.0
+
+    def test_incident_undirected_edges_with_attribute(self) -> None:
+        """Test incident_undirected_edges with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.0)
+        G.add_undirected_edge(2, 3, weight=2.0)
+        
+        # Test with data='weight'
+        undirected_edges = list(G.incident_undirected_edges(2, data='weight'))
+        assert len(undirected_edges) == 2
+        assert isinstance(undirected_edges[0], tuple)
+        assert len(undirected_edges[0]) == 3  # (u, v, weight)
+        
+        # Normalize edge ordering for comparison
+        edge_weights = {}
+        for u, v, w in undirected_edges:
+            edge_weights[tuple(sorted([u, v]))] = w
+        
+        assert edge_weights[tuple(sorted([1, 2]))] == 1.0
+        assert edge_weights[tuple(sorted([2, 3]))] == 2.0
+
+    def test_nodes_property_with_attribute(self) -> None:
+        """Test nodes property with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_node(1, weight=2.0)
+        G.add_node(2, weight=3.0)
+        
+        # Test via property
+        nodes_weight = list(G.nodes(data='weight'))
+        assert isinstance(nodes_weight[0], tuple)
+        weight_dict = dict(nodes_weight)
+        assert weight_dict[1] == 2.0
+        assert weight_dict[2] == 3.0
+
+    def test_edges_property_with_attribute(self) -> None:
+        """Test edges property with data='attribute'."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=1.5)
+        G.add_directed_edge(2, 3, weight=2.5)
+        
+        # Test via property
+        edges_weight = list(G.edges(data='weight'))
+        assert isinstance(edges_weight[0], tuple)
+        assert len(edges_weight[0]) == 3
+        
+        edge_weights = {}
+        for u, v, w in edges_weight:
+            edge_weights[(min(u, v), max(u, v))] = w
+        
+        assert edge_weights[(1, 2)] == 1.5
+        assert edge_weights[(2, 3)] == 2.5
+
     def test_neighbors(self) -> None:
         """Test neighbors method."""
         G = MixedMultiGraph()

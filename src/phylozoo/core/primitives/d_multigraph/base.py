@@ -112,35 +112,38 @@ class DirectedMultiGraph:
 
     # ========== NetworkX Compatibility Methods ==========
 
-    def nodes_iter(self, data: bool = False) -> Iterator[T] | dict[T, dict[str, Any]]:
+    def nodes_iter(self, data: bool | str = False) -> Iterator[T] | Iterator[tuple[T, Any]]:
         """
-        Return an iterator over nodes or a dict of node data.
+        Return an iterator over nodes.
 
         Parameters
         ----------
-        data : bool, optional
-            If True, return a dict keyed by node with node data as values.
-            If False, return an iterator over nodes. By default False.
+        data : bool | str, optional
+            If False (default), return iterator over nodes.
+            If True, return iterator of (node, data_dict) tuples.
+            If string, return iterator of (node, attribute_value) tuples
+            for the given attribute name.
 
         Returns
         -------
-        Iterator[T] | dict[T, dict[str, Any]]
-            Iterator over nodes or dict of node data.
+        Iterator[T] | Iterator[tuple[T, Any]]
+            Iterator over nodes or (node, data) tuples.
 
         Examples
         --------
         >>> G = DirectedMultiGraph()
         >>> G.add_node(1, weight=2.0)
+        >>> G.add_node(2, weight=3.0)
         >>> list(G.nodes_iter())
-        [1]
-        >>> dict(G.nodes_iter(data=True))
-        {1: {'weight': 2.0}}
+        [1, 2]
+        >>> list(G.nodes_iter(data=True))
+        [(1, {'weight': 2.0}), (2, {'weight': 3.0})]
+        >>> list(G.nodes_iter(data='weight'))
+        [(1, 2.0), (2, 3.0)]
         """
-        if data:
-            return self._graph.nodes(data=True)
-        return iter(self._graph.nodes())
+        return self._graph.nodes(data=data)
 
-    def edges_iter(self, keys: bool = False, data: bool = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
+    def edges_iter(self, keys: bool = False, data: bool | str = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, Any] | tuple[T, T, dict[str, Any]] | tuple[T, T, int, Any] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over edges.
 
@@ -148,13 +151,15 @@ class DirectedMultiGraph:
         ----------
         keys : bool, optional
             If True, return edge keys. By default False.
-        data : bool, optional
-            If True, return edge data. By default False.
+        data : bool | str, optional
+            If False (default), no edge data is included.
+            If True, return edge data dictionaries.
+            If string, return value of that edge attribute.
 
         Returns
         -------
         Iterator
-            Iterator over edges.
+            Iterator over edges. Format depends on keys and data parameters.
 
         Examples
         --------
@@ -165,6 +170,10 @@ class DirectedMultiGraph:
         [(1, 2)]
         >>> list(G.edges_iter(keys=True))
         [(1, 2, 0)]
+        >>> list(G.edges_iter(data=True))
+        [(1, 2, {'weight': 1.0})]
+        >>> list(G.edges_iter(keys=True, data='weight'))
+        [(1, 2, 0, 1.0)]
         """
         return self._graph.edges(keys=keys, data=data)
 
@@ -252,7 +261,7 @@ class DirectedMultiGraph:
         """
         return self._graph.successors(v)
     
-    def incident_parent_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
+    def incident_parent_edges(self, v: T, keys: bool = False, data: bool | str = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, Any] | tuple[T, T, dict[str, Any]] | tuple[T, T, int, Any] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over edges entering node v (from parent nodes).
         
@@ -262,13 +271,15 @@ class DirectedMultiGraph:
             Node.
         keys : bool, optional
             If True, return edge keys. By default False.
-        data : bool, optional
-            If True, return edge data. By default False.
+        data : bool | str, optional
+            If False (default), no edge data is included.
+            If True, return edge data dictionaries.
+            If string, return value of that edge attribute.
         
         Returns
         -------
         Iterator
-            Iterator over incoming edges as (u, v) or (u, v, key) or (u, v, key, data).
+            Iterator over incoming edges. Format depends on keys and data parameters.
         
         Examples
         --------
@@ -281,12 +292,14 @@ class DirectedMultiGraph:
         [(1, 2), (3, 2)]
         >>> list(G.incident_parent_edges(2, keys=True, data=True))
         [(1, 2, 0, {'weight': 1.0}), (3, 2, 0, {'weight': 2.0})]
+        >>> list(G.incident_parent_edges(2, data='weight'))
+        [(1, 2, 1.0), (3, 2, 2.0)]
         """
         if v not in self._graph:
             return iter([])
         return self._graph.in_edges(v, keys=keys, data=data)
     
-    def incident_child_edges(self, v: T, keys: bool = False, data: bool = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, int, dict[str, Any]]]:
+    def incident_child_edges(self, v: T, keys: bool = False, data: bool | str = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, Any] | tuple[T, T, dict[str, Any]] | tuple[T, T, int, Any] | tuple[T, T, int, dict[str, Any]]]:
         """
         Return an iterator over edges leaving node v (to child nodes).
         
@@ -296,13 +309,15 @@ class DirectedMultiGraph:
             Node.
         keys : bool, optional
             If True, return edge keys. By default False.
-        data : bool, optional
-            If True, return edge data. By default False.
+        data : bool | str, optional
+            If False (default), no edge data is included.
+            If True, return edge data dictionaries.
+            If string, return value of that edge attribute.
         
         Returns
         -------
         Iterator
-            Iterator over outgoing edges as (v, u) or (v, u, key) or (v, u, key, data).
+            Iterator over outgoing edges. Format depends on keys and data parameters.
         
         Examples
         --------
@@ -315,6 +330,8 @@ class DirectedMultiGraph:
         [(1, 2), (1, 3)]
         >>> list(G.incident_child_edges(1, keys=True, data=True))
         [(1, 2, 0, {'weight': 1.0}), (1, 3, 0, {'weight': 2.0})]
+        >>> list(G.incident_child_edges(1, data='weight'))
+        [(1, 2, 1.0), (1, 3, 2.0)]
         """
         if v not in self._graph:
             return iter([])
@@ -451,19 +468,21 @@ class DirectedMultiGraph:
             self._items = items
             self._callable_func = callable_func
         
-        def __call__(self, data: bool = False):
+        def __call__(self, data: bool | str = False):
             """
             Call as method to get iterator or node data.
             
             Parameters
             ----------
-            data : bool, optional
-                If True, return dict of node data. By default False.
+            data : bool | str, optional
+                If False (default), return iterator over nodes.
+                If True, return iterator of (node, data_dict) tuples.
+                If string, return iterator of (node, attribute_value) tuples.
             
             Returns
             -------
-            Iterator[T] | dict[T, dict[str, Any]]
-                Iterator over nodes or dict of node data.
+            Iterator[T] | Iterator[tuple[T, Any]]
+                Iterator over nodes or (node, data) tuples.
             """
             return self._callable_func(data)
         
@@ -516,7 +535,7 @@ class DirectedMultiGraph:
             self._items = items
             self._callable_func = callable_func
         
-        def __call__(self, keys: bool = False, data: bool = False):
+        def __call__(self, keys: bool = False, data: bool | str = False):
             """
             Call as method to get iterator with keys or data.
             
@@ -524,13 +543,15 @@ class DirectedMultiGraph:
             ----------
             keys : bool, optional
                 If True, return edge keys. By default False.
-            data : bool, optional
-                If True, return edge data. By default False.
+            data : bool | str, optional
+                If False (default), no edge data is included.
+                If True, return edge data dictionaries.
+                If string, return value of that edge attribute.
             
             Returns
             -------
             Iterator
-                Iterator over edges.
+                Iterator over edges. Format depends on keys and data parameters.
             """
             return self._callable_func(keys, data)
         
@@ -556,7 +577,7 @@ class DirectedMultiGraph:
         Get all nodes (works as both attribute and method).
 
         When accessed as attribute, returns a NodeView object (set-like).
-        When called as method, returns an iterator or dict.
+        When called as method, returns an iterator.
 
         Returns
         -------
@@ -571,8 +592,8 @@ class DirectedMultiGraph:
         {1, 2, 3}
         >>> list(G.nodes())  # Method call
         [1, 2, 3]
-        >>> dict(G.nodes(data=True))  # Method call with data
-        {1: {}, 2: {}, 3: {}}
+        >>> list(G.nodes(data=True))  # Method call with data
+        [(1, {}), (2, {}), (3, {})]
         """
         nodes_set = set(self._graph.nodes())
         return self.NodeView(nodes_set, self.nodes_iter)
