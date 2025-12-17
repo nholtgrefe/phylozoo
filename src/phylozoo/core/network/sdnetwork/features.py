@@ -140,6 +140,92 @@ def blobs(
                 yield {node}
 
 
+def k_blobs(
+    network: MixedPhyNetwork,
+    k: int,
+    trivial: bool = True,
+    leaves: bool = True,
+) -> Iterator[set[T]]:
+    """
+    Yield k-blobs of the network.
+    
+    A k-blob is a blob with exactly k cut-edges incident to it. Cut-edges are
+    edges that connect nodes inside the blob to nodes outside the blob.
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork
+        The mixed phylogenetic network.
+    k : int
+        The number of cut-edges that should be incident to each returned blob.
+    trivial : bool, optional
+        Whether to include trivial (single-node) blobs. By default True.
+    leaves : bool, optional
+        Whether to include blobs that contain only leaves. By default True.
+    
+    Yields
+    ------
+    set[T]
+        Sets of nodes forming each k-blob.
+    
+    Raises
+    ------
+    ValueError
+        If `trivial=False` and `leaves=True` (this combination is not possible
+        since leaves are single-node components).
+    
+    Notes
+    -----
+    Parallel edges are counted separately when determining the number of
+    cut-edges incident to a blob. For example, if there are two parallel
+    edges between a blob node and an external node, and both are cut-edges,
+    they count as two incident cut-edges.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> # Tree network: all blobs are 1-blobs (each leaf has one incident edge)
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> sorted([sorted(b) for b in k_blobs(net, k=1)])
+    [[1], [2], [3]]
+    """
+    # Check for invalid parameter combination
+    if not trivial and leaves:
+        raise ValueError(
+            "Cannot have trivial=False and leaves=True: leaves are single-node "
+            "components, so excluding trivial components would exclude all leaves."
+        )
+    
+    # Collect all blobs first
+    all_blobs_list = list(blobs(network, trivial=trivial, leaves=leaves))
+    
+    # Find all cut-edges using Tarjan's algorithm
+    cut_edges_set = cut_edges(network)
+    
+    # Iterate through all blobs
+    for blob in all_blobs_list:
+        blob_set = set(blob)
+        
+        # Count cut-edges incident to this blob
+        cut_edge_count = 0
+        
+        # Check all cut-edges
+        for u, v, key in cut_edges_set:
+            # Check if edge is incident to blob (one endpoint in, one out)
+            u_in_blob = u in blob_set
+            v_in_blob = v in blob_set
+            
+            if u_in_blob != v_in_blob:  # Exactly one endpoint in blob
+                cut_edge_count += 1
+        
+        # Yield blob if it has exactly k incident cut-edges
+        if cut_edge_count == k:
+            yield blob_set
+
+
 @lru_cache(maxsize=128)
 def cut_edges(network: MixedPhyNetwork) -> set[tuple[T, T, int]]:
     """
