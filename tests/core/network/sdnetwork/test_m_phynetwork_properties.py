@@ -245,8 +245,8 @@ class TestPropertyConsistency:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
-        for u, v in net.hybrid_edges:
-            assert net._graph._directed.has_edge(u, v)
+        for u, v, k in net.hybrid_edges:
+            assert net._graph._directed.has_edge(u, v, key=k)
             assert not net._graph._undirected.has_edge(u, v)
 
     def test_tree_edges_are_undirected(self) -> None:
@@ -257,8 +257,8 @@ class TestPropertyConsistency:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
-        for u, v in net.tree_edges:
-            assert net._graph._undirected.has_edge(u, v)
+        for u, v, k in net.tree_edges:
+            assert net._graph._undirected.has_edge(u, v, key=k)
             assert not net._graph._directed.has_edge(u, v)
 
 

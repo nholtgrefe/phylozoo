@@ -302,8 +302,8 @@ class TestHybridEdges:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
-        assert (5, 4) in net.hybrid_edges
-        assert (6, 4) in net.hybrid_edges
+        assert (5, 4, 0) in net.hybrid_edges
+        assert (6, 4, 0) in net.hybrid_edges
         assert len(net.hybrid_edges) == 2
 
     def test_hybrid_edges_are_all_directed(self) -> None:
@@ -315,8 +315,8 @@ class TestHybridEdges:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
-        for u, v in net.hybrid_edges:
-            assert net._graph._directed.has_edge(u, v)
+        for u, v, k in net.hybrid_edges:
+            assert net._graph._directed.has_edge(u, v, key=k)
             assert not net._graph._undirected.has_edge(u, v)
 
     def test_hybrid_edges_parallel(self) -> None:
@@ -331,9 +331,11 @@ class TestHybridEdges:
             undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
             )
-        # Should include both parallel edges
-        assert (5, 4) in net.hybrid_edges
-        assert (6, 4) in net.hybrid_edges
+        # Should include both parallel edges with keys
+        assert (5, 4, 0) in net.hybrid_edges
+        assert (5, 4, 1) in net.hybrid_edges
+        assert (6, 4, 0) in net.hybrid_edges
+        assert len(net.hybrid_edges) == 3
 
 
 class TestTreeEdges:
@@ -355,9 +357,9 @@ class TestTreeEdges:
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
-        assert (3, 1) in net.tree_edges or (1, 3) in net.tree_edges
-        assert (3, 2) in net.tree_edges or (2, 3) in net.tree_edges
-        assert (3, 4) in net.tree_edges or (4, 3) in net.tree_edges
+        assert (3, 1, 0) in net.tree_edges or (1, 3, 0) in net.tree_edges
+        assert (3, 2, 0) in net.tree_edges or (2, 3, 0) in net.tree_edges
+        assert (3, 4, 0) in net.tree_edges or (4, 3, 0) in net.tree_edges
         assert len(net.tree_edges) == 3
 
     def test_tree_edges_are_all_undirected(self) -> None:
@@ -367,8 +369,8 @@ class TestTreeEdges:
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
             )
-        for u, v in net.tree_edges:
-            assert net._graph._undirected.has_edge(u, v)
+        for u, v, k in net.tree_edges:
+            assert net._graph._undirected.has_edge(u, v, key=k)
             assert not net._graph._directed.has_edge(u, v)
 
     def test_tree_edges_parallel(self) -> None:

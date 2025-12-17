@@ -165,8 +165,8 @@ class TestSemiDirectedConstraints:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
         )
         # All hybrid edges should be directed
-        for u, v in net.hybrid_edges:
-            assert net._graph._directed.has_edge(u, v)
+        for u, v, k in net.hybrid_edges:
+            assert net._graph._directed.has_edge(u, v, key=k)
 
     def test_all_non_hybrid_edges_undirected(self) -> None:
         """Test that all non-hybrid edges are undirected."""
@@ -178,8 +178,8 @@ class TestSemiDirectedConstraints:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
         )
         # All tree edges should be undirected
-        for u, v in net.tree_edges:
-            assert net._graph._undirected.has_edge(u, v)
+        for u, v, k in net.tree_edges:
+            assert net._graph._undirected.has_edge(u, v, key=k)
 
     def test_validation_passes_valid_semi_directed(self) -> None:
         """Test that valid semi-directed network passes validation."""

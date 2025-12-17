@@ -335,8 +335,8 @@ class TestHybridEdges:
         )
         # Hybrid edges: (5, 4) and (6, 4)
         assert len(net.hybrid_edges) == 2
-        assert (5, 4) in net.hybrid_edges
-        assert (6, 4) in net.hybrid_edges
+        assert (5, 4, 0) in net.hybrid_edges
+        assert (6, 4, 0) in net.hybrid_edges
 
     def test_hybrid_edges_multiple_hybrids(self) -> None:
         """Test hybrid edges with multiple hybrids."""
@@ -367,9 +367,10 @@ class TestHybridEdges:
             ],
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
-        # Should include both parallel edges
-        # Note: parallel edges appear as same (u, v) tuple in the set
-        assert (5, 4) in net.hybrid_edges
+        # Should include both parallel edges with their keys
+        assert (5, 4, 0) in net.hybrid_edges
+        assert (5, 4, 1) in net.hybrid_edges
+        assert (6, 4, 0) in net.hybrid_edges
 
 
 class TestTreeEdges:
@@ -382,8 +383,8 @@ class TestTreeEdges:
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         assert len(net.tree_edges) == 2
-        assert (3, 1) in net.tree_edges
-        assert (3, 2) in net.tree_edges
+        assert (3, 1, 0) in net.tree_edges
+        assert (3, 2, 0) in net.tree_edges
 
     def test_tree_edges_mixed_with_hybrids(self) -> None:
         """Test tree edges mixed with hybrid edges."""
@@ -393,12 +394,12 @@ class TestTreeEdges:
         )
         # Tree edges: (7, 5), (7, 6), (5, 8), (6, 9), (4, 2)
         # Hybrid edges: (5, 4), (6, 4)
-        assert (7, 5) in net.tree_edges
-        assert (7, 6) in net.tree_edges
-        assert (5, 8) in net.tree_edges
-        assert (6, 9) in net.tree_edges
-        assert (4, 2) in net.tree_edges
-        assert (5, 4) not in net.tree_edges
+        assert (7, 5, 0) in net.tree_edges
+        assert (7, 6, 0) in net.tree_edges
+        assert (5, 8, 0) in net.tree_edges
+        assert (6, 9, 0) in net.tree_edges
+        assert (4, 2, 0) in net.tree_edges
+        assert (5, 4, 0) not in net.tree_edges
         assert (6, 4) not in net.tree_edges
 
     def test_tree_edges_complement_of_hybrid_edges(self) -> None:
@@ -408,7 +409,7 @@ class TestTreeEdges:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         all_edges = net.tree_edges | net.hybrid_edges
-        expected_edges = {(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)}
+        expected_edges = {(u, v, k) for u, v, k in net._graph.edges(keys=True)}
         assert all_edges == expected_edges
 
 

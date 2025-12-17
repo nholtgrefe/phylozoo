@@ -662,7 +662,7 @@ class TestToSDNetworkStructurePreservation:
         sdnet = to_sd_network(dnet)
 
         # Count tree edges
-        tree_edges_in_dnet = [e for e in dnet._graph.edges() if e not in dnet.hybrid_edges]
+        tree_edges_in_dnet = [(u, v, k) for u, v, k in dnet._graph.edges(keys=True) if (u, v, k) not in dnet.hybrid_edges]
 
         # After conversion and suppression, most tree edges should be undirected
         # (some may be merged due to suppression)

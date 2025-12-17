@@ -371,12 +371,12 @@ class DirectedPhyNetwork:
             return
         
         # First, check that gamma is only set on hybrid edges
-        hybrid_edges_set = set(self.hybrid_edges)
+        hybrid_edges_set = self.hybrid_edges  # Now contains (u, v, key) tuples
         
         for u, v, key, data in self._graph.edges(keys=True, data=True):
             if 'gamma' in data:
                 # Check if this edge is a hybrid edge
-                if (u, v) not in hybrid_edges_set:
+                if (u, v, key) not in hybrid_edges_set:
                     raise ValueError(
                         f"Gamma value can only be set on hybrid edges (edges pointing into "
                         f"hybrid nodes). Edge ({u}, {v}, key={key}) is not a hybrid edge."
@@ -1194,40 +1194,40 @@ class DirectedPhyNetwork:
         }
     
     @cached_property
-    def hybrid_edges(self) -> set[tuple[T, T]]:
+    def hybrid_edges(self) -> set[tuple[T, T, int]]:
         """
-        Get the set of all hybrid edges.
+        Get the set of all hybrid edges with keys.
         
         Hybrid edges are edges that point into hybrid nodes.
         
         Returns
         -------
-        set[tuple[T, T]]
-            Set of (source, target) tuples for hybrid edges. Returns a new set (which is mutable).
+        set[tuple[T, T, int]]
+            Set of (source, target, key) tuples for hybrid edges. Returns a new set (which is mutable).
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 2), (4, 2)], nodes=[(2, {'label': 'A'})])
         >>> net.hybrid_edges
-        {(3, 2), (4, 2)}
+        {(3, 2, 0), (4, 2, 0)}
         """
         res = set()
         for v in self.hybrid_nodes:
-            for p in self._graph.predecessors(v):
-                res.add((p, v))
+            for p, _, key in self._graph.incident_parent_edges(v, keys=True):
+                res.add((p, v, key))
         return res
     
     @cached_property
-    def tree_edges(self) -> set[tuple[T, T]]:
+    def tree_edges(self) -> set[tuple[T, T, int]]:
         """
-        Get the set of all tree edges.
+        Get the set of all tree edges with keys.
         
         Tree edges are all edges that are not hybrid edges.
         
         Returns
         -------
-        set[tuple[T, T]]
-            Set of (source, target) tuples for tree edges. Returns a new set (which is mutable).
+        set[tuple[T, T, int]]
+            Set of (source, target, key) tuples for tree edges. Returns a new set (which is mutable).
         
         Examples
         --------
@@ -1236,8 +1236,8 @@ class DirectedPhyNetwork:
         2
         """
         hybrid_edges = self.hybrid_edges
-        # edges() returns EdgeView which iterates as (u, v) tuples
-        return {(u, v) for (u, v) in self._graph.edges() if (u, v) not in hybrid_edges}
+        # Get all edges with keys
+        return {(u, v, key) for u, v, key in self._graph.edges(keys=True) if (u, v, key) not in hybrid_edges}
     
     @cached_property
     def level(self) -> int:

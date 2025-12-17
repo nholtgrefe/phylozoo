@@ -68,7 +68,7 @@ class TestToSDNetwork:
 
         # Undirected tree edges should connect remaining tree/leaf nodes (root 7 suppressed)
         undirected_edges: Set[Tuple[int, int]] = {
-            (min(u, v), max(u, v)) for u, v in sdnet.tree_edges
+            (min(u, v), max(u, v)) for u, v, k in sdnet.tree_edges
         }
         expected_undirected = {
             (min(4, 10), max(4, 10)),

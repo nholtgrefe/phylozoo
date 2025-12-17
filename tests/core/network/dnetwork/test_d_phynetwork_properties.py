@@ -210,7 +210,7 @@ class TestPropertyConsistency:
             nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
         )
         all_edges = net.tree_edges | net.hybrid_edges
-        expected_edges = {(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)}
+        expected_edges = {(u, v, k) for u, v, k in net._graph.edges(keys=True)}
         assert all_edges == expected_edges
 
     def test_root_not_in_internal_nodes(self) -> None:

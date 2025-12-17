@@ -242,7 +242,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
         )
     
     # 2) Separate hybrid (directed) vs tree (to be undirected) edges
-    hybrid_edge_set = set(working.hybrid_edges)
+    hybrid_edge_set = working.hybrid_edges  # Now contains (u, v, key) tuples
     directed_edges: list[dict[str, Any]] = []
     undirected_edges: list[dict[str, Any]] = []
     
@@ -251,7 +251,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
         if key != 0:
             edge_dict["key"] = key
         edge_dict.update(data)
-        if (u, v) in hybrid_edge_set:
+        if (u, v, key) in hybrid_edge_set:
             directed_edges.append(edge_dict)
         else:
             undirected_edges.append(edge_dict)
