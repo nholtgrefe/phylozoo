@@ -5,9 +5,14 @@ This module provides functions to extract and identify features of semi-directed
 and mixed phylogenetic networks (e.g., blobs, omnians, etc.).
 """
 
-from typing import Iterator, TypeVar
+from functools import lru_cache
+from typing import Any, Iterator, TypeVar
 
-from ...primitives.m_multigraph.features import biconnected_components
+from ...primitives.m_multigraph.features import (
+    biconnected_components,
+    cut_edges as graph_cut_edges,
+    cut_vertices as graph_cut_vertices,
+)
 from .base import MixedPhyNetwork
 
 T = TypeVar('T')
@@ -133,4 +138,78 @@ def blobs(
                 yield {node}
             elif node in leaves_set and leaves:
                 yield {node}
+
+
+@lru_cache(maxsize=128)
+def cut_edges(network: MixedPhyNetwork) -> set[tuple[T, T, int]]:
+    """
+    Find all cut-edges (bridges) in the network.
+    
+    A cut-edge is an edge whose removal increases the number of
+    connected components. Results are cached per network instance.
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork
+        The mixed phylogenetic network.
+    
+    Returns
+    -------
+    set[tuple[T, T, int]]
+        Set of cut-edges as 3-tuples (u, v, key).
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[{'u': 5, 'v': 4, 'gamma': 0.6}, {'u': 6, 'v': 4, 'gamma': 0.4}],
+    ...     undirected_edges=[(4, 2), (5, 8), (6, 9), (5, 10), (6, 11)],
+    ...     nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
+    ... )
+    >>> edges = cut_edges(net)
+    >>> len(edges) > 0
+    True
+    
+    Notes
+    -----
+    Results are cached using LRU cache with maxsize=128.
+    """
+    return graph_cut_edges(network._graph, keys=True, data=False)
+
+
+@lru_cache(maxsize=128)
+def cut_vertices(network: MixedPhyNetwork) -> set[T]:
+    """
+    Find all cut-vertices (articulation points) in the network.
+    
+    A cut-vertex is a vertex whose removal increases the number of
+    connected components. Results are cached per network instance.
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork
+        The mixed phylogenetic network.
+    
+    Returns
+    -------
+    set[T]
+        Set of cut-vertices.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[{'u': 5, 'v': 4, 'gamma': 0.6}, {'u': 6, 'v': 4, 'gamma': 0.4}],
+    ...     undirected_edges=[(7, 5), (7, 6), (7, 8), (4, 2), (5, 10), (6, 11)],
+    ...     nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (10, {'label': 'C'}), (11, {'label': 'D'})]
+    ... )
+    >>> vertices = cut_vertices(net)
+    >>> len(vertices) > 0
+    True
+    
+    Notes
+    -----
+    Results are cached using LRU cache with maxsize=128.
+    """
+    return graph_cut_vertices(network._graph, data=False)
 

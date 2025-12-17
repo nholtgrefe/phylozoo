@@ -5,7 +5,7 @@ This module provides functions to extract and identify features of MixedMultiGra
 instances (e.g., connectivity, self-loops, source components, etc.).
 """
 
-from typing import Iterator, TypeVar
+from typing import Any, Iterator, TypeVar
 
 import networkx as nx
 
@@ -309,9 +309,13 @@ def source_components(graph: 'MixedMultiGraph') -> list[tuple[list[T], list[tupl
     return source_comps
 
 
-def is_cutedge(graph: 'MixedMultiGraph', u: T, v: T, key: int | None = None) -> bool:
+def cut_edges(
+    graph: 'MixedMultiGraph', 
+    keys: bool = False, 
+    data: bool | str = False
+) -> set[tuple[T, T]] | set[tuple[T, T, int]] | set[tuple[T, T, Any]] | set[tuple[T, T, int, Any]] | list[tuple[T, T, dict[str, Any]]] | list[tuple[T, T, int, dict[str, Any]]]:
     """
-    Check if edge (u, v) is a cut-edge.
+    Find all cut-edges (bridges) in the graph.
     
     A cut-edge is an edge whose removal increases the number of
     connected components.
@@ -320,67 +324,110 @@ def is_cutedge(graph: 'MixedMultiGraph', u: T, v: T, key: int | None = None) -> 
     ----------
     graph : MixedMultiGraph
         The graph to analyze.
-    u : T
-        Source node.
-    v : T
-        Target node.
-    key : int | None, optional
-        Edge key. If None, checks the first edge found. By default None.
+    keys : bool, optional
+        If True, return 3-tuples (u, v, key). If False, return 2-tuples (u, v).
+        Default is False.
+    data : bool | str, optional
+        If False, return edges without data. If True, return edges with full data dict.
+        If a string, return edges with the value of that attribute. Default is False.
     
     Returns
     -------
-    bool
-        True if (u, v) is a cut-edge, False otherwise.
-    
-    Raises
-    ------
-    ValueError
-        If (u, v) is not an edge in the graph.
+    set or list
+        Cut-edges. Format depends on keys and data parameters:
+        - keys=False, data=False: {(u, v), ...} (set)
+        - keys=True, data=False: {(u, v, key), ...} (set)
+        - keys=False, data=True: [(u, v, data_dict), ...] (list, since dicts are unhashable)
+        - keys=True, data=True: [(u, v, key, data_dict), ...] (list, since dicts are unhashable)
+        - keys=False, data='attr': {(u, v, attr_value), ...} (set)
+        - keys=True, data='attr': {(u, v, key, attr_value), ...} (set)
     
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
-    >>> from phylozoo.core.primitives.m_multigraph.features import is_cutedge
+    >>> from phylozoo.core.primitives.m_multigraph.features import cut_edges
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
     >>> G.add_undirected_edge(2, 3)
     0
-    >>> is_cutedge(G, 2, 3)
+    >>> edges = cut_edges(G)
+    >>> (1, 2) in edges or (2, 1) in edges
     True
-    """
-    if not graph.has_edge(u, v, key):
-        raise ValueError(f"Edge ({u}, {v}, {key}) is not in the graph.")
+    >>> edges_with_keys = cut_edges(G, keys=True)
+    >>> (1, 2, 0) in edges_with_keys or (2, 1, 0) in edges_with_keys
+    True
     
-    # Find edge key if not provided
-    if key is None:
+    Notes
+    -----
+    This function uses Tarjan's algorithm for finding bridges, which runs in O(V + E) time.
+    The algorithm works on the underlying undirected (weakly connected) representation.
+    """
+    # Use NetworkX's bridge finding on the combined undirected graph
+    # NetworkX's bridges() returns iterator of 2-tuples (u, v)
+    bridges_2tuple = set(nx.bridges(graph._combined))
+    
+    # Use list for results with dicts (unhashable), set otherwise
+    use_list = data is True
+    result = [] if use_list else set()
+    
+    # For each bridge, find the corresponding edge(s)
+    # Note: Parallel edges are never bridges, so we should only find single edges
+    for u, v in bridges_2tuple:
+        edges_list = []
+        
+        # Check undirected edges
         if graph._undirected.has_edge(u, v):
-            key = next(iter(graph._undirected[u][v].keys()))
-        elif graph._directed.has_edge(u, v):
-            key = next(iter(graph._directed[u][v].keys()))
-        else:
-            raise ValueError(f"Edge ({u}, {v}) is not in the graph.")
+            edge_dict = graph._undirected[u][v]
+            # Parallel edges are never bridges - skip if found (shouldn't happen)
+            if len(edge_dict) > 1:
+                continue  # This shouldn't happen; parallel edges can't be bridges
+            for k, edge_data in edge_dict.items():
+                edges_list.append((u, v, k, edge_data))
+        
+        # Check directed edges in both directions
+        if u in graph._directed and v in graph._directed[u]:
+            edge_dict = graph._directed[u][v]
+            # Parallel edges are never bridges - skip if found (shouldn't happen)
+            if len(edge_dict) > 1:
+                continue  # This shouldn't happen; parallel edges can't be bridges
+            for k, edge_data in edge_dict.items():
+                edges_list.append((u, v, k, edge_data))
+        
+        if v in graph._directed and u in graph._directed[v]:
+            edge_dict = graph._directed[v][u]
+            # Parallel edges are never bridges - skip if found (shouldn't happen)
+            if len(edge_dict) > 1:
+                continue  # This shouldn't happen; parallel edges can't be bridges
+            for k, edge_data in edge_dict.items():
+                edges_list.append((v, u, k, edge_data))
+        
+        # Format according to keys and data parameters
+        for u_dir, v_dir, k, edge_data in edges_list:
+            if keys and data is True:
+                result.append((u_dir, v_dir, k, edge_data))
+            elif keys and isinstance(data, str):
+                attr_val = edge_data.get(data)
+                result.add((u_dir, v_dir, k, attr_val))
+            elif keys:  # keys=True, data=False
+                result.add((u_dir, v_dir, k))
+            elif data is True:
+                result.append((u_dir, v_dir, edge_data))
+            elif isinstance(data, str):
+                attr_val = edge_data.get(data)
+                result.add((u_dir, v_dir, attr_val))
+            else:  # keys=False, data=False
+                result.add((u_dir, v_dir))
     
-    num_before = nx.number_connected_components(graph._combined)
-    
-    # Temporarily remove and check
-    graph._combined.remove_edge(u, v, key)
-    num_after = nx.number_connected_components(graph._combined)
-    
-    # Restore edge
-    if graph._undirected.has_edge(u, v, key):
-        edge_data = dict(graph._undirected[u][v][key])
-        graph._combined.add_edge(u, v, key=key, **edge_data)
-    elif graph._directed.has_edge(u, v, key):
-        edge_data = dict(graph._directed[u][v][key])
-        graph._combined.add_edge(u, v, key=key, **edge_data)
-    
-    return num_after != num_before
+    return result
 
 
-def is_cutvertex(graph: 'MixedMultiGraph', v: T) -> bool:
+def cut_vertices(
+    graph: 'MixedMultiGraph',
+    data: bool | str = False
+) -> set[T] | set[tuple[T, Any]] | list[tuple[T, dict[str, Any]]]:
     """
-    Check if v is a cut-vertex.
+    Find all cut-vertices (articulation points) in the graph.
     
     A cut-vertex is a vertex whose removal increases the number of
     connected components.
@@ -389,54 +436,63 @@ def is_cutvertex(graph: 'MixedMultiGraph', v: T) -> bool:
     ----------
     graph : MixedMultiGraph
         The graph to analyze.
-    v : T
-        Vertex.
+    data : bool | str, optional
+        If False, return vertices without data. If True, return vertices with full data dict.
+        If a string, return vertices with the value of that attribute. Default is False.
     
     Returns
     -------
-    bool
-        True if v is a cut-vertex, False otherwise.
-    
-    Raises
-    ------
-    ValueError
-        If v is not a vertex in the graph.
+    set or list
+        Cut-vertices. Format depends on data parameter:
+        - data=False: {v, ...} (set)
+        - data=True: [(v, data_dict), ...] (list, since dicts are unhashable)
+        - data='attr': {(v, attr_value), ...} (set)
     
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
-    >>> from phylozoo.core.primitives.m_multigraph.features import is_cutvertex
+    >>> from phylozoo.core.primitives.m_multigraph.features import cut_vertices
     >>> G = MixedMultiGraph()
     >>> G.add_undirected_edge(1, 2)
     0
     >>> G.add_undirected_edge(2, 3)
     0
-    >>> is_cutvertex(G, 2)
+    >>> G.add_undirected_edge(2, 4)
+    0
+    >>> vertices = cut_vertices(G)
+    >>> 2 in vertices
     True
+    >>> 1 in vertices
+    False
+    
+    Notes
+    -----
+    This function uses NetworkX's articulation_points algorithm, which runs in O(V + E) time.
+    The algorithm works on the underlying undirected (weakly connected) representation.
     """
-    if v not in graph:
-        raise ValueError(f"Vertex {v} is not in the graph.")
+    # Use NetworkX's articulation points on the combined undirected graph
+    art_points = set(nx.articulation_points(graph._combined))
     
-    num_before = nx.number_connected_components(graph._combined)
+    if data is False:
+        return art_points
     
-    # Temporarily remove and check
-    graph._combined.remove_node(v)
-    num_after = nx.number_connected_components(graph._combined)
+    # Use list for results with dicts (unhashable), set otherwise
+    use_list = data is True
+    result = [] if use_list else set()
     
-    # Restore node and its edges
-    graph._combined.add_node(v)
-    # Restore edges incident to v
-    if v in graph._undirected:
-        for neighbor in graph._undirected.neighbors(v):
-            for k, data in graph._undirected[v][neighbor].items():
-                graph._combined.add_edge(v, neighbor, key=k, **data)
-    if v in graph._directed:
-        for predecessor in graph._directed.predecessors(v):
-            for k, data in graph._directed[predecessor][v].items():
-                graph._combined.add_edge(predecessor, v, key=k, **data)
-        for successor in graph._directed.successors(v):
-            for k, data in graph._directed[v][successor].items():
-                graph._combined.add_edge(v, successor, key=k, **data)
+    for v in art_points:
+        # For MixedMultiGraph, node data can be in either _directed or _undirected
+        node_data = {}
+        if v in graph._directed.nodes:
+            node_data = dict(graph._directed.nodes[v])
+        elif v in graph._undirected.nodes:
+            node_data = dict(graph._undirected.nodes[v])
+        
+        if data is True:
+            result.append((v, node_data))
+        elif isinstance(data, str):
+            attr_val = node_data.get(data) if node_data else None
+            result.add((v, attr_val))
     
-    return num_after != num_before
+    return result
 

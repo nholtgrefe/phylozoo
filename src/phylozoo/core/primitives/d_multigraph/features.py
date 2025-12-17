@@ -5,7 +5,7 @@ This module provides functions to extract and identify features of DirectedMulti
 instances (e.g., connectivity, self-loops, etc.).
 """
 
-from typing import Iterator, TypeVar
+from typing import Any, Iterator, TypeVar
 
 import networkx as nx
 
@@ -199,9 +199,13 @@ def has_self_loops(graph: 'DirectedMultiGraph') -> bool:
     return nx.number_of_selfloops(graph._graph) > 0
 
 
-def is_cutedge(graph: 'DirectedMultiGraph', u: T, v: T, key: int | None = None) -> bool:
+def cut_edges(
+    graph: 'DirectedMultiGraph', 
+    keys: bool = False, 
+    data: bool | str = False
+) -> set[tuple[T, T]] | set[tuple[T, T, int]] | set[tuple[T, T, Any]] | set[tuple[T, T, int, Any]] | list[tuple[T, T, dict[str, Any]]] | list[tuple[T, T, int, dict[str, Any]]]:
     """
-    Check if edge (u, v) is a cut-edge.
+    Find all cut-edges (bridges) in the graph.
     
     A cut-edge is an edge whose removal increases the number of
     weakly connected components.
@@ -210,61 +214,101 @@ def is_cutedge(graph: 'DirectedMultiGraph', u: T, v: T, key: int | None = None) 
     ----------
     graph : DirectedMultiGraph
         The graph to analyze.
-    u : T
-        Source node.
-    v : T
-        Target node.
-    key : int | None, optional
-        Edge key. If None, checks the first edge found. By default None.
+    keys : bool, optional
+        If True, return 3-tuples (u, v, key). If False, return 2-tuples (u, v).
+        Default is False.
+    data : bool | str, optional
+        If False, return edges without data. If True, return edges with full data dict.
+        If a string, return edges with the value of that attribute. Default is False.
     
     Returns
     -------
-    bool
-        True if (u, v) is a cut-edge, False otherwise.
-    
-    Raises
-    ------
-    ValueError
-        If (u, v) is not an edge in the graph.
+    set or list
+        Cut-edges. Format depends on keys and data parameters:
+        - keys=False, data=False: {(u, v), ...} (set)
+        - keys=True, data=False: {(u, v, key), ...} (set)
+        - keys=False, data=True: [(u, v, data_dict), ...] (list, since dicts are unhashable)
+        - keys=True, data=True: [(u, v, key, data_dict), ...] (list, since dicts are unhashable)
+        - keys=False, data='attr': {(u, v, attr_value), ...} (set)
+        - keys=True, data='attr': {(u, v, key, attr_value), ...} (set)
     
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
-    >>> from phylozoo.core.primitives.d_multigraph.features import is_cutedge
+    >>> from phylozoo.core.primitives.d_multigraph.features import cut_edges
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
     >>> G.add_edge(2, 3)
     0
-    >>> is_cutedge(G, 2, 3)
+    >>> edges = cut_edges(G)
+    >>> (1, 2) in edges and (2, 3) in edges
     True
-    """
-    if not graph.has_edge(u, v, key):
-        raise ValueError(f"Edge ({u}, {v}, {key}) is not in the graph.")
+    >>> edges_with_keys = cut_edges(G, keys=True)
+    >>> (1, 2, 0) in edges_with_keys and (2, 3, 0) in edges_with_keys
+    True
     
-    # Find edge key if not provided
-    if key is None:
+    Notes
+    -----
+    This function uses Tarjan's algorithm for finding bridges, which runs in O(V + E) time.
+    The algorithm works on the underlying undirected (weakly connected) representation.
+    """
+    # Use NetworkX's bridge finding on the combined undirected graph
+    # NetworkX's bridges() returns iterator of 2-tuples (u, v)
+    bridges_2tuple = set(nx.bridges(graph._combined))
+    
+    # Use list for results with dicts (unhashable), set otherwise
+    use_list = data is True
+    result = [] if use_list else set()
+    
+    # For each bridge, find the corresponding directed edge(s)
+    # Note: Parallel edges are never bridges, so we should only find single edges
+    for u, v in bridges_2tuple:
+        # Check both directions since _combined is undirected but _graph is directed
+        edges_uv = []
+        
         if u in graph._graph and v in graph._graph[u]:
-            key = next(iter(graph._graph[u][v].keys()))
-        else:
-            raise ValueError(f"Edge ({u}, {v}) is not in the graph.")
+            edge_dict = graph._graph[u][v]
+            # Parallel edges are never bridges - skip if found (shouldn't happen)
+            if len(edge_dict) > 1:
+                continue  # This shouldn't happen; parallel edges can't be bridges
+            for k, edge_data in edge_dict.items():
+                edges_uv.append((u, v, k, edge_data))
+        
+        if v in graph._graph and u in graph._graph[v]:
+            edge_dict = graph._graph[v][u]
+            # Parallel edges are never bridges - skip if found (shouldn't happen)
+            if len(edge_dict) > 1:
+                continue  # This shouldn't happen; parallel edges can't be bridges
+            for k, edge_data in edge_dict.items():
+                edges_uv.append((v, u, k, edge_data))
+        
+        # Format according to keys and data parameters
+        for u_dir, v_dir, k, edge_data in edges_uv:
+            if keys and data is True:
+                result.append((u_dir, v_dir, k, edge_data))
+            elif keys and isinstance(data, str):
+                attr_val = edge_data.get(data)
+                result.add((u_dir, v_dir, k, attr_val))
+            elif keys:  # keys=True, data=False
+                result.add((u_dir, v_dir, k))
+            elif data is True:
+                result.append((u_dir, v_dir, edge_data))
+            elif isinstance(data, str):
+                attr_val = edge_data.get(data)
+                result.add((u_dir, v_dir, attr_val))
+            else:  # keys=False, data=False
+                result.add((u_dir, v_dir))
     
-    num_before = nx.number_connected_components(graph._combined)
-    
-    # Temporarily remove and check
-    graph._combined.remove_edge(u, v, key)
-    num_after = nx.number_connected_components(graph._combined)
-    
-    # Restore edge
-    edge_data = dict(graph._graph[u][v][key])
-    graph._combined.add_edge(u, v, key=key, **edge_data)
-    
-    return num_after != num_before
+    return result
 
 
-def is_cutvertex(graph: 'DirectedMultiGraph', v: T) -> bool:
+def cut_vertices(
+    graph: 'DirectedMultiGraph',
+    data: bool | str = False
+) -> set[T] | set[tuple[T, Any]] | list[tuple[T, dict[str, Any]]]:
     """
-    Check if v is a cut-vertex.
+    Find all cut-vertices (articulation points) in the graph.
     
     A cut-vertex is a vertex whose removal increases the number of
     weakly connected components.
@@ -273,49 +317,57 @@ def is_cutvertex(graph: 'DirectedMultiGraph', v: T) -> bool:
     ----------
     graph : DirectedMultiGraph
         The graph to analyze.
-    v : T
-        Vertex.
+    data : bool | str, optional
+        If False, return vertices without data. If True, return vertices with full data dict.
+        If a string, return vertices with the value of that attribute. Default is False.
     
     Returns
     -------
-    bool
-        True if v is a cut-vertex, False otherwise.
-    
-    Raises
-    ------
-    ValueError
-        If v is not a vertex in the graph.
+    set or list
+        Cut-vertices. Format depends on data parameter:
+        - data=False: {v, ...} (set)
+        - data=True: [(v, data_dict), ...] (list, since dicts are unhashable)
+        - data='attr': {(v, attr_value), ...} (set)
     
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
-    >>> from phylozoo.core.primitives.d_multigraph.features import is_cutvertex
+    >>> from phylozoo.core.primitives.d_multigraph.features import cut_vertices
     >>> G = DirectedMultiGraph()
     >>> G.add_edge(1, 2)
     0
     >>> G.add_edge(2, 3)
     0
-    >>> is_cutvertex(G, 2)
+    >>> G.add_edge(2, 4)
+    0
+    >>> vertices = cut_vertices(G)
+    >>> 2 in vertices
     True
+    >>> 1 in vertices
+    False
+    
+    Notes
+    -----
+    This function uses NetworkX's articulation_points algorithm, which runs in O(V + E) time.
+    The algorithm works on the underlying undirected (weakly connected) representation.
     """
-    if v not in graph:
-        raise ValueError(f"Vertex {v} is not in the graph.")
+    # Use NetworkX's articulation points on the combined undirected graph
+    art_points = set(nx.articulation_points(graph._combined))
     
-    num_before = nx.number_connected_components(graph._combined)
+    if data is False:
+        return art_points
     
-    # Temporarily remove and check
-    graph._combined.remove_node(v)
-    num_after = nx.number_connected_components(graph._combined)
+    # Use list for results with dicts (unhashable), set otherwise
+    use_list = data is True
+    result = [] if use_list else set()
     
-    # Restore node and its edges
-    graph._combined.add_node(v)
-    # Restore edges incident to v
-    for predecessor in graph._graph.predecessors(v):
-        for k, data in graph._graph[predecessor][v].items():
-            graph._combined.add_edge(predecessor, v, key=k, **data)
-    for successor in graph._graph.successors(v):
-        for k, data in graph._graph[v][successor].items():
-            graph._combined.add_edge(v, successor, key=k, **data)
+    for v in art_points:
+        node_data = dict(graph._graph.nodes[v]) if v in graph._graph.nodes else {}
+        if data is True:
+            result.append((v, node_data))
+        elif isinstance(data, str):
+            attr_val = node_data.get(data) if node_data else None
+            result.add((v, attr_val))
     
-    return num_after != num_before
+    return result
 

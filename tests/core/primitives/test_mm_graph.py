@@ -14,11 +14,11 @@ from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 from phylozoo.core.primitives.m_multigraph.features import (
     biconnected_components,
     connected_components,
+    cut_edges,
+    cut_vertices,
     has_parallel_edges,
     has_self_loops,
     is_connected,
-    is_cutedge,
-    is_cutvertex,
     number_of_connected_components,
     source_components,
 )
@@ -1414,31 +1414,163 @@ class TestConnectivity:
         assert {1, 2, 3} in comp_sets3
         assert len(comps3) == 1
 
-    def test_is_cutedge(self) -> None:
-        """Test is_cutedge function."""
+    def test_cut_edges(self) -> None:
+        """Test cut_edges function."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(3, 4)
-        # Edge (2, 3) is a cut edge
-        key = next(iter(G._undirected[2][3].keys()))
-        assert is_cutedge(G, 2, 3, key=key)
-        # Edge (1, 2) is not a cut edge (there's another path)
-        key = next(iter(G._undirected[1][2].keys()))
-        # Actually, in a path graph, all edges are cut edges except in a cycle
-        result = is_cutedge(G, 1, 2, key=key)
-        print(f"Is (1,2) a cut edge? {result}")
+        # In a path graph, all edges are cut edges
+        edges = cut_edges(G, keys=True)
+        # Note: undirected edges can appear as (u, v) or (v, u)
+        assert (1, 2, 0) in edges or (2, 1, 0) in edges
+        assert (2, 3, 0) in edges or (3, 2, 0) in edges
+        assert (3, 4, 0) in edges or (4, 3, 0) in edges
+        # Test without keys
+        edges_no_keys = cut_edges(G, keys=False)
+        assert (1, 2) in edges_no_keys or (2, 1) in edges_no_keys
 
-    def test_is_cutvertex(self) -> None:
-        """Test is_cutvertex function."""
+    def test_cut_edges_with_parallel(self) -> None:
+        """Test cut_edges with parallel edges."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Parallel edge
+        G.add_undirected_edge(2, 3)
+        # Edges 1-2 have parallel edges, so neither is a cut-edge
+        edges = cut_edges(G, keys=True)
+        assert (1, 2, 0) not in edges and (2, 1, 0) not in edges
+        # But edge 2-3 is still a cut-edge
+        assert (2, 3, 0) in edges or (3, 2, 0) in edges
+
+    def test_cut_edges_with_data(self) -> None:
+        """Test cut_edges with data parameter."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2, weight=5.0)
+        G.add_undirected_edge(2, 3, weight=3.0)
+        # Test with data='weight'
+        edges_with_weight = cut_edges(G, keys=True, data='weight')
+        # Check that edges with weight are present (either direction)
+        assert any((u, v, k, w) in edges_with_weight or (v, u, k, w) in edges_with_weight 
+                   for u, v, k, w in [(1, 2, 0, 5.0), (2, 3, 0, 3.0)])
+
+    def test_cut_vertices(self) -> None:
+        """Test cut_vertices function."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(2, 4)
         # Node 2 is a cut vertex
-        assert is_cutvertex(G, 2)
+        vertices = cut_vertices(G)
+        assert 2 in vertices
         # Node 1 is not a cut vertex
-        assert not is_cutvertex(G, 1)
+        assert 1 not in vertices
+
+    def test_cut_vertices_with_data(self) -> None:
+        """Test cut_vertices with data parameter."""
+        G = MixedMultiGraph()
+        G.add_node(1, label='A')
+        G.add_node(2, label='B')
+        G.add_node(3, label='C')
+        G.add_node(4, label='D')
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(2, 4)
+        # Test with data='label'
+        vertices_with_label = cut_vertices(G, data='label')
+        assert (2, 'B') in vertices_with_label
+
+    def test_cut_edges_large_tree(self) -> None:
+        """Test cut_edges on a larger tree structure."""
+        G = MixedMultiGraph()
+        # Build a binary tree: depth 4, 15 nodes
+        for i in range(1, 8):
+            G.add_undirected_edge(i, 2*i)      # Left child
+            G.add_undirected_edge(i, 2*i + 1)  # Right child
+        
+        edges = cut_edges(G, keys=True)
+        # In a tree, all edges are bridges
+        assert len(edges) == 14  # 7 internal nodes, each with 2 children
+
+    def test_cut_edges_mixed_directed_undirected(self) -> None:
+        """Test cut_edges with both directed and undirected edges."""
+        G = MixedMultiGraph()
+        # Create a mixed structure
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        
+        edges = cut_edges(G, keys=True)
+        # All edges should be bridges in this chain
+        assert len(edges) == 3
+
+    def test_cut_edges_dense_undirected(self) -> None:
+        """Test cut_edges on a densely connected undirected graph."""
+        G = MixedMultiGraph()
+        # Create a complete undirected graph on 5 nodes
+        for i in range(1, 6):
+            for j in range(i+1, 6):
+                G.add_undirected_edge(i, j)
+        
+        edges = cut_edges(G, keys=True)
+        # Complete graph has no bridges
+        assert len(edges) == 0
+
+    def test_cut_edges_with_directed_cycle(self) -> None:
+        """Test cut_edges with directed cycle and undirected bridge."""
+        G = MixedMultiGraph()
+        # Create a directed cycle: 1 → 2 → 3 → 1
+        G.add_directed_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        G.add_directed_edge(3, 1)
+        
+        # Add an undirected bridge to another component
+        G.add_undirected_edge(3, 4)
+        G.add_undirected_edge(4, 5)
+        
+        edges = cut_edges(G, keys=True)
+        # The undirected edges should be bridges
+        assert len(edges) == 2
+
+    def test_cut_vertices_star_graph(self) -> None:
+        """Test cut_vertices on a large star graph."""
+        G = MixedMultiGraph()
+        center = 0
+        # Create star with 30 leaves
+        for i in range(1, 31):
+            G.add_undirected_edge(center, i)
+        
+        vertices = cut_vertices(G)
+        assert len(vertices) == 1
+        assert center in vertices
+
+    def test_cut_vertices_mixed_components(self) -> None:
+        """Test cut_vertices on mixed directed/undirected graph."""
+        G = MixedMultiGraph()
+        # Create structure with both edge types
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        G.add_directed_edge(4, 5)
+        
+        vertices = cut_vertices(G)
+        # Nodes 2, 3, 4 could be cut vertices depending on connectivity
+        assert len(vertices) >= 1
+
+    def test_cut_edges_parallel_undirected_and_bridges(self) -> None:
+        """Test that parallel undirected edges are not bridges."""
+        G = MixedMultiGraph()
+        # Path: 1 ═ 2 - 3 - 4 (parallel between 1-2)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Parallel
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        
+        edges = cut_edges(G, keys=True)
+        # Only 2-3 and 3-4 should be bridges
+        assert len(edges) == 2
+        # Verify parallel edges are not included
+        edge_pairs = {(min(u, v), max(u, v)) for u, v, k in edges}
+        assert (1, 2) not in edge_pairs or len([e for e in edges if (min(e[0], e[1]), max(e[0], e[1])) == (1, 2)]) == 0
 
 
 class TestGraphOperations:

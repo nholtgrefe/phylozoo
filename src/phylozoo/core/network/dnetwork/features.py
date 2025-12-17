@@ -6,11 +6,16 @@ phylogenetic networks (e.g., LSA node, blobs, omnians, etc.).
 """
 
 from collections import deque
-from typing import Iterator, TypeVar
+from functools import lru_cache
+from typing import Any, Iterator, TypeVar
 
 import networkx as nx
 
-from ...primitives.d_multigraph.features import biconnected_components
+from ...primitives.d_multigraph.features import (
+    biconnected_components,
+    cut_edges as graph_cut_edges,
+    cut_vertices as graph_cut_vertices,
+)
 from .base import DirectedPhyNetwork
 
 T = TypeVar('T')
@@ -230,4 +235,70 @@ def blobs(
                 yield {node}
             elif node in leaves_set and leaves:
                 yield {node}
+
+
+@lru_cache(maxsize=128)
+def cut_edges(network: DirectedPhyNetwork) -> set[tuple[T, T, int]]:
+    """
+    Find all cut-edges (bridges) in the network.
+    
+    A cut-edge is an edge whose removal increases the number of
+    weakly connected components. Results are cached per network instance.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    
+    Returns
+    -------
+    set[tuple[T, T, int]]
+        Set of cut-edges as 3-tuples (u, v, key).
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3)], nodes=[(3, {'label': 'A'})])
+    >>> edges = cut_edges(net)
+    >>> (1, 2, 0) in edges and (2, 3, 0) in edges
+    True
+    
+    Notes
+    -----
+    Results are cached using LRU cache with maxsize=128.
+    """
+    return graph_cut_edges(network._graph, keys=True, data=False)
+
+
+@lru_cache(maxsize=128)
+def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
+    """
+    Find all cut-vertices (articulation points) in the network.
+    
+    A cut-vertex is a vertex whose removal increases the number of
+    weakly connected components. Results are cached per network instance.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    
+    Returns
+    -------
+    set[T]
+        Set of cut-vertices.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3), (2, 4)], nodes=[(3, {'label': 'A'}), (4, {'label': 'B'})])
+    >>> vertices = cut_vertices(net)
+    >>> 2 in vertices
+    True
+    >>> 1 in vertices
+    False
+    
+    Notes
+    -----
+    Results are cached using LRU cache with maxsize=128.
+    """
+    return graph_cut_vertices(network._graph, data=False)
 

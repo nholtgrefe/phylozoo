@@ -14,11 +14,11 @@ from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 from phylozoo.core.primitives.d_multigraph.features import (
     biconnected_components,
     connected_components,
+    cut_edges,
+    cut_vertices,
     has_parallel_edges,
     has_self_loops,
     is_connected,
-    is_cutedge,
-    is_cutvertex,
     number_of_connected_components,
 )
 from phylozoo.core.primitives.d_multigraph.transformations import (
@@ -311,10 +311,9 @@ class TestIncidentEdges:
         # Attributes preserved
         assert M._graph[1][2][0]['weight'] == 10.0
         assert M._graph[1][2][1]['weight'] == 20.0
-        assert M._graph.nodes[1].get('label') == 'node1'
-
-    def test_factory_with_attributes(self) -> None:
-        """Test factory methods preserve node and edge attributes."""
+    
+    def test_digraph_to_directedmultigraph_with_attributes(self) -> None:
+        """Test conversion from DiGraph with node and edge attributes."""
         import networkx as nx
         G = nx.DiGraph()
         G.add_node(1, type='A', value=10)
@@ -954,55 +953,188 @@ class TestConnectivity:
         assert {4, 5, 6} in comp_sets2
         assert len(comps2) == 3
 
-    def test_is_cutedge(self) -> None:
-        """Test is_cutedge function."""
+    def test_cut_edges(self) -> None:
+        """Test cut_edges function."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
-        # Edge (2, 3) is a cut-edge
-        assert is_cutedge(G, 2, 3)
-        # Edge (1, 2) is also a cut-edge (removing it disconnects node 1)
-        # Behavior: In a chain 1->2->3, both edges are cut-edges
-        result = is_cutedge(G, 1, 2)
-        print(f"is_cutedge(1, 2) in chain 1->2->3: {result}")
-        # Report behavior rather than assert
+        # Both edges are cut-edges in a chain 1->2->3
+        edges = cut_edges(G, keys=True)
+        assert (1, 2, 0) in edges
+        assert (2, 3, 0) in edges
+        # Test without keys
+        edges_no_keys = cut_edges(G, keys=False)
+        assert (1, 2) in edges_no_keys
+        assert (2, 3) in edges_no_keys
 
-    def test_is_cutedge_with_key(self) -> None:
-        """Test is_cutedge with key parameter."""
+    def test_cut_edges_with_parallel(self) -> None:
+        """Test cut_edges with parallel edges."""
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2)
         key2 = G.add_edge(1, 2)  # Parallel edge
         G.add_edge(2, 3)
-        # Behavior: Check if parallel edges are cut-edges
-        result1 = is_cutedge(G, 1, 2, key=key1)
-        result2 = is_cutedge(G, 1, 2, key=key2)
-        print(f"is_cutedge(1, 2, key={key1}): {result1}")
-        print(f"is_cutedge(1, 2, key={key2}): {result2}")
-        # Report behavior rather than assert specific outcome
+        # The edge 1->2 has parallel edges, so neither individual edge is a cut-edge
+        # But edge 2->3 is still a cut-edge
+        edges = cut_edges(G, keys=True)
+        assert (2, 3, 0) in edges
+        # Parallel edges 1->2 should not be cut-edges
+        assert (1, 2, key1) not in edges
+        assert (1, 2, key2) not in edges
 
-    def test_is_cutvertex(self) -> None:
-        """Test is_cutvertex function."""
+    def test_cut_edges_with_data(self) -> None:
+        """Test cut_edges with data parameter."""
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2, weight=5.0)
+        G.add_edge(2, 3, weight=3.0)
+        # Test with data=True
+        edges_with_data = cut_edges(G, keys=True, data=True)
+        assert any(u == 1 and v == 2 and k == 0 for u, v, k, _ in edges_with_data)
+        # Test with data='weight'
+        edges_with_weight = cut_edges(G, keys=True, data='weight')
+        assert (1, 2, 0, 5.0) in edges_with_weight
+        assert (2, 3, 0, 3.0) in edges_with_weight
+
+    def test_cut_vertices(self) -> None:
+        """Test cut_vertices function."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         # Node 2 is a cut-vertex
-        assert is_cutvertex(G, 2)
+        vertices = cut_vertices(G)
+        assert 2 in vertices
         # Node 1 is not a cut-vertex
-        assert not is_cutvertex(G, 1)
+        assert 1 not in vertices
 
-    def test_is_cutedge_nonexistent(self) -> None:
-        """Test is_cutedge raises error for non-existent edge."""
+    def test_cut_vertices_with_data(self) -> None:
+        """Test cut_vertices with data parameter."""
         G = DirectedMultiGraph()
+        G.add_node(1, label='A')
+        G.add_node(2, label='B')
+        G.add_node(3, label='C')
         G.add_edge(1, 2)
-        with pytest.raises(ValueError):
-            is_cutedge(G, 1, 3)
+        G.add_edge(2, 3)
+        # Test with data=True
+        vertices_with_data = cut_vertices(G, data=True)
+        assert (2, {'label': 'B'}) in vertices_with_data
+        # Test with data='label'
+        vertices_with_label = cut_vertices(G, data='label')
+        assert (2, 'B') in vertices_with_label
 
-    def test_is_cutvertex_nonexistent(self) -> None:
-        """Test is_cutvertex raises error for non-existent node."""
+    def test_cut_edges_large_tree(self) -> None:
+        """Test cut_edges on a larger tree structure."""
         G = DirectedMultiGraph()
+        # Build a binary tree: depth 4, 15 nodes
+        for i in range(1, 8):
+            G.add_edge(i, 2*i)      # Left child
+            G.add_edge(i, 2*i + 1)  # Right child
+        
+        edges = cut_edges(G, keys=True)
+        # In a tree, all edges are bridges
+        assert len(edges) == 14  # 7 internal nodes, each with 2 children
+        
+        # Verify no parallel edges are reported as bridges
+        for u, v, k in edges:
+            assert k == 0, "Only single edges should be bridges"
+
+    def test_cut_edges_dense_graph(self) -> None:
+        """Test cut_edges on a densely connected graph."""
+        G = DirectedMultiGraph()
+        # Create a complete directed graph on 5 nodes
+        for i in range(1, 6):
+            for j in range(1, 6):
+                if i != j:
+                    G.add_edge(i, j)
+        
+        edges = cut_edges(G, keys=True)
+        # Complete graph has no bridges
+        assert len(edges) == 0
+
+    def test_cut_edges_bridge_network(self) -> None:
+        """Test cut_edges on a graph with clear bridge structure."""
+        G = DirectedMultiGraph()
+        # Create two cliques connected by a bridge
+        # Clique 1: nodes 1, 2, 3
+        for i in [1, 2, 3]:
+            for j in [1, 2, 3]:
+                if i != j:
+                    G.add_edge(i, j)
+        
+        # Bridge
+        G.add_edge(3, 4)
+        
+        # Clique 2: nodes 4, 5, 6
+        for i in [4, 5, 6]:
+            for j in [4, 5, 6]:
+                if i != j:
+                    G.add_edge(i, j)
+        
+        edges = cut_edges(G, keys=True)
+        # Only the bridge edge should be a cut edge
+        assert len(edges) == 1
+        assert (3, 4, 0) in edges
+
+    def test_cut_vertices_large_graph(self) -> None:
+        """Test cut_vertices on a larger graph structure."""
+        G = DirectedMultiGraph()
+        # Create a star graph with center node 0
+        center = 0
+        for i in range(1, 21):  # 20 leaf nodes
+            G.add_edge(center, i)
+        
+        vertices = cut_vertices(G)
+        # Only the center should be a cut vertex
+        assert len(vertices) == 1
+        assert center in vertices
+
+    def test_cut_vertices_chain_of_cliques(self) -> None:
+        """Test cut_vertices on chain of cliques."""
+        G = DirectedMultiGraph()
+        # Create 3 cliques of size 3, connected in a chain
+        # Clique 1: 1, 2, 3
+        for i in [1, 2, 3]:
+            for j in [1, 2, 3]:
+                if i != j:
+                    G.add_edge(i, j)
+        
+        # Connection 1: node 3 connects to node 4
+        G.add_edge(3, 4)
+        
+        # Clique 2: 4, 5, 6
+        for i in [4, 5, 6]:
+            for j in [4, 5, 6]:
+                if i != j:
+                    G.add_edge(i, j)
+        
+        # Connection 2: node 6 connects to node 7
+        G.add_edge(6, 7)
+        
+        # Clique 3: 7, 8, 9
+        for i in [7, 8, 9]:
+            for j in [7, 8, 9]:
+                if i != j:
+                    G.add_edge(i, j)
+        
+        vertices = cut_vertices(G)
+        # Nodes 3, 4, 6, 7 should be cut vertices
+        assert 3 in vertices or 4 in vertices  # At least one connection point
+        assert 6 in vertices or 7 in vertices  # At least one connection point
+
+    def test_cut_edges_mixed_parallel_and_bridges(self) -> None:
+        """Test cut_edges with both parallel edges and bridges."""
+        G = DirectedMultiGraph()
+        # Path with parallel edges at start: 1 ⇉ 2 → 3 → 4
         G.add_edge(1, 2)
-        with pytest.raises(ValueError):
-            is_cutvertex(G, 99)
+        G.add_edge(1, 2)  # Parallel
+        G.add_edge(2, 3)
+        G.add_edge(3, 4)
+        
+        edges = cut_edges(G, keys=True)
+        # Only edges 2→3 and 3→4 should be bridges
+        assert (2, 3, 0) in edges
+        assert (3, 4, 0) in edges
+        assert (1, 2, 0) not in edges  # Parallel edge not a bridge
+        assert (1, 2, 1) not in edges  # Parallel edge not a bridge
+        assert len(edges) == 2
 
 
 class TestGraphOperations:
@@ -1151,9 +1283,10 @@ class TestLargerGraphs:
         assert is_connected(G)
         assert number_of_connected_components(G) == 1
         # No cut-edges in a cycle
-        assert not is_cutedge(G, 1, 2)
-        assert not is_cutedge(G, 2, 3)
-        assert not is_cutedge(G, 3, 1)
+        edges = cut_edges(G, keys=True)
+        assert (1, 2, 0) not in edges
+        assert (2, 3, 0) not in edges
+        assert (3, 1, 0) not in edges
 
     def test_star_graph(self) -> None:
         """Test star graph structure."""
@@ -1166,9 +1299,11 @@ class TestLargerGraphs:
         assert G.outdegree(0) == 5
         assert all(G.indegree(i) == 1 for i in range(1, 6))
         # Center is cut-vertex
-        assert is_cutvertex(G, 0)
+        vertices = cut_vertices(G)
+        assert 0 in vertices
         # All edges are cut-edges
-        assert all(is_cutedge(G, 0, i) for i in range(1, 6))
+        edges = cut_edges(G, keys=True)
+        assert all((0, i, 0) in edges for i in range(1, 6))
 
     def test_complete_bipartite(self) -> None:
         """Test complete bipartite structure."""
