@@ -9,7 +9,7 @@ from typing import Any
 
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
-from .features import find_lsa_node
+from .features import lsa_node
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.transformations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork

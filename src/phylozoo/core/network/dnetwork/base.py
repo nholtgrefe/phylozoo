@@ -1158,8 +1158,8 @@ class DirectedPhyNetwork:
         >>> net.LSA_node
         3
         """
-        from .features import find_lsa_node
-        return find_lsa_node(self)
+        from .features import lsa_node
+        return lsa_node(self)
     
     @cached_property
     def tree_nodes(self) -> set[T]:
@@ -1239,21 +1239,6 @@ class DirectedPhyNetwork:
         # Get all edges with keys
         return {(u, v, key) for u, v, key in self._graph.edges(keys=True) if (u, v, key) not in hybrid_edges}
     
-    @cached_property
-    def level(self) -> int:
-        """
-        Return the level of the network.
-        
-        Placeholder: To be implemented.
-        
-        Returns
-        -------
-        int
-            Level of the network (placeholder, returns 0 for now).
-        """
-        # TODO: Implement level calculation
-        return 0
-    
     def is_tree(self) -> bool:
         """
         Check if the network is a tree.
@@ -1310,13 +1295,13 @@ class DirectedPhyNetwork:
         Returns
         -------
         str
-            String representation showing nodes, edges, level, taxa count, and taxon list.
+            String representation showing nodes, edges, taxa count, and taxon list.
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> repr(net)
-        'DirectedPhyNetwork(nodes=3, edges=2, level=0, taxa=2, taxa_list=[A, B])'
+        'DirectedPhyNetwork(nodes=3, edges=2, taxa=2, taxa_list=[A, B])'
         """
         sorted_taxa = sorted(self.taxa)
         n_taxa = len(sorted_taxa)
@@ -1330,7 +1315,6 @@ class DirectedPhyNetwork:
         return (
             f"DirectedPhyNetwork(nodes={self.number_of_nodes()}, "
             f"edges={self.number_of_edges()}, "
-            f"level={self.level}, "
             f"taxa={n_taxa}, "
             f"taxa_list=[{taxa_list_str}])"
         )

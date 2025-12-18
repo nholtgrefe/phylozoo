@@ -22,7 +22,7 @@ from .base import DirectedPhyNetwork
 T = TypeVar('T')
 
 
-def find_lsa_node(network: DirectedPhyNetwork) -> T:
+def lsa_node(network: DirectedPhyNetwork) -> T:
     """
     Find the Least Stable Ancestor (LSA) node of a directed phylogenetic network.
     
@@ -58,11 +58,11 @@ def find_lsa_node(network: DirectedPhyNetwork) -> T:
     ...     ],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> find_lsa_node(net)
+    >>> lsa_node(net)
     4
     >>> # In a simple tree, the LSA is just the root
     >>> net2 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-    >>> find_lsa_node(net2)
+    >>> lsa_node(net2)
     3
     """
     if network.number_of_nodes() == 0:

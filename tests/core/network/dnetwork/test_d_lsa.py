@@ -7,7 +7,7 @@ import warnings
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.features import find_lsa_node
+from phylozoo.core.network.dnetwork.features import lsa_node
 from phylozoo.core.network.dnetwork.transformations import (
     to_lsa_network,
 )
@@ -15,14 +15,14 @@ from phylozoo.core.network.dnetwork.classifications import is_lsa_network
 
 
 class TestFindLSANode:
-    """Tests for find_lsa_node."""
+    """Tests for lsa_node."""
 
     def test_simple_tree_root_is_lsa(self) -> None:
         """
         A simple binary tree should have its root as the LSA.
         """
         net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
-        assert find_lsa_node(net) == 3
+        assert lsa_node(net) == 3
 
     def test_hybrid_lsa_below_root(self) -> None:
         """
@@ -41,7 +41,7 @@ class TestFindLSANode:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
         # Common ancestors of all leaves are {7, 4, 10}; depth(10) > depth(4) > depth(7)
-        assert find_lsa_node(net) == 10
+        assert lsa_node(net) == 10
 
     def test_empty_network_raises(self) -> None:
         """
@@ -51,7 +51,7 @@ class TestFindLSANode:
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
             with pytest.warns(UserWarning, match="Empty network.*no nodes"):
                 with pytest.raises(ValueError, match="empty network"):
-                    find_lsa_node(DirectedPhyNetwork(edges=[]))
+                    lsa_node(DirectedPhyNetwork(edges=[]))
 
     def test_single_node_network(self) -> None:
         """
@@ -62,7 +62,7 @@ class TestFindLSANode:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore validation warning
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        assert find_lsa_node(net) == 1
+        assert lsa_node(net) == 1
         assert net.root_node == 1
         assert net.leaves == {1}
 

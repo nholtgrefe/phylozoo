@@ -99,17 +99,6 @@ class TestCachedPropertyBehavior:
         tree_edges2 = net.tree_edges
         assert tree_edges1 is tree_edges2  # Same object (cached)
 
-    def test_level_cached(self) -> None:
-        """Test that level property is cached."""
-        # Level property only exists in SemiDirectedPhyNetwork
-        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-        net = SemiDirectedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
-        )
-        level1 = net.level
-        level2 = net.level
-        assert level1 is level2  # Same object (cached)
 
 
 class TestPropertyInvalidationOnCopy:

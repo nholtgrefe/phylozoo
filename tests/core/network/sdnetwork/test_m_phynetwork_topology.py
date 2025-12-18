@@ -425,34 +425,4 @@ class TestIsTree:
         assert len(net.hybrid_nodes) == 0
 
 
-class TestLevel:
-    """Test cases for level property."""
-
-    def test_level_exists(self) -> None:
-        """Test that level property exists."""
-        # Level property only exists in SemiDirectedPhyNetwork, not MixedPhyNetwork
-        # Test with SemiDirectedPhyNetwork instead
-        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-        # Node 3 needs degree >= 3
-        net = SemiDirectedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
-        )
-        # Level should exist (may be placeholder)
-        level = net.level
-        assert level is not None
-
-    def test_level_cached(self) -> None:
-        """Test that level is cached."""
-        # Level property only exists in SemiDirectedPhyNetwork, not MixedPhyNetwork
-        # Test with SemiDirectedPhyNetwork instead
-        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-        # Node 3 needs degree >= 3
-        net = SemiDirectedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
-        )
-        level1 = net.level
-        level2 = net.level
-        assert level1 is level2
 

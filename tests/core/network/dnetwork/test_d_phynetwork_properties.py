@@ -86,12 +86,6 @@ class TestCachedPropertyBehavior:
         tree_edges2 = net.tree_edges
         assert tree_edges1 is tree_edges2  # Same object (cached)
 
-    def test_level_cached(self) -> None:
-        """Test that level property is cached."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-        level1 = net.level
-        level2 = net.level
-        assert level1 is level2  # Same object (cached)
 
 
 class TestPropertyInvalidationOnCopy:
@@ -126,7 +120,9 @@ class TestPropertyInvalidationOnCopy:
         assert net.tree_nodes == net_copy.tree_nodes
         assert net.hybrid_edges == net_copy.hybrid_edges
         assert net.tree_edges == net_copy.tree_edges
-        assert net.level == net_copy.level
+        # Level is now a function, not a property
+        from phylozoo.core.network.dnetwork.classifications import level
+        assert level(net) == level(net_copy)
 
 
 class TestAllCachedProperties:
@@ -148,7 +144,6 @@ class TestAllCachedProperties:
         tree1, tree2 = net.tree_nodes, net.tree_nodes
         hybrid_edges1, hybrid_edges2 = net.hybrid_edges, net.hybrid_edges
         tree_edges1, tree_edges2 = net.tree_edges, net.tree_edges
-        level1, level2 = net.level, net.level
         
         # Check they're cached (same object for mutable types, same value for immutable)
         assert leaves1 is leaves2
@@ -159,7 +154,6 @@ class TestAllCachedProperties:
         assert tree1 is tree2
         assert hybrid_edges1 is hybrid_edges2
         assert tree_edges1 is tree_edges2
-        assert level1 is level2
 
 
 class TestPropertyConsistency:

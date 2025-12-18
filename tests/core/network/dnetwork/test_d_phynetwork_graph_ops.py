@@ -373,7 +373,6 @@ class TestRepr:
         assert "DirectedPhyNetwork" in repr_str
         assert "nodes=" in repr_str
         assert "edges=" in repr_str
-        assert "level=" in repr_str
         assert "taxa=" in repr_str
 
     def test_repr_truncation(self) -> None:

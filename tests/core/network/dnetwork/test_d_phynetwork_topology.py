@@ -413,27 +413,6 @@ class TestTreeEdges:
         assert all_edges == expected_edges
 
 
-class TestLevel:
-    """Test cases for level property."""
-
-    def test_level_placeholder(self) -> None:
-        """Test that level returns 0 (placeholder)."""
-        net = DirectedPhyNetwork(
-            edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
-        )
-        # Currently returns 0 as placeholder
-        assert net.level == 0
-
-    def test_level_cached(self) -> None:
-        """Test that level is cached."""
-        net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
-        )
-        level1 = net.level
-        level2 = net.level
-        assert level1 is level2  # Same object (cached)
 
 
 class TestIsTree:

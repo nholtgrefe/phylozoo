@@ -486,21 +486,6 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         new_net._label_to_node = self._label_to_node.copy()
         return new_net
     
-    @cached_property
-    def level(self) -> int:
-        """
-        Return the level of the network.
-        
-        Placeholder: To be implemented.
-        
-        Returns
-        -------
-        int
-            Level of the network (placeholder, returns 0 for now).
-        """
-        # TODO: Implement level calculation
-        return 0
-    
     def __repr__(self) -> str:
         """
         Return string representation of the network.
@@ -508,13 +493,13 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         Returns
         -------
         str
-            String representation showing nodes, edges, level, taxa count, and taxon list.
+            String representation showing nodes, edges, taxa count, and taxon list.
         
         Examples
         --------
         >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> repr(net)
-        'SemiDirectedPhyNetwork(nodes=3, edges=2, level=0, taxa=2, taxa_list=[A, B])'
+        'SemiDirectedPhyNetwork(nodes=3, edges=2, taxa=2, taxa_list=[A, B])'
         """
         sorted_taxa = sorted(self.taxa)
         n_taxa = len(sorted_taxa)
@@ -528,7 +513,6 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         return (
             f"SemiDirectedPhyNetwork(nodes={self.number_of_nodes()}, "
             f"edges={self.number_of_edges()}, "
-            f"level={self.level}, "
             f"taxa={n_taxa}, "
             f"taxa_list=[{taxa_list_str}])"
         )
