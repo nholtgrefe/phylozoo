@@ -12,6 +12,7 @@ from typing import Dict, List, Set, Tuple
 
 from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 from phylozoo.core.primitives.m_multigraph.features import (
+    bi_edge_connected_components,
     biconnected_components,
     connected_components,
     cut_edges,
@@ -1413,6 +1414,125 @@ class TestConnectivity:
         # Still one biconnected component despite all parallel edges
         assert {1, 2, 3} in comp_sets3
         assert len(comps3) == 1
+
+    def test_bi_edge_connected_components(self) -> None:
+        """Test bi_edge_connected_components method."""
+        G = MixedMultiGraph()
+        # Cycle forms one bi-edge connected component (no bridges in cycle)
+        _ = G.add_undirected_edge(1, 2)
+        _ = G.add_undirected_edge(2, 3)
+        _ = G.add_undirected_edge(3, 1)
+        # Bridge edge to separate node
+        _ = G.add_undirected_edge(3, 4)
+        comps = list(bi_edge_connected_components(G))
+        comp_sets = [set(comp) for comp in comps]
+        assert {1, 2, 3} in comp_sets
+        assert {4} in comp_sets
+        assert len(comps) == 2
+
+    def test_bi_edge_connected_components_two_cycles(self) -> None:
+        """Test bi_edge_connected_components with two cycles connected by bridge."""
+        G = MixedMultiGraph()
+        # First cycle: 1-2-3-1
+        _ = G.add_undirected_edge(1, 2)
+        _ = G.add_undirected_edge(2, 3)
+        _ = G.add_undirected_edge(3, 1)
+        # Bridge: 3-4
+        _ = G.add_undirected_edge(3, 4)
+        # Second cycle: 4-5-6-4
+        _ = G.add_undirected_edge(4, 5)
+        _ = G.add_undirected_edge(5, 6)
+        _ = G.add_undirected_edge(6, 4)
+        comps = list(bi_edge_connected_components(G))
+        comp_sets = [set(comp) for comp in comps]
+        assert {1, 2, 3} in comp_sets
+        assert {4, 5, 6} in comp_sets
+        assert len(comps) == 2
+
+    def test_bi_edge_connected_components_path(self) -> None:
+        """Test bi_edge_connected_components with path graph (all edges are bridges)."""
+        G = MixedMultiGraph()
+        # Path graph: 1-2-3-4-5 (all edges are bridges)
+        _ = G.add_undirected_edge(1, 2)
+        _ = G.add_undirected_edge(2, 3)
+        _ = G.add_undirected_edge(3, 4)
+        _ = G.add_undirected_edge(4, 5)
+        comps = list(bi_edge_connected_components(G))
+        comp_sets = [set(comp) for comp in comps]
+        # Each node is its own component since all edges are bridges
+        assert {1} in comp_sets
+        assert {2} in comp_sets
+        assert {3} in comp_sets
+        assert {4} in comp_sets
+        assert {5} in comp_sets
+        assert len(comps) == 5
+
+    def test_bi_edge_connected_components_parallel_edges(self) -> None:
+        """Test bi_edge_connected_components with parallel edges."""
+        G = MixedMultiGraph()
+        # Cycle with parallel edges - still one bi-edge connected component
+        _ = G.add_undirected_edge(1, 2)
+        _ = G.add_undirected_edge(1, 2)  # Parallel edge
+        _ = G.add_undirected_edge(2, 3)
+        _ = G.add_undirected_edge(3, 1)
+        comps = list(bi_edge_connected_components(G))
+        comp_sets = [set(comp) for comp in comps]
+        # Parallel edges don't create bridges, so cycle remains one component
+        assert {1, 2, 3} in comp_sets
+        assert len(comps) == 1
+        
+        # Test with parallel edges on what would be a bridge
+        G2 = MixedMultiGraph()
+        # Cycle 1: 1-2-3-1
+        _ = G2.add_undirected_edge(1, 2)
+        _ = G2.add_undirected_edge(2, 3)
+        _ = G2.add_undirected_edge(3, 1)
+        # Parallel edges between 3 and 4 (not a bridge due to parallel edges)
+        _ = G2.add_undirected_edge(3, 4)
+        _ = G2.add_undirected_edge(3, 4)  # Parallel edge
+        # Cycle 2: 4-5-6-4
+        _ = G2.add_undirected_edge(4, 5)
+        _ = G2.add_undirected_edge(5, 6)
+        _ = G2.add_undirected_edge(6, 4)
+        comps2 = list(bi_edge_connected_components(G2))
+        comp_sets2 = [set(comp) for comp in comps2]
+        # Parallel edges make 3-4 non-bridge, so all nodes are in one component
+        assert {1, 2, 3, 4, 5, 6} in comp_sets2
+        assert len(comps2) == 1
+        
+        # Test path graph with parallel edges in the middle: 1-2-3-4 where 2-3 has parallel edges
+        G3 = MixedMultiGraph()
+        _ = G3.add_undirected_edge(1, 2)
+        _ = G3.add_undirected_edge(2, 3)
+        _ = G3.add_undirected_edge(2, 3)  # Parallel edge
+        _ = G3.add_undirected_edge(3, 4)
+        comps3 = list(bi_edge_connected_components(G3))
+        comp_sets3 = [set(comp) for comp in comps3]
+        # Parallel edges make 2-3 non-bridge, so we get: {1}, {2, 3}, {4}
+        assert {1} in comp_sets3
+        assert {2, 3} in comp_sets3
+        assert {4} in comp_sets3
+        assert len(comps3) == 3
+
+    def test_bi_edge_connected_components_mixed_edges(self) -> None:
+        """Test bi_edge_connected_components with mixed directed and undirected edges."""
+        G = MixedMultiGraph()
+        # Cycle with undirected edges: 1-2-3-1
+        _ = G.add_undirected_edge(1, 2)
+        _ = G.add_undirected_edge(2, 3)
+        _ = G.add_undirected_edge(3, 1)
+        # Bridge with directed edge: 3->4
+        _ = G.add_directed_edge(3, 4)
+        # Cycle with undirected edges: 4-5-6-4
+        _ = G.add_undirected_edge(4, 5)
+        _ = G.add_undirected_edge(5, 6)
+        _ = G.add_undirected_edge(6, 4)
+        comps = list(bi_edge_connected_components(G))
+        comp_sets = [set(comp) for comp in comps]
+        # Directed edge 3->4 is still a bridge, so we get two components
+        assert {1, 2, 3} in comp_sets
+        assert {4, 5, 6} in comp_sets
+        assert len(comps) == 2
 
     def test_cut_edges(self) -> None:
         """Test cut_edges function."""

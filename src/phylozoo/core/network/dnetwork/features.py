@@ -7,11 +7,12 @@ phylogenetic networks (e.g., LSA node, blobs, omnians, etc.).
 
 from collections import deque
 from functools import lru_cache
-from typing import Any, Iterator, TypeVar
+from typing import Any, TypeVar
 
 import networkx as nx
 
 from ...primitives.d_multigraph.features import (
+    bi_edge_connected_components,
     biconnected_components,
     cut_edges as graph_cut_edges,
     cut_vertices as graph_cut_vertices,
@@ -118,13 +119,14 @@ def find_lsa_node(network: DirectedPhyNetwork) -> T:
     return max(common_ancestors, key=lambda node: depths.get(node, 0))
 
 
+@lru_cache(maxsize=128)
 def blobs(
     network: DirectedPhyNetwork,
     trivial: bool = True,
     leaves: bool = True,
-) -> Iterator[set[T]]:
+) -> list[set[T]]:
     """
-    Yield blobs of the network.
+    Get blobs of the network.
     
     A blob is a maximal subgraph without any cut-edges. This function provides
     filtering options to control which blobs are returned.
@@ -138,10 +140,10 @@ def blobs(
     leaves : bool, optional
         Whether to include blobs that contain only leaves. By default True.
     
-    Yields
-    ------
-    set[T]
-        Sets of nodes forming each blob.
+    Returns
+    -------
+    list[set[T]]
+        List of sets of nodes forming each blob.
     
     Raises
     ------
@@ -151,10 +153,11 @@ def blobs(
     
     Notes
     -----
-    Blobs are computed as:
-    - All biconnected components with at least 3 nodes
-    - Biconnected components with exactly 2 nodes that have parallel edges
-    - All remaining nodes (trivial blobs, including leaves)
+    Blobs are computed as bi-edge connected components (2-edge-connected components).
+    A bi-edge connected component is a maximal subgraph that remains connected
+    after removing any single edge (i.e., has no cut-edges/bridges).
+    
+    Results are cached using LRU cache with maxsize=128.
     
     Examples
     --------
@@ -180,10 +183,10 @@ def blobs(
     >>> sorted([sorted(b) for b in blobs(net)])
     [[1], [2], [3], [4, 5, 6, 8], [7], [9], [10], [11]]
     >>> # Filtering: exclude trivial (single-node) blobs
-    >>> len(list(blobs(net, trivial=False, leaves=False)))
+    >>> len([b for b in blobs(net, trivial=False, leaves=False)])
     1
     >>> # Filtering: exclude blobs containing only leaves
-    >>> len(list(blobs(net, leaves=False)))
+    >>> len([b for b in blobs(net, leaves=False)])
     2
     """
     # Check for invalid parameter combination
@@ -194,57 +197,38 @@ def blobs(
         )
     
     leaves_set = network.leaves
-    graph = network._graph
+    result: list[set[T]] = []
     
-    # Collect nodes that are in non-trivial blobs
-    visited: set[T] = set()
-    
-    # Process biconnected components
-    for blob in biconnected_components(graph):
+    # Process bi-edge connected components directly
+    for blob in bi_edge_connected_components(network._graph):
         blob_set = set(blob)
         
-        # Keep blobs with >= 3 nodes
-        if len(blob_set) >= 3:
-            visited.update(blob_set)
-            # Filter blobs containing only leaves
-            if not leaves and blob_set.issubset(leaves_set):
+        # Filter single-node components based on parameters
+        if len(blob_set) == 1:
+            node = next(iter(blob_set))
+            # Skip if trivial=False and it's not a leaf
+            if not trivial and node not in leaves_set:
                 continue
-            yield blob_set
-            continue
-        
-        # Keep 2-node blobs only if they have parallel edges
-        if len(blob_set) == 2:
-            u, v = list(blob_set)
-            # Check for parallel edges in the underlying graph
-            # Count edges in both directions (u->v and v->u)
-            num_edges = 0
-            if u in graph._graph and v in graph._graph[u]:
-                num_edges += len(graph._graph[u][v])
-            if v in graph._graph and u in graph._graph[v]:
-                num_edges += len(graph._graph[v][u])
-            
-            if num_edges > 1:  # Parallel edges exist
-                visited.update(blob_set)
-                # Filter blobs containing only leaves
-                yield blob_set
+            # Skip if leaves=False and it is a leaf
+            if not leaves and node in leaves_set:
+                continue
+            result.append(blob_set)
+        else:
+            # Multi-node components: always include (cannot consist entirely of leaves)
+            result.append(blob_set)
     
-    # Add remaining nodes as trivial blobs
-    for node in graph.nodes():
-        if node not in visited:
-            if node not in leaves_set and trivial:
-                yield {node}
-            elif node in leaves_set and leaves:
-                yield {node}
+    return result
 
 
+@lru_cache(maxsize=128)
 def k_blobs(
     network: DirectedPhyNetwork,
     k: int,
     trivial: bool = True,
     leaves: bool = True,
-) -> Iterator[set[T]]:
+) -> list[set[T]]:
     """
-    Yield k-blobs of the network.
+    Get k-blobs of the network.
     
     A k-blob is a blob with exactly k edges incident to it. An incident edge
     is any edge that connects a node inside the blob to a node outside the blob.
@@ -261,10 +245,10 @@ def k_blobs(
     leaves : bool, optional
         Whether to include blobs that contain only leaves. By default True.
     
-    Yields
-    ------
-    set[T]
-        Sets of nodes forming each k-blob.
+    Returns
+    -------
+    list[set[T]]
+        List of sets of nodes forming each k-blob.
     
     Raises
     ------
@@ -278,6 +262,8 @@ def k_blobs(
     them based on the number of incident edges. Parallel edges are counted
     separately, so if there are two parallel edges crossing the blob boundary,
     they count as two incident edges.
+    
+    Results are cached using LRU cache with maxsize=128.
     
     Examples
     --------
@@ -300,8 +286,9 @@ def k_blobs(
     
     # Get the underlying graph for edge access
     graph = network._graph
+    result: list[set[T]] = []
     
-    # Iterate through blobs directly (generator)
+    # Iterate through blobs
     for blob in blobs(network, trivial=trivial, leaves=leaves):
         blob_set = set(blob)
         
@@ -321,9 +308,11 @@ def k_blobs(
                 if v not in blob_set:  # Edge crosses blob boundary
                     incident_edge_count += 1
         
-        # Yield blob if it has exactly k incident edges
+        # Add blob if it has exactly k incident edges
         if incident_edge_count == k:
-            yield blob_set
+            result.append(blob_set)
+    
+    return result
 
 
 @lru_cache(maxsize=128)

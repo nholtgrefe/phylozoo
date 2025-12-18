@@ -178,6 +178,70 @@ def biconnected_components(graph: 'MixedMultiGraph') -> Iterator[set[T]]:
     return nx.biconnected_components(graph._combined)
 
 
+def bi_edge_connected_components(graph: 'MixedMultiGraph') -> Iterator[set[T]]:
+    """
+    Get bi-edge connected components (2-edge-connected components) of the graph.
+    
+    A bi-edge connected component is a maximal subgraph that remains connected
+    after removing any single edge. This is equivalent to finding connected components
+    after removing all bridges (cut edges).
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The graph to analyze.
+    
+    Returns
+    -------
+    Iterator[set[T]]
+        Iterator over sets of nodes in each bi-edge connected component.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> # Graph with cycle: 1-2-3-1, edge 3-4 is bridge
+    >>> # Bi-edge connected components: {1, 2, 3}, {4}
+    >>> G = MixedMultiGraph()
+    >>> _ = G.add_undirected_edge(1, 2)
+    >>> _ = G.add_undirected_edge(2, 3)
+    >>> _ = G.add_undirected_edge(3, 1)
+    >>> _ = G.add_undirected_edge(3, 4)
+    >>> comps = list(bi_edge_connected_components(G))
+    >>> {1, 2, 3} in comps
+    True
+    >>> {4} in comps
+    True
+    >>> # Graph with two cycles connected by bridge: 1-2-3-1 and 4-5-6-4, connected via bridge 3-4
+    >>> # Bi-edge connected components: {1, 2, 3}, {4, 5, 6}
+    >>> G2 = MixedMultiGraph()
+    >>> _ = G2.add_undirected_edge(1, 2)
+    >>> _ = G2.add_undirected_edge(2, 3)
+    >>> _ = G2.add_undirected_edge(3, 1)
+    >>> _ = G2.add_undirected_edge(3, 4)  # Bridge
+    >>> _ = G2.add_undirected_edge(4, 5)
+    >>> _ = G2.add_undirected_edge(5, 6)
+    >>> _ = G2.add_undirected_edge(6, 4)
+    >>> comps2 = list(bi_edge_connected_components(G2))
+    >>> {1, 2, 3} in comps2
+    True
+    >>> {4, 5, 6} in comps2
+    True
+    """
+    # Find all bridges (cut edges)
+    bridges = set(nx.bridges(graph._combined))
+    
+    # Create a copy of the graph without bridges
+    graph_without_bridges = graph._combined.copy()
+    for u, v in bridges:
+        # Remove all edges between u and v (handles parallel edges)
+        # Note: bridges can't have parallel edges, but we remove all just to be safe
+        while graph_without_bridges.has_edge(u, v):
+            graph_without_bridges.remove_edge(u, v)
+    
+    # Return connected components of the graph without bridges
+    return nx.connected_components(graph_without_bridges)
+
+
 def has_self_loops(graph: 'MixedMultiGraph') -> bool:
     """
     Check whether the mixed multigraph contains any self-loops (directed or undirected).
