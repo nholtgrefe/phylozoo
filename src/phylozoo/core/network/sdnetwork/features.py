@@ -149,15 +149,16 @@ def k_blobs(
     """
     Yield k-blobs of the network.
     
-    A k-blob is a blob with exactly k cut-edges incident to it. Cut-edges are
-    edges that connect nodes inside the blob to nodes outside the blob.
+    A k-blob is a blob with exactly k edges incident to it. An incident edge
+    is any edge (directed or undirected) that connects a node inside the blob
+    to a node outside the blob. Parallel edges are counted separately.
     
     Parameters
     ----------
     network : MixedPhyNetwork
         The mixed phylogenetic network.
     k : int
-        The number of cut-edges that should be incident to each returned blob.
+        The number of edges that should be incident to each returned blob.
     trivial : bool, optional
         Whether to include trivial (single-node) blobs. By default True.
     leaves : bool, optional
@@ -176,21 +177,23 @@ def k_blobs(
     
     Notes
     -----
-    Parallel edges are counted separately when determining the number of
-    cut-edges incident to a blob. For example, if there are two parallel
-    edges between a blob node and an external node, and both are cut-edges,
-    they count as two incident cut-edges.
+    This function identifies blobs and then filters
+    them based on the number of incident edges. Both directed and undirected
+    edges are counted. Parallel edges are counted separately, so if there are
+    two parallel edges crossing the blob boundary, they count as two incident edges.
     
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> # Tree network: all blobs are 1-blobs (each leaf has one incident edge)
+    >>> # Tree network: leaves are 1-blobs, internal nodes are 2-blobs or more
     >>> net = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
     >>> sorted([sorted(b) for b in k_blobs(net, k=1)])
-    [[1], [2], [3]]
+    [[1], [2]]
+    >>> sorted([sorted(b) for b in k_blobs(net, k=2)])
+    [[3]]
     """
     # Check for invalid parameter combination
     if not trivial and leaves:
@@ -199,30 +202,42 @@ def k_blobs(
             "components, so excluding trivial components would exclude all leaves."
         )
     
-    # Collect all blobs first
-    all_blobs_list = list(blobs(network, trivial=trivial, leaves=leaves))
+    # Get the underlying graph for edge access
+    graph = network._graph
     
-    # Find all cut-edges using Tarjan's algorithm
-    cut_edges_set = cut_edges(network)
-    
-    # Iterate through all blobs
-    for blob in all_blobs_list:
+    # Iterate through blobs directly (generator)
+    for blob in blobs(network, trivial=trivial, leaves=leaves):
         blob_set = set(blob)
         
-        # Count cut-edges incident to this blob
-        cut_edge_count = 0
+        # Count edges incident to this blob
+        # An incident edge has exactly one endpoint in the blob
+        incident_edge_count = 0
+        seen_undirected = set()  # Track undirected edges to avoid double-counting
         
-        # Check all cut-edges
-        for u, v, key in cut_edges_set:
-            # Check if edge is incident to blob (one endpoint in, one out)
-            u_in_blob = u in blob_set
-            v_in_blob = v in blob_set
+        # Check all edges incident to nodes in the blob
+        for node in blob_set:
+            # Check directed incoming edges (parent edges)
+            for u, v, key in graph.incident_parent_edges(node, keys=True):
+                if u not in blob_set:  # Edge crosses blob boundary
+                    incident_edge_count += 1
             
-            if u_in_blob != v_in_blob:  # Exactly one endpoint in blob
-                cut_edge_count += 1
+            # Check directed outgoing edges (child edges)
+            for u, v, key in graph.incident_child_edges(node, keys=True):
+                if v not in blob_set:  # Edge crosses blob boundary
+                    incident_edge_count += 1
+            
+            # Check undirected edges
+            for u, v, key in graph.incident_undirected_edges(node, keys=True):
+                neighbor = v if u == node else u
+                if neighbor not in blob_set:  # Edge crosses blob boundary
+                    # Normalize edge to avoid double-counting undirected edges
+                    edge = (min(u, v), max(u, v), key)
+                    if edge not in seen_undirected:
+                        seen_undirected.add(edge)
+                        incident_edge_count += 1
         
-        # Yield blob if it has exactly k incident cut-edges
-        if cut_edge_count == k:
+        # Yield blob if it has exactly k incident edges
+        if incident_edge_count == k:
             yield blob_set
 
 

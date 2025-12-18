@@ -48,8 +48,8 @@ class TestKBlobs1Blobs:
         )
         blobs_1 = list(k_blobs(net, k=1))
         
-        # In a tree, all nodes are 1-blobs (single edges connecting them)
-        assert len(blobs_1) == 7  # 4 leaves + 3 internal nodes
+        # Leaves have exactly 1 incident edge, so they are 1-blobs
+        assert len(blobs_1) == 4  # Only the 4 leaves
 
     def test_non_binary_tree_1blobs(self) -> None:
         """Test 1-blobs in a non-binary tree."""
@@ -60,30 +60,28 @@ class TestKBlobs1Blobs:
         )
         blobs_1 = list(k_blobs(net, k=1))
         
-        # All 4 nodes should be 1-blobs
-        assert len(blobs_1) == 4
+        # Only leaves have 1 incident edge
+        assert len(blobs_1) == 3  # The 3 leaves
 
 
 class TestKBlobs2Blobs:
     """Test cases for 2-blobs."""
 
-    def test_simple_chain_has_2blob(self) -> None:
-        """Test that middle node in a chain is a 2-blob."""
-        # Chain: 1 -> 2 -> 3 -> 4
+    def test_simple_tree_root_is_2blob(self) -> None:
+        """Test that root of simple binary tree is a 2-blob."""
+        # Simple tree: root splits to 2 leaves
         net = DirectedPhyNetwork(
-            edges=[(1, 2), (2, 3), (3, 4)],
-            nodes=[(4, {'label': 'A'})]
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         blobs_2 = list(k_blobs(net, k=2))
         
-        # Nodes 2 and 3 should be 2-blobs (one edge in, one edge out)
-        assert len(blobs_2) == 2
-        blob_sets = [sorted(b) for b in blobs_2]
-        assert [2] in blob_sets
-        assert [3] in blob_sets
+        # Root node 3 has exactly 2 incident edges (2 outgoing to leaves)
+        assert len(blobs_2) == 1
+        assert {3} in blobs_2
 
-    def test_network_with_parallel_edges_2blobs(self) -> None:
-        """Test 2-blobs with parallel edges present."""
+    def test_network_with_parallel_edges_3blobs(self) -> None:
+        """Test 3-blobs with parallel edges present."""
         # Network with parallel edges to hybrid
         net = DirectedPhyNetwork(
             edges=[
@@ -94,11 +92,11 @@ class TestKBlobs2Blobs:
             ],
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
-        blobs_2 = list(k_blobs(net, k=2))
+        blobs_3 = list(k_blobs(net, k=3))
         
-        # Node 10 splits to 2 leaves (2 cut-edges out)
-        assert len(blobs_2) >= 1
-        assert {10} in blobs_2
+        # Node 10 has 1 incoming + 2 outgoing = 3 incident edges
+        assert len(blobs_3) >= 1
+        assert {10} in blobs_3
 
 
 class TestKBlobs3Blobs:
@@ -211,15 +209,12 @@ class TestKBlobsNonBinary:
             ]
         )
         
-        # Check 3-blob (root)
+        # Check 3-blobs (root has 3 outgoing, internal nodes have 1 in + 2 out = 3)
         blobs_3 = list(k_blobs(net, k=3))
         assert {10} in blobs_3
-        
-        # Check 2-blobs (internal nodes with 2 children)
-        blobs_2 = list(k_blobs(net, k=2))
-        assert {7} in blobs_2
-        assert {8} in blobs_2
-        assert {9} in blobs_2
+        assert {7} in blobs_3
+        assert {8} in blobs_3
+        assert {9} in blobs_3
         
         # Check 1-blobs (leaves)
         blobs_1 = list(k_blobs(net, k=1))
@@ -345,12 +340,15 @@ class TestKBlobsComplex:
             ]
         )
         
-        # Root has 2 incident cut-edges
+        # Node 10 (root) has 2 outgoing edges
         blobs_2 = list(k_blobs(net, k=2))
-        assert {10} in blobs_2
-        assert {8} in blobs_2
-        assert {6} in blobs_2
-        assert {7} in blobs_2
+        assert {10} in blobs_2  # Root: 2 outgoing
+        
+        # Nodes 6, 7, 8 each have 1 in + 2 out = 3 incident edges
+        blobs_3 = list(k_blobs(net, k=3))
+        assert {6} in blobs_3  # Internal: 1 in + 2 out
+        assert {7} in blobs_3  # Internal: 1 in + 2 out
+        assert {8} in blobs_3  # Internal: 1 in + 2 out
         
         # All leaves have 1 incident cut-edge
         blobs_1 = list(k_blobs(net, k=1))
