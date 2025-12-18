@@ -252,53 +252,40 @@ def cut_edges(
     -----
     This function uses Tarjan's algorithm for finding bridges, which runs in O(V + E) time.
     The algorithm works on the underlying undirected (weakly connected) representation.
+    Parallel edges are never bridges, so this implementation optimizes by iterating through
+    edges once and checking bridge membership.
     """
-    # Use NetworkX's bridge finding on the combined undirected graph
-    # NetworkX's bridges() returns iterator of 2-tuples (u, v)
-    bridges_2tuple = set(nx.bridges(graph._combined))
+    # Get bridges from combined graph (O(V+E))
+    bridges_set = set(nx.bridges(graph._combined))
+    
+    # Normalize bridges to (min, max) for efficient lookup
+    bridges_normalized = {(min(u, v), max(u, v)) for u, v in bridges_set}
     
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
     result = [] if use_list else set()
     
-    # For each bridge, find the corresponding directed edge(s)
-    # Note: Parallel edges are never bridges, so we should only find single edges
-    for u, v in bridges_2tuple:
-        # Check both directions since _combined is undirected but _graph is directed
-        edges_uv = []
-        
-        if u in graph._graph and v in graph._graph[u]:
-            edge_dict = graph._graph[u][v]
-            # Parallel edges are never bridges - skip if found (shouldn't happen)
-            if len(edge_dict) > 1:
-                continue  # This shouldn't happen; parallel edges can't be bridges
-            for k, edge_data in edge_dict.items():
-                edges_uv.append((u, v, k, edge_data))
-        
-        if v in graph._graph and u in graph._graph[v]:
-            edge_dict = graph._graph[v][u]
-            # Parallel edges are never bridges - skip if found (shouldn't happen)
-            if len(edge_dict) > 1:
-                continue  # This shouldn't happen; parallel edges can't be bridges
-            for k, edge_data in edge_dict.items():
-                edges_uv.append((v, u, k, edge_data))
-        
-        # Format according to keys and data parameters
-        for u_dir, v_dir, k, edge_data in edges_uv:
+    # Iterate through edges once and check if they're bridges
+    # Bridges can't have parallel edges, so we only need to check each edge once
+    for u, v, key, edge_data in graph._graph.edges(keys=True, data=True):
+        # Check if this edge corresponds to a bridge
+        edge_normalized = (min(u, v), max(u, v))
+        if edge_normalized in bridges_normalized:
+            # Format according to keys and data parameters
             if keys and data is True:
-                result.append((u_dir, v_dir, k, edge_data))
+                result.append((u, v, key, edge_data))
             elif keys and isinstance(data, str):
                 attr_val = edge_data.get(data)
-                result.add((u_dir, v_dir, k, attr_val))
+                result.add((u, v, key, attr_val))
             elif keys:  # keys=True, data=False
-                result.add((u_dir, v_dir, k))
+                result.add((u, v, key))
             elif data is True:
-                result.append((u_dir, v_dir, edge_data))
+                result.append((u, v, edge_data))
             elif isinstance(data, str):
                 attr_val = edge_data.get(data)
-                result.add((u_dir, v_dir, attr_val))
+                result.add((u, v, attr_val))
             else:  # keys=False, data=False
-                result.add((u_dir, v_dir))
+                result.add((u, v))
     
     return result
 
@@ -351,7 +338,7 @@ def cut_vertices(
     This function uses NetworkX's articulation_points algorithm, which runs in O(V + E) time.
     The algorithm works on the underlying undirected (weakly connected) representation.
     """
-    # Use NetworkX's articulation points on the combined undirected graph
+    # Get articulation points (O(V+E))
     art_points = set(nx.articulation_points(graph._combined))
     
     if data is False:
@@ -361,11 +348,17 @@ def cut_vertices(
     use_list = data is True
     result = [] if use_list else set()
     
+    # Access node data directly from NetworkX graph (more efficient)
+    nodes_data = graph._graph.nodes
+    
     for v in art_points:
-        node_data = dict(graph._graph.nodes[v]) if v in graph._graph.nodes else {}
         if data is True:
+            # Direct dict access is faster than creating a new dict
+            node_data = dict(nodes_data[v]) if v in nodes_data else {}
             result.append((v, node_data))
         elif isinstance(data, str):
+            # Direct attribute access
+            node_data = nodes_data[v] if v in nodes_data else {}
             attr_val = node_data.get(data) if node_data else None
             result.add((v, attr_val))
     

@@ -362,62 +362,63 @@ def cut_edges(
     -----
     This function uses Tarjan's algorithm for finding bridges, which runs in O(V + E) time.
     The algorithm works on the underlying undirected (weakly connected) representation.
+    Parallel edges are never bridges, so this implementation optimizes by iterating through
+    edges once and checking bridge membership.
     """
-    # Use NetworkX's bridge finding on the combined undirected graph
-    # NetworkX's bridges() returns iterator of 2-tuples (u, v)
-    bridges_2tuple = set(nx.bridges(graph._combined))
+    # Get bridges from combined graph (O(V+E))
+    bridges_set = set(nx.bridges(graph._combined))
+    
+    # Normalize bridges to (min, max) for efficient lookup
+    bridges_normalized = {(min(u, v), max(u, v)) for u, v in bridges_set}
     
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
     result = [] if use_list else set()
     
-    # For each bridge, find the corresponding edge(s)
-    # Note: Parallel edges are never bridges, so we should only find single edges
-    for u, v in bridges_2tuple:
-        edges_list = []
-        
-        # Check undirected edges
-        if graph._undirected.has_edge(u, v):
-            edge_dict = graph._undirected[u][v]
-            # Parallel edges are never bridges - skip if found (shouldn't happen)
-            if len(edge_dict) > 1:
-                continue  # This shouldn't happen; parallel edges can't be bridges
-            for k, edge_data in edge_dict.items():
-                edges_list.append((u, v, k, edge_data))
-        
-        # Check directed edges in both directions
-        if u in graph._directed and v in graph._directed[u]:
-            edge_dict = graph._directed[u][v]
-            # Parallel edges are never bridges - skip if found (shouldn't happen)
-            if len(edge_dict) > 1:
-                continue  # This shouldn't happen; parallel edges can't be bridges
-            for k, edge_data in edge_dict.items():
-                edges_list.append((u, v, k, edge_data))
-        
-        if v in graph._directed and u in graph._directed[v]:
-            edge_dict = graph._directed[v][u]
-            # Parallel edges are never bridges - skip if found (shouldn't happen)
-            if len(edge_dict) > 1:
-                continue  # This shouldn't happen; parallel edges can't be bridges
-            for k, edge_data in edge_dict.items():
-                edges_list.append((v, u, k, edge_data))
-        
-        # Format according to keys and data parameters
-        for u_dir, v_dir, k, edge_data in edges_list:
+    # Track processed normalized edges to avoid duplicates
+    processed_edges = set()
+    
+    # Check undirected edges
+    for u, v, key, edge_data in graph._undirected.edges(keys=True, data=True):
+        edge_normalized = (min(u, v), max(u, v))
+        if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
+            processed_edges.add(edge_normalized)
+            # Format according to keys and data parameters
             if keys and data is True:
-                result.append((u_dir, v_dir, k, edge_data))
+                result.append((u, v, key, edge_data))
             elif keys and isinstance(data, str):
                 attr_val = edge_data.get(data)
-                result.add((u_dir, v_dir, k, attr_val))
+                result.add((u, v, key, attr_val))
             elif keys:  # keys=True, data=False
-                result.add((u_dir, v_dir, k))
+                result.add((u, v, key))
             elif data is True:
-                result.append((u_dir, v_dir, edge_data))
+                result.append((u, v, edge_data))
             elif isinstance(data, str):
                 attr_val = edge_data.get(data)
-                result.add((u_dir, v_dir, attr_val))
+                result.add((u, v, attr_val))
             else:  # keys=False, data=False
-                result.add((u_dir, v_dir))
+                result.add((u, v))
+    
+    # Check directed edges
+    for u, v, key, edge_data in graph._directed.edges(keys=True, data=True):
+        edge_normalized = (min(u, v), max(u, v))
+        if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
+            processed_edges.add(edge_normalized)
+            # Format according to keys and data parameters
+            if keys and data is True:
+                result.append((u, v, key, edge_data))
+            elif keys and isinstance(data, str):
+                attr_val = edge_data.get(data)
+                result.add((u, v, key, attr_val))
+            elif keys:  # keys=True, data=False
+                result.add((u, v, key))
+            elif data is True:
+                result.append((u, v, edge_data))
+            elif isinstance(data, str):
+                attr_val = edge_data.get(data)
+                result.add((u, v, attr_val))
+            else:  # keys=False, data=False
+                result.add((u, v))
     
     return result
 
@@ -470,7 +471,7 @@ def cut_vertices(
     This function uses NetworkX's articulation_points algorithm, which runs in O(V + E) time.
     The algorithm works on the underlying undirected (weakly connected) representation.
     """
-    # Use NetworkX's articulation points on the combined undirected graph
+    # Get articulation points (O(V+E))
     art_points = set(nx.articulation_points(graph._combined))
     
     if data is False:
@@ -480,17 +481,29 @@ def cut_vertices(
     use_list = data is True
     result = [] if use_list else set()
     
+    # Access node data directly from NetworkX graphs (more efficient)
+    directed_nodes = graph._directed.nodes
+    undirected_nodes = graph._undirected.nodes
+    
     for v in art_points:
         # For MixedMultiGraph, node data can be in either _directed or _undirected
-        node_data = {}
-        if v in graph._directed.nodes:
-            node_data = dict(graph._directed.nodes[v])
-        elif v in graph._undirected.nodes:
-            node_data = dict(graph._undirected.nodes[v])
-        
         if data is True:
+            # Direct dict access is faster than creating a new dict
+            if v in directed_nodes:
+                node_data = dict(directed_nodes[v])
+            elif v in undirected_nodes:
+                node_data = dict(undirected_nodes[v])
+            else:
+                node_data = {}
             result.append((v, node_data))
         elif isinstance(data, str):
+            # Direct attribute access
+            if v in directed_nodes:
+                node_data = directed_nodes[v]
+            elif v in undirected_nodes:
+                node_data = undirected_nodes[v]
+            else:
+                node_data = {}
             attr_val = node_data.get(data) if node_data else None
             result.add((v, attr_val))
     
