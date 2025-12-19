@@ -60,6 +60,11 @@ addopts = [
     "--strict-markers",
     "--tb=short",
 ]
+filterwarnings = [
+    "ignore:Empty network.*no nodes.*:UserWarning",
+    "ignore:Single-node network.*:UserWarning",
+    "ignore:Validity is not fully checked for MixedPhyNetworks.*:UserWarning",
+]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
