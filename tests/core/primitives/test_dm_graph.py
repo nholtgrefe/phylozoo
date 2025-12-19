@@ -23,8 +23,7 @@ from phylozoo.core.primitives.d_multigraph.features import (
     number_of_connected_components,
 )
 from phylozoo.core.primitives.d_multigraph.transformations import (
-    identify_two_nodes,
-    identify_node_set,
+    identify_vertices,
 )
 from phylozoo.core.primitives.d_multigraph.conversions import (
     digraph_to_directedmultigraph,
@@ -1263,28 +1262,32 @@ class TestGraphOperations:
         assert G.number_of_nodes() == 0
         assert G.number_of_edges() == 0
 
-    def test_identify_two_nodes(self) -> None:
-        """Test identify_two_nodes method."""
+    def test_identify_vertices_two_nodes(self) -> None:
+        """Test identify_vertices method with two nodes."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
-        identify_two_nodes(G, 1, 2)
+        identify_vertices(G, [1, 2])
         assert 2 not in G
         assert 1 in G
         # Edges should be moved to node 1
         assert G.has_edge(1, 3)
 
-    def test_identify_node_set(self) -> None:
-        """Test identify_node_set method."""
+    def test_identify_vertices_multiple_nodes(self) -> None:
+        """Test identify_vertices method with multiple nodes."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         G.add_edge(3, 4)
-        identify_node_set(G, [1, 2, 3])
+        identify_vertices(G, [1, 2, 3])
         # First node (1) should be kept
         assert 1 in G
-        # Other nodes may or may not be present (depends on implementation)
-        assert len(list(G.nodes())) <= 3
+        # Other nodes should be removed
+        assert 2 not in G
+        assert 3 not in G
+        assert 4 in G
+        # Edges should be moved to node 1
+        assert G.has_edge(1, 4)
 
     def test_validate_synchronization(self) -> None:
         """Test _validate_synchronization method."""
@@ -1327,7 +1330,7 @@ class TestEdgeCases:
     def test_self_loops(self) -> None:
         """Test self-loops (if supported)."""
         G = DirectedMultiGraph()
-        # Note: identify_two_nodes might create self-loops, but they should be cleaned up
+        # Note: identify_vertices does not create self-loops (they are removed)
         # Direct self-loops might not be explicitly supported
         # This test documents current behavior
         try:

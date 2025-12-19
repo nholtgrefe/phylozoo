@@ -14,21 +14,47 @@ from . import DirectedMultiGraph
 T = TypeVar('T')
 
 
-def identify_two_nodes(graph: 'DirectedMultiGraph', u: T, v: T) -> None:
+def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_attrs: dict[str, Any] | None = None) -> None:
     """
-    Identify two nodes u and v by keeping node u.
+    Identify multiple vertices by keeping the first vertex.
     
-    Modifies the graph in place. All edges incident to v are moved to u,
-    and v is removed.
+    This function identifies all vertices in the list with the first vertex.
+    All edges incident to the other vertices are moved to the first vertex,
+    and the other vertices are removed. The first vertex's attributes are
+    preserved (or replaced with merged_attrs if provided).
+    
+    This operation modifies the graph in place. Identification may create
+    new parallel edges. Self-loops are not created (edges from a vertex
+    to itself are removed).
     
     Parameters
     ----------
     graph : DirectedMultiGraph
-        The graph to modify.
-    u : T
-        Node to keep.
-    v : T
-        Node to identify with u (will be removed).
+        The directed multigraph to modify. **This function modifies the graph in place.**
+    vertices : list[T]
+        List of vertices to identify. The first vertex will be kept, and all
+        others will be merged into it.
+    merged_attrs : dict[str, Any] | None, optional
+        Attributes to use for the kept vertex. If None, the first vertex's
+        attributes are preserved. If provided, these attributes replace the
+        first vertex's attributes.
+    
+    Raises
+    ------
+    ValueError
+        If the vertices list is empty, if any vertex is not in the graph, or
+        if identification would create edges in both directions between the
+        same pair of nodes (u->v and v->u), which is not allowed.
+    
+    Notes
+    -----
+    This function does not create self-loops. Any edges that would become
+    self-loops after identification are removed.
+    
+    Identification may create parallel edges. However, if identification would
+    result in edges in both directions between the same pair of nodes (e.g.,
+    both u->v and v->u), a ValueError is raised as this violates the graph's
+    constraints.
     
     Examples
     --------
@@ -38,52 +64,142 @@ def identify_two_nodes(graph: 'DirectedMultiGraph', u: T, v: T) -> None:
     0
     >>> G.add_edge(2, 3)
     0
-    >>> identify_two_nodes(G, 1, 2)
+    >>> G.add_edge(3, 4)
+    0
+    >>> identify_vertices(G, [1, 2, 3])
     >>> list(G.nodes())
-    [1, 3]
-    """
-    # Use NetworkX's contracted_nodes on each graph
-    nx.contracted_nodes(graph._graph, u, v, self_loops=False, copy=False)
-    nx.contracted_nodes(graph._combined, u, v, self_loops=False, copy=False)
-    
-    # Clean up any self-loops that might have been created
-    if graph._graph.has_edge(u, u):
-        for k in list(graph._graph[u][u].keys()):
-            graph._graph.remove_edge(u, u, key=k)
-            graph._combined.remove_edge(u, u, key=k)
-
-
-def identify_node_set(graph: 'DirectedMultiGraph', nodes: list[T] | set[T]) -> None:
-    """
-    Identify all nodes in the set by keeping the first node.
-    
-    Modifies the graph in place.
-    
-    Parameters
-    ----------
-    graph : DirectedMultiGraph
-        The graph to modify.
-    nodes : list[T] | set[T]
-        Iterable of nodes to identify. The first node will be kept.
-    
-    Examples
-    --------
-    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
-    >>> G = DirectedMultiGraph()
-    >>> G.add_edge(1, 2)
-    0
-    >>> G.add_edge(2, 3)
-    0
-    >>> identify_node_set(G, [1, 2, 3])
-    >>> len(G.nodes()) <= 3
+    [1, 4]
+    >>> G.has_edge(1, 4)
     True
     """
-    nodes_list = list(nodes)
-    if len(nodes_list) < 2:
-        return
+    if not vertices:
+        raise ValueError("Vertices list cannot be empty")
     
-    for i in range(1, len(nodes_list)):
-        identify_two_nodes(graph, nodes_list[0], nodes_list[i])
+    vertices_list = list(vertices)
+    if len(vertices_list) < 2:
+        return  # Nothing to identify
+    
+    first_vertex = vertices_list[0]
+    other_vertices = vertices_list[1:]
+    
+    # Check that all vertices exist
+    for v in vertices_list:
+        if v not in graph.nodes():
+            raise ValueError(f"Vertex {v} not found in graph")
+    
+    # Before merging, check if identification would create bidirectional edges
+    # After merging, edges from other_vertices will be moved to first_vertex
+    # We need to check if this would create both u->v and v->u for any external node pair
+    
+    # Collect all external nodes that would have edges to/from first_vertex after merging
+    external_outgoing_targets: set[T] = set()  # Nodes that would receive edges FROM first_vertex
+    external_incoming_sources: set[T] = set()  # Nodes that would have edges TO first_vertex
+    
+    for other_v in other_vertices:
+        # Check outgoing edges from other_v (will become first_vertex -> target)
+        for u, v, key, data in graph.incident_child_edges(other_v, keys=True, data=True):
+            if v == first_vertex or v in other_vertices:
+                continue  # Skip self-loops and edges to vertices being merged
+            external_outgoing_targets.add(v)
+        
+        # Check incoming edges to other_v (will become source -> first_vertex)
+        for u, v, key, data in graph.incident_parent_edges(other_v, keys=True, data=True):
+            if u == first_vertex or u in other_vertices:
+                continue  # Skip self-loops and edges from vertices being merged
+            external_incoming_sources.add(u)
+    
+    # Check if first_vertex already has edges that would conflict
+    # Check outgoing edges from first_vertex
+    for u, v, key, data in graph.incident_child_edges(first_vertex, keys=True, data=True):
+        if v not in vertices_list:  # External target
+            # After merge: first_vertex -> v (already exists)
+            # Check if merging would also create v -> first_vertex
+            if v in external_incoming_sources:
+                raise ValueError(
+                    f"Identification would create edges in both directions between {first_vertex} and {v}, "
+                    f"which is not allowed."
+                )
+    
+    # Check incoming edges to first_vertex
+    for u, v, key, data in graph.incident_parent_edges(first_vertex, keys=True, data=True):
+        if u not in vertices_list:  # External source
+            # After merge: u -> first_vertex (already exists)
+            # Check if merging would also create first_vertex -> u
+            if u in external_outgoing_targets:
+                raise ValueError(
+                    f"Identification would create edges in both directions between {first_vertex} and {u}, "
+                    f"which is not allowed."
+                )
+    
+    # Also check if edges being merged would create bidirectional edges between external nodes
+    # This handles the case where other_vertex has u->v and first_vertex has v->u
+    for target in external_outgoing_targets:
+        # After merge: first_vertex -> target
+        # Check if first_vertex already has target -> first_vertex
+        if graph.has_edge(target, first_vertex) and target not in vertices_list:
+            raise ValueError(
+                f"Identification would create edges in both directions between {first_vertex} and {target}, "
+                f"which is not allowed."
+            )
+    
+    for source in external_incoming_sources:
+        # After merge: source -> first_vertex
+        # Check if first_vertex already has first_vertex -> source
+        if graph.has_edge(first_vertex, source) and source not in vertices_list:
+            raise ValueError(
+                f"Identification would create edges in both directions between {first_vertex} and {source}, "
+                f"which is not allowed."
+            )
+    
+    # Collect node attributes from first vertex
+    first_vertex_attrs = {}
+    if first_vertex in graph._graph.nodes():
+        first_vertex_attrs.update(graph._graph.nodes[first_vertex])
+    
+    # Merge all other vertices into first vertex
+    for other_v in other_vertices:
+        # Collect all edges incident to other_v before removal
+        edges_to_add: list[tuple[T, T, int, dict[str, Any]]] = []
+        
+        # Outgoing edges from other_v
+        for u, v, key, data in graph.incident_child_edges(other_v, keys=True, data=True):
+            if v == first_vertex or v in other_vertices:
+                continue  # Skip self-loops and edges to other vertices being merged
+            edges_to_add.append((first_vertex, v, key, data or {}))
+        
+        # Incoming edges to other_v
+        for u, v, key, data in graph.incident_parent_edges(other_v, keys=True, data=True):
+            if u == first_vertex or u in other_vertices:
+                continue  # Skip self-loops and edges from other vertices being merged
+            edges_to_add.append((u, first_vertex, key, data or {}))
+        
+        # Remove the vertex (this removes all its incident edges)
+        graph.remove_node(other_v)
+        
+        # Add edges to first_vertex
+        for u, v, key, data in edges_to_add:
+            # Check if edge with this key already exists - if so, let it auto-generate
+            # This allows parallel edges to be created
+            if graph.has_edge(u, v, key=key):
+                # Key conflict - let add_edge auto-generate a new key
+                graph.add_edge(u, v, key=None, **data)
+            else:
+                graph.add_edge(u, v, key=key, **data)
+    
+    # Update first vertex attributes
+    if merged_attrs is not None:
+        # Replace attributes with merged_attrs
+        for attr_name, attr_value in merged_attrs.items():
+            graph._graph.nodes[first_vertex][attr_name] = attr_value
+            graph._combined.nodes[first_vertex][attr_name] = attr_value
+        # Remove attributes not in merged_attrs
+        attrs_to_remove = set(first_vertex_attrs.keys()) - set(merged_attrs.keys())
+        for attr_name in attrs_to_remove:
+            if attr_name in graph._graph.nodes[first_vertex]:
+                del graph._graph.nodes[first_vertex][attr_name]
+            if attr_name in graph._combined.nodes[first_vertex]:
+                del graph._combined.nodes[first_vertex][attr_name]
+    # Otherwise, first vertex's attributes are already preserved
 
 
 def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: dict[str, Any] | None = None) -> None:

@@ -1159,6 +1159,3 @@ class DirectedMultiGraph:
         """
         self._graph.clear()
         self._combined.clear()
-
-    # Note: identify_two_nodes and identify_node_set are now functions
-    # in dm_operations module (NetworkX-style API)

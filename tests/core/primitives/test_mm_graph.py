@@ -24,8 +24,7 @@ from phylozoo.core.primitives.m_multigraph.features import (
     source_components,
 )
 from phylozoo.core.primitives.m_multigraph.transformations import (
-    identify_two_nodes,
-    identify_node_set,
+    identify_vertices,
     orient_away_from_vertex,
 )
 from phylozoo.core.primitives.m_multigraph.conversions import (
@@ -1719,30 +1718,32 @@ class TestGraphOperations:
         assert G.number_of_nodes() == 0
         assert G.number_of_edges() == 0
 
-    def test_identify_two_nodes(self) -> None:
-        """Test identify_two_nodes method."""
+    def test_identify_vertices_two_nodes(self) -> None:
+        """Test identify_vertices method with two nodes."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_directed_edge(1, 4)
-        identify_two_nodes(G, 1, 2)  # Keep node 1
+        identify_vertices(G, [1, 2])  # Keep node 1
         # Node 2 should be removed, edges should be transferred
         assert 2 not in G
         assert 1 in G
         # Check if edges were transferred correctly
-        print(f"After identifying 1 and 2, edges incident to 1: {list(G.neighbors(1))}")
+        assert G.has_edge(1, 3)  # Undirected edge from 2->3 becomes 1->3
+        assert G.has_edge(1, 4)  # Directed edge 1->4 should still exist
 
-    def test_identify_node_set(self) -> None:
-        """Test identify_node_set method."""
+    def test_identify_vertices_multiple_nodes(self) -> None:
+        """Test identify_vertices method with multiple nodes."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(3, 4)
-        identify_node_set(G, [1, 2, 3])  # Keep first node (1)
+        identify_vertices(G, [1, 2, 3])  # Keep first node (1)
         assert 1 in G
         assert 2 not in G
         assert 3 not in G
-        print(f"After identifying [1,2,3], edges incident to 1: {list(G.neighbors(1))}")
+        assert 4 in G
+        assert G.has_edge(1, 4)  # Edge from 3->4 becomes 1->4
 
 
 class TestSourceComponents:

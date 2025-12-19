@@ -20,21 +20,49 @@ else:
 T = TypeVar('T')
 
 
-def identify_two_nodes(graph: 'MixedMultiGraph', u: T, v: T) -> None:
+def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs: dict[str, Any] | None = None) -> None:
     """
-    Identify two nodes u and v by keeping node u.
+    Identify multiple vertices by keeping the first vertex.
     
-    Modifies the graph in place. All edges incident to v are moved to u,
-    and v is removed.
+    This function identifies all vertices in the list with the first vertex.
+    All edges incident to the other vertices are moved to the first vertex,
+    and the other vertices are removed. The first vertex's attributes are
+    preserved (or replaced with merged_attrs if provided).
+    
+    This operation modifies the graph in place. Identification may create
+    new parallel edges. Self-loops are not created (edges from a vertex
+    to itself are removed).
     
     Parameters
     ----------
     graph : MixedMultiGraph
-        The graph to modify.
-    u : T
-        Node to keep.
-    v : T
-        Node to identify with u (will be removed).
+        The mixed multigraph to modify. **This function modifies the graph in place.**
+    vertices : list[T]
+        List of vertices to identify. The first vertex will be kept, and all
+        others will be merged into it.
+    merged_attrs : dict[str, Any] | None, optional
+        Attributes to use for the kept vertex. If None, the first vertex's
+        attributes are preserved. If provided, these attributes replace the
+        first vertex's attributes.
+    
+    Raises
+    ------
+    ValueError
+        If the vertices list is empty, if any vertex is not in the graph, if
+        identification would create both directed and undirected edges between
+        the same pair of nodes, or if identification would create edges in both
+        directions between the same pair of nodes (u->v and v->u), which is not allowed.
+    
+    Notes
+    -----
+    This function does not create self-loops. Any edges that would become
+    self-loops after identification are removed.
+    
+    Identification may create parallel edges. However, if identification would
+    result in both directed and undirected edges between the same pair of nodes
+    (e.g., both a directed edge u->v and an undirected edge u-v), or edges in
+    both directions (e.g., both u->v and v->u), a ValueError is raised as this
+    violates the graph's constraints.
     
     Examples
     --------
@@ -44,58 +72,246 @@ def identify_two_nodes(graph: 'MixedMultiGraph', u: T, v: T) -> None:
     0
     >>> G.add_undirected_edge(2, 3)
     0
-    >>> identify_two_nodes(G, 1, 2)
+    >>> G.add_undirected_edge(3, 4)
+    0
+    >>> identify_vertices(G, [1, 2, 3])
     >>> list(G.nodes())
-    [1, 3]
-    """
-    # Use NetworkX's contracted_nodes on each graph
-    nx.contracted_nodes(graph._undirected, u, v, self_loops=False, copy=False)
-    nx.contracted_nodes(graph._directed, u, v, self_loops=False, copy=False)
-    nx.contracted_nodes(graph._combined, u, v, self_loops=False, copy=False)
-    
-    # Clean up any self-loops that might have been created
-    # (contracted_nodes with self_loops=False should handle this, but be safe)
-    if graph._undirected.has_edge(u, u):
-        for k in list(graph._undirected[u][u].keys()):
-            graph._undirected.remove_edge(u, u, key=k)
-            graph._combined.remove_edge(u, u, key=k)
-    if graph._directed.has_edge(u, u):
-        for k in list(graph._directed[u][u].keys()):
-            graph._directed.remove_edge(u, u, key=k)
-            graph._combined.remove_edge(u, u, key=k)
-
-
-def identify_node_set(graph: 'MixedMultiGraph', nodes: list[T] | set[T]) -> None:
-    """
-    Identify all nodes in the set by keeping the first node.
-    
-    Modifies the graph in place.
-    
-    Parameters
-    ----------
-    graph : MixedMultiGraph
-        The graph to modify.
-    nodes : list[T] | set[T]
-        Iterable of nodes to identify. The first node will be kept.
-    
-    Examples
-    --------
-    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
-    >>> G = MixedMultiGraph()
-    >>> G.add_undirected_edge(1, 2)
-    0
-    >>> G.add_undirected_edge(2, 3)
-    0
-    >>> identify_node_set(G, [1, 2, 3])
-    >>> len(G.nodes()) <= 3
+    [1, 4]
+    >>> G.has_edge(1, 4)
     True
     """
-    nodes_list = list(nodes)
-    if len(nodes_list) < 2:
-        return
+    if not vertices:
+        raise ValueError("Vertices list cannot be empty")
     
-    for i in range(1, len(nodes_list)):
-        identify_two_nodes(graph, nodes_list[0], nodes_list[i])
+    vertices_list = list(vertices)
+    if len(vertices_list) < 2:
+        return  # Nothing to identify
+    
+    first_vertex = vertices_list[0]
+    other_vertices = vertices_list[1:]
+    
+    # Check that all vertices exist
+    for v in vertices_list:
+        if v not in graph.nodes():
+            raise ValueError(f"Vertex {v} not found in graph")
+    
+    # Before merging, check if identification would create conflicting edge types
+    # Collect all edges that would be created, tracking their types
+    edges_to_create: dict[tuple[T, T], set[str]] = {}  # (u, v) -> set of edge types ('directed' or 'undirected')
+    
+    for other_v in other_vertices:
+        # Check outgoing directed edges from other_v
+        for u, v, key, data in graph.incident_child_edges(other_v, keys=True, data=True):
+            if v == first_vertex or v in other_vertices:
+                continue  # Skip self-loops and edges to other vertices being merged
+            edge_key = (first_vertex, v)
+            if edge_key not in edges_to_create:
+                edges_to_create[edge_key] = set()
+            edges_to_create[edge_key].add('directed')
+        
+        # Check incoming directed edges to other_v
+        for u, v, key, data in graph.incident_parent_edges(other_v, keys=True, data=True):
+            if u == first_vertex or u in other_vertices:
+                continue  # Skip self-loops and edges from other vertices being merged
+            edge_key = (u, first_vertex)
+            if edge_key not in edges_to_create:
+                edges_to_create[edge_key] = set()
+            edges_to_create[edge_key].add('directed')
+        
+        # Check undirected edges incident to other_v
+        for u, v, key, data in graph.incident_undirected_edges(other_v, keys=True, data=True):
+            neighbor = v if u == other_v else u
+            if neighbor == first_vertex or neighbor in other_vertices:
+                continue  # Skip self-loops and edges to other vertices being merged
+            # Normalize edge key (undirected edges are symmetric)
+            edge_key = (min(first_vertex, neighbor), max(first_vertex, neighbor))
+            if edge_key not in edges_to_create:
+                edges_to_create[edge_key] = set()
+            edges_to_create[edge_key].add('undirected')
+    
+    # Check for conflicts: both directed and undirected edges between same nodes
+    # Also check for bidirectional directed edges (u->v and v->u)
+    # Also check against existing edges from first_vertex
+    for (u, v), edge_types in edges_to_create.items():
+        # Check if edges_to_create has both types (directed and undirected)
+        if 'directed' in edge_types and 'undirected' in edge_types:
+            raise ValueError(
+                f"Identification would create both directed and undirected edges between {u} and {v}, "
+                f"which violates mutual exclusivity."
+            )
+        
+        # Check for bidirectional directed edges (u->v and v->u)
+        reverse_key = (v, u)
+        if reverse_key in edges_to_create:
+            reverse_types = edges_to_create[reverse_key]
+            if 'directed' in edge_types and 'directed' in reverse_types:
+                raise ValueError(
+                    f"Identification would create edges in both directions between {u} and {v}, "
+                    f"which is not allowed."
+                )
+        
+        # Check against existing edges from first_vertex
+        # Check if first_vertex already has a directed edge to/from this node
+        if u == first_vertex:
+            if graph._directed.has_edge(first_vertex, v):
+                if 'undirected' in edge_types:
+                    raise ValueError(
+                        f"Identification would create both directed and undirected edges between {first_vertex} and {v}, "
+                        f"which violates mutual exclusivity."
+                    )
+                # Check for bidirectional: first_vertex->v exists, and we'd create v->first_vertex
+                if 'directed' in edge_types:
+                    # Check if reverse direction would be created
+                    if (v, first_vertex) in edges_to_create and 'directed' in edges_to_create[(v, first_vertex)]:
+                        raise ValueError(
+                            f"Identification would create edges in both directions between {first_vertex} and {v}, "
+                            f"which is not allowed."
+                        )
+            if graph._directed.has_edge(v, first_vertex):
+                if 'undirected' in edge_types:
+                    raise ValueError(
+                        f"Identification would create both directed and undirected edges between {first_vertex} and {v}, "
+                        f"which violates mutual exclusivity."
+                    )
+                # Check for bidirectional: v->first_vertex exists, and we'd create first_vertex->v
+                if 'directed' in edge_types:
+                    raise ValueError(
+                        f"Identification would create edges in both directions between {first_vertex} and {v}, "
+                        f"which is not allowed."
+                    )
+        elif v == first_vertex:
+            if graph._directed.has_edge(first_vertex, u):
+                if 'undirected' in edge_types:
+                    raise ValueError(
+                        f"Identification would create both directed and undirected edges between {first_vertex} and {u}, "
+                        f"which violates mutual exclusivity."
+                    )
+                # Check for bidirectional: first_vertex->u exists, and we'd create u->first_vertex
+                if 'directed' in edge_types:
+                    raise ValueError(
+                        f"Identification would create edges in both directions between {first_vertex} and {u}, "
+                        f"which is not allowed."
+                    )
+            if graph._directed.has_edge(u, first_vertex):
+                if 'undirected' in edge_types:
+                    raise ValueError(
+                        f"Identification would create both directed and undirected edges between {first_vertex} and {u}, "
+                        f"which violates mutual exclusivity."
+                    )
+                # Check for bidirectional: u->first_vertex exists, and we'd create first_vertex->u
+                if 'directed' in edge_types:
+                    # Check if reverse direction would be created
+                    if (first_vertex, u) in edges_to_create and 'directed' in edges_to_create[(first_vertex, u)]:
+                        raise ValueError(
+                            f"Identification would create edges in both directions between {first_vertex} and {u}, "
+                            f"which is not allowed."
+                        )
+        
+        # Check if first_vertex already has an undirected edge to this node
+        if u == first_vertex:
+            if graph._undirected.has_edge(first_vertex, v):
+                if 'directed' in edge_types:
+                    raise ValueError(
+                        f"Identification would create both directed and undirected edges between {first_vertex} and {v}, "
+                        f"which violates mutual exclusivity."
+                    )
+        elif v == first_vertex:
+            if graph._undirected.has_edge(first_vertex, u):
+                if 'directed' in edge_types:
+                    raise ValueError(
+                        f"Identification would create both directed and undirected edges between {first_vertex} and {u}, "
+                        f"which violates mutual exclusivity."
+                    )
+        
+        # Also check reverse direction for undirected edges
+        reverse_key_undir = (v, u) if u < v else (u, v)
+        if reverse_key_undir in edges_to_create:
+            reverse_types = edges_to_create[reverse_key_undir]
+            if 'directed' in edge_types and 'undirected' in reverse_types:
+                raise ValueError(
+                    f"Identification would create both directed and undirected edges between {u} and {v}, "
+                    f"which violates mutual exclusivity."
+                )
+            if 'undirected' in edge_types and 'directed' in reverse_types:
+                raise ValueError(
+                    f"Identification would create both directed and undirected edges between {u} and {v}, "
+                    f"which violates mutual exclusivity."
+                )
+    
+    # Collect node attributes from first vertex
+    first_vertex_attrs = {}
+    if first_vertex in graph._undirected.nodes():
+        first_vertex_attrs.update(graph._undirected.nodes[first_vertex])
+    if first_vertex in graph._directed.nodes():
+        first_vertex_attrs.update(graph._directed.nodes[first_vertex])
+    
+    # Merge all other vertices into first vertex
+    for other_v in other_vertices:
+        # Collect all edges incident to other_v before removal
+        directed_edges_to_add: list[tuple[T, T, int, dict[str, Any]]] = []
+        undirected_edges_to_add: list[tuple[T, T, int, dict[str, Any]]] = []
+        
+        # Outgoing directed edges from other_v
+        for u, v, key, data in graph.incident_child_edges(other_v, keys=True, data=True):
+            if v == first_vertex or v in other_vertices:
+                continue  # Skip self-loops and edges to other vertices being merged
+            directed_edges_to_add.append((first_vertex, v, key, data or {}))
+        
+        # Incoming directed edges to other_v
+        for u, v, key, data in graph.incident_parent_edges(other_v, keys=True, data=True):
+            if u == first_vertex or u in other_vertices:
+                continue  # Skip self-loops and edges from other vertices being merged
+            directed_edges_to_add.append((u, first_vertex, key, data or {}))
+        
+        # Undirected edges incident to other_v
+        for u, v, key, data in graph.incident_undirected_edges(other_v, keys=True, data=True):
+            neighbor = v if u == other_v else u
+            if neighbor == first_vertex or neighbor in other_vertices:
+                continue  # Skip self-loops and edges to other vertices being merged
+            undirected_edges_to_add.append((first_vertex, neighbor, key, data or {}))
+        
+        # Remove the vertex (this removes all its incident edges)
+        graph.remove_node(other_v)
+        
+        # Add edges to first_vertex
+        for u, v, key, data in directed_edges_to_add:
+            # Check if edge with this key already exists - if so, let it auto-generate
+            # This allows parallel edges to be created
+            if graph.has_edge(u, v, key=key):
+                # Key conflict - let add_directed_edge auto-generate a new key
+                graph.add_directed_edge(u, v, key=None, **data)
+            else:
+                graph.add_directed_edge(u, v, key=key, **data)
+        
+        for u, v, key, data in undirected_edges_to_add:
+            # Check if edge with this key already exists - if so, let it auto-generate
+            # This allows parallel edges to be created
+            if graph.has_edge(u, v, key=key):
+                # Key conflict - let add_undirected_edge auto-generate a new key
+                graph.add_undirected_edge(u, v, key=None, **data)
+            else:
+                graph.add_undirected_edge(u, v, key=key, **data)
+    
+    # Update first vertex attributes
+    if merged_attrs is not None:
+        # Replace attributes with merged_attrs
+        for attr_name, attr_value in merged_attrs.items():
+            if first_vertex in graph._undirected.nodes():
+                graph._undirected.nodes[first_vertex][attr_name] = attr_value
+            if first_vertex in graph._directed.nodes():
+                graph._directed.nodes[first_vertex][attr_name] = attr_value
+            if first_vertex in graph._combined.nodes():
+                graph._combined.nodes[first_vertex][attr_name] = attr_value
+        # Remove attributes not in merged_attrs
+        attrs_to_remove = set(first_vertex_attrs.keys()) - set(merged_attrs.keys())
+        for attr_name in attrs_to_remove:
+            if first_vertex in graph._undirected.nodes() and attr_name in graph._undirected.nodes[first_vertex]:
+                del graph._undirected.nodes[first_vertex][attr_name]
+            if first_vertex in graph._directed.nodes() and attr_name in graph._directed.nodes[first_vertex]:
+                del graph._directed.nodes[first_vertex][attr_name]
+            if first_vertex in graph._combined.nodes() and attr_name in graph._combined.nodes[first_vertex]:
+                del graph._combined.nodes[first_vertex][attr_name]
+    # Otherwise, first vertex's attributes are already preserved
 
 
 def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMultiGraph':
