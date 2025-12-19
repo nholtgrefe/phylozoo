@@ -44,7 +44,7 @@ def has_parallel_edges(network: 'MixedPhyNetwork') -> bool:
 
 
 @lru_cache(maxsize=128)
-def level(network: 'MixedPhyNetwork') -> int:
+def level(network: 'SemiDirectedPhyNetwork') -> int:
     """
     Return the level of the network.
     
@@ -53,8 +53,8 @@ def level(network: 'MixedPhyNetwork') -> int:
     
     Parameters
     ----------
-    network : MixedPhyNetwork
-        The mixed phylogenetic network.
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
     
     Returns
     -------
@@ -67,7 +67,8 @@ def level(network: 'MixedPhyNetwork') -> int:
     
     Examples
     --------
-    >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> level(net)
     0
     """
@@ -94,7 +95,7 @@ def level(network: 'MixedPhyNetwork') -> int:
 
 
 @lru_cache(maxsize=128)
-def vertex_level(network: 'MixedPhyNetwork') -> int:
+def vertex_level(network: 'SemiDirectedPhyNetwork') -> int:
     """
     Return the vertex level of the network.
     
@@ -103,8 +104,8 @@ def vertex_level(network: 'MixedPhyNetwork') -> int:
     
     Parameters
     ----------
-    network : MixedPhyNetwork
-        The mixed phylogenetic network.
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
     
     Returns
     -------
@@ -117,7 +118,8 @@ def vertex_level(network: 'MixedPhyNetwork') -> int:
     
     Examples
     --------
-    >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> vertex_level(net)
     0
     """
@@ -135,7 +137,7 @@ def vertex_level(network: 'MixedPhyNetwork') -> int:
 
 
 @lru_cache(maxsize=128)
-def reticulation_number(network: 'MixedPhyNetwork') -> int:
+def reticulation_number(network: 'SemiDirectedPhyNetwork') -> int:
     """
     Return the reticulation number of the network.
     
@@ -144,8 +146,8 @@ def reticulation_number(network: 'MixedPhyNetwork') -> int:
     
     Parameters
     ----------
-    network : MixedPhyNetwork
-        The mixed phylogenetic network.
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
     
     Returns
     -------
@@ -154,7 +156,8 @@ def reticulation_number(network: 'MixedPhyNetwork') -> int:
     
     Examples
     --------
-    >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> reticulation_number(net)
     0
     """

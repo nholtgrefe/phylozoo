@@ -19,6 +19,4 @@ attribute for splits to store (multiplcitiy, weight etc.)
 
 classificaitons: tree-child (weakly strongly), galled, OLP, is_simple, is stackfree
 
-remove level from network class
-find_lsa node to lsa node
-
+catch warning higher up in tests once?

@@ -13,7 +13,6 @@ import networkx as nx
 
 from ...primitives.d_multigraph.features import (
     bi_edge_connected_components,
-    biconnected_components,
     cut_edges as graph_cut_edges,
     cut_vertices as graph_cut_vertices,
 )
@@ -80,29 +79,43 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
         parents = list(network.parents(leaf))
         return parents[0] if parents else leaf
     
-    # Find all ancestors of each leaf
-    # Use NetworkX's ancestors function on the underlying graph
+    # Find the LSA: the lowest node through which ALL paths from root to leaves pass
+    # This means for each leaf, the LSA must be on ALL simple paths from root to that leaf
+    root = network.root_node
     dag = network._graph._graph
     
-    # For each leaf, find all its ancestors
-    ancestor_sets = []
+    # For each leaf, find all nodes that appear on ALL simple paths from root to that leaf
+    # The LSA must be in the intersection of all these sets
+    nodes_on_all_paths_to_each_leaf = []
+    
     for leaf in leaves:
-        ancestors = set(nx.ancestors(dag, leaf))
-        ancestors.add(leaf)  # Include the leaf itself
-        ancestor_sets.append(ancestors)
+        # Find all simple paths from root to this leaf
+        try:
+            all_paths = list(nx.all_simple_paths(dag, root, leaf))
+        except nx.NetworkXNoPath:
+            raise ValueError(f"No path from root {root} to leaf {leaf}")
+        
+        if not all_paths:
+            raise ValueError(f"No path from root {root} to leaf {leaf}")
+        
+        # Find nodes that appear on ALL paths to this leaf
+        # Start with nodes from the first path
+        nodes_on_all_paths = set(all_paths[0])
+        # Intersect with nodes from each subsequent path
+        for path in all_paths[1:]:
+            nodes_on_all_paths &= set(path)
+        
+        nodes_on_all_paths_to_each_leaf.append(nodes_on_all_paths)
     
-    # Find intersection: nodes that are ancestors of all leaves
-    common_ancestors = ancestor_sets[0]
-    for ancestor_set in ancestor_sets[1:]:
-        common_ancestors &= ancestor_set
+    # Find intersection: nodes that are on ALL paths to ALL leaves
+    lsa_candidates = nodes_on_all_paths_to_each_leaf[0]
+    for node_set in nodes_on_all_paths_to_each_leaf[1:]:
+        lsa_candidates &= node_set
     
-    if not common_ancestors:
-        # This shouldn't happen in a valid network, but handle it
-        raise ValueError("No common ancestor found for all leaves")
+    if not lsa_candidates:
+        raise ValueError("No node found on all paths from root to all leaves")
     
-    # Find the node with maximum depth (distance from root)
-    root = network.root_node
-    
+    # Find the deepest node (maximum depth from root) among candidates
     # Compute depths using BFS from root (use deque for O(1) popleft)
     depths: dict[T, int] = {}
     queue = deque([root])
@@ -115,8 +128,8 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
                 depths[child] = depths[current] + 1
                 queue.append(child)
     
-    # Find the deepest node among common ancestors using max() with key function
-    return max(common_ancestors, key=lambda node: depths.get(node, 0))
+    # Return the deepest node among LSA candidates
+    return max(lsa_candidates, key=lambda node: depths.get(node, 0))
 
 
 @lru_cache(maxsize=128)
