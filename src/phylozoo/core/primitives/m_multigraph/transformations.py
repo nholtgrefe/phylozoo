@@ -447,3 +447,167 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
             f"Unexpected edge type combination for node {node}: "
             f"{type1} and {type2}"
         )
+
+
+def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: dict[str, Any] | None = None) -> None:
+    """
+    Identify all parallel edges between two nodes by keeping one edge.
+    
+    This function removes all parallel edges between u and v except one,
+    effectively merging them into a single edge. The first edge (lowest key)
+    is kept, and all others are removed.
+    
+    For mixed multigraphs, parallel edges can be either:
+    - Multiple directed edges from u to v (if any directed edges exist)
+    - Multiple undirected edges between u and v (if any undirected edges exist)
+    
+    Note: Directed and undirected edges between the same nodes are mutually exclusive
+    in MixedMultiGraph, so this function handles only one type at a time.
+    
+    Edge attributes are handled as follows:
+    - If `merged_attrs` is provided: these attributes are used directly for the kept edge.
+      This allows the caller to apply special merging logic before identification.
+    - If `merged_attrs` is None: attributes are merged by taking the first edge's data,
+      then subsequent edges' data overriding. For attributes present in multiple edges,
+      the last edge's value overrides earlier values.
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The mixed multigraph to modify. **This function modifies the graph in place.**
+    u : T
+        First node.
+    v : T
+        Second node.
+    merged_attrs : dict[str, Any] | None, optional
+        Pre-merged attributes to use for the kept edge. If None, attributes are merged
+        by taking the first edge's data first, then subsequent edges' data overriding.
+        
+        When provided, these attributes will be used directly for the kept edge.
+        This is useful when special attribute handling is needed.
+    
+    Raises
+    ------
+    ValueError
+        If either node is not in the graph, or if no edges exist between u and v.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> G = MixedMultiGraph()
+    >>> G.add_directed_edge(1, 2, weight=1.0)
+    0
+    >>> G.add_directed_edge(1, 2, weight=2.0)
+    1
+    >>> G.add_directed_edge(1, 2, label='test')
+    2
+    >>> identify_parallel_edge(G, 1, 2)
+    >>> G.number_of_edges(1, 2)
+    1
+    >>> # With undirected edges
+    >>> G2 = MixedMultiGraph()
+    >>> G2.add_undirected_edge(1, 2, weight=1.0)
+    0
+    >>> G2.add_undirected_edge(1, 2, weight=2.0)
+    1
+    >>> identify_parallel_edge(G2, 1, 2, merged_attrs={'weight': 3.0, 'merged': True})
+    >>> edge_data = G2._undirected[1][2][0]
+    >>> edge_data['weight']
+    3.0
+    >>> edge_data['merged']
+    True
+    """
+    # Check that nodes exist
+    if u not in graph.nodes():
+        raise ValueError(f"Node {u} not found in graph")
+    if v not in graph.nodes():
+        raise ValueError(f"Node {v} not found in graph")
+    
+    # Check if there are any edges between u and v
+    if not graph.has_edge(u, v):
+        raise ValueError(f"No edges exist between nodes {u} and {v}")
+    
+    # Check if edges are directed or undirected (mutually exclusive)
+    has_directed = graph._directed.has_edge(u, v)
+    has_undirected = graph._undirected.has_edge(u, v) or graph._undirected.has_edge(v, u)
+    
+    if has_directed:
+        # Handle parallel directed edges
+        edges_dict = graph._directed[u].get(v, {})
+        if not edges_dict:
+            raise ValueError(f"No directed edges exist between nodes {u} and {v}")
+        
+        num_edges = len(edges_dict)
+        if num_edges <= 1:
+            # No parallel edges, nothing to do
+            return
+        
+        # Collect all edge keys and data
+        edge_keys = sorted(edges_dict.keys())
+        first_key = edge_keys[0]
+        first_data = edges_dict[first_key]
+        
+        # Determine merged attributes
+        if merged_attrs is None:
+            merged_attrs = {}
+            # Start with first edge's data
+            if first_data:
+                merged_attrs.update(first_data)
+            # Then override with subsequent edges' data
+            for key in edge_keys[1:]:
+                edge_data = edges_dict[key]
+                if edge_data:
+                    merged_attrs.update(edge_data)
+        
+        # Remove all edges between u and v
+        for key in edge_keys:
+            graph.remove_directed_edge(u, v, key=key)
+        
+        # Add back a single edge with merged attributes
+        graph.add_directed_edge(u, v, key=first_key, **merged_attrs)
+    
+    elif has_undirected:
+        # Handle parallel undirected edges
+        # Check both directions (u, v) and (v, u) since undirected edges are symmetric
+        edges_dict = graph._undirected[u].get(v, {})
+        if not edges_dict:
+            edges_dict = graph._undirected[v].get(u, {})
+        
+        if not edges_dict:
+            raise ValueError(f"No undirected edges exist between nodes {u} and {v}")
+        
+        num_edges = len(edges_dict)
+        if num_edges <= 1:
+            # No parallel edges, nothing to do
+            return
+        
+        # Collect all edge keys and data
+        edge_keys = sorted(edges_dict.keys())
+        first_key = edge_keys[0]
+        first_data = edges_dict[first_key]
+        
+        # Determine merged attributes
+        if merged_attrs is None:
+            merged_attrs = {}
+            # Start with first edge's data
+            if first_data:
+                merged_attrs.update(first_data)
+            # Then override with subsequent edges' data
+            for key in edge_keys[1:]:
+                edge_data = edges_dict[key]
+                if edge_data:
+                    merged_attrs.update(edge_data)
+        
+        # Remove all edges between u and v (handle both directions)
+        for key in edge_keys:
+            # Try removing as (u, v) first, then (v, u)
+            try:
+                graph.remove_edge(u, v, key=key)
+            except (ValueError, KeyError):
+                graph.remove_edge(v, u, key=key)
+        
+        # Add back a single edge with merged attributes
+        graph.add_undirected_edge(u, v, key=first_key, **merged_attrs)
+    
+    else:
+        raise ValueError(f"No edges exist between nodes {u} and {v}")

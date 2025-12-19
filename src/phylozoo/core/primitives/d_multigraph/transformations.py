@@ -200,3 +200,112 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     
     # Add the new edge u->v
     graph.add_edge(u, v, key=k1 if k1 == k2 else None, **merged_attrs)
+
+
+def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs: dict[str, Any] | None = None) -> None:
+    """
+    Identify all parallel edges between two nodes by keeping one edge.
+    
+    This function removes all parallel edges between u and v except one,
+    effectively merging them into a single edge. The first edge (lowest key)
+    is kept, and all others are removed.
+    
+    Edge attributes are handled as follows:
+    - If `merged_attrs` is provided: these attributes are used directly for the kept edge.
+      This allows the caller to apply special merging logic before identification.
+    - If `merged_attrs` is None: attributes are merged by taking the first edge's data,
+      then subsequent edges' data overriding. For attributes present in multiple edges,
+      the last edge's value overrides earlier values.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The directed multigraph to modify. **This function modifies the graph in place.**
+    u : T
+        Source node.
+    v : T
+        Target node.
+    merged_attrs : dict[str, Any] | None, optional
+        Pre-merged attributes to use for the kept edge. If None, attributes are merged
+        by taking the first edge's data first, then subsequent edges' data overriding.
+        
+        When provided, these attributes will be used directly for the kept edge.
+        This is useful when special attribute handling is needed.
+    
+    Raises
+    ------
+    ValueError
+        If either node is not in the graph, or if no edges exist between u and v.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+    >>> G = DirectedMultiGraph()
+    >>> G.add_edge(1, 2, weight=1.0)
+    0
+    >>> G.add_edge(1, 2, weight=2.0)
+    1
+    >>> G.add_edge(1, 2, label='test')
+    2
+    >>> identify_parallel_edge(G, 1, 2)
+    >>> G.number_of_edges(1, 2)
+    1
+    >>> # With custom merged attributes
+    >>> G2 = DirectedMultiGraph()
+    >>> G2.add_edge(1, 2, weight=1.0)
+    0
+    >>> G2.add_edge(1, 2, weight=2.0)
+    1
+    >>> identify_parallel_edge(G2, 1, 2, merged_attrs={'weight': 3.0, 'merged': True})
+    >>> edge_data = G2._graph[1][2][0]
+    >>> edge_data['weight']
+    3.0
+    >>> edge_data['merged']
+    True
+    """
+    # Check that nodes exist
+    if u not in graph.nodes():
+        raise ValueError(f"Node {u} not found in graph")
+    if v not in graph.nodes():
+        raise ValueError(f"Node {v} not found in graph")
+    
+    # Check if there are any edges between u and v
+    if not graph.has_edge(u, v):
+        raise ValueError(f"No edges exist between nodes {u} and {v}")
+    
+    # Get all parallel edges between u and v
+    edges_dict = graph._graph[u].get(v, {})
+    if not edges_dict:
+        raise ValueError(f"No edges exist between nodes {u} and {v}")
+    
+    num_edges = len(edges_dict)
+    if num_edges <= 1:
+        # No parallel edges, nothing to do
+        return
+    
+    # Collect all edge keys and data
+    edge_keys = sorted(edges_dict.keys())
+    first_key = edge_keys[0]
+    first_data = edges_dict[first_key]
+    
+    # Determine merged attributes
+    if merged_attrs is None:
+        merged_attrs = {}
+        # Start with first edge's data
+        if first_data:
+            merged_attrs.update(first_data)
+        # Then override with subsequent edges' data
+        for key in edge_keys[1:]:
+            edge_data = edges_dict[key]
+            if edge_data:
+                merged_attrs.update(edge_data)
+    else:
+        # Use provided merged_attrs directly
+        pass
+    
+    # Remove all edges between u and v
+    for key in edge_keys:
+        graph.remove_edge(u, v, key=key)
+    
+    # Add back a single edge with merged attributes
+    graph.add_edge(u, v, key=first_key, **merged_attrs)
