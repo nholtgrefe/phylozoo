@@ -64,6 +64,7 @@
 - Use type hints in test functions as well
 - If a test does not work at first go, don't necessarily fix the test to work, but consider whether we might want to update the class of interest instead.
 - **NEVER** fix tests based on the actual behavior, instead clarify with me what behaviour I want to see.
+- Use existing example networks to test functions.
 
 ## Workflow Preferences
 

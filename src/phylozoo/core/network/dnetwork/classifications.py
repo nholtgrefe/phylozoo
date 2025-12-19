@@ -268,3 +268,37 @@ def is_tree(network: 'DirectedPhyNetwork') -> bool:
     True
     """
     return len(network.hybrid_edges) == 0
+
+
+@lru_cache(maxsize=128)
+def is_simple(network: 'DirectedPhyNetwork') -> bool:
+    """
+    Check if the network is simple.
+    
+    A network is simple if it has at most one non-leaf blob.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network has at most one non-leaf blob, False otherwise.
+    
+    Notes
+    -----
+    For empty networks, this function returns True.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> is_simple(net)
+    True
+    """
+    if network.number_of_nodes() == 0:
+        return True
+    
+    non_leaf_blobs = list(blobs(network, leaves=False))
+    return len(non_leaf_blobs) <= 1

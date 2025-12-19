@@ -16,6 +16,7 @@ import pytest
 from phylozoo.core.network import SemiDirectedPhyNetwork
 from phylozoo.core.network.sdnetwork.classifications import (
     is_binary,
+    is_simple,
     is_tree,
     level,
     reticulation_number,
@@ -311,4 +312,70 @@ class TestIsTree:
             ]
         )
         assert is_tree(net) is True
+
+
+class TestIsSimple:
+    """Test cases for is_simple() function."""
+
+    def test_is_simple_empty_network(self) -> None:
+        """Test is_simple in empty network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
+        assert is_simple(net) is True
+
+    def test_is_simple_tree_single_internal(self) -> None:
+        """Test is_simple in tree with single internal node."""
+        # Semi-directed networks require internal nodes to have degree >= 3
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        # Tree with one internal node has one non-leaf blob, so it is simple
+        assert is_simple(net) is True
+
+    def test_is_simple_tree_multiple_internal(self) -> None:
+        """Test is_simple in tree with multiple internal nodes."""
+        # Semi-directed networks require internal nodes to have degree >= 3
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[
+                (5, 3), (5, 4), (5, 6),  # Node 5 has degree 3
+                (3, 1), (3, 2), (3, 7)  # Node 3 has degree 3
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}),
+                (6, {'label': 'D'}), (7, {'label': 'E'})
+            ]
+        )
+        # Tree with multiple internal nodes has multiple non-leaf blobs, so it is not simple
+        assert is_simple(net) is False
+
+    def test_is_simple_single_hybrid(self) -> None:
+        """Test is_simple with single hybrid node (one non-leaf blob)."""
+        # Network with single hybrid
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1),  # Hybrid node 5: in-degree 2, total degree 3
+                (6, 2), (6, 3), (6, 7),  # Tree node 6
+                (7, 8), (7, 9),  # Tree node 7
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
+                (8, {'label': 'D'}), (9, {'label': 'E'}),
+            ]
+        )
+        # Single hybrid creates one non-leaf blob
+        assert is_simple(net) is True
+
+    def test_is_simple_multiple_blobs(self) -> None:
+        """Test is_simple with multiple non-leaf blobs."""
+        # Use a fixture network that has multiple blobs
+        from tests.fixtures import sd_networks as sdn
+        # Networks with multiple blobs should not be simple
+        assert is_simple(sdn.LEVEL_1_SDNETWORK_TWO_BLOBS) is False
+        assert is_simple(sdn.LEVEL_2_SDNETWORK_THREE_BLOBS) is False
 

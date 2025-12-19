@@ -18,5 +18,3 @@ Is cut-vertex or is articulation?
 attribute for splits to store (multiplcitiy, weight etc.)
 
 classificaitons: tree-child (weakly strongly), galled, OLP, is_simple, is stackfree
-
-catch warning higher up in tests once?

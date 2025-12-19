@@ -16,6 +16,7 @@ import pytest
 from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.classifications import (
     is_binary,
+    is_simple,
     is_tree,
     level,
     reticulation_number,
@@ -312,4 +313,59 @@ class TestIsTree:
             ]
         )
         assert is_tree(net) is True
+
+
+class TestIsSimple:
+    """Test cases for is_simple() function."""
+
+    def test_is_simple_empty_network(self) -> None:
+        """Test is_simple in empty network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(edges=[])
+        assert is_simple(net) is True
+
+    def test_is_simple_tree_single_internal(self) -> None:
+        """Test is_simple in tree with single internal node."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        # Tree with one internal node has one non-leaf blob, so it is simple
+        assert is_simple(net) is True
+
+    def test_is_simple_tree_multiple_internal(self) -> None:
+        """Test is_simple in tree with multiple internal nodes."""
+        net = DirectedPhyNetwork(
+            edges=[(5, 3), (5, 4), (3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        # Tree with multiple internal nodes has multiple non-leaf blobs, so it is not simple
+        assert is_simple(net) is False
+
+    def test_is_simple_single_hybrid(self) -> None:
+        """Test is_simple with single hybrid node (one non-leaf blob)."""
+        # Network: root -> tree nodes -> hybrid -> leaf
+        net = DirectedPhyNetwork(
+            edges=[(8, 5), (8, 6), (5, 4), (5, 1), (6, 4), (6, 2), (4, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        # Single hybrid creates one non-leaf blob
+        assert is_simple(net) is True
+
+    def test_is_simple_multiple_blobs(self) -> None:
+        """Test is_simple with multiple non-leaf blobs."""
+        # Use a fixture network that has multiple blobs
+        from tests.fixtures import directed_networks as dn
+        # LEVEL_1_DNETWORK_TWO_BLOBS has two separate hybrid regions
+        assert is_simple(dn.LEVEL_1_DNETWORK_TWO_BLOBS) is False
+
+    def test_is_simple_with_fixtures(self) -> None:
+        """Test is_simple using example networks from fixtures."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Networks with multiple blobs should not be simple
+        assert is_simple(dn.LEVEL_1_DNETWORK_TWO_BLOBS) is False
+        assert is_simple(dn.LEVEL_2_DNETWORK_THREE_BLOBS) is False
+        assert is_simple(dn.LEVEL_1_DNETWORK_FIVE_BLOBS) is False
 
