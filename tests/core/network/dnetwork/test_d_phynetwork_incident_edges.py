@@ -101,7 +101,7 @@ class TestIncidentParentEdges:
                 {'u': 7, 'v': 5},
                 {'u': 7, 'v': 6},
                 {'u': 5, 'v': 4, 'key': 0, 'branch_length': 0.5},
-                {'u': 5, 'v': 4, 'key': 1, 'branch_length': 0.7},
+                {'u': 5, 'v': 4, 'key': 1, 'branch_length': 0.5},  # Same branch_length for parallel edges
                 {'u': 5, 'v': 8},
                 {'u': 6, 'v': 4},
                 {'u': 6, 'v': 9},
@@ -323,7 +323,7 @@ class TestIncidentEdgesEdgeCases:
                 {'u': 7, 'v': 5},
                 {'u': 7, 'v': 6},
                 {'u': 5, 'v': 4, 'key': 0, 'branch_length': 0.5},
-                {'u': 5, 'v': 4, 'key': 1, 'branch_length': 0.7},
+                {'u': 5, 'v': 4, 'key': 1, 'branch_length': 0.5},  # Same branch_length for parallel edges
                 {'u': 5, 'v': 8},
                 {'u': 6, 'v': 4},
                 {'u': 6, 'v': 9},

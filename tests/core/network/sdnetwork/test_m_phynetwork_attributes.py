@@ -86,7 +86,9 @@ class TestGetEdgeAttribute:
         """Test getting attribute from parallel edge with key."""
         # Parallel undirected edges between internal nodes 3 and 4
         # Both nodes need degree >= 3
-        with expect_mixed_network_warning():
+        # Use no_validation to allow different branch_length values for testing
+        from phylozoo.utils.validation import no_validation
+        with no_validation():
             net = MixedPhyNetwork(
             undirected_edges=[
             {'u': 3, 'v': 4, 'key': 0, 'branch_length': 0.5},
@@ -154,7 +156,9 @@ class TestGetBranchLength:
     def test_get_branch_length_parallel_edges(self) -> None:
         """Test getting branch length from parallel edges."""
         # Parallel edges between internal nodes
-        with expect_mixed_network_warning():
+        # Use no_validation to allow different branch_length values for testing
+        from phylozoo.utils.validation import no_validation
+        with no_validation():
             net = MixedPhyNetwork(
             undirected_edges=[
             {'u': 3, 'v': 4, 'key': 0, 'branch_length': 0.5},

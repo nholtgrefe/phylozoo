@@ -52,7 +52,7 @@ class MixedPhyNetwork:
         - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
         
         Edge attributes (validated):
-        - branch_length (float)
+        - branch_length (float; for set of parallel edges, all must have equal branch_length)
         - bootstrap (float in [0.0, 1.0])
         - gamma (float in [0.0, 1.0], hybrid edges only; for each hybrid node, all 
         incoming gammas must sum to 1.0) 
@@ -67,7 +67,7 @@ class MixedPhyNetwork:
         - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
         
         Edge attributes (validated):
-        - branch_length (float)
+        - branch_length (float; for set of parallel edges, all must have equal branch_length)
         - bootstrap (float in [0.0, 1.0])
         
         Note: Undirected edges cannot have gamma values.
@@ -565,6 +565,122 @@ class MixedPhyNetwork:
                     f"Each node must have indegree either 0 or total_degree-1."
                 )
     
+    def _validate_branchlength_constraints(self) -> None:
+        """
+        Validate branch length constraints for parallel edges.
+        
+        For each set of parallel edges between nodes u and v (for both directed
+        and undirected edges separately), this method ensures:
+        1. If one edge has a branch_length attribute, all parallel edges must have branch_length
+        2. All branch_length values must be the same across parallel edges
+        
+        Raises
+        ------
+        ValueError
+            If branch length constraints are violated for any set of parallel edges.
+        
+        Notes
+        -----
+        This is an internal validation method called by ``validate()``.
+        """
+        # Check directed edges
+        directed_edge_groups: dict[tuple[T, T], list[tuple[int, dict[str, Any]]]] = {}
+        
+        for u, v, key, data in self._graph.directed_edges_iter(keys=True, data=True):
+            edge_key = (u, v)
+            if edge_key not in directed_edge_groups:
+                directed_edge_groups[edge_key] = []
+            directed_edge_groups[edge_key].append((key, data or {}))
+        
+        # Check undirected edges (normalize to (min(u,v), max(u,v)) for consistency)
+        undirected_edge_groups: dict[tuple[T, T], list[tuple[int, dict[str, Any]]]] = {}
+        
+        for u, v, key, data in self._graph.undirected_edges_iter(keys=True, data=True):
+            edge_key = (min(u, v), max(u, v))
+            if edge_key not in undirected_edge_groups:
+                undirected_edge_groups[edge_key] = []
+            undirected_edge_groups[edge_key].append((key, data or {}))
+        
+        # Validate directed edges
+        for (u, v), edges in directed_edge_groups.items():
+            if len(edges) <= 1:
+                continue  # No parallel edges, skip
+            
+            branch_lengths: list[float] = []
+            missing_branch_lengths: list[int] = []
+            
+            for key, data in edges:
+                bl = data.get('branch_length')
+                if bl is None:
+                    missing_branch_lengths.append(key)
+                else:
+                    if not isinstance(bl, (int, float)):
+                        raise ValueError(
+                            f"Directed edge ({u}, {v}, key={key}) has branch_length of type {type(bl).__name__}, "
+                            f"but must be numeric."
+                        )
+                    branch_lengths.append(float(bl))
+            
+            if branch_lengths and missing_branch_lengths:
+                missing_keys_str = ', '.join(str(k) for k in missing_branch_lengths)
+                raise ValueError(
+                    f"Parallel directed edges between {u} and {v} have inconsistent branch_length attributes. "
+                    f"Some edges have branch_length (keys: {[k for k, d in edges if d.get('branch_length') is not None]}), "
+                    f"but others do not (keys: {missing_keys_str}). "
+                    f"If one parallel edge has branch_length, all must have branch_length."
+                )
+            
+            if len(branch_lengths) > 1:
+                first_bl = branch_lengths[0]
+                for i, bl in enumerate(branch_lengths[1:], start=1):
+                    if abs(bl - first_bl) > 1e-10:
+                        keys_with_bl = [k for k, d in edges if d.get('branch_length') is not None]
+                        raise ValueError(
+                            f"Parallel directed edges between {u} and {v} have different branch_length values. "
+                            f"All parallel edges must have the same branch_length. "
+                            f"Found values: {branch_lengths} for keys: {keys_with_bl}"
+                        )
+        
+        # Validate undirected edges
+        for (u, v), edges in undirected_edge_groups.items():
+            if len(edges) <= 1:
+                continue  # No parallel edges, skip
+            
+            branch_lengths: list[float] = []
+            missing_branch_lengths: list[int] = []
+            
+            for key, data in edges:
+                bl = data.get('branch_length')
+                if bl is None:
+                    missing_branch_lengths.append(key)
+                else:
+                    if not isinstance(bl, (int, float)):
+                        raise ValueError(
+                            f"Undirected edge ({u}, {v}, key={key}) has branch_length of type {type(bl).__name__}, "
+                            f"but must be numeric."
+                        )
+                    branch_lengths.append(float(bl))
+            
+            if branch_lengths and missing_branch_lengths:
+                missing_keys_str = ', '.join(str(k) for k in missing_branch_lengths)
+                raise ValueError(
+                    f"Parallel undirected edges between {u} and {v} have inconsistent branch_length attributes. "
+                    f"Some edges have branch_length (keys: {[k for k, d in edges if d.get('branch_length') is not None]}), "
+                    f"but others do not (keys: {missing_keys_str}). "
+                    f"If one parallel edge has branch_length, all must have branch_length."
+                )
+            
+            if len(branch_lengths) > 1:
+                first_bl = branch_lengths[0]
+                for i, bl in enumerate(branch_lengths[1:], start=1):
+                    if abs(bl - first_bl) > 1e-10:
+                        keys_with_bl = [k for k, d in edges if d.get('branch_length') is not None]
+                        raise ValueError(
+                            f"Parallel undirected edges between {u} and {v} have different branch_length values. "
+                            f"All parallel edges must have the same branch_length. "
+                            f"Found values: {branch_lengths} for keys: {keys_with_bl}"
+                        )
+    
     def validate(self) -> None:
         """
         Validate the network structure and edge attributes.
@@ -577,6 +693,8 @@ class MixedPhyNetwork:
         5. Mixed network constraint (issues warning that additional checks may be added)
         6. Bootstrap values are in [0.0, 1.0]
         7. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
+        8. Branch length constraints: for each set of parallel edges, if one edge has
+           branch_length, all must have branch_length, and all values must be the same
         
         Raises
         ------
@@ -630,6 +748,9 @@ class MixedPhyNetwork:
         
         # 6. Validate gamma constraints
         self._validate_gamma_constraints()
+        
+        # 7. Validate branch length constraints
+        self._validate_branchlength_constraints()
     
     def _validate_structural_constraints(self) -> None:
         """
