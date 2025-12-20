@@ -202,7 +202,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
        create parallel edges. Suppression connects the two neighbors directly:
        - undirected+undirected -> undirected
        - directed+directed (u->x, x->v) -> directed (u->v)
-       - directed into x and undirected out (u->x, x—v) -> directed (u->v)
+       - directed into x and undirected out (u->x, x—v) -> undirected (u-v)
        - undirected into x and directed out (u—x, x->v) -> directed (u->v)
     
     Parameters
@@ -647,12 +647,8 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             new_nodes.append((node, {'label': label}))
     
     # Create and return new network
-    # Use no_validation to allow creation even if structure is temporarily invalid
-    # The transformation may produce networks that need further processing
-    from phylozoo.utils.validation import no_validation
-    with no_validation():
-        return DirectedPhyNetwork(
-            edges=new_edges,
-            nodes=new_nodes if new_nodes else None
-        )
+    return DirectedPhyNetwork(
+        edges=new_edges,
+        nodes=new_nodes if new_nodes else None
+    )
 

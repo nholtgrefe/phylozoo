@@ -358,13 +358,9 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
             new_nodes.append((node, {'label': label}))
     
     # Create and return new network
-    # Use no_validation to allow creation even if structure is temporarily invalid
-    # The transformation may produce networks that need further processing
-    from phylozoo.utils.validation import no_validation
-    with no_validation():
-        return SemiDirectedPhyNetwork(
-            directed_edges=new_directed_edges,
-            undirected_edges=new_undirected_edges,
-            nodes=new_nodes if new_nodes else None
-        )
+    return SemiDirectedPhyNetwork(
+        directed_edges=new_directed_edges,
+        undirected_edges=new_undirected_edges,
+        nodes=new_nodes if new_nodes else None
+    )
 
