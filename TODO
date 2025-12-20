@@ -18,3 +18,19 @@ Is cut-vertex or is articulation?
 attribute for splits to store (multiplcitiy, weight etc.)
 
 classificaitons: tree-child (weakly strongly), galled, OLP, is stackfree
+use novalidation more
+
+
+##
+- for identify par edges, move branch length to bottom out edge (should be one) and remove gamma and bootstrap
+- for supp de
+
+- update to_sd_networks docstring degree-2suppres
+
+
+Next, I want a function in the two network transformations module. Called 'identify_parallel_edges', what it does is it identifies every pair of aprallel edges and suppressing degree-2 nodes exhaustively. You may use the existing functions for the dm_ and mm_graph classes. The attributes are merged in a special way, in particular, when suppressing degree-2 nodes thte branch lengths on either side are summed (if they exist of course and if possible).
+
+Next, I want a function in the two network transformations modules (for DirectedPhyNetwork and SemiDirectedPhyNetwork, not MixedPhyNetwork), called 'identify_parallel_edges', what it does is:  it identifies every pair of parallel edges and suppresses degree-2 nodes exhaustively. You may use the existing functions for the dm_ and mm_graph classes to perform this. However, there is some special attribute handling (use the merged_attr parameter to take care of this). In particular:
+- when suppressing a degree-2 node v (with edge uv and vw) the branch lengths of uv and vw are summed and assigned to the new edge uw (other attributes are removed, do note this in the docs)
+- when identifying parallel edges, the new edge gets the branch_length from one of the originals (they should all be same by definition and validation anyway), other attributes are removed (like gamma etc.)
+Since these two operations supp degree-2 nodes and identifyiung par edges (with this specific attribute handling) will probably come back later, I think it might be nice to have them as internal helper function that may be reused later

@@ -10,6 +10,10 @@ from typing import Any
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
 from .features import lsa_node
+from ...primitives.d_multigraph.transformations import (
+    identify_parallel_edge as dm_identify_parallel_edge,
+    suppress_degree2_node as dm_suppress_degree2_node,
+)
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.transformations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork
@@ -361,4 +365,294 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
         undirected_edges=final_undirected,
         nodes=nodes_list if nodes_list else None,
     )
+
+
+def _merge_attrs_for_degree2_suppression_directed(
+    edge1_data: dict[str, Any],
+    edge2_data: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Merge edge attributes for suppressing a degree-2 node in a directed network.
+    
+    Special handling:
+    - branch_length: If both edges have branch_length, sum them. Otherwise, use the one that has it.
+    - gamma: If edge2 has gamma, use it. Otherwise, don't include gamma.
+    - All other attributes (bootstrap, etc.) are removed.
+    
+    Parameters
+    ----------
+    edge1_data : dict[str, Any]
+        Attributes of the first edge (uv).
+    edge2_data : dict[str, Any]
+        Attributes of the second edge (vw).
+    
+    Returns
+    -------
+    dict[str, Any]
+        Merged attributes containing branch_length (if present) and gamma (if edge2 has it).
+        All other attributes are removed.
+    
+    Notes
+    -----
+    This is an internal helper function for identify_parallel_edges.
+    """
+    merged: dict[str, Any] = {}
+    
+    # Handle branch_length: sum if both present, otherwise use the one that has it
+    bl1 = edge1_data.get('branch_length') if edge1_data else None
+    bl2 = edge2_data.get('branch_length') if edge2_data else None
+    
+    if bl1 is not None and bl2 is not None:
+        merged['branch_length'] = bl1 + bl2
+    elif bl1 is not None:
+        merged['branch_length'] = bl1
+    elif bl2 is not None:
+        merged['branch_length'] = bl2
+    
+    # Handle gamma: use edge2's gamma if present
+    gamma2 = edge2_data.get('gamma') if edge2_data else None
+    if gamma2 is not None:
+        merged['gamma'] = gamma2
+    
+    # All other attributes (bootstrap, etc.) are removed
+    return merged
+
+
+def _merge_attrs_for_parallel_identification_directed(
+    edges_data: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Merge edge attributes for identifying parallel edges in a directed network.
+    
+    Special handling:
+    - branch_length: Extract from the first edge (all should be same by validation).
+    - gamma: Sum all gamma values from parallel edges.
+    - All other attributes (bootstrap, etc.) are removed.
+    
+    Parameters
+    ----------
+    edges_data : list[dict[str, Any]]
+        List of edge data dictionaries for parallel edges between the same pair of nodes.
+    
+    Returns
+    -------
+    dict[str, Any]
+        Merged attributes containing branch_length (if present) and gamma (sum of all gammas).
+        All other attributes are removed.
+    
+    Notes
+    -----
+    This is an internal helper function for identify_parallel_edges.
+    All parallel edges should have the same branch_length by validation, so we
+    just take it from the first edge.
+    """
+    merged: dict[str, Any] = {}
+    
+    if not edges_data:
+        return merged
+    
+    # Extract branch_length from first edge (all should be same by validation)
+    first_data = edges_data[0] or {}
+    bl = first_data.get('branch_length')
+    if bl is not None:
+        merged['branch_length'] = bl
+    
+    # Sum gamma values from all parallel edges
+    gamma_sum = 0.0
+    has_gamma = False
+    for edge_data in edges_data:
+        if edge_data:
+            gamma = edge_data.get('gamma')
+            if gamma is not None:
+                gamma_sum += gamma
+                has_gamma = True
+    
+    if has_gamma:
+        merged['gamma'] = gamma_sum
+    
+    # All other attributes (bootstrap, etc.) are removed
+    return merged
+
+
+def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
+    """
+    Identify all parallel edges and suppress all degree-2 nodes exhaustively.
+    
+    This function iteratively:
+    1. Identifies all parallel edges (removes all but one, keeping branch_length)
+    2. Suppresses all degree-2 nodes (sums branch_lengths, removes other attributes)
+    
+    The process continues until no more changes occur, as suppression may create
+    new parallel edges, and identification may create new degree-2 nodes.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to transform.
+    
+    Returns
+    -------
+    DirectedPhyNetwork
+        A new network with all parallel edges identified and all degree-2 nodes suppressed.
+    
+    Notes
+    -----
+    - Branch lengths are preserved: summed when suppressing degree-2 nodes, kept from
+      first edge when identifying parallel edges (all should be same by validation).
+    - Gamma values: summed when identifying parallel edges, preserved from edge2 when
+      suppressing degree-2 nodes (if edge2 has gamma, otherwise no gamma is included).
+    - All other edge attributes (bootstrap, etc.) are removed.
+    - Node labels and other node attributes are preserved.
+    - Leaves are never suppressed.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         {'u': 1, 'v': 2, 'branch_length': 0.5},
+    ...         {'u': 1, 'v': 2, 'branch_length': 0.5},  # Parallel edges: node 2 is hybrid (in-degree 2)
+    ...         {'u': 2, 'v': 3, 'branch_length': 0.3},  # Node 2 to tree node 3
+    ...         {'u': 3, 'v': 4, 'branch_length': 0.2},  # Node 3 to leaf
+    ...         {'u': 3, 'v': 5, 'branch_length': 0.1},  # Node 3 to leaf (keeps node 3 valid)
+    ...         {'u': 1, 'v': 6, 'branch_length': 0.1}
+    ...     ],
+    ...     nodes=[(4, {'label': 'A'}), (5, {'label': 'B'}), (6, {'label': 'C'})]
+    ... )
+    >>> result = identify_parallel_edges(net)
+    >>> # Step 1: Parallel edges 1->2 identified -> node 2 becomes degree-2 (in-degree 1, out-degree 1)
+    >>> # Step 2: Degree-2 node 2 suppressed -> edge 1->3 with branch_length=0.8 (0.5+0.3)
+    >>> # Result: edges 1->3 (0.8), 3->4 (0.2), 3->5 (0.1), 1->6 (0.1)
+    """
+    # Handle empty and single-node networks
+    if network.number_of_nodes() == 0:
+        return network.copy()
+    
+    if network.number_of_nodes() == 1:
+        return network.copy()
+    
+    # Create a copy of the internal graph to modify
+    from ...primitives.d_multigraph import DirectedMultiGraph
+    
+    # Extract all edges from the network
+    edges_list: list[dict[str, Any]] = []
+    for u, v, key, data in network._graph.edges(keys=True, data=True):
+        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        if key != 0:
+            edge_dict['key'] = key
+        edge_dict.update(data or {})
+        edges_list.append(edge_dict)
+    
+    # Create a working graph copy
+    working_graph = DirectedMultiGraph(edges=edges_list)
+    
+    # Get original leaves (these should never be suppressed)
+    original_leaves = network.leaves
+    
+    # Iterate until no more changes occur
+    max_iterations = 1000  # Safety limit
+    iteration = 0
+    
+    while iteration < max_iterations:
+        iteration += 1
+        changes_made = False
+        
+        # Step 1: Find and identify all parallel edges
+        parallel_pairs: list[tuple[Any, Any]] = []
+        for u, v in working_graph._graph.edges():
+            if working_graph._graph.number_of_edges(u, v) > 1:
+                parallel_pairs.append((u, v))
+        
+        for u, v in parallel_pairs:
+            # Skip if nodes no longer exist (may have been removed)
+            if u not in working_graph.nodes() or v not in working_graph.nodes():
+                continue
+            
+            # Skip if no longer parallel (may have been identified by previous iteration)
+            if working_graph._graph.number_of_edges(u, v) <= 1:
+                continue
+            
+            # Collect edge data for all parallel edges
+            edges_dict = working_graph._graph[u].get(v, {})
+            if len(edges_dict) <= 1:
+                continue
+            
+            edges_data = [edges_dict[key] for key in sorted(edges_dict.keys())]
+            
+            # Merge attributes using helper function
+            merged_attrs = _merge_attrs_for_parallel_identification_directed(edges_data)
+            
+            # Identify parallel edges
+            dm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
+            changes_made = True
+        
+        # Step 2: Find and suppress all degree-2 nodes (excluding leaves)
+        degree2_nodes: list[Any] = []
+        for node in working_graph.nodes():
+            if node not in original_leaves and working_graph.degree(node) == 2:
+                degree2_nodes.append(node)
+        
+        for node in degree2_nodes:
+            # Skip if node no longer exists or degree changed
+            if node not in working_graph.nodes():
+                continue
+            
+            if working_graph.degree(node) != 2:
+                continue
+            
+            # Collect incident edges
+            incoming = list(working_graph.incident_parent_edges(node, keys=True, data=True))
+            outgoing = list(working_graph.incident_child_edges(node, keys=True, data=True))
+            
+            # Should have exactly one incoming and one outgoing for degree-2 node
+            if len(incoming) != 1 or len(outgoing) != 1:
+                continue
+            
+            # Get edge data
+            (u, _, k1, d1) = incoming[0]
+            (_, v, k2, d2) = outgoing[0]
+            
+            # Merge attributes using helper function
+            merged_attrs = _merge_attrs_for_degree2_suppression_directed(
+                d1 or {}, d2 or {}
+            )
+            
+            # Suppress degree-2 node
+            dm_suppress_degree2_node(working_graph, node, merged_attrs=merged_attrs)
+            changes_made = True
+        
+        # If no changes were made, we're done
+        if not changes_made:
+            break
+    
+    if iteration >= max_iterations:
+        raise RuntimeError(
+            "identify_parallel_edges exceeded maximum iterations. "
+            "This may indicate an infinite loop or a bug."
+        )
+    
+    # Extract edges and nodes from the modified graph
+    new_edges: list[dict[str, Any]] = []
+    for u, v, key, data in working_graph.edges(keys=True, data=True):
+        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        if key != 0:
+            edge_dict['key'] = key
+        edge_dict.update(data or {})
+        new_edges.append(edge_dict)
+    
+    # Preserve node labels
+    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
+    for node in working_graph.nodes():
+        label = network.get_label(node)
+        if label is not None:
+            new_nodes.append((node, {'label': label}))
+    
+    # Create and return new network
+    # Use no_validation to allow creation even if structure is temporarily invalid
+    # The transformation may produce networks that need further processing
+    from phylozoo.utils.validation import no_validation
+    with no_validation():
+        return DirectedPhyNetwork(
+            edges=new_edges,
+            nodes=new_nodes if new_nodes else None
+        )
 

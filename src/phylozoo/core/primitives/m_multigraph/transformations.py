@@ -515,15 +515,15 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     neighbors directly, preserving edge types according to these rules:
     - undirected + undirected -> undirected edge
     - directed_in + directed_out (u->x, x->v) -> directed edge (u->v)
-    - directed_out + directed_in (x->u, v->x) -> directed edge (v->u)
-    - directed_in + undirected (u->x, x—v) -> directed edge (u->v)
-    - undirected + directed_in (u—x, v->x) -> directed edge (u->v)
-    - directed_out + undirected (x->u, x—v) -> directed edge (u->v)
+    - directed_in + undirected (u->x, x—v) -> undirected edge (u—v)
     - undirected + directed_out (u—x, x->v) -> directed edge (u->v)
     
     Invalid combinations that raise ValueError:
     - directed_in + directed_in: Multiple incoming directed edges
     - directed_out + directed_out: Multiple outgoing directed edges
+    
+    Note: Edge types are processed in order (directed_in first, then undirected, then
+    directed_out), so the order in the rules above is deterministic.
     
     This operation modifies the graph in place. Suppression may create parallel edges.
     
@@ -532,7 +532,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
       This allows the caller to apply special merging logic before suppression.
     - If `merged_attrs` is None: attributes are merged by taking the first edge's data,
       then the second edge's data overriding. The order of edges is determined by edge
-      type priority: directed_in edges first, then directed_out edges, then undirected
+      type priority: directed_in edges first, then undirected edges, then directed_out
       edges. If both edges are of the same type, the order may be non-deterministic
       (depends on graph iteration order). For attributes present in both edges, the
       second edge's value overrides the first.
@@ -585,6 +585,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     directed_out = list(graph.incident_child_edges(node, keys=True, data=True))
     
     # Determine neighbors and edge types
+    # Order: directed_in first, then undirected, then directed_out
     neighbors = []
     edge_types = []  # 'undirected', 'directed_in', 'directed_out'
     
@@ -592,14 +593,14 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
         neighbors.append((u, key, data))
         edge_types.append('directed_in')
     
-    for u, v, key, data in directed_out:
-        neighbors.append((v, key, data))
-        edge_types.append('directed_out')
-    
     for u, v, key, data in undirected_edges:
         neighbor = v if u == node else u
         neighbors.append((neighbor, key, data))
         edge_types.append('undirected')
+    
+    for u, v, key, data in directed_out:
+        neighbors.append((v, key, data))
+        edge_types.append('directed_out')
     
     # Defensive check: we already verified degree == 2, so this should always be true
     # This check catches potential inconsistencies in the graph implementation
@@ -629,22 +630,15 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
         graph.add_undirected_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'directed_out':
         # u->x, x->v -> u->v
+        # n1 is source of incoming (u), n2 is target of outgoing (v) -> u->v
         graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
-    elif type1 == 'directed_out' and type2 == 'directed_in':
-        # x->u, v->x -> v->u (n1 is target of x->n1, n2 is source of n2->x)
-        graph.add_directed_edge(n2, n1, key=k1 if k1 == k2 else None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'undirected':
-        # u->x, x—v -> u->v
-        graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
-    elif type1 == 'undirected' and type2 == 'directed_in':
-        # u—x, v->x -> u->v
-        graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
-    elif type1 == 'directed_out' and type2 == 'undirected':
-        # x->u, x—v -> u->v (from target of directed edge to neighbor of undirected edge)
-        # n1 is the target of x->n1, n2 is neighbor of x—n2
-        graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
+        # u->x, x—v -> undirected edge
+        # n1 is source of incoming (u), n2 is neighbor of undirected (v) -> undirected u—v
+        graph.add_undirected_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
     elif type1 == 'undirected' and type2 == 'directed_out':
-        # u—x, x->v -> u->v
+        # u—x, x->v -> directed edge
+        # n1 is neighbor of undirected (u), n2 is target of outgoing (v) -> u->v
         graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'directed_in':
         # Multiple incoming directed edges - invalid for degree-2 node

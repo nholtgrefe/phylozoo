@@ -25,7 +25,7 @@ class TestSuppressDegree2NodeValidCombinations:
         assert G.number_of_nodes() == 2
 
     def test_directed_in_directed_out(self) -> None:
-        """Test suppression of node with incoming and outgoing directed edges."""
+        """Test suppression of node with incoming and outgoing directed edges -> directed."""
         G = MixedMultiGraph()
         G.add_directed_edge(1, 2)
         G.add_directed_edge(2, 3)
@@ -34,24 +34,13 @@ class TestSuppressDegree2NodeValidCombinations:
         
         assert 2 not in G.nodes()
         assert G.has_edge(1, 3)
-        assert G.number_of_edges() == 1
-        assert G.number_of_nodes() == 2
-
-    def test_directed_out_directed_in(self) -> None:
-        """Test suppression of node with outgoing and incoming directed edges."""
-        G = MixedMultiGraph()
-        G.add_directed_edge(2, 1)
-        G.add_directed_edge(3, 2)
-        
-        suppress_degree2_node(G, 2)
-        
-        assert 2 not in G.nodes()
-        assert G.has_edge(3, 1)
+        assert G._directed.has_edge(1, 3)  # Should be directed
+        assert not G._undirected.has_edge(1, 3)
         assert G.number_of_edges() == 1
         assert G.number_of_nodes() == 2
 
     def test_directed_in_undirected(self) -> None:
-        """Test suppression of node with incoming directed and undirected edge."""
+        """Test suppression of node with incoming directed and undirected edge -> undirected."""
         G = MixedMultiGraph()
         G.add_directed_edge(1, 2)
         G.add_undirected_edge(2, 3)
@@ -60,38 +49,13 @@ class TestSuppressDegree2NodeValidCombinations:
         
         assert 2 not in G.nodes()
         assert G.has_edge(1, 3)
-        assert G.number_of_edges() == 1
-        assert G.number_of_nodes() == 2
-
-    def test_undirected_directed_in(self) -> None:
-        """Test suppression of node with undirected and incoming directed edge."""
-        G = MixedMultiGraph()
-        G.add_undirected_edge(1, 2)
-        G.add_directed_edge(3, 2)
-        
-        suppress_degree2_node(G, 2)
-        
-        assert 2 not in G.nodes()
-        # directed_in comes first, so n1=3, n2=1, result is 3->1
-        assert G.has_edge(3, 1)
-        assert G.number_of_edges() == 1
-        assert G.number_of_nodes() == 2
-
-    def test_directed_out_undirected(self) -> None:
-        """Test suppression of node with outgoing directed and undirected edge."""
-        G = MixedMultiGraph()
-        G.add_directed_edge(2, 1)
-        G.add_undirected_edge(2, 3)
-        
-        suppress_degree2_node(G, 2)
-        
-        assert 2 not in G.nodes()
-        assert G.has_edge(1, 3)
+        assert G._undirected.has_edge(1, 3)  # Should be undirected
+        assert not G._directed.has_edge(1, 3)
         assert G.number_of_edges() == 1
         assert G.number_of_nodes() == 2
 
     def test_undirected_directed_out(self) -> None:
-        """Test suppression of node with undirected and outgoing directed edge."""
+        """Test suppression of node with undirected and outgoing directed edge -> directed."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_directed_edge(2, 3)
@@ -99,8 +63,10 @@ class TestSuppressDegree2NodeValidCombinations:
         suppress_degree2_node(G, 2)
         
         assert 2 not in G.nodes()
-        # directed_out comes before undirected, so n1=3 (target of 2->3), n2=1 (undirected neighbor), result is 3->1
-        assert G.has_edge(3, 1)
+        # undirected comes before directed_out, so n1=1 (neighbor of undirected), n2=3 (target of outgoing) -> 1->3
+        assert G.has_edge(1, 3)
+        assert G._directed.has_edge(1, 3)  # Should be directed
+        assert not G._undirected.has_edge(1, 3)
         assert G.number_of_edges() == 1
         assert G.number_of_nodes() == 2
 
@@ -212,8 +178,9 @@ class TestSuppressDegree2NodeAttributes:
         suppress_degree2_node(G, 2)
         
         # directed_in comes first, so its attributes are base, then undirected overrides
+        # Result should be undirected edge
         assert G.has_edge(1, 3)
-        edge_data = dict(G._directed[1][3][0])
+        edge_data = dict(G._undirected[1][3][0])
         assert edge_data.get('weight') == 2.0  # undirected overrides
         assert edge_data.get('label') == "undirected"  # undirected overrides
 
@@ -288,9 +255,9 @@ class TestSuppressDegree2NodeComplex:
         
         suppress_degree2_node(G, 2)
         assert 2 not in G.nodes()
-        assert G.has_edge(1, 3)  # Should be directed
+        assert G.has_edge(1, 3)  # Should be undirected (directed_in + undirected)
         
         # Check direction
-        assert G._directed.has_edge(1, 3)
-        assert not G._undirected.has_edge(1, 3)
+        assert G._undirected.has_edge(1, 3)
+        assert not G._directed.has_edge(1, 3)
 
