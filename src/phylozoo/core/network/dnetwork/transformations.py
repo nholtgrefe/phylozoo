@@ -19,6 +19,7 @@ from ...primitives.d_multigraph.transformations import (
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.transformations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork
+from ..sdnetwork.io import sdnetwork_from_mmgraph
 
 
 def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -356,45 +357,17 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
             for neighbor in neighbors_before:
                 if neighbor in mixed.nodes() and mixed.degree(neighbor) == 2:
                     degree2_nodes.add(neighbor)
-    
-    # Build nodes list with labels (leaves are never suppressed, only internal nodes)
-    # Leaves: all leaves from working network
-    # Internal nodes: only those not suppressed
-    nodes_list: list[Any | tuple[Any | dict[str | str]]] = []
-    
-    # Add leaves with labels
-    for leaf in working.leaves:
-        label = working.get_label(leaf)
-        if label is not None:
-            nodes_list.append((leaf, {'label': label}))
-    
-    # Add internal nodes with labels (excluding suppressed nodes)
-    for node, label in working._node_to_label.items():
-        if node not in working.leaves and node not in suppressed_nodes:
-            nodes_list.append((node, {'label': label}))
-    
-    # Rebuild directed/undirected edges from mixed graph to pass to SD network
-    # Use public API methods
-    final_directed = []
-    for u, v, k, d in mixed.directed_edges_iter(keys=True, data=True):
-        edge_dict = {"u": u, "v": v}
-        if k != 0:
-            edge_dict["key"] = k
-        edge_dict.update(d)
-        final_directed.append(edge_dict)
-    final_undirected = []
-    for u, v, k, d in mixed.undirected_edges_iter(keys=True, data=True):
-        edge_dict = {"u": u, "v": v}
-        if k != 0:
-            edge_dict["key"] = k
-        edge_dict.update(d)
-        final_undirected.append(edge_dict)
-    
-    return SemiDirectedPhyNetwork(
-        directed_edges=final_directed,
-        undirected_edges=final_undirected,
-        nodes=nodes_list if nodes_list else None,
-    )
+
+    # Ensure node labels are preserved in the mixed graph
+    for node in mixed.nodes():
+        if node in working._node_to_label:
+            label = working._node_to_label[node]
+            mixed._undirected.nodes[node]['label'] = label
+            mixed._directed.nodes[node]['label'] = label
+            mixed._combined.nodes[node]['label'] = label
+
+    # Convert the mixed graph to a semi-directed network
+    return sdnetwork_from_mmgraph(mixed, network_type='semi-directed')
 
 
 def _merge_attrs_for_degree2_suppression_directed(
