@@ -10,6 +10,7 @@ from typing import Any, TypeVar
 from . import SemiDirectedPhyNetwork
 from .base import MixedPhyNetwork
 from .features import k_blobs
+from .io import sdnetwork_from_mmgraph
 from ...primitives.m_multigraph.transformations import (
     identify_parallel_edge as mm_identify_parallel_edge,
     identify_vertices as mm_identify_vertices,
@@ -185,32 +186,8 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
     if network.number_of_nodes() == 1:
         return network.copy()
     
-    # Create a copy of the internal graph to modify
-    from ...primitives.m_multigraph import MixedMultiGraph
-    
-    # Extract all edges from the network
-    directed_edges_list: list[dict[str, Any]] = []
-    undirected_edges_list: list[dict[str, Any]] = []
-    
-    for u, v, key, data in network._graph.directed_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        edge_dict.update(data or {})
-        directed_edges_list.append(edge_dict)
-    
-    for u, v, key, data in network._graph.undirected_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        edge_dict.update(data or {})
-        undirected_edges_list.append(edge_dict)
-    
-    # Create a working graph copy
-    working_graph = MixedMultiGraph(
-        directed_edges=directed_edges_list,
-        undirected_edges=undirected_edges_list
-    )
+    # Create a working graph copy (preserves all node and edge attributes)
+    working_graph = network._graph.copy()
     
     # Get original leaves (these should never be suppressed)
     original_leaves = network.leaves
@@ -338,36 +315,8 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
             "This may indicate an infinite loop or a bug."
         )
     
-    # Extract edges and nodes from the modified graph
-    new_directed_edges: list[dict[str, Any]] = []
-    for u, v, key, data in working_graph.directed_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        edge_dict.update(data or {})
-        new_directed_edges.append(edge_dict)
-    
-    new_undirected_edges: list[dict[str, Any]] = []
-    for u, v, key, data in working_graph.undirected_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        edge_dict.update(data or {})
-        new_undirected_edges.append(edge_dict)
-    
-    # Preserve node labels
-    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
-    for node in working_graph.nodes():
-        label = network.get_label(node)
-        if label is not None:
-            new_nodes.append((node, {'label': label}))
-    
-    # Create and return new network
-    return SemiDirectedPhyNetwork(
-        directed_edges=new_directed_edges,
-        undirected_edges=new_undirected_edges,
-        nodes=new_nodes if new_nodes else None
-    )
+    # Create and return new network from the modified graph
+    return sdnetwork_from_mmgraph(working_graph, network_type='semi-directed')
 
 
 def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
@@ -465,45 +414,8 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
         # Suppress the degree-2 node with merged attributes
         mm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
     
-    # Extract edges and nodes from the modified graph
-    new_directed_edges: list[dict[str, Any]] = []
-    for u, v, key, data in working_graph.directed_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        if data:
-            edge_dict.update(data)
-        new_directed_edges.append(edge_dict)
-    
-    new_undirected_edges: list[dict[str, Any]] = []
-    for u, v, key, data in working_graph.undirected_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        if data:
-            edge_dict.update(data)
-        new_undirected_edges.append(edge_dict)
-    
-    # Preserve node labels
-    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
-    for node in working_graph.nodes():
-        label = network.get_label(node)
-        if label is not None:
-            new_nodes.append((node, {'label': label}))
-    
-    # Create and return new network (will be validated)
-    # Check if input was SemiDirectedPhyNetwork to return same type
-    if isinstance(network, SemiDirectedPhyNetwork):
-        return SemiDirectedPhyNetwork(
-            directed_edges=new_directed_edges,
-            undirected_edges=new_undirected_edges,
-            nodes=new_nodes if new_nodes else None
-        )
-    else:
-        # Return MixedPhyNetwork
-        return MixedPhyNetwork(
-            directed_edges=new_directed_edges,
-            undirected_edges=new_undirected_edges,
-            nodes=new_nodes if new_nodes else None
-        )
+    # Create and return new network from the modified graph (will be validated)
+    # Return same type as input
+    network_type = 'semi-directed' if isinstance(network, SemiDirectedPhyNetwork) else 'mixed'
+    return sdnetwork_from_mmgraph(working_graph, network_type=network_type)
 

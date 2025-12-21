@@ -9,7 +9,8 @@ from typing import Any
 
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
-from .features import k_blobs, lsa_node
+from .features import k_blobs
+from .io import dnetwork_from_dmgraph
 from ...primitives.d_multigraph.transformations import (
     identify_parallel_edge as dm_identify_parallel_edge,
     identify_vertices as dm_identify_vertices,
@@ -215,6 +216,34 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     -------
     SemiDirectedPhyNetwork
         The corresponding semi-directed phylogenetic network.
+
+    Examples
+    --------
+    >>> # Simple tree (no hybrids) - all edges become undirected
+    >>> dnet = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> sdnet = to_sd_network(dnet)
+    >>> sdnet.number_of_directed_edges()
+    0
+    >>> sdnet.number_of_undirected_edges()
+    2
+
+    >>> # Network with hybrids - hybrid edges remain directed
+    >>> dnet = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (4, 1), (4, 2),  # Tree edges from root
+    ...         {'u': 1, 'v': 3, 'gamma': 0.6},  # Hybrid edge
+    ...         {'u': 2, 'v': 3, 'gamma': 0.4}   # Hybrid edge
+    ...     ],
+    ...     nodes=[(3, {'label': 'C'})]
+    ... )
+    >>> sdnet = to_sd_network(dnet)
+    >>> sdnet.number_of_directed_edges()  # Hybrid edges
+    2
+    >>> sdnet.number_of_undirected_edges()  # Tree edges
+    2
     """
     # Single-leaf shortcut: the LSA of a single-leaf network is that leaf,
     # so the semi-directed network collapses to a single node with no edges.
@@ -531,20 +560,8 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     if network.number_of_nodes() == 1:
         return network.copy()
     
-    # Create a copy of the internal graph to modify
-    from ...primitives.d_multigraph import DirectedMultiGraph
-    
-    # Extract all edges from the network
-    edges_list: list[dict[str, Any]] = []
-    for u, v, key, data in network._graph.edges(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        edge_dict.update(data or {})
-        edges_list.append(edge_dict)
-    
-    # Create a working graph copy
-    working_graph = DirectedMultiGraph(edges=edges_list)
+    # Create a working graph copy (preserves all node and edge attributes)
+    working_graph = network._graph.copy()
     
     # Get original leaves (these should never be suppressed)
     original_leaves = network.leaves
@@ -631,27 +648,8 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             "This may indicate an infinite loop or a bug."
         )
     
-    # Extract edges and nodes from the modified graph
-    new_edges: list[dict[str, Any]] = []
-    for u, v, key, data in working_graph.edges(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        edge_dict.update(data or {})
-        new_edges.append(edge_dict)
-    
-    # Preserve node labels
-    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
-    for node in working_graph.nodes():
-        label = network.get_label(node)
-        if label is not None:
-            new_nodes.append((node, {'label': label}))
-    
-    # Create and return new network
-    return DirectedPhyNetwork(
-        edges=new_edges,
-        nodes=new_nodes if new_nodes else None
-    )
+    # Create and return new network from the modified graph
+    return dnetwork_from_dmgraph(working_graph)
 
 
 def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -749,26 +747,6 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         # Suppress the degree-2 node with merged attributes
         dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
     
-    # Extract edges and nodes from the modified graph
-    new_edges: list[dict[str, Any]] = []
-    for u, v, key, data in working_graph.edges(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
-        if key != 0:
-            edge_dict['key'] = key
-        if data:
-            edge_dict.update(data)
-        new_edges.append(edge_dict)
-    
-    # Preserve node labels
-    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
-    for node in working_graph.nodes():
-        label = network.get_label(node)
-        if label is not None:
-            new_nodes.append((node, {'label': label}))
-    
-    # Create and return new network (will be validated)
-    return DirectedPhyNetwork(
-        edges=new_edges,
-        nodes=new_nodes if new_nodes else None
-    )
+    # Create and return new network from the modified graph (will be validated)
+    return dnetwork_from_dmgraph(working_graph)
 
