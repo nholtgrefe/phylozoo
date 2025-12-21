@@ -659,7 +659,7 @@ class TestSingleNodeNetwork:
 
     def test_single_node_to_sd_network(self) -> None:
         """Test conversion to semi-directed network."""
-        from phylozoo.core.network.dnetwork.transformations import to_sd_network
+        from phylozoo.core.network.dnetwork.derivations import to_sd_network
         
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)

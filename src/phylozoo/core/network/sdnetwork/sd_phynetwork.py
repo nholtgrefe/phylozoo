@@ -285,7 +285,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             raise ValueError("Source component is empty")
         
         # Local imports to avoid circular dependencies
-        from ...network.dnetwork.transformations import to_sd_network
+        from ...network.dnetwork.derivations import to_sd_network
         from ...network.dnetwork import DirectedPhyNetwork
         from ...network.dnetwork.classifications import is_lsa_network
         
