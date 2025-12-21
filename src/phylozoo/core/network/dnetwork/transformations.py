@@ -9,9 +9,10 @@ from typing import Any
 
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
-from .features import lsa_node
+from .features import k_blobs, lsa_node
 from ...primitives.d_multigraph.transformations import (
     identify_parallel_edge as dm_identify_parallel_edge,
+    identify_vertices as dm_identify_vertices,
     suppress_degree2_node as dm_suppress_degree2_node,
 )
 from ...primitives.m_multigraph import MixedMultiGraph
@@ -647,6 +648,125 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             new_nodes.append((node, {'label': label}))
     
     # Create and return new network
+    return DirectedPhyNetwork(
+        edges=new_edges,
+        nodes=new_nodes if new_nodes else None
+    )
+
+
+def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
+    """
+    Suppress all 2-blobs in the network.
+    
+    A 2-blob is a blob with exactly 2 incident edges. This function:
+    1. Finds all 2-blobs using k_blobs
+    2. For each 2-blob (except those containing the root):
+       - Identifies all vertices in the blob with the first vertex
+       - This creates a degree-2 node
+       - Suppresses the degree-2 node using proper attribute merging
+    3. Returns a new validated network
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to transform.
+    
+    Returns
+    -------
+    DirectedPhyNetwork
+        A new network with all 2-blobs suppressed (except root-containing ones).
+        The network is validated before being returned.
+    
+    Raises
+    ------
+    ValueError
+        If the transformation creates an invalid network structure.
+    
+    Notes
+    -----
+    - 2-blobs containing the root node are skipped (special case for directed networks)
+    - After identifying vertices in a 2-blob, the kept vertex becomes degree-2
+      and is then suppressed
+    - Edge attributes (branch_length, gamma) are properly merged during suppression
+    - The function works on a copy of the graph, so the original network is not modified
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6)],
+    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'})]
+    ... )
+    >>> result = suppress_2_blobs(net)
+    >>> result.validate()  # Should not raise
+    """
+    # Work on a copy of the graph to avoid modifying the original
+    working_graph = network._graph.copy()
+    
+    # Find all 2-blobs
+    two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
+    
+    # Get root node for checking
+    root = network.root_node
+    
+    # Process each 2-blob
+    for blob in two_blobs:
+        # Skip 2-blobs containing the root (special case for directed networks)
+        if root in blob:
+            continue
+        
+        # Convert blob set to sorted list, keep first vertex
+        blob_list = sorted(blob)
+        if len(blob_list) < 2:
+            continue  # Skip trivial blobs (shouldn't happen with trivial=False)
+        
+        first_vertex = blob_list[0]
+        
+        # Identify all vertices in blob with the first vertex
+        # This modifies working_graph in place
+        dm_identify_vertices(working_graph, blob_list)
+        
+        # After identification, the first_vertex should be degree-2
+        # (since 2-blobs have exactly 2 incident edges)
+        if working_graph.degree(first_vertex) != 2:
+            # This shouldn't happen, but skip if it does
+            continue
+        
+        # Collect incident edges to merge attributes
+        directed_in = list(working_graph.incident_parent_edges(first_vertex, keys=True, data=True))
+        directed_out = list(working_graph.incident_child_edges(first_vertex, keys=True, data=True))
+        
+        if len(directed_in) != 1 or len(directed_out) != 1:
+            # Invalid configuration, skip
+            continue
+        
+        # Get edge data
+        (u, _, k1, d1) = directed_in[0]
+        (_, v, k2, d2) = directed_out[0]
+        
+        # Merge attributes using the helper function
+        merged_attrs = _merge_attrs_for_degree2_suppression_directed(d1 or {}, d2 or {})
+        
+        # Suppress the degree-2 node with merged attributes
+        dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
+    
+    # Extract edges and nodes from the modified graph
+    new_edges: list[dict[str, Any]] = []
+    for u, v, key, data in working_graph.edges(keys=True, data=True):
+        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        if key != 0:
+            edge_dict['key'] = key
+        if data:
+            edge_dict.update(data)
+        new_edges.append(edge_dict)
+    
+    # Preserve node labels
+    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
+    for node in working_graph.nodes():
+        label = network.get_label(node)
+        if label is not None:
+            new_nodes.append((node, {'label': label}))
+    
+    # Create and return new network (will be validated)
     return DirectedPhyNetwork(
         edges=new_edges,
         nodes=new_nodes if new_nodes else None

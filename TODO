@@ -25,3 +25,5 @@ use novalidation more
 - use merged_attr functions for to_sd_network, and move to derivations or not?
 - this might mean that we can remove the is_directed parameter from there
 - also, we might be able to use a single one for d and sd in a utils module?
+
+- perhaps we can reuse code to go from mgrapht to net as in end of 2blob function

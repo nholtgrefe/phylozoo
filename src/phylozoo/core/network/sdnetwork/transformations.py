@@ -5,13 +5,18 @@ This module provides functions to transform semi-directed and mixed phylogenetic
 (e.g., suppress degree-2 nodes/blobs, identify parallel edges, etc.).
 """
 
-from typing import Any
+from typing import Any, TypeVar
 
 from . import SemiDirectedPhyNetwork
+from .base import MixedPhyNetwork
+from .features import k_blobs
 from ...primitives.m_multigraph.transformations import (
     identify_parallel_edge as mm_identify_parallel_edge,
+    identify_vertices as mm_identify_vertices,
     suppress_degree2_node as mm_suppress_degree2_node,
 )
+
+T = TypeVar('T')
 
 
 def _merge_attrs_for_degree2_suppression_mixed(
@@ -363,4 +368,142 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
         undirected_edges=new_undirected_edges,
         nodes=new_nodes if new_nodes else None
     )
+
+
+def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
+    """
+    Suppress all 2-blobs in the network.
+    
+    A 2-blob is a blob with exactly 2 incident edges. This function:
+    1. Finds all 2-blobs using k_blobs
+    2. For each 2-blob:
+       - Identifies all vertices in the blob with the first vertex
+       - This creates a degree-2 node
+       - Suppresses the degree-2 node using proper attribute merging
+    3. Returns a new validated network
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork
+        The mixed phylogenetic network to transform.
+    
+    Returns
+    -------
+    MixedPhyNetwork
+        A new network with all 2-blobs suppressed.
+        The network is validated before being returned.
+    
+    Raises
+    ------
+    ValueError
+        If the transformation creates an invalid network structure.
+    
+    Notes
+    -----
+    - After identifying vertices in a 2-blob, the kept vertex becomes degree-2
+      and is then suppressed
+    - Edge attributes (branch_length, gamma) are properly merged during suppression
+    - The function works on a copy of the graph, so the original network is not modified
+    - For mixed networks, incident edges can be directed or undirected, and the
+      suppression handles both types correctly
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6)],
+    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'})]
+    ... )
+    >>> result = suppress_2_blobs(net)
+    >>> result.validate()  # Should not raise
+    """
+    # Work on a copy of the graph to avoid modifying the original
+    working_graph = network._graph.copy()
+    
+    # Find all 2-blobs
+    two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
+    
+    # Process each 2-blob
+    for blob in two_blobs:
+        # Convert blob set to sorted list, keep first vertex
+        blob_list = sorted(blob)
+        if len(blob_list) < 2:
+            continue  # Skip trivial blobs (shouldn't happen with trivial=False)
+        
+        first_vertex = blob_list[0]
+        
+        # Identify all vertices in blob with the first vertex
+        # This modifies working_graph in place
+        mm_identify_vertices(working_graph, blob_list)
+        
+        # After identification, the first_vertex should be degree-2
+        # (since 2-blobs have exactly 2 incident edges)
+        if working_graph.degree(first_vertex) != 2:
+            # This shouldn't happen, but skip if it does
+            continue
+        
+        # Collect incident edges to merge attributes
+        # Order: directed_in first, then undirected, then directed_out
+        edges_info: list[dict[str, Any]] = []
+        
+        # Collect in order: directed_in, undirected, directed_out
+        for u, v, key, data in working_graph.incident_parent_edges(first_vertex, keys=True, data=True):
+            edges_info.append(data or {})
+        for u, v, key, data in working_graph.incident_undirected_edges(first_vertex, keys=True, data=True):
+            edges_info.append(data or {})
+        for u, v, key, data in working_graph.incident_child_edges(first_vertex, keys=True, data=True):
+            edges_info.append(data or {})
+        
+        # We should have exactly 2 incident edges
+        if len(edges_info) != 2:
+            # Invalid configuration, skip
+            continue
+        
+        # Merge attributes using the helper function
+        merged_attrs = _merge_attrs_for_degree2_suppression_mixed(edges_info[0], edges_info[1])
+        
+        # Suppress the degree-2 node with merged attributes
+        mm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
+    
+    # Extract edges and nodes from the modified graph
+    new_directed_edges: list[dict[str, Any]] = []
+    for u, v, key, data in working_graph.directed_edges_iter(keys=True, data=True):
+        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        if key != 0:
+            edge_dict['key'] = key
+        if data:
+            edge_dict.update(data)
+        new_directed_edges.append(edge_dict)
+    
+    new_undirected_edges: list[dict[str, Any]] = []
+    for u, v, key, data in working_graph.undirected_edges_iter(keys=True, data=True):
+        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        if key != 0:
+            edge_dict['key'] = key
+        if data:
+            edge_dict.update(data)
+        new_undirected_edges.append(edge_dict)
+    
+    # Preserve node labels
+    new_nodes: list[Any | tuple[Any, dict[str, Any]]] = []
+    for node in working_graph.nodes():
+        label = network.get_label(node)
+        if label is not None:
+            new_nodes.append((node, {'label': label}))
+    
+    # Create and return new network (will be validated)
+    # Check if input was SemiDirectedPhyNetwork to return same type
+    if isinstance(network, SemiDirectedPhyNetwork):
+        return SemiDirectedPhyNetwork(
+            directed_edges=new_directed_edges,
+            undirected_edges=new_undirected_edges,
+            nodes=new_nodes if new_nodes else None
+        )
+    else:
+        # Return MixedPhyNetwork
+        return MixedPhyNetwork(
+            directed_edges=new_directed_edges,
+            undirected_edges=new_undirected_edges,
+            nodes=new_nodes if new_nodes else None
+        )
 
