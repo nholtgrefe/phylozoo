@@ -16,6 +16,8 @@ Make a network test suite with example networks to be reused etc.
 Allow degree-2 nodes?
 Is cut-vertex or is articulation?
 attribute for splits to store (multiplcitiy, weight etc.)
+make partition validation aware
+identify par edges (just take average branch lengths())
 
 classificaitons: tree-child (weakly strongly), galled, OLP, is stackfree
 use novalidation more
