@@ -63,6 +63,13 @@ class DistanceMatrix:
     create a new DistanceMatrix instance with the modified data.
     """
     
+    # Minimal class-level defaults so static analyzers recognize attributes.
+    # These are immediately replaced in __init__ for each instance.
+    _matrix = np.empty((0, 0))
+    _labels = ()
+    _indices = ()
+    _label_to_index = {}
+
     def __init__(
         self,
         distance_matrix: np.ndarray,
@@ -110,8 +117,8 @@ class DistanceMatrix:
         # Store as private attribute (immutability)
         self._matrix = matrix
         n = int(matrix.shape[0])
-        
-        # Handle labels
+
+        # Handle labels (assume labels are hashable)
         if labels is None:
             self._labels = tuple(range(n))
         else:
@@ -121,8 +128,14 @@ class DistanceMatrix:
                     f"Number of labels ({len(labels_list)}) must match "
                     f"matrix size ({n})"
                 )
+            # Ensure labels are unique to avoid ambiguous lookups
+            if len(set(labels_list)) != len(labels_list):
+                raise ValueError("Labels must be unique")
             # Store as tuple for immutability
             self._labels = tuple(labels_list)
+
+        # Build O(1) lookup mapping for label -> index (labels must be hashable)
+        self._label_to_index = {lbl: idx for idx, lbl in enumerate(self._labels)}
         
         # Store indices as tuple
         self._indices = tuple(range(n))
@@ -203,9 +216,10 @@ class DistanceMatrix:
         >>> dm.get_index('B')
         1
         """
-        if label not in self._labels:
-            raise ValueError(f"Label {label} not found in distance matrix")
-        return self._labels.index(label)
+        try:
+            return self._label_to_index[label]
+        except KeyError as exc:
+            raise ValueError(f"Label {label} not found in distance matrix") from exc
     
     def get_distance(self, label1: T, label2: T) -> float:
         """
@@ -270,6 +284,7 @@ class DistanceMatrix:
         new_dm._matrix = matrix_copy
         new_dm._labels = self._labels  # Tuples are immutable, so safe to share
         new_dm._indices = self._indices  # Tuples are immutable, so safe to share
+        new_dm._label_to_index = dict(self._label_to_index)
         return new_dm
     
     def __len__(self) -> int:
@@ -297,7 +312,8 @@ class DistanceMatrix:
         bool
             True if label is in the matrix, False otherwise.
         """
-        return label in self._labels
+        # Use mapping for consistent/fast membership checks
+        return label in self._label_to_index
     
     def __repr__(self) -> str:
         """
