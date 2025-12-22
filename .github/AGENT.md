@@ -38,6 +38,9 @@ Keep changes small and easy for a human reviewer to validate.
 - VCS restriction for agents
   - Agents MUST NOT create branches, make commits, push, merge, or perform any git/VCS operations. Produce suggested edits as patches/diffs for a human maintainer to review and apply.
 
+- Chat responses
+    - Be brief in explanations and to the point. For example, when explaining code changes, focus on the key modifications without excessive detail.
+
 Note: The project's `.instructions` historically mentions Python >=3.7 compatibility; the current `pyproject.toml` requires Python >=3.10 — treat `pyproject.toml` as authoritative.
 
 If you follow these guidelines, a human reviewer will be able to understand and validate automated edits quickly.
