@@ -17,7 +17,14 @@ from typing import Any
 
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
-from .transformations import to_lsa_network
+from .features import blobs
+from .io import dnetwork_from_dmgraph
+from .transformations import (
+    to_lsa_network,
+    suppress_2_blobs,
+    _merge_edge_attributes_for_suppression,
+)
+from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.transformations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork
@@ -200,79 +207,59 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     return sdnetwork_from_mmgraph(mixed, network_type='semi-directed')
 
 
-def _merge_edge_attributes_for_suppression(
-    edge1_data: dict[str, Any],
-    edge2_data: dict[str, Any],
-    edge1_is_directed: bool,
-    edge2_is_directed: bool,
-) -> dict[str, Any]:
+def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     """
-    Merge edge attributes for suppressing a degree-2 node.
+    Create a tree of blobs by suppressing all 2-blobs and collapsing internal blobs.
 
-    Special handling for 'gamma' and 'branch_length':
-    - Gamma: If one edge is directed and has gamma, use that gamma. If both have gamma,
-      multiply them.
-    - Branch length: If both have branch_length, sum them.
-    - Other attributes: Use edge1_data values, with edge2_data overriding.
+    This function:
+    1. Suppresses all 2-blobs using suppress_2_blobs
+    2. Finds all internal blobs (blobs with more than 1 node, excluding leaves)
+    3. For each internal blob, identifies all vertices with a single vertex
+    4. Returns a new network representing the tree of blobs
 
     Parameters
     ----------
-    edge1_data : dict[str, Any]
-        Attributes of the first edge.
-    edge2_data : dict[str, Any]
-        Attributes of the second edge.
-    edge1_is_directed : bool
-        Whether the first edge is directed.
-    edge2_is_directed : bool
-        Whether the second edge is directed.
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to transform.
 
     Returns
     -------
-    dict[str, Any]
-        Merged attributes with special handling for gamma and branch_length.
+    DirectedPhyNetwork
+        A new network where each blob has been collapsed to a single vertex,
+        forming a tree structure.
+
+    Examples
+    --------
+    >>> # Create a directed network with a hybrid
+    >>> from phylozoo.core.network.dnetwork.classifications import is_tree
+    >>> dnet = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (10, 5), (10, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),    # Both lead to hybrid 4 (in-degree 2)
+    ...         (4, 8),            # Hybrid to tree node
+    ...         (8, 1), (8, 2),    # Tree node to leaves
+    ...         (5, 3), (6, 7)     # Additional leaves to satisfy degree constraints
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> tree_net = tree_of_blobs(dnet)
+    >>> is_tree(tree_net)  # Should be True
+    True
     """
-    merged = {}
+    # First suppress all 2-blobs using the existing function
+    blob_network = suppress_2_blobs(network)
 
-    # Start with edge1_data
-    if edge1_data:
-        merged.update(edge1_data)
+    # Find all internal blobs (more than 1 node, not containing only leaves)
+    all_blobs = blobs(blob_network, trivial=False, leaves=False)
 
-    # Handle gamma specially
-    gamma1 = edge1_data.get('gamma') if edge1_data else None
-    gamma2 = edge2_data.get('gamma') if edge2_data else None
+    # Work on a copy of the internal graph and collapse blobs
+    working_graph = blob_network._graph.copy()
+    for blob in all_blobs:
+        if len(blob) > 1:
+            # Sort to ensure deterministic behavior
+            blob_sorted = sorted(blob)
+            # Identify all vertices in the blob with the first vertex
+            dm_identify_vertices(working_graph, blob_sorted)
 
-    if gamma1 is not None and gamma2 is not None:
-        # Both have gamma: multiply them
-        merged['gamma'] = gamma1 * gamma2
-    elif gamma1 is not None and edge1_is_directed:
-        # Only edge1 has gamma and it's directed: use it
-        merged['gamma'] = gamma1
-    elif gamma2 is not None and edge2_is_directed:
-        # Only edge2 has gamma and it's directed: use it
-        merged['gamma'] = gamma2
-    elif gamma1 is not None:
-        # Only edge1 has gamma (but not directed): use it
-        merged['gamma'] = gamma1
-    elif gamma2 is not None:
-        # Only edge2 has gamma (but not directed): use it
-        merged['gamma'] = gamma2
-
-    # Handle branch_length specially
-    bl1 = edge1_data.get('branch_length') if edge1_data else None
-    bl2 = edge2_data.get('branch_length') if edge2_data else None
-
-    if bl1 is not None and bl2 is not None:
-        # Both have branch_length: sum them
-        merged['branch_length'] = bl1 + bl2
-    elif bl1 is not None:
-        merged['branch_length'] = bl1
-    elif bl2 is not None:
-        merged['branch_length'] = bl2
-
-    # Override with other edge2_data attributes (except gamma and branch_length which we handled)
-    if edge2_data:
-        for key, value in edge2_data.items():
-            if key not in ('gamma', 'branch_length'):
-                merged[key] = value
-
-    return merged
+    # Convert back to DirectedPhyNetwork
+    return dnetwork_from_dmgraph(working_graph)
