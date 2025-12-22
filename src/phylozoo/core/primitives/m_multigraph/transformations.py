@@ -5,7 +5,7 @@ This module provides functions to transform MixedMultiGraph instances
 (e.g., identify nodes, orient edges, suppress degree-2 nodes, etc.).
 """
 
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, Iterable
 from collections import deque
 
 import networkx as nx
@@ -821,3 +821,84 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
     
     else:
         raise ValueError(f"No edges exist between nodes {u} and {v}")
+
+
+def subgraph(graph: 'MixedMultiGraph', nodes: Iterable[T]) -> 'MixedMultiGraph':
+    """
+    Return the induced subgraph of `graph` on the given `nodes`.
+
+    The returned object is a new MixedMultiGraph instance containing only
+    the specified nodes and any edges (both undirected and directed,
+    including parallel edges and their keys/attributes) whose endpoints are
+    both in `nodes`. Node and edge attributes are preserved.
+
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        Source mixed multigraph.
+    nodes : Iterable[T]
+        Iterable of node identifiers to include in the induced subgraph.
+
+    Returns
+    -------
+    MixedMultiGraph
+        A new MixedMultiGraph containing the induced subgraph.
+
+    Raises
+    ------
+    ValueError
+        If any node in `nodes` is not present in `graph`.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.transformations import subgraph
+    >>> G = MixedMultiGraph()
+    >>> G.add_node(1, label='A')
+    >>> G.add_node(2, label='B')
+    >>> G.add_undirected_edge(1, 2, weight=1.0)
+    0
+    >>> H = subgraph(G, [1, 2])
+    >>> list(H.nodes())
+    [1, 2]
+    >>> list(H.undirected_edges_iter(keys=True, data=True))
+    [(1, 2, 0, {'weight': 1.0})]
+    """
+    nodes_set = set(nodes)
+
+    # Empty nodes -> return empty graph
+    if not nodes_set:
+        return MixedMultiGraph()
+
+    # Validate nodes exist in source graph
+    for n in nodes_set:
+        if n not in graph.nodes():
+            raise ValueError(f"Node {n} not found in graph")
+
+    new_graph = MixedMultiGraph()
+
+    # Preserve node attributes
+    for n in nodes_set:
+        node_attrs: dict[str, Any] = {}
+        if n in graph._undirected.nodes():
+            node_attrs.update(dict(graph._undirected.nodes[n]))
+        if n in graph._directed.nodes():
+            node_attrs.update(dict(graph._directed.nodes[n]))
+        if node_attrs:
+            new_graph.add_node(n, **node_attrs)
+        else:
+            new_graph.add_node(n)
+
+    # Preserve undirected edges (keys and data) where both endpoints are in nodes_set
+    for u, v, key, data in graph._undirected.edges(keys=True, data=True):
+        if u in nodes_set and v in nodes_set:
+            edge_data = dict(data) if data else {}
+            new_graph.add_undirected_edge(u, v, key=key, **edge_data)
+
+    # Preserve directed edges (keys and data) where both endpoints are in nodes_set
+    for u, v, key, data in graph._directed.edges(keys=True, data=True):
+        if u in nodes_set and v in nodes_set:
+            edge_data = dict(data) if data else {}
+            new_graph.add_directed_edge(u, v, key=key, **edge_data)
+
+    return new_graph

@@ -5,7 +5,7 @@ This module provides functions to transform DirectedMultiGraph instances
 (e.g., identify nodes, suppress degree-2 nodes, etc.).
 """
 
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Iterable
 
 import networkx as nx
 
@@ -425,3 +425,71 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
     
     # Add back a single edge with merged attributes
     graph.add_edge(u, v, key=first_key, **merged_attrs)
+
+
+def subgraph(graph: 'DirectedMultiGraph', nodes: Iterable[T]) -> 'DirectedMultiGraph':
+    """
+    Return the induced subgraph of `graph` on the given `nodes`.
+
+    The returned object is a new DirectedMultiGraph instance containing only
+    the specified nodes and any edges (including parallel edges and their
+    keys/attributes) whose endpoints are both in `nodes`. Node and edge
+    attributes are preserved.
+
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        Source directed multigraph.
+    nodes : Iterable[T]
+        Iterable of node identifiers to include in the induced subgraph.
+
+    Returns
+    -------
+    DirectedMultiGraph
+        A new DirectedMultiGraph containing the induced subgraph.
+
+    Raises
+    ------
+    ValueError
+        If any node in `nodes` is not present in `graph`.
+
+    Examples
+    --------
+    >>> G = DirectedMultiGraph()
+    >>> G.add_edge(1, 2, weight=1.0)
+    0
+    >>> G.add_edge(2, 3, weight=2.0)
+    0
+    >>> H = subgraph(G, [1, 2])
+    >>> list(H.nodes())
+    [1, 2]
+    >>> list(H.edges_iter(keys=True, data=True))
+    [(1, 2, 0, {'weight': 1.0})]
+    """
+    nodes_set = set(nodes)
+
+    # Empty nodes -> return empty graph
+    if not nodes_set:
+        return DirectedMultiGraph()
+
+    # Validate nodes exist in source graph
+    for n in nodes_set:
+        if n not in graph.nodes():
+            raise ValueError(f"Node {n} not found in graph")
+
+    new_graph = DirectedMultiGraph()
+
+    # Preserve node attributes
+    for n in nodes_set:
+        attrs = dict(graph._graph.nodes[n]) if n in graph._graph.nodes else {}
+        new_graph.add_node(n, **attrs)
+
+    # Preserve edges (including keys and data) where both endpoints are in nodes_set
+    for u, v, key, data in graph._graph.edges(keys=True, data=True):
+        if u in nodes_set and v in nodes_set:
+            # data can be None; ensure dict
+            edge_data = dict(data) if data else {}
+            # Preserve the same key where possible
+            new_graph.add_edge(u, v, key=key, **edge_data)
+
+    return new_graph
