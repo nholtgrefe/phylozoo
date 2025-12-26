@@ -22,15 +22,13 @@ from .io import dnetwork_from_dmgraph
 from .transformations import (
     to_lsa_network,
     suppress_2_blobs as suppress_2_blobs_fn,
-    _merge_edge_attributes_for_suppression,
-    _merge_attrs_for_degree2_suppression_directed,
     identify_parallel_edges as identify_parallel_edges_dn,
 )
+from ._utils import _suppress_deg2_nodes as dm_suppress_deg2_nodes
+from ..sdnetwork._utils import _suppress_deg2_nodes as mm_suppress_deg2_nodes
 from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
 from ...primitives.d_multigraph.transformations import subgraph as dm_subgraph
-from ...primitives.d_multigraph.transformations import suppress_degree2_node as dm_suppress_degree2_node
 from ...primitives.m_multigraph import MixedMultiGraph
-from ...primitives.m_multigraph.transformations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork
 from ..sdnetwork.io import sdnetwork_from_mmgraph
 
@@ -135,69 +133,8 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     # 3) Build a mixed graph to allow suppression
     mixed = MixedMultiGraph(directed_edges=directed_edges, undirected_edges=undirected_edges)
 
-    # Track which nodes are suppressed (leaves are never suppressed, only internal nodes)
-    suppressed_nodes: set[Any] = set()
-
-    # Maintain a set of degree-2 nodes for efficient lookup and updates
-    # Initialize by scanning all nodes once
-    degree2_nodes: set[Any] = {node for node in mixed.nodes() if mixed.degree(node) == 2}
-
-    # Suppress all degree-2 nodes (iteratively, as suppression may create new ones)
-    # Before suppression, merge attributes with special handling for gamma and branch_length
-    while degree2_nodes:
-        # Process each degree-2 node (convert to list to avoid modification during iteration)
-        nodes_to_process = list(degree2_nodes)
-        degree2_nodes.clear()
-
-        for node in nodes_to_process:
-            # Skip if node was already suppressed (can happen if multiple nodes point to same neighbor)
-            if node not in mixed.nodes():
-                continue
-
-            # We already know degree is 2, so collect the two incident edges directly
-            # Collect incident edges to merge attributes using public API
-            undirected_edges = list(mixed.incident_undirected_edges(node, keys=True, data=True))
-            directed_in = list(mixed.incident_parent_edges(node, keys=True, data=True))
-            directed_out = list(mixed.incident_child_edges(node, keys=True, data=True))
-
-            # Since we know degree is 2, we expect exactly 2 edges total
-            # Build edges_info directly (we know there are exactly 2)
-            edges_info: list[tuple[dict[str, Any], bool]] = []
-            for u, v, key, data in directed_in:
-                edges_info.append((data, True))  # (data, is_directed)
-            for u, v, key, data in directed_out:
-                edges_info.append((data, True))  # (data, is_directed)
-            for u, v, key, data in undirected_edges:
-                edges_info.append((data, False))  # (data, is_directed)
-
-            # Defensive check: if degree changed, skip (shouldn't happen, but be safe)
-            if len(edges_info) != 2:
-                continue
-
-            (d1, dir1), (d2, dir2) = edges_info
-
-            # Merge attributes with special handling for gamma and branch_length
-            merged_attrs = _merge_edge_attributes_for_suppression(d1, d2, dir1, dir2)
-
-            # Track that this node will be suppressed
-            suppressed_nodes.add(node)
-
-            # Get neighbors before suppression to update degree2_nodes set
-            neighbors_before = set()
-            for u, v, key, data in directed_in:
-                neighbors_before.add(u)
-            for u, v, key, data in directed_out:
-                neighbors_before.add(v)
-            for u, v, key, data in undirected_edges:
-                neighbors_before.add(v if u == node else u)
-
-            # Use suppress_degree2_node with merged attributes
-            suppress_degree2_node(mixed, node, merged_attrs=merged_attrs)
-
-            # After suppression, check if any neighbors became degree-2
-            for neighbor in neighbors_before:
-                if neighbor in mixed.nodes() and mixed.degree(neighbor) == 2:
-                    degree2_nodes.add(neighbor)
+    # Suppress all degree-2 nodes using the mixed graph utility function
+    mm_suppress_deg2_nodes(mixed)
 
     # Ensure node labels are preserved in the mixed graph
     for node in mixed.nodes():
@@ -306,7 +243,7 @@ def subnetwork(
     Returns
     -------
     DirectedPhyNetwork
-        The derived subnetwork.
+        The derived subnetwork. Returns an empty network if `taxa` is empty.
 
     Raises
     ------
@@ -314,7 +251,8 @@ def subnetwork(
         If any of the provided taxa are not found in the network.
     """
     if not taxa:
-        raise ValueError("`taxa` must be a non-empty list of leaf labels")
+        # Return an empty network if no taxa are specified
+        return DirectedPhyNetwork(edges=[], nodes=[])
 
     # Work on the original network; LSA conversion (if requested) will be
     # applied after optional post-processing (user requested behavior).
@@ -344,24 +282,7 @@ def subnetwork(
     working_dm = induced_dm.copy()
 
     # First pass: suppress all degree-2 nodes (directed suppression semantics)
-    # Iteratively remove nodes with indegree==1 and outdegree==1
-    while True:
-        degree2 = [n for n in working_dm.nodes() if working_dm._graph.in_degree(n) == 1 and working_dm._graph.out_degree(n) == 1]
-        if not degree2:
-            break
-        for node in degree2:
-            # Defensive: node may have been removed
-            if node not in working_dm._graph:
-                continue
-            # Get the single incoming and outgoing edges
-            incoming = list(working_dm.incident_parent_edges(node, keys=True, data=True))
-            outgoing = list(working_dm.incident_child_edges(node, keys=True, data=True))
-            if len(incoming) != 1 or len(outgoing) != 1:
-                continue
-            _, _, k_in, data_in = incoming[0]
-            _, _, k_out, data_out = outgoing[0]
-            merged = _merge_attrs_for_degree2_suppression_directed(dict(data_in) if data_in else {}, dict(data_out) if data_out else {})
-            dm_suppress_degree2_node(working_dm, node, merged_attrs=merged)
+    dm_suppress_deg2_nodes(working_dm, exclude_nodes=None)
 
     # Convert to DirectedPhyNetwork for higher-level transformations
     result_net = dnetwork_from_dmgraph(working_dm)

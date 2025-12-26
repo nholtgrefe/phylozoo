@@ -370,3 +370,45 @@ class TestIdentifyParallelEdgesComplex:
         assert edge_data_1.get('gamma') == 0.6
         assert edge_data_2.get('gamma') == 0.4
 
+
+class TestBranchLengthWeightedAverage:
+    """Test branch_length weighted average when identifying parallel edges."""
+
+    def test_weighted_average_with_gammas_directed(self) -> None:
+        """Test that branch_length is computed as weighted average by gamma values for directed edges."""
+        from phylozoo.core.network.sdnetwork._utils import _merge_attrs_for_parallel_identification_mixed
+        
+        # Test the utility function directly with different branch_lengths and gammas
+        # Edge 1: branch_length=0.5, gamma=0.6
+        # Edge 2: branch_length=0.3, gamma=0.4
+        # Expected weighted average: (0.5*0.6 + 0.3*0.4) / (0.6 + 0.4) = (0.3 + 0.12) / 1.0 = 0.42
+        edges_data = [
+            {'branch_length': 0.5, 'gamma': 0.6},
+            {'branch_length': 0.3, 'gamma': 0.4},
+        ]
+        result = _merge_attrs_for_parallel_identification_mixed(edges_data)
+        
+        # Weighted average: (0.5*0.6 + 0.3*0.4) / (0.6 + 0.4) = 0.42
+        assert abs(result.get('branch_length', 0) - 0.42) < 1e-10
+        # Gamma should be sum: 0.6 + 0.4 = 1.0
+        assert result.get('gamma') == 1.0
+
+    def test_simple_average_without_gammas(self) -> None:
+        """Test that branch_length is computed as simple average when no gammas are present."""
+        from phylozoo.core.network.sdnetwork._utils import _merge_attrs_for_parallel_identification_mixed
+        
+        # Test the utility function directly with different branch_lengths but no gammas
+        # Edge 1: branch_length=0.5
+        # Edge 2: branch_length=0.3
+        # Expected simple average: (0.5 + 0.3) / 2 = 0.4
+        edges_data = [
+            {'branch_length': 0.5},
+            {'branch_length': 0.3},
+        ]
+        result = _merge_attrs_for_parallel_identification_mixed(edges_data)
+        
+        # Simple average: (0.5 + 0.3) / 2 = 0.4
+        assert abs(result.get('branch_length', 0) - 0.4) < 1e-10
+        # No gamma should be present
+        assert 'gamma' not in result or result.get('gamma') is None
+

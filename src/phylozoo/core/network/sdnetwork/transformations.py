@@ -11,120 +11,17 @@ from . import SemiDirectedPhyNetwork
 from .base import MixedPhyNetwork
 from .features import k_blobs
 from .io import sdnetwork_from_mmgraph
+from ._utils import (
+    _merge_attrs_for_degree2_suppression_mixed,
+    _merge_attrs_for_parallel_identification_mixed,
+    _suppress_deg2_nodes,
+)
 from ...primitives.m_multigraph.transformations import (
     identify_parallel_edge as mm_identify_parallel_edge,
     identify_vertices as mm_identify_vertices,
-    suppress_degree2_node as mm_suppress_degree2_node,
 )
 
 T = TypeVar('T')
-
-
-def _merge_attrs_for_degree2_suppression_mixed(
-    edge1_data: dict[str, Any],
-    edge2_data: dict[str, Any],
-) -> dict[str, Any]:
-    """
-    Merge edge attributes for suppressing a degree-2 node in a mixed network.
-    
-    Special handling:
-    - branch_length: If both edges have branch_length, sum them. Otherwise, use the one that has it.
-    - gamma: If edge2 has gamma, use it. Otherwise, don't include gamma.
-    - All other attributes (bootstrap, etc.) are removed.
-    
-    Parameters
-    ----------
-    edge1_data : dict[str, Any]
-        Attributes of the first edge.
-    edge2_data : dict[str, Any]
-        Attributes of the second edge.
-    
-    Returns
-    -------
-    dict[str, Any]
-        Merged attributes containing branch_length (if present) and gamma (if edge2 has it).
-        All other attributes are removed.
-    
-    Notes
-    -----
-    This is an internal helper function for identify_parallel_edges.
-    """
-    merged: dict[str, Any] = {}
-    
-    # Handle branch_length: sum if both present, otherwise use the one that has it
-    bl1 = edge1_data.get('branch_length') if edge1_data else None
-    bl2 = edge2_data.get('branch_length') if edge2_data else None
-    
-    if bl1 is not None and bl2 is not None:
-        merged['branch_length'] = bl1 + bl2
-    elif bl1 is not None:
-        merged['branch_length'] = bl1
-    elif bl2 is not None:
-        merged['branch_length'] = bl2
-    
-    # Handle gamma: use edge2's gamma if present
-    gamma2 = edge2_data.get('gamma') if edge2_data else None
-    if gamma2 is not None:
-        merged['gamma'] = gamma2
-    
-    # All other attributes (bootstrap, etc.) are removed
-    return merged
-
-
-def _merge_attrs_for_parallel_identification_mixed(
-    edges_data: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """
-    Merge edge attributes for identifying parallel edges in a mixed network.
-    
-    Special handling:
-    - branch_length: Extract from the first edge (all should be same by validation).
-    - gamma: Sum all gamma values from parallel edges.
-    - All other attributes (bootstrap, etc.) are removed.
-    
-    Parameters
-    ----------
-    edges_data : list[dict[str, Any]]
-        List of edge data dictionaries for parallel edges between the same pair of nodes.
-    
-    Returns
-    -------
-    dict[str, Any]
-        Merged attributes containing branch_length (if present) and gamma (sum of all gammas).
-        All other attributes are removed.
-    
-    Notes
-    -----
-    This is an internal helper function for identify_parallel_edges.
-    All parallel edges should have the same branch_length by validation, so we
-    just take it from the first edge.
-    """
-    merged: dict[str, Any] = {}
-    
-    if not edges_data:
-        return merged
-    
-    # Extract branch_length from first edge (all should be same by validation)
-    first_data = edges_data[0] or {}
-    bl = first_data.get('branch_length')
-    if bl is not None:
-        merged['branch_length'] = bl
-    
-    # Sum gamma values from all parallel edges
-    gamma_sum = 0.0
-    has_gamma = False
-    for edge_data in edges_data:
-        if edge_data:
-            gamma = edge_data.get('gamma')
-            if gamma is not None:
-                gamma_sum += gamma
-                has_gamma = True
-    
-    if has_gamma:
-        merged['gamma'] = gamma_sum
-    
-    # All other attributes (bootstrap, etc.) are removed
-    return merged
 
 
 def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyNetwork:
@@ -261,48 +158,10 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
             mm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
             changes_made = True
         
-        # Step 3: Find and suppress all degree-2 nodes (excluding leaves)
-        degree2_nodes: list[Any] = []
-        for node in working_graph.nodes():
-            if node not in original_leaves and working_graph.degree(node) == 2:
-                degree2_nodes.append(node)
-        
-        for node in degree2_nodes:
-            # Skip if node no longer exists or degree changed
-            if node not in working_graph.nodes():
-                continue
-            
-            if working_graph.degree(node) != 2:
-                continue
-            
-            # Collect incident edges
-            undirected_edges = list(working_graph.incident_undirected_edges(node, keys=True, data=True))
-            directed_in = list(working_graph.incident_parent_edges(node, keys=True, data=True))
-            directed_out = list(working_graph.incident_child_edges(node, keys=True, data=True))
-            
-            # Should have exactly 2 edges total for degree-2 node
-            if len(undirected_edges) + len(directed_in) + len(directed_out) != 2:
-                continue
-            
-            # Build edges_info
-            edges_info: list[tuple[dict[str, Any], bool]] = []
-            for u, v, key, data in directed_in:
-                edges_info.append((data or {}, True))
-            for u, v, key, data in directed_out:
-                edges_info.append((data or {}, True))
-            for u, v, key, data in undirected_edges:
-                edges_info.append((data or {}, False))
-            
-            if len(edges_info) != 2:
-                continue
-            
-            (d1, dir1), (d2, dir2) = edges_info
-            
-            # Merge attributes using helper function
-            merged_attrs = _merge_attrs_for_degree2_suppression_mixed(d1, d2)
-            
-            # Suppress degree-2 node
-            mm_suppress_degree2_node(working_graph, node, merged_attrs=merged_attrs)
+        # Step 3: Suppress all degree-2 nodes (excluding leaves)
+        nodes_before = set(working_graph.nodes())
+        _suppress_deg2_nodes(working_graph)
+        if set(working_graph.nodes()) != nodes_before:
             changes_made = True
         
         # If no changes were made, we're done
@@ -412,6 +271,8 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
         merged_attrs = _merge_attrs_for_degree2_suppression_mixed(edges_info[0], edges_info[1])
         
         # Suppress the degree-2 node with merged attributes
+        # Note: We suppress a single specific node here, not all degree-2 nodes
+        from ...primitives.m_multigraph.transformations import suppress_degree2_node as mm_suppress_degree2_node
         mm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
     
     # Create and return new network from the modified graph (will be validated)

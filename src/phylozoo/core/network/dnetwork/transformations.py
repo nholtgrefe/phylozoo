@@ -8,17 +8,17 @@ This module provides functions to transform directed phylogenetic networks
 from typing import Any
 
 from . import DirectedPhyNetwork
-from .classifications import is_lsa_network
 from .features import k_blobs
 from .io import dnetwork_from_dmgraph
+from ._utils import (
+    _merge_attrs_for_degree2_suppression_directed,
+    _merge_attrs_for_parallel_identification_directed,
+    _suppress_deg2_nodes,
+)
 from ...primitives.d_multigraph.transformations import (
     identify_parallel_edge as dm_identify_parallel_edge,
     identify_vertices as dm_identify_vertices,
-    suppress_degree2_node as dm_suppress_degree2_node,
 )
-from ...primitives.m_multigraph import MixedMultiGraph
-from ...primitives.m_multigraph.transformations import suppress_degree2_node
-
 
 def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     """
@@ -112,192 +112,6 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         edges=new_edges,
         nodes=new_nodes if new_nodes else None
     )
-
-
-def _merge_edge_attributes_for_suppression(
-    edge1_data: dict[str, Any],
-    edge2_data: dict[str, Any],
-    edge1_is_directed: bool,
-    edge2_is_directed: bool,
-) -> dict[str, Any]:
-    """
-    Merge edge attributes for suppressing a degree-2 node.
-    
-    Special handling for 'gamma' and 'branch_length':
-    - Gamma: If one edge is directed and has gamma, use that gamma. If both have gamma,
-      multiply them.
-    - Branch length: If both have branch_length, sum them.
-    - Other attributes: Use edge1_data values, with edge2_data overriding.
-    
-    Parameters
-    ----------
-    edge1_data : dict[str, Any]
-        Attributes of the first edge.
-    edge2_data : dict[str, Any]
-        Attributes of the second edge.
-    edge1_is_directed : bool
-        Whether the first edge is directed.
-    edge2_is_directed : bool
-        Whether the second edge is directed.
-    
-    Returns
-    -------
-    dict[str, Any]
-        Merged attributes with special handling for gamma and branch_length.
-    """
-    merged = {}
-    
-    # Start with edge1_data
-    if edge1_data:
-        merged.update(edge1_data)
-    
-    # Handle gamma specially
-    gamma1 = edge1_data.get('gamma') if edge1_data else None
-    gamma2 = edge2_data.get('gamma') if edge2_data else None
-    
-    if gamma1 is not None and gamma2 is not None:
-        # Both have gamma: multiply them
-        merged['gamma'] = gamma1 * gamma2
-    elif gamma1 is not None and edge1_is_directed:
-        # Only edge1 has gamma and it's directed: use it
-        merged['gamma'] = gamma1
-    elif gamma2 is not None and edge2_is_directed:
-        # Only edge2 has gamma and it's directed: use it
-        merged['gamma'] = gamma2
-    elif gamma1 is not None:
-        # Only edge1 has gamma (but not directed): use it
-        merged['gamma'] = gamma1
-    elif gamma2 is not None:
-        # Only edge2 has gamma (but not directed): use it
-        merged['gamma'] = gamma2
-    
-    # Handle branch_length specially
-    bl1 = edge1_data.get('branch_length') if edge1_data else None
-    bl2 = edge2_data.get('branch_length') if edge2_data else None
-    
-    if bl1 is not None and bl2 is not None:
-        # Both have branch_length: sum them
-        merged['branch_length'] = bl1 + bl2
-    elif bl1 is not None:
-        merged['branch_length'] = bl1
-    elif bl2 is not None:
-        merged['branch_length'] = bl2
-    
-    # Override with other edge2_data attributes (except gamma and branch_length which we handled)
-    if edge2_data:
-        for key, value in edge2_data.items():
-            if key not in ('gamma', 'branch_length'):
-                merged[key] = value
-    
-    return merged
-
-
-
-def _merge_attrs_for_degree2_suppression_directed(
-    edge1_data: dict[str, Any],
-    edge2_data: dict[str, Any],
-) -> dict[str, Any]:
-    """
-    Merge edge attributes for suppressing a degree-2 node in a directed network.
-    
-    Special handling:
-    - branch_length: If both edges have branch_length, sum them. Otherwise, use the one that has it.
-    - gamma: If edge2 has gamma, use it. Otherwise, don't include gamma.
-    - All other attributes (bootstrap, etc.) are removed.
-    
-    Parameters
-    ----------
-    edge1_data : dict[str, Any]
-        Attributes of the first edge (uv).
-    edge2_data : dict[str, Any]
-        Attributes of the second edge (vw).
-    
-    Returns
-    -------
-    dict[str, Any]
-        Merged attributes containing branch_length (if present) and gamma (if edge2 has it).
-        All other attributes are removed.
-    
-    Notes
-    -----
-    This is an internal helper function for identify_parallel_edges.
-    """
-    merged: dict[str, Any] = {}
-    
-    # Handle branch_length: sum if both present, otherwise use the one that has it
-    bl1 = edge1_data.get('branch_length') if edge1_data else None
-    bl2 = edge2_data.get('branch_length') if edge2_data else None
-    
-    if bl1 is not None and bl2 is not None:
-        merged['branch_length'] = bl1 + bl2
-    elif bl1 is not None:
-        merged['branch_length'] = bl1
-    elif bl2 is not None:
-        merged['branch_length'] = bl2
-    
-    # Handle gamma: use edge2's gamma if present
-    gamma2 = edge2_data.get('gamma') if edge2_data else None
-    if gamma2 is not None:
-        merged['gamma'] = gamma2
-    
-    # All other attributes (bootstrap, etc.) are removed
-    return merged
-
-
-def _merge_attrs_for_parallel_identification_directed(
-    edges_data: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """
-    Merge edge attributes for identifying parallel edges in a directed network.
-    
-    Special handling:
-    - branch_length: Extract from the first edge (all should be same by validation).
-    - gamma: Sum all gamma values from parallel edges.
-    - All other attributes (bootstrap, etc.) are removed.
-    
-    Parameters
-    ----------
-    edges_data : list[dict[str, Any]]
-        List of edge data dictionaries for parallel edges between the same pair of nodes.
-    
-    Returns
-    -------
-    dict[str, Any]
-        Merged attributes containing branch_length (if present) and gamma (sum of all gammas).
-        All other attributes are removed.
-    
-    Notes
-    -----
-    This is an internal helper function for identify_parallel_edges.
-    All parallel edges should have the same branch_length by validation, so we
-    just take it from the first edge.
-    """
-    merged: dict[str, Any] = {}
-    
-    if not edges_data:
-        return merged
-    
-    # Extract branch_length from first edge (all should be same by validation)
-    first_data = edges_data[0] or {}
-    bl = first_data.get('branch_length')
-    if bl is not None:
-        merged['branch_length'] = bl
-    
-    # Sum gamma values from all parallel edges
-    gamma_sum = 0.0
-    has_gamma = False
-    for edge_data in edges_data:
-        if edge_data:
-            gamma = edge_data.get('gamma')
-            if gamma is not None:
-                gamma_sum += gamma
-                has_gamma = True
-    
-    if has_gamma:
-        merged['gamma'] = gamma_sum
-    
-    # All other attributes (bootstrap, etc.) are removed
-    return merged
 
 
 def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -399,39 +213,10 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             dm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
             changes_made = True
         
-        # Step 2: Find and suppress all degree-2 nodes (excluding leaves)
-        degree2_nodes: list[Any] = []
-        for node in working_graph.nodes():
-            if node not in original_leaves and working_graph.degree(node) == 2:
-                degree2_nodes.append(node)
-        
-        for node in degree2_nodes:
-            # Skip if node no longer exists or degree changed
-            if node not in working_graph.nodes():
-                continue
-            
-            if working_graph.degree(node) != 2:
-                continue
-            
-            # Collect incident edges
-            incoming = list(working_graph.incident_parent_edges(node, keys=True, data=True))
-            outgoing = list(working_graph.incident_child_edges(node, keys=True, data=True))
-            
-            # Should have exactly one incoming and one outgoing for degree-2 node
-            if len(incoming) != 1 or len(outgoing) != 1:
-                continue
-            
-            # Get edge data
-            (u, _, k1, d1) = incoming[0]
-            (_, v, k2, d2) = outgoing[0]
-            
-            # Merge attributes using helper function
-            merged_attrs = _merge_attrs_for_degree2_suppression_directed(
-                d1 or {}, d2 or {}
-            )
-            
-            # Suppress degree-2 node
-            dm_suppress_degree2_node(working_graph, node, merged_attrs=merged_attrs)
+        # Step 2: Suppress all degree-2 nodes (excluding leaves)
+        nodes_before = set(working_graph.nodes())
+        _suppress_deg2_nodes(working_graph)
+        if set(working_graph.nodes()) != nodes_before:
             changes_made = True
         
         # If no changes were made, we're done
@@ -533,7 +318,7 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             # Invalid configuration, skip
             continue
         
-        # Get edge data
+        # Get edge data for merging
         (u, _, k1, d1) = directed_in[0]
         (_, v, k2, d2) = directed_out[0]
         
@@ -541,6 +326,8 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         merged_attrs = _merge_attrs_for_degree2_suppression_directed(d1 or {}, d2 or {})
         
         # Suppress the degree-2 node with merged attributes
+        # Note: We suppress a single specific node here, not all degree-2 nodes
+        from ...primitives.d_multigraph.transformations import suppress_degree2_node as dm_suppress_degree2_node
         dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
     
     # Create and return new network from the modified graph (will be validated)

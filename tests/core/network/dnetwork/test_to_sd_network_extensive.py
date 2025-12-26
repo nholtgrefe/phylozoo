@@ -834,26 +834,6 @@ class TestToSDNetworkConsistency:
 class TestToSDNetworkBootstrap:
     """Test bootstrap value handling during conversion."""
 
-    def test_bootstrap_preserved_on_tree_edges(self) -> None:
-        """Bootstrap values should be preserved on tree edges."""
-        dnet = DirectedPhyNetwork(
-            edges=[
-                {"u": 5, "v": 3, "bootstrap": 0.95},
-                {"u": 5, "v": 4, "bootstrap": 0.87},
-                (3, 1),
-                (3, 2),
-                (4, 6),
-                (4, 7),
-            ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'})],
-        )
-        sdnet = to_sd_network(dnet)
-
-        # Bootstrap should be preserved on undirected edges after suppression
-        # Edge (3,4) should have bootstrap from one of the original edges
-        # (depends on which edge's attributes take precedence)
-        assert sdnet.get_bootstrap(3, 4) in [0.95, 0.87]
-
     def test_bootstrap_not_on_hybrid_edges(self) -> None:
         """Bootstrap should not be set on hybrid edges (which are directed)."""
         dnet = DirectedPhyNetwork(
