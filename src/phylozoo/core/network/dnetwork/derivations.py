@@ -21,10 +21,14 @@ from .features import blobs
 from .io import dnetwork_from_dmgraph
 from .transformations import (
     to_lsa_network,
-    suppress_2_blobs,
+    suppress_2_blobs as suppress_2_blobs_fn,
     _merge_edge_attributes_for_suppression,
+    _merge_attrs_for_degree2_suppression_directed,
+    identify_parallel_edges as identify_parallel_edges_dn,
 )
 from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
+from ...primitives.d_multigraph.transformations import subgraph as dm_subgraph
+from ...primitives.d_multigraph.transformations import suppress_degree2_node as dm_suppress_degree2_node
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.transformations import suppress_degree2_node
 from ..sdnetwork import SemiDirectedPhyNetwork
@@ -247,7 +251,7 @@ def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     True
     """
     # First suppress all 2-blobs using the existing function
-    blob_network = suppress_2_blobs(network)
+    blob_network = suppress_2_blobs_fn(network)
 
     # Find all internal blobs (more than 1 node, not containing only leaves)
     all_blobs = blobs(blob_network, trivial=False, leaves=False)
@@ -263,3 +267,113 @@ def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
 
     # Convert back to DirectedPhyNetwork
     return dnetwork_from_dmgraph(working_graph)
+
+
+def subnetwork(
+    network: DirectedPhyNetwork,
+    taxa: list[str],
+    suppress_2_blobs: bool = False,
+    identify_parallel_edges: bool = False,
+    make_lsa: bool = False,
+) -> DirectedPhyNetwork:
+    """
+    Extract the subnetwork induced by a subset of taxa (leaf labels).
+
+    The subnetwork is defined as the union of all directed paths from the
+    requested leaves up to the root (i.e., all their ancestors and the
+    leaves themselves). The induced subgraph is taken on the underlying
+    DirectedMultiGraph, then degree-2 internal nodes are suppressed. Optionally,
+    the result can be post-processed by suppressing 2-blobs, identifying
+    parallel edges, and/or converting to an LSA network. After any of these
+    optional steps, degree-2 suppression is applied again to clean up artifacts.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        Source network.
+    taxa : list[str]
+        Subset of taxon labels (leaf labels) to induce the subnetwork on.
+
+    Other parameters (keyword-only)
+    -------------------------------
+    suppress_2_blobs : bool, default False
+        If True, suppress all 2-blobs in the resulting network.
+    identify_parallel_edges : bool, default False
+        If True, identify/merge parallel edges in the resulting network.
+    make_lsa : bool, default False
+        If True, convert the result to an LSA-network.
+
+    Returns
+    -------
+    DirectedPhyNetwork
+        The derived subnetwork.
+
+    Raises
+    ------
+    ValueError
+        If any of the provided taxa are not found in the network.
+    """
+    if not taxa:
+        raise ValueError("`taxa` must be a non-empty list of leaf labels")
+
+    # Work on the original network; LSA conversion (if requested) will be
+    # applied after optional post-processing (user requested behavior).
+    working_net = network
+
+    # Map taxa labels to node ids using public API
+    leaf_nodes: list[Any] = []
+    for t in taxa:
+        node_id = working_net.get_node_id(t)
+        if node_id is None:
+            raise ValueError(f"Taxon label '{t}' not found in network")
+        leaf_nodes.append(node_id)
+
+    # Collect all ancestors (and the leaves themselves)
+    import networkx as nx
+
+    dag = working_net._graph._graph
+    nodes_set: set[Any] = set()
+    for leaf in leaf_nodes:
+        nodes_set.add(leaf)
+        nodes_set.update(nx.ancestors(dag, leaf))
+
+    # Create induced DirectedMultiGraph using existing utility
+    induced_dm = dm_subgraph(working_net._graph, nodes_set)
+
+    # Work on a mutable copy for transformations
+    working_dm = induced_dm.copy()
+
+    # First pass: suppress all degree-2 nodes (directed suppression semantics)
+    # Iteratively remove nodes with indegree==1 and outdegree==1
+    while True:
+        degree2 = [n for n in working_dm.nodes() if working_dm._graph.in_degree(n) == 1 and working_dm._graph.out_degree(n) == 1]
+        if not degree2:
+            break
+        for node in degree2:
+            # Defensive: node may have been removed
+            if node not in working_dm._graph:
+                continue
+            # Get the single incoming and outgoing edges
+            incoming = list(working_dm.incident_parent_edges(node, keys=True, data=True))
+            outgoing = list(working_dm.incident_child_edges(node, keys=True, data=True))
+            if len(incoming) != 1 or len(outgoing) != 1:
+                continue
+            _, _, k_in, data_in = incoming[0]
+            _, _, k_out, data_out = outgoing[0]
+            merged = _merge_attrs_for_degree2_suppression_directed(dict(data_in) if data_in else {}, dict(data_out) if data_out else {})
+            dm_suppress_degree2_node(working_dm, node, merged_attrs=merged)
+
+    # Convert to DirectedPhyNetwork for higher-level transformations
+    result_net = dnetwork_from_dmgraph(working_dm)
+
+    # Optional post-processing steps
+    if suppress_2_blobs:
+        result_net = suppress_2_blobs_fn(result_net)
+
+    if identify_parallel_edges:
+        result_net = identify_parallel_edges_dn(result_net)
+
+    if make_lsa:
+        result_net = to_lsa_network(result_net)
+
+    return result_net
