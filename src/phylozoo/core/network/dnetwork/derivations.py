@@ -13,7 +13,8 @@ phylogenetic networks (e.g., splits, quartets, distances, blobtrees, subnetworks
 # - Blobtree construction
 # - Subnetwork extraction
 # - Displayed tree extraction
-from typing import Any
+import itertools
+from typing import Any, Iterator
 
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
@@ -298,3 +299,85 @@ def subnetwork(
         result_net = to_lsa_network(result_net)
 
     return result_net
+
+
+def k_taxon_subnetworks(
+    network: DirectedPhyNetwork,
+    k: int,
+    suppress_2_blobs: bool = False,
+    identify_parallel_edges: bool = False,
+    make_lsa: bool = False,
+) -> Iterator[DirectedPhyNetwork]:
+    """
+    Generate all subnetworks induced by exactly k taxa.
+
+    This function yields all possible subnetworks of the network that are
+    induced by exactly k taxon labels. For each combination of k taxa,
+    the corresponding subnetwork is computed using the `subnetwork` function.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        Source network.
+    k : int
+        Number of taxa to include in each subnetwork. Must be between 0 and
+        the number of taxa in the network (inclusive).
+
+    Other parameters (keyword-only)
+    -------------------------------
+    suppress_2_blobs : bool, default False
+        If True, suppress all 2-blobs in each resulting subnetwork.
+    identify_parallel_edges : bool, default False
+        If True, identify/merge parallel edges in each resulting subnetwork.
+    make_lsa : bool, default False
+        If True, convert each result to an LSA-network.
+
+    Yields
+    ------
+    DirectedPhyNetwork
+        Subnetworks induced by exactly k taxa. Each subnetwork is generated
+        lazily as the iterator is consumed.
+
+    Raises
+    ------
+    ValueError
+        If k < 0 or k > number of taxa in the network.
+
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(5, 3), (5, 4), (3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> # Generate all 2-taxon subnetworks
+    >>> subnetworks = list(k_taxon_subnetworks(net, k=2))
+    >>> len(subnetworks)
+    3  # C(3,2) = 3 combinations
+    >>> # Each subnetwork has exactly 2 leaves
+    >>> all(len(subnet.leaves) == 2 for subnet in subnetworks)
+    True
+    >>> # Generate all 1-taxon subnetworks
+    >>> single_taxon_subs = list(k_taxon_subnetworks(net, k=1))
+    >>> len(single_taxon_subs)
+    3  # C(3,1) = 3 combinations
+    """
+    all_taxa = list(network.taxa)
+    num_taxa = len(all_taxa)
+
+    # Validate k
+    if k < 0:
+        raise ValueError(f"k must be non-negative, got {k}")
+    if k > num_taxa:
+        raise ValueError(
+            f"k ({k}) cannot exceed the number of taxa ({num_taxa}) in the network"
+        )
+
+    # Generate all combinations of k taxa
+    for taxa_combination in itertools.combinations(all_taxa, k):
+        yield subnetwork(
+            network,
+            list(taxa_combination),
+            suppress_2_blobs=suppress_2_blobs,
+            identify_parallel_edges=identify_parallel_edges,
+            make_lsa=make_lsa,
+        )
