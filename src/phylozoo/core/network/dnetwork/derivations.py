@@ -453,6 +453,7 @@ def _switchings(network: DirectedPhyNetwork, probability: bool = False) -> Itera
         switching_graph = network._graph.copy()
         if probability:
             switching_graph._graph.graph['probability'] = 1.0
+            switching_graph._combined.graph['probability'] = 1.0
         yield switching_graph
         return
     
@@ -488,8 +489,88 @@ def _switchings(network: DirectedPhyNetwork, probability: bool = False) -> Itera
                 if (u, v, key) != (keep_u, keep_v, keep_key):
                     switching_graph.remove_edge(u, v, key=key)
         
-        # Store probability if requested
+        # Store probability if requested (in all underlying graphs)
         if probability:
             switching_graph._graph.graph['probability'] = prob
+            switching_graph._combined.graph['probability'] = prob
         
         yield switching_graph
+
+
+def displayed_trees(network: DirectedPhyNetwork, probability: bool = False) -> Iterator[DirectedPhyNetwork]:
+    """
+    Generate all displayed trees of a directed phylogenetic network.
+    
+    A displayed tree is obtained by:
+    1. Taking a switching (deleting all but one parent edge per hybrid node)
+    2. Exhaustively removing degree-1 nodes that are not leaves or the root
+    3. Suppressing all degree-2 nodes
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    probability : bool, optional
+        If True, store the probability of the displayed tree in the network's
+        'probability' attribute. The probability is inherited from the switching
+        and equals the product of gamma values for the kept hybrid edges. If a
+        hybrid edge has no gamma value, it is taken to be 1/k where k is the
+        in-degree of the hybrid node. If there are no hybrid nodes, the
+        probability is 1.0. By default False.
+    
+    Yields
+    ------
+    DirectedPhyNetwork
+        A displayed tree of the network. If probability=True, the network has a
+        'probability' attribute containing the tree probability.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (10, 5), (10, 6),
+    ...         (5, 4), (6, 4),
+    ...         (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> trees = list(displayed_trees(net))
+    >>> len(trees)
+    2  # Two switchings yield two displayed trees
+    """
+    # Get original network's leaves and root for reference
+    original_leaves = network.leaves
+    original_root = network.root_node
+    
+    # Iterate through all switchings
+    for switching_graph in _switchings(network, probability=probability):
+        # Work on a copy to avoid modifying the switching
+        tree_graph = switching_graph.copy()
+        
+        # Exhaustively remove degree-1 nodes that are not leaves or root
+        while True:
+            degree1_nodes = [
+                node for node in tree_graph.nodes()
+                if tree_graph.degree(node) == 1
+                and node not in original_leaves
+                and node != original_root
+            ]
+            
+            if not degree1_nodes:
+                break
+            
+            # Remove all degree-1 nodes (excluding leaves and root)
+            for node in degree1_nodes:
+                # Double-check node still exists and is still degree-1
+                if node in tree_graph.nodes() and tree_graph.degree(node) == 1:
+                    tree_graph.remove_node(node)
+        
+        # Suppress all degree-2 nodes
+        dm_suppress_deg2_nodes(tree_graph, exclude_nodes=None)
+        
+        # Convert back to DirectedPhyNetwork
+        # Note: dnetwork_from_dmgraph already copies graph attributes, so probability
+        # is automatically preserved from the switching graph.
+        displayed_tree = dnetwork_from_dmgraph(tree_graph)
+        
+        yield displayed_tree

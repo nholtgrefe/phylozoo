@@ -7,7 +7,7 @@ import math
 import pytest
 
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
-from phylozoo.core.network.sdnetwork.derivations import _switchings, k_taxon_subnetworks, subnetwork, tree_of_blobs
+from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, k_taxon_subnetworks, subnetwork, tree_of_blobs
 from phylozoo.core.network.sdnetwork.features import blobs
 from phylozoo.core.network.sdnetwork.io import sdnetwork_from_mmgraph
 from phylozoo.core.network.sdnetwork.transformations import suppress_2_blobs
@@ -409,10 +409,12 @@ class TestSwitchings:
         assert len(switchings) == 1
         assert switchings[0].number_of_edges() == 3
         
-        # With probability=True, should have probability 1.0
+        # With probability=True, should have probability 1.0 in all underlying graphs
         switchings_with_prob = list(_switchings(net, probability=True))
         assert len(switchings_with_prob) == 1
         assert switchings_with_prob[0]._directed.graph.get('probability') == 1.0
+        assert switchings_with_prob[0]._undirected.graph.get('probability') == 1.0
+        assert switchings_with_prob[0]._combined.graph.get('probability') == 1.0
 
     def test_single_hybrid_two_parents(self) -> None:
         """Network with one hybrid node and two parent edges should yield two switchings."""
@@ -527,12 +529,19 @@ class TestSwitchings:
         switchings = list(_switchings(net, probability=True))
         assert len(switchings) == 2
         
-        # Check probabilities
+        # Check probabilities in all underlying graphs
         probs = [sw._directed.graph.get('probability') for sw in switchings]
         assert 0.6 in probs
         assert 0.4 in probs
         # Probabilities should sum to 1.0
         assert abs(sum(probs) - 1.0) < 1e-10
+        
+        # Check that probability is set in all underlying graphs
+        for sw in switchings:
+            prob = sw._directed.graph.get('probability')
+            assert prob is not None
+            assert sw._undirected.graph.get('probability') == prob
+            assert sw._combined.graph.get('probability') == prob
 
     def test_probability_without_gamma_values(self) -> None:
         """Test probability calculation when no gamma values are present."""
@@ -556,6 +565,9 @@ class TestSwitchings:
             prob = sw._directed.graph.get('probability')
             assert prob is not None
             assert abs(prob - 0.5) < 1e-10
+            # Check that probability is set in all underlying graphs
+            assert sw._undirected.graph.get('probability') == prob
+            assert sw._combined.graph.get('probability') == prob
         # Probabilities should sum to 1.0
         total_prob = sum(sw._directed.graph.get('probability') for sw in switchings)
         assert abs(total_prob - 1.0) < 1e-10
@@ -597,3 +609,122 @@ class TestSwitchings:
         # No probability attribute should be present
         for sw in switchings:
             assert 'probability' not in sw._directed.graph
+
+
+class TestDisplayedTrees:
+    """Test cases for the displayed_trees function for SemiDirectedPhyNetwork."""
+
+    def test_tree_network_single_displayed_tree(self) -> None:
+        """A tree network should yield exactly one displayed tree."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        trees = list(displayed_trees(net))
+        assert len(trees) == 1
+        assert trees[0].number_of_nodes() == 4
+
+    def test_single_hybrid_two_displayed_trees(self) -> None:
+        """Network with one hybrid node should yield two displayed trees."""
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        trees = list(displayed_trees(net))
+        assert len(trees) == 2
+        
+        # Each tree should be a valid tree (no hybrid nodes)
+        for tree in trees:
+            assert len(tree.hybrid_nodes) == 0
+
+    def test_displayed_trees_are_trees(self) -> None:
+        """All displayed trees should be trees (no hybrid nodes)."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        trees = list(displayed_trees(net))
+        
+        for tree in trees:
+            assert len(tree.hybrid_nodes) == 0
+
+    def test_probability_with_gamma_values(self) -> None:
+        """Test probability calculation when gamma values are present."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4}
+            ],
+            undirected_edges=[
+                (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+            ],
+            nodes=[
+                (3, {'label': 'C'}), (7, {'label': 'D'}),
+                (1, {'label': 'A'}), (2, {'label': 'B'})
+            ]
+        )
+        trees = list(displayed_trees(net, probability=True))
+        assert len(trees) == 2
+        
+        # Check probabilities
+        probs = [tree.get_network_attribute('probability') for tree in trees]
+        assert 0.6 in probs
+        assert 0.4 in probs
+        # Probabilities should sum to 1.0
+        assert abs(sum(probs) - 1.0) < 1e-10
+
+    def test_probability_without_gamma_values(self) -> None:
+        """Test probability calculation when no gamma values are present."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                (5, 4), (6, 4)  # No gamma values
+            ],
+            undirected_edges=[
+                (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+            ],
+            nodes=[
+                (3, {'label': 'C'}), (7, {'label': 'D'}),
+                (1, {'label': 'A'}), (2, {'label': 'B'})
+            ]
+        )
+        trees = list(displayed_trees(net, probability=True))
+        assert len(trees) == 2
+        
+        # Without gamma, each tree should have probability 1/2 (indegree is 2)
+        for tree in trees:
+            prob = tree.get_network_attribute('probability')
+            assert prob is not None
+            assert abs(prob - 0.5) < 1e-10
+        # Probabilities should sum to 1.0
+        total_prob = sum(tree.get_network_attribute('probability') for tree in trees)
+        assert abs(total_prob - 1.0) < 1e-10
+
+    def test_probability_tree_network(self) -> None:
+        """Tree network (no hybrid nodes) should have probability 1.0."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        trees = list(displayed_trees(net, probability=True))
+        assert len(trees) == 1
+        assert trees[0].get_network_attribute('probability') == 1.0
+
+    def test_probability_false_no_attribute(self) -> None:
+        """Test that probability=False does not add probability attribute."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4}
+            ],
+            undirected_edges=[
+                (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+            ],
+            nodes=[
+                (3, {'label': 'C'}), (7, {'label': 'D'}),
+                (1, {'label': 'A'}), (2, {'label': 'B'})
+            ]
+        )
+        trees = list(displayed_trees(net, probability=False))
+        
+        # No probability attribute should be present
+        for tree in trees:
+            assert tree.get_network_attribute('probability') is None
