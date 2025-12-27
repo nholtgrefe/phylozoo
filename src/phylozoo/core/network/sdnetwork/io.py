@@ -77,17 +77,22 @@ def sdnetwork_from_mmgraph(
         attrs = graph._undirected.nodes[node]
         nodes.append((node, attrs.copy()))
 
+    # Extract graph attributes
+    graph_attributes = graph._directed.graph.copy()
+
     # Create and return new network
     if network_type == 'semi-directed':
         return SemiDirectedPhyNetwork(
             directed_edges=directed_edges,
             undirected_edges=undirected_edges,
-            nodes=nodes if nodes else None
+            nodes=nodes if nodes else None,
+            attributes=graph_attributes if graph_attributes else None
         )
     else:  # network_type == 'mixed'
         return MixedPhyNetwork(
             directed_edges=directed_edges,
             undirected_edges=undirected_edges,
-            nodes=nodes if nodes else None
+            nodes=nodes if nodes else None,
+            attributes=graph_attributes if graph_attributes else None
         )
 

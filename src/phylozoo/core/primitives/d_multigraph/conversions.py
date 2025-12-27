@@ -35,7 +35,9 @@ def digraph_to_directedmultigraph(graph: nx.DiGraph) -> 'DirectedMultiGraph':
     >>> M.number_of_edges()
     2
     """
-    dmg = DirectedMultiGraph()
+    # Copy graph attributes if present
+    graph_attrs = graph.graph.copy() if graph.graph else None
+    dmg = DirectedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         dmg.add_node(node, **data)
@@ -74,7 +76,9 @@ def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> 'DirectedMulti
     >>> M.number_of_edges()
     2
     """
-    dmg = DirectedMultiGraph()
+    # Copy graph attributes if present
+    graph_attrs = graph.graph.copy() if graph.graph else None
+    dmg = DirectedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         dmg.add_node(node, **data)

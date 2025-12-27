@@ -71,6 +71,7 @@ class DirectedMultiGraph:
     def __init__(
         self,
         edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize a directed multi-graph.
@@ -83,14 +84,29 @@ class DirectedMultiGraph:
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' keys and optional 'key' and edge attributes
             By default None.
+        attributes : dict[str, Any] | None, optional
+            Optional dictionary of graph-level attributes to store with the graph.
+            These attributes are stored in the NetworkX graph's `.graph` attribute.
+            By default None.
 
         Examples
         --------
         >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
-        >>> G2 = DirectedMultiGraph(edges=[(1, 2, 0), {'u': 2, 'v': 3, 'weight': 5.0}])
+        >>> G2 = DirectedMultiGraph(
+        ...     edges=[(1, 2, 0), {'u': 2, 'v': 3, 'weight': 5.0}],
+        ...     attributes={'source': 'file.nex', 'version': '1.0'}
+        ... )
         """
-        self._graph: nx.MultiDiGraph = nx.MultiDiGraph()
-        self._combined: nx.MultiGraph = nx.MultiGraph()
+        # Initialize graphs with attributes if provided
+        if attributes:
+            # Warn on Python keyword attribute names
+            for attr_key in attributes:
+                warn_on_keyword(attr_key, "Graph attribute key")
+            self._graph: nx.MultiDiGraph = nx.MultiDiGraph(**attributes)
+            self._combined: nx.MultiGraph = nx.MultiGraph(**attributes)
+        else:
+            self._graph: nx.MultiDiGraph = nx.MultiDiGraph()
+            self._combined: nx.MultiGraph = nx.MultiGraph()
 
         # Load edges if given
         if edges:
@@ -1135,7 +1151,9 @@ class DirectedMultiGraph:
         >>> H.number_of_edges()
         2
         """
-        new_graph = DirectedMultiGraph()
+        # Copy graph attributes
+        graph_attrs = self._graph.graph.copy() if self._graph.graph else None
+        new_graph = DirectedMultiGraph(attributes=graph_attrs)
         new_graph._graph = self._graph.copy()
         new_graph._combined = self._combined.copy()
         return new_graph

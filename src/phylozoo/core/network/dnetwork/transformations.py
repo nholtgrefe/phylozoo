@@ -107,10 +107,11 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             if label is not None:
                 new_nodes.append((node, {'label': label}))
     
-    # Create new network
+    # Create new network, preserving graph attributes
     return DirectedPhyNetwork(
         edges=new_edges,
-        nodes=new_nodes if new_nodes else None
+        nodes=new_nodes if new_nodes else None,
+        attributes=network.get_network_attribute() if network.get_network_attribute() else None
     )
 
 

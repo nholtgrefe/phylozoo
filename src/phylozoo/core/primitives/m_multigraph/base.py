@@ -101,6 +101,7 @@ class MixedMultiGraph:
         self,
         directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
         undirected_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize a mixed multi-graph.
@@ -119,15 +120,31 @@ class MixedMultiGraph:
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' keys and optional 'key' and edge attributes
             By default None.
+        attributes : dict[str, Any] | None, optional
+            Optional dictionary of graph-level attributes to store with the graph.
+            These attributes are stored in both the directed and undirected NetworkX graphs' `.graph` attributes.
+            By default None.
 
         Examples
         --------
         >>> G = MixedMultiGraph(undirected_edges=[(1, 2), (2, 3)])
-        >>> G2 = MixedMultiGraph(directed_edges=[(1, 2, 0), {'u': 2, 'v': 3, 'weight': 5.0}])
+        >>> G2 = MixedMultiGraph(
+        ...     directed_edges=[(1, 2, 0), {'u': 2, 'v': 3, 'weight': 5.0}],
+        ...     attributes={'source': 'file.nex', 'version': '1.0'}
+        ... )
         """
-        self._undirected: nx.MultiGraph = nx.MultiGraph()
-        self._directed: nx.MultiDiGraph = nx.MultiDiGraph()
-        self._combined: nx.MultiGraph = nx.MultiGraph()
+        # Initialize graphs with attributes if provided
+        if attributes:
+            # Warn on Python keyword attribute names
+            for attr_key in attributes:
+                warn_on_keyword(attr_key, "Graph attribute key")
+            self._undirected: nx.MultiGraph = nx.MultiGraph(**attributes)
+            self._directed: nx.MultiDiGraph = nx.MultiDiGraph(**attributes)
+            self._combined: nx.MultiGraph = nx.MultiGraph(**attributes)
+        else:
+            self._undirected: nx.MultiGraph = nx.MultiGraph()
+            self._directed: nx.MultiDiGraph = nx.MultiDiGraph()
+            self._combined: nx.MultiGraph = nx.MultiGraph()
 
         # Load undirected edges if given (before directed edges to handle mutual exclusivity)
         if undirected_edges:
@@ -1552,7 +1569,9 @@ class MixedMultiGraph:
         >>> H.number_of_edges()
         2
         """
-        new_graph = MixedMultiGraph()
+        # Copy graph attributes
+        graph_attrs = self._directed.graph.copy() if self._directed.graph else None
+        new_graph = MixedMultiGraph(attributes=graph_attrs)
         new_graph._undirected = self._undirected.copy()
         new_graph._directed = self._directed.copy()
         new_graph._combined = self._combined.copy()

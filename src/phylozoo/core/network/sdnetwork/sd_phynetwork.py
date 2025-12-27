@@ -86,6 +86,12 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         attributes.
 
         Can be empty or None. By default None.
+    attributes : dict[str, Any] | None, optional
+        Optional dictionary of graph-level attributes to store with the network.
+        These attributes are stored in the underlying graph's `.graph` attribute
+        and are preserved through copy operations. Can be used to store metadata
+        like provenance, source file, creation date, etc.
+        By default None.
     
     Attributes
     ----------
@@ -147,6 +153,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
         undirected_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
         nodes: list[T | tuple[T | dict[str | Any | None]]] = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize a semi-directed phylogenetic network.
@@ -187,6 +194,12 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             
             Leaves without labels will get auto-generated labels. Can be empty list or None.
             By default None.
+        attributes : dict[str, Any] | None, optional
+            Optional dictionary of graph-level attributes to store with the network.
+            These attributes are stored in the underlying graph's `.graph` attribute
+            and are preserved through copy operations. Can be used to store metadata
+            like provenance, source file, creation date, etc.
+            By default None.
         
         Examples
         --------
@@ -205,11 +218,12 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         >>> # Empty network
         >>> net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
         """
-        # Call parent constructor with nodes parameter
+        # Call parent constructor with nodes and attributes parameters
         super().__init__(
             directed_edges=directed_edges,
             undirected_edges=undirected_edges,
-            nodes=nodes
+            nodes=nodes,
+            attributes=attributes
         )
     
     def _validate_semidir_constraint(self) -> None:

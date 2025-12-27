@@ -333,5 +333,12 @@ def dnetwork_from_dmgraph(graph: DirectedMultiGraph[T]) -> DirectedPhyNetwork[T]
         attrs = graph._graph.nodes[node]
         nodes.append((node, attrs.copy()))
 
+    # Extract graph attributes
+    graph_attributes = graph._graph.graph.copy()
+
     # Create and return new network
-    return DirectedPhyNetwork(edges=edges, nodes=nodes)
+    return DirectedPhyNetwork(
+        edges=edges,
+        nodes=nodes,
+        attributes=graph_attributes if graph_attributes else None
+    )

@@ -98,12 +98,12 @@ class TestGetEdgeAttribute:
             net.get_edge_attribute(5, 4, attr='branch_length')
 
     def test_get_edge_attribute_default_attr(self) -> None:
-        """Test default attribute name is 'branch_length'."""
+        """Test default attr=None returns all attributes."""
         net = DirectedPhyNetwork(
             edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}],
             nodes=[(1, {"label": "A"})]
         )
-        assert net.get_edge_attribute(3, 1) == 0.5  # Default attr='branch_length'
+        assert net.get_edge_attribute(3, 1) == {'branch_length': 0.5}  # Default attr=None returns all attributes
 
 
 class TestGetBranchLength:

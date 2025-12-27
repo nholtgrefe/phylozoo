@@ -68,6 +68,12 @@ class DirectedPhyNetwork:
         attritbutes.
 
         Can be empty or None. By default None.
+    attributes : dict[str, Any] | None, optional
+        Optional dictionary of graph-level attributes to store with the network.
+        These attributes are stored in the underlying graph's `.graph` attribute
+        and are preserved through copy operations. Can be used to store metadata
+        like provenance, source file, creation date, etc.
+        By default None.
     
     Attributes
     ----------
@@ -133,6 +139,7 @@ class DirectedPhyNetwork:
         self,
         edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
         nodes: list[T | tuple[T, dict[str, Any]]] | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize a directed phylogenetic network.
@@ -161,6 +168,12 @@ class DirectedPhyNetwork:
             - label: string, unique across all nodes; use another key for non-string data.
             
             Leaves without labels will get auto-generated labels. Can be empty list or None.
+            By default None.
+        attributes : dict[str, Any] | None, optional
+            Optional dictionary of graph-level attributes to store with the network.
+            These attributes are stored in the underlying graph's `.graph` attribute
+            and are preserved through copy operations. Can be used to store metadata
+            like provenance, source file, creation date, etc.
             By default None.
         
         Examples
@@ -192,7 +205,7 @@ class DirectedPhyNetwork:
         if edges is None:
             edges = []
         
-        self._graph: DirectedMultiGraph[T] = DirectedMultiGraph(edges=edges)
+        self._graph: DirectedMultiGraph[T] = DirectedMultiGraph(edges=edges, attributes=attributes)
         self._node_to_label: dict[T, str] = {}
         self._label_to_node: dict[str, T] = {}
         
@@ -670,22 +683,29 @@ class DirectedPhyNetwork:
         """
         return self._node_to_label.get(node_id)
     
-    def get_node_attribute(self, node_id: T, attr: str) -> Any | None:
+    def get_node_attribute(self, node_id: T, attr: str | None = None) -> dict[str, Any] | Any | None:
         """
-        Get a node attribute value.
+        Get node attribute(s).
         
         Parameters
         ----------
         node_id : T
             Node identifier.
-        attr : str
-            Attribute name. Common attributes include 'label'.
-            Any node attribute can be accessed.
+        attr : str | None, optional
+            Attribute name. If None, returns all attributes as a dict.
+            If specified, returns the value of that specific attribute.
+            By default None.
         
         Returns
         -------
-        Any | None
-            Attribute value, or None if not set.
+        dict[str, Any] | Any | None
+            If attr is None: dict of all node attributes (empty dict if no attributes).
+            If attr is specified: attribute value, or None if not set.
+        
+        Raises
+        ------
+        ValueError
+            If the node does not exist in the network.
         
         Examples
         --------
@@ -701,10 +721,18 @@ class DirectedPhyNetwork:
         42
         >>> net.get_node_attribute(1, 'nonexistent') is None
         True
+        >>> net.get_node_attribute(1)  # Get all attributes
+        {'label': 'A'}
+        >>> net.get_node_attribute(3)  # Get all attributes
+        {'label': 'root', 'custom': 42}
         """
         if node_id not in self._graph:
-            return None
-        return self._graph._graph.nodes[node_id].get(attr)
+            raise ValueError(f"Node {node_id} does not exist in the network.")
+        
+        if attr is None:
+            return self._graph._graph.nodes[node_id].copy()
+        else:
+            return self._graph._graph.nodes[node_id].get(attr)
     
     def get_node_id(self, label: str) -> T | None:
         """
@@ -728,11 +756,49 @@ class DirectedPhyNetwork:
         """
         return self._label_to_node.get(label)
     
+    # ========== Network Attribute Access (Read-Only) ==========
+    
+    def get_network_attribute(self, key: str | None = None) -> dict[str, Any] | Any | None:
+        """
+        Get network-level attribute(s).
+        
+        Parameters
+        ----------
+        key : str | None, optional
+            Attribute key. If None, returns all attributes as a dict.
+            If specified, returns the value of that specific attribute.
+            By default None.
+        
+        Returns
+        -------
+        dict[str, Any] | Any | None
+            If key is None: dict of all network attributes (empty dict if no attributes).
+            If key is specified: attribute value, or None if not set.
+        
+        Examples
+        --------
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(3, 1)],
+        ...     nodes=[(1, {'label': 'A'})],
+        ...     attributes={'source': 'file.nex', 'version': '1.0'}
+        ... )
+        >>> net.get_network_attribute('source')
+        'file.nex'
+        >>> net.get_network_attribute('nonexistent') is None
+        True
+        >>> net.get_network_attribute()  # Get all attributes
+        {'source': 'file.nex', 'version': '1.0'}
+        """
+        if key is None:
+            return self._graph._graph.graph.copy()
+        else:
+            return self._graph._graph.graph.get(key)
+    
     # ========== Edge Attribute Access (Read-Only) ==========
     
-    def get_edge_attribute(self, u: T, v: T, key: int | None = None, attr: str = 'branch_length') -> Any | None:
+    def get_edge_attribute(self, u: T, v: T, key: int | None = None, attr: str | None = None) -> dict[str, Any] | Any | None:
         """
-        Get an edge attribute value (read-only).
+        Get edge attribute(s).
         
         Parameters
         ----------
@@ -741,25 +807,27 @@ class DirectedPhyNetwork:
         key : int | None, optional
             Edge key for parallel edges. If None and multiple parallel edges exist,
             raises ValueError. Must specify key when parallel edges exist.
-        attr : str, default 'branch_length'
-            Attribute name. Suggested attributes: 'branch_length', 'bootstrap', 'gamma'.
-            Any edge attribute can be accessed.
+        attr : str | None, optional
+            Attribute name. If None, returns all attributes as a dict.
+            If specified, returns the value of that specific attribute.
+            By default None.
         
         Returns
         -------
-        Any | None
-            Attribute value, or None if not set.
+        dict[str, Any] | Any | None
+            If attr is None: dict of all edge attributes (empty dict if no attributes).
+            If attr is specified: attribute value, or None if not set.
         
         Raises
         ------
         ValueError
-            If key is None and multiple parallel edges exist between u and v.
+            If the edge does not exist, or if key is None and multiple parallel edges exist.
         
         Examples
         --------
         >>> net = DirectedPhyNetwork(
         ...     edges=[
-        ...         {'u': 3, 'v': 2, 'key': 0, 'branch_length': 0.5},
+        ...         {'u': 3, 'v': 2, 'key': 0, 'branch_length': 0.5, 'bootstrap': 0.95},
         ...         {'u': 3, 'v': 2, 'key': 1, 'branch_length': 0.7},  # Parallel edge
         ...         (2, 1)  # Tree node 2 to leaf
         ...     ],
@@ -769,31 +837,42 @@ class DirectedPhyNetwork:
         0.5
         >>> net.get_edge_attribute(3, 2, key=1, attr='branch_length')
         0.7
-        >>> net.get_edge_attribute(3, 2, attr='branch_length')  # Raises ValueError
+        >>> net.get_edge_attribute(3, 2, key=0)  # Get all attributes
+        {'branch_length': 0.5, 'bootstrap': 0.95}
+        >>> net.get_edge_attribute(2, 1)  # Get all attributes
+        {}
         """
         if not self.has_edge(u, v):
-            return None
+            return {} if attr is None else None
         
         # Check if parallel edges exist
         edges_data = self._graph._graph[u][v]
         num_edges = len(edges_data)
         
         if num_edges == 0:
-            return None
+            return {} if attr is None else None
         elif num_edges == 1:
             # Single edge - key not needed
             first_key = next(iter(edges_data))
-            return edges_data[first_key].get(attr)
+            edge_attrs = edges_data[first_key]
+            if attr is None:
+                return edge_attrs.copy()
+            else:
+                return edge_attrs.get(attr)
         else:
             # Multiple parallel edges - key is required
             if key is None:
                 raise ValueError(
                     f"Multiple parallel edges exist between {u} and {v}. "
-                    f"Must specify 'key' parameter to get attribute from a specific edge."
+                    f"Must specify 'key' parameter to get attributes from a specific edge."
                 )
             if key not in edges_data:
-                return None
-            return edges_data[key].get(attr)
+                raise ValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
+            edge_attrs = edges_data[key]
+            if attr is None:
+                return edge_attrs.copy()
+            else:
+                return edge_attrs.get(attr)
     
     def get_branch_length(self, u: T, v: T, key: int | None = None) -> float | None:
         """

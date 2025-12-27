@@ -41,7 +41,9 @@ def graph_to_mixedmultigraph(graph: nx.Graph) -> 'MixedMultiGraph':
     >>> M.number_of_edges()
     2
     """
-    mg = MixedMultiGraph()
+    # Copy graph attributes if present
+    graph_attrs = graph.graph.copy() if graph.graph else None
+    mg = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
@@ -80,7 +82,9 @@ def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> 'MixedMultiGraph':
     >>> M.number_of_edges()
     2
     """
-    mg = MixedMultiGraph()
+    # Copy graph attributes if present
+    graph_attrs = graph.graph.copy() if graph.graph else None
+    mg = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
@@ -119,7 +123,9 @@ def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> 'MixedMultiGraph'
     >>> M._directed.number_of_edges()
     2
     """
-    mg = MixedMultiGraph()
+    # Copy graph attributes if present
+    graph_attrs = graph.graph.copy() if graph.graph else None
+    mg = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
@@ -157,7 +163,9 @@ def directedmultigraph_to_mixedmultigraph(graph: 'DirectedMultiGraph') -> 'Mixed
     >>> M._directed.number_of_edges()
     1
     """
-    mg = MixedMultiGraph()
+    # Copy graph attributes from source DirectedMultiGraph
+    graph_attrs = graph._graph.graph.copy() if graph._graph.graph else None
+    mg = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
