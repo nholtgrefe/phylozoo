@@ -7,7 +7,7 @@ import math
 import pytest
 
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
-from phylozoo.core.network.sdnetwork.derivations import k_taxon_subnetworks, subnetwork, tree_of_blobs
+from phylozoo.core.network.sdnetwork.derivations import _switchings, k_taxon_subnetworks, subnetwork, tree_of_blobs
 from phylozoo.core.network.sdnetwork.features import blobs
 from phylozoo.core.network.sdnetwork.io import sdnetwork_from_mmgraph
 from phylozoo.core.network.sdnetwork.transformations import suppress_2_blobs
@@ -393,3 +393,207 @@ class TestKTaxonSubnetworks:
             assert len(subnet.taxa) == k
             assert subnet.number_of_nodes() > 0
             subnet.validate()
+
+
+class TestSwitchings:
+    """Test _switchings function for SemiDirectedPhyNetwork."""
+
+    def test_tree_network_single_switching(self) -> None:
+        """Tree network (no hybrid nodes) should yield exactly one switching."""
+        # Create a valid tree network (internal node needs degree >= 3)
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        switchings = list(_switchings(net))
+        assert len(switchings) == 1
+        assert switchings[0].number_of_edges() == 3
+        
+        # With probability=True, should have probability 1.0
+        switchings_with_prob = list(_switchings(net, probability=True))
+        assert len(switchings_with_prob) == 1
+        assert switchings_with_prob[0]._directed.graph.get('probability') == 1.0
+
+    def test_single_hybrid_two_parents(self) -> None:
+        """Network with one hybrid node and two parent edges should yield two switchings."""
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        switchings = list(_switchings(net))
+        assert len(switchings) == 2
+        
+        # Find the hybrid node
+        hybrid_nodes = net.hybrid_nodes
+        assert len(hybrid_nodes) == 1
+        hybrid = next(iter(hybrid_nodes))
+        
+        # Each switching should have exactly one parent edge for the hybrid node
+        for sw in switchings:
+            parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
+            assert len(parent_edges) == 1
+
+    def test_single_hybrid_three_parents(self) -> None:
+        """Network with one hybrid node and three parent edges should yield three switchings."""
+        # Use a simpler approach: connect all parents to ensure single source component
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4), (7, 4)],
+            undirected_edges=[
+                (4, 1),  # Hybrid outgoing edge
+                (5, 6), (6, 7),  # Connect parents to ensure single source component
+                (5, 8), (5, 9),  # Tree node 5
+                (6, 10), (6, 11),  # Tree node 6
+                (7, 12), (7, 13),  # Tree node 7
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}),
+                (10, {'label': 'D'}), (11, {'label': 'E'}), (12, {'label': 'F'}), (13, {'label': 'G'})
+            ]
+        )
+        switchings = list(_switchings(net))
+        assert len(switchings) == 3
+        
+        # Each switching should have exactly one parent edge for the hybrid node
+        hybrid = 4
+        for sw in switchings:
+            parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
+            assert len(parent_edges) == 1
+
+    def test_two_hybrids_independent(self) -> None:
+        """Network with two independent hybrid nodes should yield product of switchings."""
+        # Use existing fixture with two hybrids
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE
+        net = LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE
+        switchings = list(_switchings(net))
+        assert len(switchings) == 4  # 2 * 2 = 4
+        
+        # Find the hybrid nodes
+        hybrid_nodes = net.hybrid_nodes
+        assert len(hybrid_nodes) == 2
+        hybrids = sorted(hybrid_nodes)
+        
+        # Each switching should have exactly one parent edge per hybrid
+        for sw in switchings:
+            for hybrid in hybrids:
+                parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
+                assert len(parent_edges) == 1
+
+    def test_switchings_preserve_undirected_edges(self) -> None:
+        """Switchings should preserve all undirected edges."""
+        # Use existing fixture
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        switchings = list(_switchings(net))
+        assert len(switchings) == 2
+        
+        # Get all undirected edges from original network
+        original_undirected = set(net._graph._undirected.edges(keys=True))
+        
+        # All switchings should preserve all undirected edges
+        for sw in switchings:
+            switching_undirected = set(sw._undirected.edges(keys=True))
+            assert original_undirected == switching_undirected
+
+    def test_switchings_are_copies(self) -> None:
+        """Switchings should be independent copies, not references."""
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        switchings = list(_switchings(net))
+        
+        # Modify one switching and verify others are unchanged
+        if len(switchings) > 0:
+            original_edge_count = switchings[0].number_of_edges()
+            # Remove an undirected edge (not a hybrid edge)
+            for u, v in switchings[0].undirected_edges_iter():
+                switchings[0].remove_edge(u, v)
+                break
+            # Other switchings should be unchanged
+            for sw in switchings[1:]:
+                assert sw.number_of_edges() == original_edge_count
+
+    def test_probability_with_gamma_values(self) -> None:
+        """Test probability calculation when gamma values are present."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4}
+            ],
+            undirected_edges=[
+                (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+            ],
+            nodes=[
+                (3, {'label': 'C'}), (7, {'label': 'D'}),
+                (1, {'label': 'A'}), (2, {'label': 'B'})
+            ]
+        )
+        switchings = list(_switchings(net, probability=True))
+        assert len(switchings) == 2
+        
+        # Check probabilities
+        probs = [sw._directed.graph.get('probability') for sw in switchings]
+        assert 0.6 in probs
+        assert 0.4 in probs
+        # Probabilities should sum to 1.0
+        assert abs(sum(probs) - 1.0) < 1e-10
+
+    def test_probability_without_gamma_values(self) -> None:
+        """Test probability calculation when no gamma values are present."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                (5, 4), (6, 4)  # No gamma values
+            ],
+            undirected_edges=[
+                (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+            ],
+            nodes=[
+                (3, {'label': 'C'}), (7, {'label': 'D'}),
+                (1, {'label': 'A'}), (2, {'label': 'B'})
+            ]
+        )
+        switchings = list(_switchings(net, probability=True))
+        assert len(switchings) == 2
+        
+        # Without gamma, each edge should have probability 1/2 (indegree is 2)
+        for sw in switchings:
+            prob = sw._directed.graph.get('probability')
+            assert prob is not None
+            assert abs(prob - 0.5) < 1e-10
+        # Probabilities should sum to 1.0
+        total_prob = sum(sw._directed.graph.get('probability') for sw in switchings)
+        assert abs(total_prob - 1.0) < 1e-10
+
+    def test_probability_with_multiple_hybrids(self) -> None:
+        """Test probability calculation with multiple hybrid nodes."""
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE
+        net = LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE
+        switchings = list(_switchings(net, probability=True))
+        assert len(switchings) == 4  # 2 * 2 = 4
+        
+        # Each switching should have a probability
+        for sw in switchings:
+            prob = sw._directed.graph.get('probability')
+            assert prob is not None
+            assert 0.0 < prob <= 1.0
+        
+        # Probabilities should sum to 1.0
+        total_prob = sum(sw._directed.graph.get('probability') for sw in switchings)
+        assert abs(total_prob - 1.0) < 1e-10
+
+    def test_probability_false_no_attribute(self) -> None:
+        """Test that probability=False does not add probability attribute."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4}
+            ],
+            undirected_edges=[
+                (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+            ],
+            nodes=[
+                (3, {'label': 'C'}), (7, {'label': 'D'}),
+                (1, {'label': 'A'}), (2, {'label': 'B'})
+            ]
+        )
+        switchings = list(_switchings(net, probability=False))
+        
+        # No probability attribute should be present
+        for sw in switchings:
+            assert 'probability' not in sw._directed.graph

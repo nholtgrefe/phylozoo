@@ -19,4 +19,5 @@ attribute for splits to store (multiplcitiy, weight etc.)
 
 classificaitons: tree-child (weakly strongly), galled, OLP, is stackfree
 use novalidation more
+move dnetworkfromdgraph to anothe submodule?
 

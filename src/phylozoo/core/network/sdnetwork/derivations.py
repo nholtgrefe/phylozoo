@@ -27,6 +27,7 @@ from ...primitives.m_multigraph.transformations import (
     subgraph as mm_subgraph,
 )
 from ...primitives.m_multigraph.features import updown_path_vertices
+from ...primitives.m_multigraph import MixedMultiGraph
 from .io import sdnetwork_from_mmgraph
 
 
@@ -291,3 +292,128 @@ def k_taxon_subnetworks(
             suppress_2_blobs=suppress_2_blobs,
             identify_parallel_edges=identify_parallel_edges,
         )
+
+
+def _switchings(network: SemiDirectedPhyNetwork, probability: bool = False) -> Iterator[MixedMultiGraph]:
+    """
+    Generate all switchings of a semi-directed phylogenetic network.
+    
+    A switching is obtained by deleting all but one incident parent edge for each
+    hybrid node. This function generates all possible combinations of keeping
+    exactly one parent edge per hybrid node. Each switching is a tree (not
+    necessarily a phylogenetic tree).
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    probability : bool, optional
+        If True, store the probability of the switching in the graph's 'probability'
+        attribute. The probability is the product of gamma values for the kept hybrid
+        edges. If a hybrid edge has no gamma value, it is taken to be 1/k where k
+        is the in-degree of the hybrid node. By default False.
+    
+    Yields
+    ------
+    MixedMultiGraph
+        A switching of the network (one parent edge kept per hybrid node). Each
+        switching is a tree. If probability=True, the graph has a 'probability'
+        attribute containing the switching probability.
+    
+    Examples
+    --------
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[
+    ...         (5, 4),
+    ...         (6, 4)
+    ...     ],
+    ...     undirected_edges=[
+    ...         (5, 3),
+    ...         (5, 6),
+    ...         (6, 7),
+    ...         (4, 8),
+    ...         (8, 1),
+    ...         (8, 2)
+    ...     ],
+    ...     nodes=[
+    ...         (3, {'label': 'C'}),
+    ...         (7, {'label': 'D'}),
+    ...         (1, {'label': 'A'}),
+    ...         (2, {'label': 'B'})
+    ...     ]
+    ... )
+    >>> switchings = list(_switchings(net))
+    >>> len(switchings)
+    2  # Two parent edges for hybrid node 4: (5,4) and (6,4)
+    >>> # Each switching has exactly one parent edge for the hybrid node
+    >>> hybrid = 4
+    >>> for sw in switchings:
+    ...     parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
+    ...     assert len(parent_edges) == 1
+    >>> # With probability=True, each switching has a probability attribute
+    >>> net_with_gamma = SemiDirectedPhyNetwork(
+    ...     directed_edges=[
+    ...         {'u': 5, 'v': 4, 'gamma': 0.6},
+    ...         {'u': 6, 'v': 4, 'gamma': 0.4}
+    ...     ],
+    ...     undirected_edges=[
+    ...         (5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)
+    ...     ],
+    ...     nodes=[
+    ...         (3, {'label': 'C'}), (7, {'label': 'D'}),
+    ...         (1, {'label': 'A'}), (2, {'label': 'B'})
+    ...     ]
+    ... )
+    >>> switchings_with_prob = list(_switchings(net_with_gamma, probability=True))
+    >>> switchings_with_prob[0]._directed.graph.get('probability')
+    0.6  # Probability of keeping edge (5,4)
+    >>> switchings_with_prob[1]._directed.graph.get('probability')
+    0.4  # Probability of keeping edge (6,4)
+    """
+    hybrid_nodes = network.hybrid_nodes
+    
+    # If no hybrid nodes, return the original graph
+    if not hybrid_nodes:
+        switching_graph = network._graph.copy()
+        if probability:
+            switching_graph._directed.graph['probability'] = 1.0
+        yield switching_graph
+        return
+    
+    # Collect parent edges for each hybrid node (hybrid nodes always have parent edges)
+    hybrid_parent_edges: dict[Any, list[tuple[Any, Any, int]]] = {}
+    hybrid_indegrees: dict[Any, int] = {}
+    for hybrid in hybrid_nodes:
+        parent_edges = list(network.incident_parent_edges(hybrid, keys=True))
+        hybrid_parent_edges[hybrid] = parent_edges
+        hybrid_indegrees[hybrid] = len(parent_edges)
+    
+    # Generate all combinations: for each hybrid, choose one parent edge to keep
+    hybrid_list = list(hybrid_nodes)
+    
+    for edge_combination in itertools.product(*hybrid_parent_edges.values()):
+        # Create a copy of the graph
+        switching_graph = network._graph.copy()
+        
+        # Calculate probability and remove edges in a single loop
+        prob = 1.0 if probability else None
+        for hybrid, (keep_u, keep_v, keep_key) in zip(hybrid_list, edge_combination):
+            # Calculate probability contribution for this hybrid if requested
+            if probability:
+                gamma = network.get_gamma(keep_u, keep_v, keep_key)
+                if gamma is not None:
+                    prob *= gamma
+                else:
+                    # No gamma specified, use uniform probability 1/k
+                    prob *= 1.0 / hybrid_indegrees[hybrid]
+            
+            # Remove all parent edges except the one to keep
+            for u, v, key in hybrid_parent_edges[hybrid]:
+                if (u, v, key) != (keep_u, keep_v, keep_key):
+                    switching_graph.remove_edge(u, v, key=key)
+        
+        # Store probability if requested
+        if probability:
+            switching_graph._directed.graph['probability'] = prob
+        
+        yield switching_graph

@@ -5,7 +5,7 @@ Tests for dnetwork derivations functions.
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import tree_of_blobs
+from phylozoo.core.network.dnetwork.derivations import _switchings, tree_of_blobs
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.io import dnetwork_from_dmgraph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
@@ -92,3 +92,210 @@ class TestTreeOfBlobs:
         final_blobs = blobs(result, trivial=False, leaves=False)
         # All internal blobs should be collapsed to single vertices
         assert len(final_blobs) == 0
+
+
+class TestSwitchings:
+    """Test _switchings function for DirectedPhyNetwork."""
+
+    def test_tree_network_single_switching(self) -> None:
+        """Tree network (no hybrid nodes) should yield exactly one switching."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        switchings = list(_switchings(net))
+        assert len(switchings) == 1
+        assert switchings[0].number_of_edges() == 2
+        
+        # With probability=True, should have probability 1.0
+        switchings_with_prob = list(_switchings(net, probability=True))
+        assert len(switchings_with_prob) == 1
+        assert switchings_with_prob[0]._graph.graph.get('probability') == 1.0
+
+    def test_single_hybrid_two_parents(self) -> None:
+        """Network with one hybrid node and two parent edges should yield two switchings."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_DNETWORK_SINGLE_HYBRID
+        switchings = list(_switchings(net))
+        assert len(switchings) == 2
+        
+        # Find the hybrid node
+        hybrid_nodes = net.hybrid_nodes
+        assert len(hybrid_nodes) == 1
+        hybrid = next(iter(hybrid_nodes))
+        
+        # Each switching should have exactly one parent edge for the hybrid node
+        for sw in switchings:
+            parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
+            assert len(parent_edges) == 1
+
+    def test_single_hybrid_three_parents(self) -> None:
+        """Network with one hybrid node and three parent edges should yield three switchings."""
+        # Create a valid network with one hybrid and three parents
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6), (10, 7),  # Root to tree nodes
+                (5, 4), (6, 4), (7, 4),  # Three parents to hybrid 4
+                (4, 1),  # Hybrid to leaf
+                (5, 8), (6, 9), (7, 11),  # Other children for tree nodes
+            ],
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (11, {'label': 'D'})]
+        )
+        switchings = list(_switchings(net))
+        assert len(switchings) == 3
+        
+        # Each switching should have exactly one parent edge for the hybrid node
+        hybrid = 4
+        for sw in switchings:
+            parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
+            assert len(parent_edges) == 1
+
+    def test_two_hybrids_independent(self) -> None:
+        """Network with two independent hybrid nodes should yield product of switchings."""
+        # Create a valid network with two hybrids - ensure all tree nodes have out-degree >= 2
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),  # Root to tree nodes
+                (5, 4), (5, 17), (6, 4), (6, 18), (4, 11), (11, 1), (11, 12),  # Hybrid 4 with 2 parents, tree node 11
+                (10, 8), (10, 9),  # Root to more tree nodes (8 and 9 are tree nodes)
+                (8, 7), (8, 15),  # Tree node 8: one to hybrid 7, one to leaf
+                (9, 7), (9, 16),  # Tree node 9: one to hybrid 7, one to leaf
+                (7, 13), (13, 2), (13, 14),  # Hybrid 7 with 2 parents, tree node 13
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}), (14, {'label': 'D'}), (15, {'label': 'E'}), (16, {'label': 'F'}), (17, {'label': 'G'}), (18, {'label': 'H'})]
+        )
+        switchings = list(_switchings(net))
+        assert len(switchings) == 4  # 2 * 2 = 4
+        
+        # Each switching should have exactly one parent edge per hybrid
+        for sw in switchings:
+            parent_edges_4 = list(sw.incident_parent_edges(4, keys=True))
+            parent_edges_7 = list(sw.incident_parent_edges(7, keys=True))
+            assert len(parent_edges_4) == 1
+            assert len(parent_edges_7) == 1
+
+    def test_switchings_preserve_non_hybrid_edges(self) -> None:
+        """Switchings should preserve all non-hybrid edges."""
+        # Create a valid network with hybrid and non-hybrid edges
+        # Ensure all tree nodes have out-degree >= 2
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),  # Root to tree nodes
+                (5, 4), (5, 17), (6, 4), (6, 18), (4, 1),  # Hybrid 4, tree nodes 5 and 6 have out-degree 2
+                (10, 3), (3, 2), (3, 15),  # Non-hybrid tree node 3 with out-degree 2
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (15, {'label': 'C'}), (17, {'label': 'D'}), (18, {'label': 'E'})]
+        )
+        switchings = list(_switchings(net))
+        assert len(switchings) == 2
+        
+        # All switchings should have the non-hybrid edge (3, 2)
+        for sw in switchings:
+            assert sw.has_edge(3, 2)
+
+    def test_switchings_are_copies(self) -> None:
+        """Switchings should be independent copies, not references."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_DNETWORK_SINGLE_HYBRID
+        switchings = list(_switchings(net))
+        
+        # Modify one switching and verify others are unchanged
+        if len(switchings) > 0:
+            original_edge_count = switchings[0].number_of_edges()
+            # Remove a non-hybrid edge
+            for u, v in switchings[0].edges():
+                if switchings[0].indegree(v) < 2:  # Not a hybrid edge
+                    switchings[0].remove_edge(u, v)
+                    break
+            # Other switchings should be unchanged
+            for sw in switchings[1:]:
+                assert sw.number_of_edges() == original_edge_count
+
+    def test_probability_with_gamma_values(self) -> None:
+        """Test probability calculation when gamma values are present."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        switchings = list(_switchings(net, probability=True))
+        assert len(switchings) == 2
+        
+        # Check probabilities
+        probs = [sw._graph.graph.get('probability') for sw in switchings]
+        assert 0.6 in probs
+        assert 0.4 in probs
+        # Probabilities should sum to 1.0
+        assert abs(sum(probs) - 1.0) < 1e-10
+
+    def test_probability_without_gamma_values(self) -> None:
+        """Test probability calculation when no gamma values are present."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),  # No gamma values
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        switchings = list(_switchings(net, probability=True))
+        assert len(switchings) == 2
+        
+        # Without gamma, each edge should have probability 1/2 (indegree is 2)
+        for sw in switchings:
+            prob = sw._graph.graph.get('probability')
+            assert prob is not None
+            assert abs(prob - 0.5) < 1e-10
+        # Probabilities should sum to 1.0
+        total_prob = sum(sw._graph.graph.get('probability') for sw in switchings)
+        assert abs(total_prob - 1.0) < 1e-10
+
+    def test_probability_with_multiple_hybrids(self) -> None:
+        """Test probability calculation with multiple hybrid nodes."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6), (10, 8), (10, 9),
+                (5, 4), (5, 17), (6, 4), (6, 18),  # Hybrid 4 with 2 parents
+                (8, 7), (8, 15), (9, 7), (9, 16),  # Hybrid 7 with 2 parents
+                (4, 11), (11, 1), (11, 12),
+                (7, 13), (13, 2), (13, 14)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}),
+                (14, {'label': 'D'}), (15, {'label': 'E'}), (16, {'label': 'F'}),
+                (17, {'label': 'G'}), (18, {'label': 'H'})
+            ]
+        )
+        switchings = list(_switchings(net, probability=True))
+        assert len(switchings) == 4  # 2 * 2 = 4
+        
+        # Each switching should have a probability
+        for sw in switchings:
+            prob = sw._graph.graph.get('probability')
+            assert prob is not None
+            assert 0.0 < prob <= 1.0
+        
+        # Probabilities should sum to 1.0
+        total_prob = sum(sw._graph.graph.get('probability') for sw in switchings)
+        assert abs(total_prob - 1.0) < 1e-10
+
+    def test_probability_false_no_attribute(self) -> None:
+        """Test that probability=False does not add probability attribute."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        switchings = list(_switchings(net, probability=False))
+        
+        # No probability attribute should be present
+        for sw in switchings:
+            assert 'probability' not in sw._graph.graph
