@@ -13,16 +13,20 @@ and mixed phylogenetic networks (e.g., splits, quartets, distances, blobtrees, s
 # - Blobtree construction
 # - Subnetwork extraction
 # - Displayed tree extraction
-from typing import Any
+import itertools
+from typing import Any, Iterator
 
 from . import MixedPhyNetwork
 from .features import blobs
-from .transformations import suppress_2_blobs
+from .transformations import suppress_2_blobs as suppress_2_blobs_fn, identify_parallel_edges as identify_parallel_edges_fn
 from .sd_phynetwork import SemiDirectedPhyNetwork
+from ._utils import _suppress_deg2_nodes
 from ...primitives.m_multigraph.transformations import (
     identify_vertices as mm_identify_vertices,
     suppress_degree2_node as mm_suppress_degree2_node,
+    subgraph as mm_subgraph,
 )
+from ...primitives.m_multigraph.features import updown_path_vertices
 from .io import sdnetwork_from_mmgraph
 
 
@@ -76,7 +80,7 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     True
     """
     # First suppress all 2-blobs using the existing function
-    blob_network = suppress_2_blobs(network)
+    blob_network = suppress_2_blobs_fn(network)
 
     # Find all internal blobs (more than 1 node, not containing only leaves)
     all_blobs = blobs(blob_network, trivial=False, leaves=False)
@@ -94,3 +98,196 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     # Preserve the input type (SemiDirectedPhyNetwork or MixedPhyNetwork)
     network_type = 'semi-directed' if isinstance(network, SemiDirectedPhyNetwork) else 'mixed'
     return sdnetwork_from_mmgraph(working_graph, network_type=network_type)
+
+
+def subnetwork(
+    network: SemiDirectedPhyNetwork,
+    taxa: list[str],
+    suppress_2_blobs: bool = False,
+    identify_parallel_edges: bool = False,
+) -> SemiDirectedPhyNetwork:
+    """
+    Extract the subnetwork induced by a subset of taxa (leaf labels).
+
+    The subnetwork is defined as the union of all up-down paths between the
+    requested leaves (i.e., all vertices on up-down paths between any pair
+    of the requested leaves). The induced subgraph is taken on the underlying
+    MixedMultiGraph, then degree-2 internal nodes are suppressed. Optionally,
+    the result can be post-processed by suppressing 2-blobs and/or identifying
+    parallel edges. After any of these optional steps, degree-2 suppression is
+    applied again to clean up artifacts.
+
+    An up-down path between two vertices x and y is a path where no two edges
+    are oriented towards each other. Equivalently, it is a path where the first
+    k edges can be oriented towards x (where undirected edges can be oriented in
+    either way) and the remaining l-k edges can be oriented towards y.
+
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        Source network.
+    taxa : list[str]
+        Subset of taxon labels (leaf labels) to induce the subnetwork on.
+
+    Other parameters (keyword-only)
+    -------------------------------
+    suppress_2_blobs : bool, default False
+        If True, suppress all 2-blobs in the resulting network.
+    identify_parallel_edges : bool, default False
+        If True, identify/merge parallel edges in the resulting network.
+
+    Returns
+    -------
+    SemiDirectedPhyNetwork
+        The derived subnetwork. Returns an empty network if `taxa` is empty.
+        Returns a network with a single leaf if `taxa` contains a single leaf.
+
+    Raises
+    ------
+    ValueError
+        If any of the provided taxa are not found in the network.
+
+    Examples
+    --------
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> subnet = subnetwork(net, ['A', 'B'])
+    >>> sorted(subnet.taxa)
+    ['A', 'B']
+    >>> # Network with hybrid
+    >>> net2 = SemiDirectedPhyNetwork(
+    ...     directed_edges=[(5, 4), (6, 4)],
+    ...     undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> subnet2 = subnetwork(net2, ['A', 'B'])
+    >>> sorted(subnet2.taxa)
+    ['A', 'B']
+    """
+    if not taxa:
+        # Return an empty network if no taxa are specified
+        return SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[], nodes=[])
+    
+    # Map taxa labels to node ids using public API
+    leaf_nodes: list[Any] = []
+    for t in taxa:
+        node_id = network.get_node_id(t)
+        if node_id is None:
+            raise ValueError(f"Taxon label '{t}' not found in network")
+        leaf_nodes.append(node_id)
+    
+    # Collect all vertices on up-down paths between any pair of leaves
+    # Note: updown_path_vertices handles the single-leaf case (returns {x} when x == y)
+    nodes_set: set[Any] = set()
+    if len(leaf_nodes) == 1:
+        # Single leaf case: updown_path_vertices(leaf, leaf) returns {leaf}
+        nodes_set = updown_path_vertices(network._graph, leaf_nodes[0], leaf_nodes[0])
+    else:
+        for leaf1, leaf2 in itertools.combinations(leaf_nodes, 2):
+            # Find vertices on up-down paths between this pair of leaves
+            path_vertices = updown_path_vertices(network._graph, leaf1, leaf2)
+            nodes_set.update(path_vertices)
+        # Also include all leaves themselves (they should already be included, but ensure)
+        nodes_set.update(leaf_nodes)
+    
+    # Create induced MixedMultiGraph using existing utility
+    induced_mm = mm_subgraph(network._graph, nodes_set)
+    
+    # Work on a mutable copy for transformations
+    working_mm = induced_mm.copy()
+    
+    # First pass: suppress all degree-2 nodes (excluding leaves)
+    leaf_set = set(leaf_nodes)
+    _suppress_deg2_nodes(working_mm, exclude_nodes=leaf_set)
+    
+    # Convert to SemiDirectedPhyNetwork for higher-level transformations
+    result_net = sdnetwork_from_mmgraph(working_mm, network_type='semi-directed')
+    
+    # Optional post-processing steps
+    if suppress_2_blobs:
+        result_net = suppress_2_blobs_fn(result_net)
+    
+    if identify_parallel_edges:
+        result_net = identify_parallel_edges_fn(result_net)
+    
+    return result_net
+
+
+def k_taxon_subnetworks(
+    network: SemiDirectedPhyNetwork,
+    k: int,
+    suppress_2_blobs: bool = False,
+    identify_parallel_edges: bool = False,
+) -> Iterator[SemiDirectedPhyNetwork]:
+    """
+    Generate all subnetworks induced by exactly k taxa.
+    
+    This function yields all possible subnetworks of the network that are
+    induced by exactly k taxon labels. For each combination of k taxa,
+    the corresponding subnetwork is computed using the `subnetwork` function.
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        Source network.
+    k : int
+        Number of taxa to include in each subnetwork. Must be between 0 and
+        the number of taxa in the network (inclusive).
+    
+    Other parameters (keyword-only)
+    -------------------------------
+    suppress_2_blobs : bool, default False
+        If True, suppress all 2-blobs in each resulting subnetwork.
+    identify_parallel_edges : bool, default False
+        If True, identify/merge parallel edges in each resulting subnetwork.
+    
+    Yields
+    ------
+    SemiDirectedPhyNetwork
+        Subnetworks induced by exactly k taxa. Each subnetwork is generated
+        lazily as the iterator is consumed.
+    
+    Raises
+    ------
+    ValueError
+        If k < 0 or k > number of taxa in the network.
+    
+    Examples
+    --------
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(5, 3), (5, 4), (5, 6), (3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (6, {'label': 'D'})]
+    ... )
+    >>> # Generate all 2-taxon subnetworks
+    >>> subnetworks = list(k_taxon_subnetworks(net, k=2))
+    >>> len(subnetworks)
+    6  # C(4,2) = 6 combinations
+    >>> # Each subnetwork has exactly 2 leaves
+    >>> all(len(subnet.taxa) == 2 for subnet in subnetworks)
+    True
+    >>> # Generate all 1-taxon subnetworks
+    >>> single_taxon_subs = list(k_taxon_subnetworks(net, k=1))
+    >>> len(single_taxon_subs)
+    4  # C(4,1) = 4 combinations
+    """
+    all_taxa = list(network.taxa)
+    num_taxa = len(all_taxa)
+    
+    # Validate k
+    if k < 0:
+        raise ValueError(f"k must be non-negative, got {k}")
+    if k > num_taxa:
+        raise ValueError(
+            f"k ({k}) cannot exceed the number of taxa ({num_taxa}) in the network"
+        )
+    
+    # Generate all combinations of k taxa
+    for taxa_combination in itertools.combinations(all_taxa, k):
+        yield subnetwork(
+            network,
+            list(taxa_combination),
+            suppress_2_blobs=suppress_2_blobs,
+            identify_parallel_edges=identify_parallel_edges,
+        )

@@ -22,6 +22,7 @@ from phylozoo.core.primitives.m_multigraph.features import (
     is_connected,
     number_of_connected_components,
     source_components,
+    updown_path_vertices,
 )
 from phylozoo.core.primitives.m_multigraph.transformations import (
     identify_vertices,
@@ -2454,4 +2455,144 @@ class TestHasParallelEdges:
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(1, 2)
         assert has_parallel_edges(G)
+
+
+class TestUpdownPathVertices:
+    """Test cases for updown_path_vertices function."""
+
+    def test_simple_undirected_path(self) -> None:
+        """Test up-down paths in a simple undirected path."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        vertices = updown_path_vertices(G, 1, 4)
+        assert vertices == {1, 2, 3, 4}
+
+    def test_path_with_directed_edge(self) -> None:
+        """Test up-down paths with a directed edge in the middle."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        G.add_undirected_edge(4, 5)
+        vertices = updown_path_vertices(G, 1, 5)
+        assert vertices == {1, 2, 3, 4, 5}
+
+    def test_same_vertex(self) -> None:
+        """Test up-down paths when x == y."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        vertices = updown_path_vertices(G, 1, 1)
+        assert vertices == {1}
+
+    def test_vertex_not_in_graph(self) -> None:
+        """Test up-down paths when vertices are not in graph."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        vertices = updown_path_vertices(G, 1, 3)
+        assert vertices == set()
+        vertices = updown_path_vertices(G, 3, 1)
+        assert vertices == set()
+
+    def test_disconnected_vertices(self) -> None:
+        """Test up-down paths between disconnected vertices."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(3, 4)
+        vertices = updown_path_vertices(G, 1, 3)
+        assert vertices == set()
+
+    def test_path_with_backward_directed_edge(self) -> None:
+        """Test up-down paths that require traversing directed edges backwards."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(3, 2)  # Directed edge pointing to 2
+        G.add_undirected_edge(3, 4)
+        vertices = updown_path_vertices(G, 1, 4)
+        # Path: 1 -> 2 <- 3 -> 4 (traverse 3->2 backwards)
+        assert vertices == {1, 2, 3, 4}
+
+    def test_path_with_forward_directed_edge(self) -> None:
+        """Test up-down paths that traverse directed edges forwards."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)  # Directed edge pointing from 2
+        G.add_undirected_edge(3, 4)
+        vertices = updown_path_vertices(G, 1, 4)
+        # Path: 1 -> 2 -> 3 -> 4 (traverse 2->3 forwards)
+        assert vertices == {1, 2, 3, 4}
+
+    def test_hybrid_node_structure(self) -> None:
+        """Test up-down paths through a hybrid node structure."""
+        G = MixedMultiGraph()
+        # Hybrid node 4 with two incoming directed edges
+        G.add_directed_edge(2, 4)
+        G.add_directed_edge(3, 4)
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 3)
+        G.add_undirected_edge(4, 5)
+        vertices = updown_path_vertices(G, 1, 5)
+        # Paths: 1 -> 2 -> 4 -> 5 and 1 -> 3 -> 4 -> 5
+        assert vertices == {1, 2, 3, 4, 5}
+
+    def test_branching_structure(self) -> None:
+        """Test up-down paths in a branching structure."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 3)
+        G.add_undirected_edge(2, 4)
+        G.add_undirected_edge(3, 5)
+        vertices = updown_path_vertices(G, 4, 5)
+        # Path: 4 -> 2 -> 1 -> 3 -> 5
+        assert vertices == {1, 2, 3, 4, 5}
+
+    def test_complex_path_with_mixed_edges(self) -> None:
+        """Test up-down paths in a complex structure with mixed edge types."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        G.add_directed_edge(5, 4)  # Backwards from 4
+        G.add_undirected_edge(5, 6)
+        vertices = updown_path_vertices(G, 1, 6)
+        # Path: 1 -> 2 -> 3 -> 4 <- 5 -> 6
+        # This path is invalid because after turning point (2->3), edge 5->4 points back towards 1
+        assert vertices == set()
+
+    def test_single_edge_path(self) -> None:
+        """Test up-down paths with a single edge."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        vertices = updown_path_vertices(G, 1, 2)
+        assert vertices == {1, 2}
+
+    def test_single_directed_edge_path(self) -> None:
+        """Test up-down paths with a single directed edge."""
+        G = MixedMultiGraph()
+        G.add_directed_edge(1, 2)
+        vertices = updown_path_vertices(G, 1, 2)
+        # Can traverse 1->2 forwards (towards 2)
+        assert vertices == {1, 2}
+
+    def test_path_through_parallel_edges(self) -> None:
+        """Test up-down paths when parallel edges exist."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # Parallel edge
+        G.add_undirected_edge(2, 3)
+        vertices = updown_path_vertices(G, 1, 3)
+        assert vertices == {1, 2, 3}
+
+    def test_path_with_cycle(self) -> None:
+        """Test up-down paths in a structure with a cycle."""
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        G.add_undirected_edge(4, 2)  # Creates cycle: 2-3-4-2
+        vertices = updown_path_vertices(G, 1, 4)
+        # Path exists: 1 -> 2 -> 3 -> 4
+        assert vertices == {1, 2, 3, 4}
 

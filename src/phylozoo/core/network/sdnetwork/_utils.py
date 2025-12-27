@@ -72,10 +72,10 @@ def _suppress_deg2_nodes(
     Suppress all degree-2 nodes in a mixed multigraph.
     
     This function is intended for SemiDirectedPhyNetwork and MixedPhyNetwork operations.
-    It iteratively suppresses all nodes with degree 2. For mixed graphs, a degree-2 node
-    can have various edge configurations (directed in/out, undirected, or combinations).
-    Suppression continues until no more degree-2 nodes remain, as suppression may create
-    new degree-2 nodes.
+    It iteratively suppresses all nodes with degree 2 (where outdegree != 2 and indegree != 2). 
+    For mixed graphs, a degree-2 node can have various edge configurations (directed in/out, 
+    undirected, or combinations). Suppression continues until no more degree-2 nodes remain, 
+    as suppression may create new degree-2 nodes.
     
     Edge attributes are properly merged using `_merge_attrs_for_degree2_suppression_mixed`,
     which handles branch_length (summed) and gamma (from edge2) correctly.
@@ -104,11 +104,15 @@ def _suppress_deg2_nodes(
     
     # Iteratively suppress degree-2 nodes until no more remain
     while True:
-        # Find all degree-2 nodes
+        # Find all degree-2 nodes that can be suppressed
+        # Only consider nodes where outdegree != 2 and indegree != 2
+        # (to avoid ambiguous suppression directions)
         degree2_nodes = [
             node for node in graph.nodes()
             if node not in exclude_nodes
             and graph.degree(node) == 2
+            and graph.outdegree(node) != 2
+            and graph.indegree(node) != 2
         ]
         
         if not degree2_nodes:

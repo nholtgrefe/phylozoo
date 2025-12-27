@@ -573,3 +573,138 @@ def cut_vertices(
     
     return result
 
+
+def _is_updown_path(graph: 'MixedMultiGraph', path: list[T], x: T, y: T) -> bool:
+    """
+    Check if a path is an up-down path from x to y.
+    
+    An up-down path is one where no two edges are oriented towards each other.
+    Equivalently, it is a path where the first k edges can be oriented towards x
+    and the remaining l-k edges can be oriented towards y.
+    
+    This implementation uses a two-pass algorithm:
+    1. Find the turning point - the first vertex u_i where we encounter a directed
+       edge (u_i, u_{i+1}) oriented from u_i towards y (i.e., u_i -> u_{i+1})
+    2. After the turning point, no edges can be oriented towards x (i.e., no
+       directed edge v->u where we traverse from u to v after the turning point)
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The mixed multigraph.
+    path : list[T]
+        List of vertices forming a path from x to y. Assumed to be a valid path
+        (i.e., edges exist between consecutive vertices).
+    x : T
+        Source vertex (should be path[0]).
+    y : T
+        Target vertex (should be path[-1]).
+    
+    Returns
+    -------
+    bool
+        True if the path is an up-down path, False otherwise.
+    
+    Notes
+    -----
+    The input path is assumed to be valid (edges exist between consecutive vertices).
+    """
+    if len(path) < 2:
+        return True
+    
+    turning_point_idx: int | None = None
+    
+    for i in range(len(path) - 1):
+        u, v = path[i], path[i + 1]
+        if graph._directed.has_edge(u, v):
+            turning_point_idx = i
+            break
+    
+    if turning_point_idx is None:
+        return True
+    
+    for i in range(turning_point_idx + 1, len(path) - 1):
+        u, v = path[i], path[i + 1]
+        if graph._directed.has_edge(v, u):
+            return False
+    
+    return True
+
+
+def updown_path_vertices(graph: 'MixedMultiGraph', x: T, y: T) -> set[T]:
+    """
+    Find all vertices on up-down paths between two vertices x and y.
+    
+    An up-down path from x to y is a path where no two edges are oriented towards
+    each other. Equivalently, it is a path where the first k edges can be oriented
+    towards x (where undirected edges can be oriented in either way) and the
+    remaining l-k edges can be oriented towards y.
+    
+    This function finds all vertices v such that there exists an up-down path
+    from x to y that passes through v.
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The mixed multigraph to analyze.
+    x : T
+        Source vertex.
+    y : T
+        Target vertex.
+    
+    Returns
+    -------
+    set[T]
+        Set of all vertices on up-down paths from x to y, including x and y.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> from phylozoo.core.primitives.m_multigraph.features import updown_path_vertices
+    >>> G = MixedMultiGraph()
+    >>> G.add_undirected_edge(1, 2)
+    0
+    >>> G.add_undirected_edge(2, 3)
+    0
+    >>> G.add_directed_edge(3, 4)
+    0
+    >>> G.add_undirected_edge(4, 5)
+    0
+    >>> vertices = updown_path_vertices(G, 1, 5)
+    >>> vertices == {1, 2, 3, 4, 5}
+    True
+    
+    Notes
+    -----
+    This implementation uses NetworkX's all_simple_paths to find all paths between
+    x and y, then filters for up-down paths.
+    """
+    import networkx as nx
+    
+    if x not in graph.nodes() or y not in graph.nodes():
+        return set()
+    
+    if x == y:
+        return {x}
+    
+    # Use NetworkX to find all simple paths in the combined graph
+    # The combined graph treats all edges as undirected for path finding
+    # Use generator to avoid storing all paths in memory at once
+    try:
+        all_paths = nx.all_simple_paths(graph._combined, x, y)
+    except nx.NetworkXNoPath:
+        return set()
+    
+    # Collect all vertices on up-down paths
+    result: set[T] = set()
+    
+    for path in all_paths:
+        if _is_updown_path(graph, path, x, y):
+            result.update(path)
+            # Early termination: if we've found all vertices in the graph, we're done
+            # (This is unlikely but can help in some cases)
+            if len(result) == len(graph.nodes()):
+                break
+    
+    return result
+
