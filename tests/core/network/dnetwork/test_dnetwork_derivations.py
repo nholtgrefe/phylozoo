@@ -2,10 +2,11 @@
 Tests for dnetwork derivations functions.
 """
 
+import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, tree_of_blobs
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, tree_of_blobs, distances
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.io import dnetwork_from_dmgraph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
@@ -419,3 +420,140 @@ class TestDisplayedTrees:
         # No probability attribute should be present
         for tree in trees:
             assert tree.get_network_attribute('probability') is None
+
+
+class TestDistances:
+    """Test distances function for DirectedPhyNetwork."""
+    
+    def test_simple_tree_no_branch_lengths(self) -> None:
+        """Test distances for a simple tree without branch lengths."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 2
+        assert dm.get_distance('A', 'B') == 2.0  # Two edges, each with default length 1.0
+        assert dm.get_distance('A', 'A') == 0.0
+        assert dm.get_distance('B', 'B') == 0.0
+    
+    def test_simple_tree_with_branch_lengths(self) -> None:
+        """Test distances for a simple tree with branch lengths."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 3, 'v': 1, 'branch_length': 0.5},
+                {'u': 3, 'v': 2, 'branch_length': 0.3}
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 2
+        assert dm.get_distance('A', 'B') == 0.8  # 0.5 + 0.3
+        assert dm.get_distance('A', 'A') == 0.0
+        assert dm.get_distance('B', 'B') == 0.0
+    
+    def test_network_with_hybrid_shortest(self) -> None:
+        """Test shortest distances for a network with hybrid node."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 4
+        # All distances should be finite
+        for i, taxon1 in enumerate(dm.labels):
+            for j, taxon2 in enumerate(dm.labels):
+                if i != j:
+                    assert dm.get_distance(taxon1, taxon2) > 0
+                    assert dm.get_distance(taxon1, taxon2) < np.inf
+                else:
+                    assert dm.get_distance(taxon1, taxon2) == 0.0
+    
+    def test_network_with_hybrid_longest(self) -> None:
+        """Test longest distances for a network with hybrid node."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        dm = distances(net, mode='longest')
+        assert len(dm) == 4
+        # All distances should be finite and >= shortest
+        shortest_dm = distances(net, mode='shortest')
+        for i, taxon1 in enumerate(dm.labels):
+            for j, taxon2 in enumerate(dm.labels):
+                if i != j:
+                    assert dm.get_distance(taxon1, taxon2) >= shortest_dm.get_distance(taxon1, taxon2)
+                else:
+                    assert dm.get_distance(taxon1, taxon2) == 0.0
+    
+    def test_network_with_hybrid_average(self) -> None:
+        """Test average distances for a network with hybrid node."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        dm = distances(net, mode='average')
+        assert len(dm) == 4
+        # All distances should be finite and between shortest and longest
+        shortest_dm = distances(net, mode='shortest')
+        longest_dm = distances(net, mode='longest')
+        for i, taxon1 in enumerate(dm.labels):
+            for j, taxon2 in enumerate(dm.labels):
+                if i != j:
+                    shortest = shortest_dm.get_distance(taxon1, taxon2)
+                    longest = longest_dm.get_distance(taxon1, taxon2)
+                    avg = dm.get_distance(taxon1, taxon2)
+                    assert shortest <= avg <= longest
+                else:
+                    assert dm.get_distance(taxon1, taxon2) == 0.0
+    
+    def test_single_taxon(self) -> None:
+        """Test distances for a network with a single taxon."""
+        net = DirectedPhyNetwork(
+            nodes=[(1, {'label': 'A'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 1
+        assert dm.get_distance('A', 'A') == 0.0
+    
+    def test_symmetric_matrix(self) -> None:
+        """Test that the distance matrix is symmetric."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert dm.get_distance('A', 'B') == dm.get_distance('B', 'A')
+    
+    def test_all_modes_produce_valid_matrices(self) -> None:
+        """Test that all modes produce valid distance matrices."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        for mode in ['shortest', 'longest', 'average']:
+            dm = distances(net, mode=mode)
+            assert len(dm) == 4
+            # Check symmetry
+            for i, taxon1 in enumerate(dm.labels):
+                for j, taxon2 in enumerate(dm.labels):
+                    assert dm.get_distance(taxon1, taxon2) == dm.get_distance(taxon2, taxon1)
+                    if i == j:
+                        assert dm.get_distance(taxon1, taxon2) == 0.0

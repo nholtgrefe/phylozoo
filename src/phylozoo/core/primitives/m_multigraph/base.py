@@ -1597,3 +1597,32 @@ class MixedMultiGraph:
         self._undirected.clear()
         self._directed.clear()
         self._combined.clear()
+
+    def set_graph_attribute(self, key: str, value: Any) -> None:
+        """
+        Set a graph attribute in all underlying graphs.
+        
+        Sets the same attribute value in the directed, undirected, and combined
+        graph's `.graph` attribute dictionaries.
+        
+        Parameters
+        ----------
+        key : str
+            The attribute key.
+        value : Any
+            The attribute value.
+        
+        Examples
+        --------
+        >>> G = MixedMultiGraph()
+        >>> G.set_graph_attribute('probability', 0.5)
+        >>> G._directed.graph.get('probability')
+        0.5
+        >>> G._undirected.graph.get('probability')
+        0.5
+        >>> G._combined.graph.get('probability')
+        0.5
+        """
+        self._directed.graph[key] = value
+        self._undirected.graph[key] = value
+        self._combined.graph[key] = value

@@ -1177,3 +1177,29 @@ class DirectedMultiGraph:
         """
         self._graph.clear()
         self._combined.clear()
+
+    def set_graph_attribute(self, key: str, value: Any) -> None:
+        """
+        Set a graph attribute in all underlying graphs.
+        
+        Sets the same attribute value in the graph and combined graph's
+        `.graph` attribute dictionaries.
+        
+        Parameters
+        ----------
+        key : str
+            The attribute key.
+        value : Any
+            The attribute value.
+        
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> G.set_graph_attribute('probability', 0.5)
+        >>> G._graph.graph.get('probability')
+        0.5
+        >>> G._combined.graph.get('probability')
+        0.5
+        """
+        self._graph.graph[key] = value
+        self._combined.graph[key] = value

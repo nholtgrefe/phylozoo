@@ -14,7 +14,10 @@ phylogenetic networks (e.g., splits, quartets, distances, blobtrees, subnetworks
 # - Subnetwork extraction
 # - Displayed tree extraction
 import itertools
-from typing import Any, Iterator
+from typing import Any, Iterator, Literal
+
+import numpy as np
+import networkx as nx
 
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
@@ -33,6 +36,7 @@ from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.m_multigraph import MixedMultiGraph
 from ..sdnetwork import SemiDirectedPhyNetwork
 from ..sdnetwork.io import sdnetwork_from_mmgraph
+from ....core.distance import DistanceMatrix
 
 
 def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
@@ -452,8 +456,7 @@ def _switchings(network: DirectedPhyNetwork, probability: bool = False) -> Itera
     if not hybrid_nodes:
         switching_graph = network._graph.copy()
         if probability:
-            switching_graph._graph.graph['probability'] = 1.0
-            switching_graph._combined.graph['probability'] = 1.0
+            switching_graph.set_graph_attribute('probability', 1.0)
         yield switching_graph
         return
     
@@ -491,8 +494,7 @@ def _switchings(network: DirectedPhyNetwork, probability: bool = False) -> Itera
         
         # Store probability if requested (in all underlying graphs)
         if probability:
-            switching_graph._graph.graph['probability'] = prob
-            switching_graph._combined.graph['probability'] = prob
+            switching_graph.set_graph_attribute('probability', prob)
         
         yield switching_graph
 
@@ -574,3 +576,180 @@ def displayed_trees(network: DirectedPhyNetwork, probability: bool = False) -> I
         displayed_tree = dnetwork_from_dmgraph(tree_graph)
         
         yield displayed_tree
+
+
+def _switching_distance_matrix(
+    switching_graph: DirectedMultiGraph,
+    taxa: list[str],
+    original_network: DirectedPhyNetwork,
+) -> np.ndarray:
+    """
+    Compute the full distance matrix for all pairwise distances between taxa in a switching.
+    
+    Parameters
+    ----------
+    switching_graph : DirectedMultiGraph
+        The switching graph (a tree).
+    taxa : list[str]
+        List of taxon labels.
+    original_network : DirectedPhyNetwork
+        The original network (used to access branch lengths).
+    
+    Returns
+    -------
+    np.ndarray
+        A symmetric numpy array of shape (len(taxa), len(taxa)) with pairwise distances.
+        Diagonal is 0.0 (distance from a taxon to itself).
+    
+    Notes
+    -----
+    The switching is a tree, so there is exactly one path between any two leaves.
+    Branch lengths are accessed from the original network. If an edge has no branch
+    length, 1.0 is used as the default.
+    """
+    n = len(taxa)
+    if n == 0:
+        return np.array([])
+    if n == 1:
+        return np.array([[0.0]])
+    
+    # Get leaf nodes corresponding to taxon labels
+    leaf_nodes: list[Any] = []
+    for taxon in taxa:
+        leaf_node = original_network._label_to_node.get(taxon)
+        if leaf_node is None:
+            raise ValueError(f"Taxon '{taxon}' not found in network")
+        leaf_nodes.append(leaf_node)
+    
+    # Initialize distance matrix
+    distance_matrix = np.zeros((n, n), dtype=np.float64)
+    
+    # Use the combined graph view for path finding (treats all edges as undirected)
+    combined_graph = switching_graph._combined
+    
+    # Compute pairwise distances
+    for i, leaf1 in enumerate(leaf_nodes):
+        for j, leaf2 in enumerate(leaf_nodes):
+            if i == j:
+                distance_matrix[i, j] = 0.0
+                continue
+            
+            # Find the unique path between the two leaves
+            path = nx.shortest_path(combined_graph, leaf1, leaf2)
+            
+            # Sum branch lengths along the path
+            total_distance = 0.0
+            for k in range(len(path) - 1):
+                u, v = path[k], path[k + 1]
+                
+                # Get branch length from the original network
+                bl = original_network.get_branch_length(u, v)
+                if bl is None:
+                    bl = original_network.get_branch_length(v, u)
+                
+                # Default to 1.0 if no branch length found
+                if bl is None:
+                    bl = 1.0
+                
+                total_distance += bl
+            
+            distance_matrix[i, j] = total_distance
+            distance_matrix[j, i] = total_distance  # Symmetric
+    
+    return distance_matrix
+
+
+def distances(
+    network: DirectedPhyNetwork,
+    mode: Literal['shortest', 'longest', 'average'] = 'average',
+) -> DistanceMatrix:
+    """
+    Compute pairwise distances between taxa based on switchings.
+    
+    This function computes distances by considering all switchings of the network.
+    For each pair of taxa, the distance is computed in each switching (sum of branch
+    lengths along the unique path), and then aggregated according to the specified mode.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    mode : Literal['shortest', 'longest', 'average'], optional
+        Distance aggregation mode:
+        - 'shortest': Take the minimum distance across all switchings
+        - 'longest': Take the maximum distance across all switchings
+        - 'average': Take the probability-weighted average across all switchings
+        By default 'average'.
+    
+    Returns
+    -------
+    DistanceMatrix
+        A distance matrix with pairwise distances between all taxa.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (10, 5), (10, 6),
+    ...         (5, 4), (6, 4),
+    ...         (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> dm = distances(net, mode='shortest')
+    >>> len(dm)
+    4
+    >>> dm.get_distance('A', 'B')
+    2.0  # Example distance
+    """
+    # Get all taxa
+    all_taxa = list(network.taxa)
+    n = len(all_taxa)
+    
+    # Handle edge cases
+    if n == 0:
+        return DistanceMatrix(np.array([]), labels=[])
+    if n == 1:
+        return DistanceMatrix(np.array([[0.0]]), labels=all_taxa)
+    
+    # Initialize aggregation arrays based on mode
+    if mode == 'shortest':
+        result = np.full((n, n), np.inf, dtype=np.float64)
+    elif mode == 'longest':
+        result = np.zeros((n, n), dtype=np.float64)
+    elif mode == 'average':
+        weighted_sum = np.zeros((n, n), dtype=np.float64)
+        prob_sum = 0.0
+    else:
+        raise ValueError(f"Invalid mode: {mode}. Must be 'shortest', 'longest', or 'average'")
+    
+    # Iterate through all switchings
+    for switching_graph in _switchings(network, probability=(mode == 'average')):
+        # Get probability if mode is 'average'
+        prob = 1.0
+        if mode == 'average':
+            prob = switching_graph._graph.graph.get('probability', 1.0)
+            if prob is None:
+                prob = 1.0
+        
+        # Compute full distance matrix for this switching
+        switching_matrix = _switching_distance_matrix(switching_graph, all_taxa, network)
+        
+        # Update aggregation based on mode
+        if mode == 'shortest':
+            result = np.minimum(result, switching_matrix)
+        elif mode == 'longest':
+            result = np.maximum(result, switching_matrix)
+        elif mode == 'average':
+            weighted_sum += switching_matrix * prob
+            prob_sum += prob
+    
+    # For 'average' mode, divide by sum of probabilities
+    if mode == 'average':
+        result = weighted_sum / prob_sum
+    
+    # Ensure diagonal is 0.0
+    np.fill_diagonal(result, 0.0)
+    
+    # Create and return DistanceMatrix
+    return DistanceMatrix(result, labels=all_taxa)

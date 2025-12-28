@@ -44,6 +44,19 @@ class TestDirectedMultiGraphAttributes:
         assert graph._graph.graph == {}
         assert graph._graph.graph.get('any') is None
 
+    def test_set_graph_attribute(self):
+        """Test setting a graph attribute in all underlying graphs."""
+        graph = DirectedMultiGraph(edges=[(1, 2)])
+        graph.set_graph_attribute('probability', 0.5)
+        
+        assert graph._graph.graph.get('probability') == 0.5
+        assert graph._combined.graph.get('probability') == 0.5
+        
+        # Test updating the attribute
+        graph.set_graph_attribute('probability', 0.8)
+        assert graph._graph.graph.get('probability') == 0.8
+        assert graph._combined.graph.get('probability') == 0.8
+
     def test_attributes_preserved_on_copy(self):
         """Test that attributes are preserved when copying."""
         attributes = {'source': 'file.nex', 'version': '1.0'}

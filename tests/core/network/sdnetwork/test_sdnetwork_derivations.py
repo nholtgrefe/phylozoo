@@ -4,10 +4,11 @@ Tests for sdnetwork derivations functions.
 
 import math
 
+import numpy as np
 import pytest
 
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
-from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, k_taxon_subnetworks, subnetwork, tree_of_blobs
+from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, distances, k_taxon_subnetworks, subnetwork, tree_of_blobs
 from phylozoo.core.network.sdnetwork.features import blobs
 from phylozoo.core.network.sdnetwork.io import sdnetwork_from_mmgraph
 from phylozoo.core.network.sdnetwork.transformations import suppress_2_blobs
@@ -728,3 +729,149 @@ class TestDisplayedTrees:
         # No probability attribute should be present
         for tree in trees:
             assert tree.get_network_attribute('probability') is None
+    
+    def test_displayed_trees_only_undirected_edges(self) -> None:
+        """Test that displayed trees consist of only undirected edges."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        trees = list(displayed_trees(net))
+        
+        for tree in trees:
+            # Displayed trees should have no hybrid nodes (they are trees)
+            assert len(tree.hybrid_nodes) == 0
+            # Since there are no hybrid nodes, there should be no directed edges
+            directed_edges = list(tree._graph._directed.edges())
+            assert len(directed_edges) == 0, f"Tree has directed edges: {directed_edges}"
+            # All edges should be undirected
+            assert len(list(tree._graph._undirected.edges())) > 0
+
+
+class TestDistances:
+    """Test distances function for SemiDirectedPhyNetwork."""
+    
+    def test_simple_tree_no_branch_lengths(self) -> None:
+        """Test distances for a simple tree without branch lengths."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 3
+        assert dm.get_distance('A', 'B') == 2.0  # Two edges, each with default length 1.0
+        assert dm.get_distance('A', 'A') == 0.0
+        assert dm.get_distance('B', 'B') == 0.0
+    
+    def test_simple_tree_with_branch_lengths(self) -> None:
+        """Test distances for a simple tree with branch lengths."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[
+                {'u': 3, 'v': 1, 'branch_length': 0.5},
+                {'u': 3, 'v': 2, 'branch_length': 0.3},
+                (3, 4)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 3
+        assert dm.get_distance('A', 'B') == 0.8  # 0.5 + 0.3
+        assert dm.get_distance('A', 'A') == 0.0
+        assert dm.get_distance('B', 'B') == 0.0
+    
+    def test_network_with_hybrid_shortest(self) -> None:
+        """Test shortest distances for a network with hybrid node."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 4
+        # All distances should be finite
+        for i, taxon1 in enumerate(dm.labels):
+            for j, taxon2 in enumerate(dm.labels):
+                if i != j:
+                    assert dm.get_distance(taxon1, taxon2) > 0
+                    assert dm.get_distance(taxon1, taxon2) < np.inf
+                else:
+                    assert dm.get_distance(taxon1, taxon2) == 0.0
+    
+    def test_network_with_hybrid_longest(self) -> None:
+        """Test longest distances for a network with hybrid node."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        dm = distances(net, mode='longest')
+        assert len(dm) == 4
+        # All distances should be finite and >= shortest
+        shortest_dm = distances(net, mode='shortest')
+        for i, taxon1 in enumerate(dm.labels):
+            for j, taxon2 in enumerate(dm.labels):
+                if i != j:
+                    assert dm.get_distance(taxon1, taxon2) >= shortest_dm.get_distance(taxon1, taxon2)
+                else:
+                    assert dm.get_distance(taxon1, taxon2) == 0.0
+    
+    def test_network_with_hybrid_average(self) -> None:
+        """Test average distances for a network with hybrid node."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4}
+            ],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        dm = distances(net, mode='average')
+        assert len(dm) == 4
+        # All distances should be finite and between shortest and longest
+        shortest_dm = distances(net, mode='shortest')
+        longest_dm = distances(net, mode='longest')
+        for i, taxon1 in enumerate(dm.labels):
+            for j, taxon2 in enumerate(dm.labels):
+                if i != j:
+                    shortest = shortest_dm.get_distance(taxon1, taxon2)
+                    longest = longest_dm.get_distance(taxon1, taxon2)
+                    avg = dm.get_distance(taxon1, taxon2)
+                    assert shortest <= avg <= longest
+                else:
+                    assert dm.get_distance(taxon1, taxon2) == 0.0
+    
+    def test_single_taxon(self) -> None:
+        """Test distances for a network with a single taxon."""
+        net = SemiDirectedPhyNetwork(
+            nodes=[(1, {'label': 'A'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert len(dm) == 1
+        assert dm.get_distance('A', 'A') == 0.0
+    
+    def test_symmetric_matrix(self) -> None:
+        """Test that the distance matrix is symmetric."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        dm = distances(net, mode='shortest')
+        assert dm.get_distance('A', 'B') == dm.get_distance('B', 'A')
+    
+    def test_all_modes_produce_valid_matrices(self) -> None:
+        """Test that all modes produce valid distance matrices."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        for mode in ['shortest', 'longest', 'average']:
+            dm = distances(net, mode=mode)
+            assert len(dm) == 4
+            # Check symmetry
+            for i, taxon1 in enumerate(dm.labels):
+                for j, taxon2 in enumerate(dm.labels):
+                    assert dm.get_distance(taxon1, taxon2) == dm.get_distance(taxon2, taxon1)
+                    if i == j:
+                        assert dm.get_distance(taxon1, taxon2) == 0.0
