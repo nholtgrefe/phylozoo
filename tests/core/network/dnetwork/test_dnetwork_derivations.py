@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, tree_of_blobs, distances
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, tree_of_blobs, distances, induced_splits
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.io import dnetwork_from_dmgraph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
@@ -557,3 +557,105 @@ class TestDistances:
                     assert dm.get_distance(taxon1, taxon2) == dm.get_distance(taxon2, taxon1)
                     if i == j:
                         assert dm.get_distance(taxon1, taxon2) == 0.0
+
+
+class TestInducedSplits:
+    """Test induced_splits function for DirectedPhyNetwork."""
+
+    def test_simple_tree(self) -> None:
+        """Test induced_splits on a simple tree."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        splits = induced_splits(net)
+        assert len(splits) >= 1
+        # Should have at least one split (the edge between root and leaves)
+
+    def test_tree_with_three_leaves(self) -> None:
+        """Test induced_splits on a tree with three leaves."""
+        net = DirectedPhyNetwork(
+            edges=[(4, 1), (4, 2), (4, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        splits = induced_splits(net)
+        # Should have splits for each cut-edge
+        assert len(splits) >= 1
+
+    def test_network_with_hybrid(self) -> None:
+        """Test induced_splits on a network with hybrid node."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        assert len(splits) >= 1
+        # Check that all splits cover all taxa
+        all_taxa = set(LEVEL_1_DNETWORK_SINGLE_HYBRID.taxa)
+        for split in splits:
+            assert split.elements == all_taxa
+
+    def test_empty_network(self) -> None:
+        """Test induced_splits on empty network."""
+        net = DirectedPhyNetwork()
+        splits = induced_splits(net)
+        assert len(splits) == 0
+
+    def test_single_taxon_network(self) -> None:
+        """Test induced_splits on network with single taxon."""
+        net = DirectedPhyNetwork(
+            edges=[(2, 1)],
+            nodes=[(1, {'label': 'A'})]
+        )
+        splits = induced_splits(net)
+        # Need at least 2 taxa for splits
+        assert len(splits) == 0
+
+    def test_tree_of_blobs_same_splits(self) -> None:
+        """Test that tree-of-blobs has the same split system as original network."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        original_splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        blob_tree = tree_of_blobs(LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        blob_tree_splits = induced_splits(blob_tree)
+        
+        # Split systems should be equal
+        assert original_splits.splits == blob_tree_splits.splits
+
+    def test_tree_of_blobs_same_splits_simple_tree(self) -> None:
+        """Test that tree-of-blobs preserves splits for a simple tree."""
+        net = DirectedPhyNetwork(
+            edges=[(4, 1), (4, 2), (4, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        original_splits = induced_splits(net)
+        blob_tree = tree_of_blobs(net)
+        blob_tree_splits = induced_splits(blob_tree)
+        
+        # Split systems should be equal
+        assert original_splits.splits == blob_tree_splits.splits
+
+    def test_splits_cover_all_taxa(self) -> None:
+        """Test that all splits cover all taxa."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        all_taxa = set(LEVEL_1_DNETWORK_SINGLE_HYBRID.taxa)
+        
+        for split in splits:
+            assert split.elements == all_taxa
+
+    def test_splits_are_valid(self) -> None:
+        """Test that all returned splits are valid (non-empty sets)."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        
+        for split in splits:
+            assert len(split.set1) > 0
+            assert len(split.set2) > 0
+            assert split.set1.isdisjoint(split.set2)
+
+    def test_tree_of_blobs_same_splits_multiple_blobs_level2(self) -> None:
+        """Test that tree-of-blobs preserves splits for a level 2 network with multiple blobs."""
+        from tests.fixtures.directed_networks import LEVEL_2_DNETWORK_MULTIPLE_BLOBS
+        original_splits = induced_splits(LEVEL_2_DNETWORK_MULTIPLE_BLOBS)
+        blob_tree = tree_of_blobs(LEVEL_2_DNETWORK_MULTIPLE_BLOBS)
+        blob_tree_splits = induced_splits(blob_tree)
+        
+        # Split systems should be equal
+        assert original_splits.splits == blob_tree_splits.splits

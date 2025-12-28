@@ -25,6 +25,7 @@ from .transformations import (
     suppress_2_blobs as suppress_2_blobs_fn,
     identify_parallel_edges as identify_parallel_edges_dn,
 )
+from ...split import Split, SplitSystem
 from ._utils import _suppress_deg2_nodes as dm_suppress_deg2_nodes
 from ..sdnetwork._utils import _suppress_deg2_nodes as mm_suppress_deg2_nodes
 from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
@@ -750,3 +751,107 @@ def distances(
     
     # Create and return DistanceMatrix
     return DistanceMatrix(result, labels=all_taxa)
+
+
+def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
+    """
+    Extract all splits induced by cut-edges of the network.
+    
+    This function:
+    1. Converts the network to an LSA network
+    2. Suppresses all 2-blobs (which don't influence splits)
+    3. Finds all cut-edges
+    4. For each cut-edge, computes the split it induces (2-partition of taxa)
+    
+    The split induced by a cut-edge is the 2-partition of taxa obtained when
+    removing that edge from the network.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    
+    Returns
+    -------
+    SplitSystem
+        A split system containing all splits induced by cut-edges.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> splits = induced_splits(net)
+    >>> len(splits) >= 1
+    True
+    
+    Notes
+    -----
+    The network is first converted to an LSA network and then the tree-of-blobs
+    is computed. Since the tree-of-blobs has the same split system as the original
+    network, we can efficiently compute splits using a single DFS traversal of
+    the tree structure.
+    """
+    # Handle empty networks
+    if network.number_of_nodes() == 0:
+        return SplitSystem()
+    
+    # Step 1: Convert to LSA network
+    lsa_network = to_lsa_network(network) if not is_lsa_network(network) else network
+    
+    # Step 2: Get tree-of-blobs (this has the same splits as the original network)
+    blob_tree = tree_of_blobs(lsa_network)
+    
+    # Get all taxa
+    all_taxa = list(blob_tree.taxa)
+    if len(all_taxa) < 2:
+        # Need at least 2 taxa for splits
+        return SplitSystem()
+    
+    # Step 3: Single DFS traversal to compute splits
+    # In a tree, every edge is a cut-edge, so we can efficiently compute splits
+    splits: set[Split] = set()
+    
+    # Use combined graph view (undirected) for traversal
+    combined_graph = blob_tree._graph._combined
+    
+    # Pick an arbitrary leaf as starting point for DFS
+    if len(blob_tree.leaves) == 0:
+        return SplitSystem()
+    
+    start_leaf = next(iter(blob_tree.leaves))
+    visited: set[Any] = set()
+    
+    def dfs(node: Any, parent: Any | None = None) -> set[str]:
+        """DFS that returns the set of leaves in the subtree rooted at node."""
+        visited.add(node)
+        node_leaves: set[str] = set()
+        
+        # If this is a leaf, add its taxon
+        if node in blob_tree._node_to_label and node in blob_tree.leaves:
+            taxon = blob_tree._node_to_label[node]
+            node_leaves.add(taxon)
+        
+        # Process neighbors (excluding parent)
+        for neighbor in combined_graph.neighbors(node):
+            if neighbor == parent:
+                continue
+            if neighbor not in visited:
+                neighbor_leaves = dfs(neighbor, node)
+                node_leaves.update(neighbor_leaves)
+                
+                # For edge (node, neighbor), create split
+                # Split: (leaves in neighbor's subtree, all other leaves)
+                if neighbor_leaves and len(neighbor_leaves) < len(all_taxa):
+                    other_leaves = set(all_taxa) - neighbor_leaves
+                    if other_leaves:  # Both sides must have at least one leaf
+                        split = Split(neighbor_leaves, other_leaves)
+                        splits.add(split)
+        
+        return node_leaves
+    
+    # Start DFS from the leaf
+    dfs(start_leaf)
+    
+    return SplitSystem(splits)
