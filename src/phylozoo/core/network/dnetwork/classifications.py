@@ -302,3 +302,23 @@ def is_simple(network: 'DirectedPhyNetwork') -> bool:
     
     non_leaf_blobs = list(blobs(network, leaves=False))
     return len(non_leaf_blobs) <= 1
+
+
+def is_galled(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_galled function."""
+    return False
+
+
+def is_OLP(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_OLP function."""
+    return False
+
+
+def is_stackfree(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_stackfree function."""
+    return False
+
+
+def is_treechild(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_treechild function."""
+    return False

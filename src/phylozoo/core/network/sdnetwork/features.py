@@ -300,3 +300,8 @@ def cut_vertices(network: MixedPhyNetwork) -> set[T]:
     """
     return graph_cut_vertices(network._graph, data=False)
 
+
+def omnians(network: MixedPhyNetwork) -> set[T]:
+    """Stub for omnians function."""
+    return set()
+

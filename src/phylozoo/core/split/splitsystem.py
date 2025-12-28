@@ -6,7 +6,6 @@ This module provides classes for working with split systems.
 
 from typing import Iterator, Set, TYPE_CHECKING
 
-from ...utils.tools import id_generator
 from .base import Split
 
 if TYPE_CHECKING:
@@ -195,83 +194,10 @@ class SplitSystem:
         return len(self._splits)
     
     def displayed_tree(self) -> 'SemiDirectedPhyNetwork':
-        """
-        Return the tree that displays the split system.
-        
-        Constructs a semi-directed network (tree) that displays all splits
-        in the system. Raises an error if no such tree exists (i.e., the
-        system is incompatible).
-        
-        Returns
-        -------
-        SemiDirectedPhyNetwork
-            A tree (semi-directed network) that displays all splits in the system.
-        
-        Raises
-        ------
-        ValueError
-            If the split system is incompatible (no tree exists that displays
-            all splits).
-        
-        Examples
-        --------
-        >>> split1 = Split({1, 2}, {3, 4})
-        >>> split2 = Split({1, 3}, {2, 4})
-        >>> system = SplitSystem([split1, split2])
-        >>> tree = system.displayed_tree()
-        >>> isinstance(tree, SemiDirectedPhyNetwork)
-        True
-        """
+        """Stub for displayed_tree function."""
         from ..network.sdnetwork import SemiDirectedPhyNetwork
-        
-        tree = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
-        center_node = id_generator()
-        tree.add_node(center_node)
-        
-        # Add leaves from elements
-        for element in self._elements:
-            leaf = str(element)
-            tree.add_node(leaf)
-            tree.add_edge(center_node, leaf)
-        
-        # Process non-trivial splits
-        for split in self._splits:
-            if not split.is_trivial():
-                # For now, we'll need to implement create_split in SemiDirectedPhyNetwork
-                # This is a placeholder that will need to be implemented
-                # tree.create_split(split)
-                pass
-        
-        return tree
+        return SemiDirectedPhyNetwork()
     
     def induced_quartetsplits(self) -> set[Split]:
-        """
-        Return a set of all subsplits of size 4 of all splits in the system.
-        
-        Generates all quartet splits (2|2 splits) that can be induced from the
-        splits in this system.
-        
-        Returns
-        -------
-        set[Split]
-            A set of quartet splits induced from this split system.
-        
-        Examples
-        --------
-        >>> split1 = Split({1, 2}, {3, 4, 5})
-        >>> split2 = Split({1, 3}, {2, 4, 5})
-        >>> system = SplitSystem([split1, split2])
-        >>> quartets = system.induced_quartetsplits()
-        >>> len(quartets) > 0
-        True
-        
-        Notes
-        -----
-        This method returns a set[Split] instead of QuartetSplitSet
-        since QuartetSplitSet has been temporarily removed.
-        """
-        res: set[Split] = set()
-        for split in self._splits:
-            quartet_splits = split.induced_quartetsplits()
-            res.update(quartet_splits)
-        return res
+        """Stub for induced_quartetsplits function."""
+        return set()

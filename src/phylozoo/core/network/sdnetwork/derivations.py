@@ -54,9 +54,10 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
 
     Returns
     -------
-    MixedPhyNetwork
+    MixedPhyNetwork | SemiDirectedPhyNetwork
         A new network where each blob has been collapsed to a single vertex,
-        forming a tree structure.
+        forming a tree structure. Returns a SemiDirectedPhyNetwork if the input
+        is a SemiDirectedPhyNetwork, otherwise returns a MixedPhyNetwork.
 
     Examples
     --------
@@ -771,3 +772,8 @@ def induced_splits(network: MixedPhyNetwork) -> SplitSystem:
     dfs(start_leaf)
     
     return SplitSystem(splits)
+
+
+def displayed_splits(network: MixedPhyNetwork) -> SplitSystem:
+    """Stub for displayed_splits function."""
+    return SplitSystem()

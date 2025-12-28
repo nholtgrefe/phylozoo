@@ -855,3 +855,8 @@ def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
     dfs(start_leaf)
     
     return SplitSystem(splits)
+
+
+def displayed_splits(network: DirectedPhyNetwork) -> SplitSystem:
+    """Stub for displayed_splits function."""
+    return SplitSystem()

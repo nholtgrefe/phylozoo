@@ -1,0 +1,2 @@
+"""Tests for quartet module."""
+

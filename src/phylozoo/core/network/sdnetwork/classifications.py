@@ -267,3 +267,28 @@ def is_simple(network: 'SemiDirectedPhyNetwork') -> bool:
     non_leaf_blobs = list(blobs(network, leaves=False))
     return len(non_leaf_blobs) <= 1
 
+
+def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_galled function."""
+    return False
+
+
+def is_OLP(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_OLP function."""
+    return False
+
+
+def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_stackfree function."""
+    return False
+
+
+def is_strongly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_strongly_treechild function."""
+    return False
+
+
+def is_weakly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_weakly_treechild function."""
+    return False
+

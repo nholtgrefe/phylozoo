@@ -393,3 +393,8 @@ def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
     """
     return graph_cut_vertices(network._graph, data=False)
 
+
+def omnians(network: DirectedPhyNetwork) -> set[T]:
+    """Stub for omnians function."""
+    return set()
+

@@ -4,7 +4,13 @@ Quartet module.
 This module provides classes for working with quartet patterns.
 """
 
-# Placeholder module - to be implemented
+from .base import Quartet
+from .qprofile import QuartetProfile
+from .qprofileset import QuartetProfileSet
 
-__all__ = []
+__all__ = [
+    "Quartet",
+    "QuartetProfile",
+    "QuartetProfileSet",
+]
 
