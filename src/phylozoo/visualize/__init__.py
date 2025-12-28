@@ -12,6 +12,7 @@ from .network_plot import (
     plot_network_with_layout,
     plot_tree,
 )
+from .rectangular_layout import compute_rectangular_layout
 
 __all__ = [
     'plot_directed_multigraph',
@@ -21,5 +22,6 @@ __all__ = [
     'plot_tree',
     'compute_directed_layout',
     'compute_semidirected_layout',
+    'compute_rectangular_layout',
 ]
 

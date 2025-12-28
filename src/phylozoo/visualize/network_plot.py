@@ -818,38 +818,79 @@ def plot_directed_network_with_layout(
             edge_groups[edge_key] = []
         edge_groups[edge_key].append((u, v, key))
     
-    # Draw edges with curvature for parallel edges
+    # Draw edges in rectangular style (horizontal then vertical)
     for (u, v), edges in edge_groups.items():
         is_hybrid_edge = v in hybrid_nodes
         edge_col = hybrid_edge_color if is_hybrid_edge else edge_color
         
         num_parallel = len(edges)
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
         
         if num_parallel == 1:
-            # Single edge - draw straight
-            nx.draw_networkx_edges(
-                G_nx, pos, edgelist=[(u, v)], ax=ax,
-                edge_color=edge_col, width=edge_width,
-                arrows=True, arrowsize=arrow_size,
-                arrowstyle='->', alpha=0.7, **kwargs
-            )
-        else:
-            # Multiple parallel edges - draw with curvature
-            for idx, (u_edge, v_edge, key) in enumerate(edges):
-                curvature = (idx - (num_parallel - 1) / 2) * 0.3
-                
-                x1, y1 = pos[u_edge]
-                x2, y2 = pos[v_edge]
-                
-                # Create curved path
+            # Single edge - draw rectangular (horizontal then vertical)
+            # For top-bottom orientation: horizontal at parent level, then vertical down
+            if orientation == 'top-bottom':
+                # Horizontal segment from parent to child's x-position
+                # Vertical segment from horizontal level to child
+                mid_y = y1  # Horizontal at parent's y-level
+                # Draw horizontal line
+                ax.plot([x1, x2], [mid_y, mid_y], 
+                       color=edge_col, linewidth=edge_width, alpha=0.7, zorder=1)
+                # Draw vertical line with arrow
                 arrow = mpatches.FancyArrowPatch(
-                    (x1, y1), (x2, y2),
-                    connectionstyle=f"arc3,rad={curvature}",
+                    (x2, mid_y), (x2, y2),
                     color=edge_col, linewidth=edge_width,
                     arrowstyle='->', mutation_scale=arrow_size,
                     alpha=0.7, zorder=1
                 )
                 ax.add_patch(arrow)
+            else:
+                # left-right orientation: vertical at parent level, then horizontal
+                mid_x = x1  # Vertical at parent's x-level
+                # Draw vertical line
+                ax.plot([mid_x, mid_x], [y1, y2],
+                       color=edge_col, linewidth=edge_width, alpha=0.7, zorder=1)
+                # Draw horizontal line with arrow
+                arrow = mpatches.FancyArrowPatch(
+                    (mid_x, y2), (x2, y2),
+                    color=edge_col, linewidth=edge_width,
+                    arrowstyle='->', mutation_scale=arrow_size,
+                    alpha=0.7, zorder=1
+                )
+                ax.add_patch(arrow)
+        else:
+            # Multiple parallel edges - draw with slight horizontal offset for each
+            for idx, (u_edge, v_edge, key) in enumerate(edges):
+                # Offset horizontal position slightly for parallel edges
+                offset = (idx - (num_parallel - 1) / 2) * 0.15
+                
+                if orientation == 'top-bottom':
+                    mid_y = y1
+                    # Horizontal segment with offset
+                    ax.plot([x1, x2 + offset], [mid_y, mid_y],
+                           color=edge_col, linewidth=edge_width, alpha=0.7, zorder=1)
+                    # Vertical segment with arrow
+                    arrow = mpatches.FancyArrowPatch(
+                        (x2 + offset, mid_y), (x2 + offset, y2),
+                        color=edge_col, linewidth=edge_width,
+                        arrowstyle='->', mutation_scale=arrow_size,
+                        alpha=0.7, zorder=1
+                    )
+                    ax.add_patch(arrow)
+                else:
+                    mid_x = x1
+                    # Vertical segment with offset
+                    ax.plot([mid_x, mid_x], [y1, y2 + offset],
+                           color=edge_col, linewidth=edge_width, alpha=0.7, zorder=1)
+                    # Horizontal segment with arrow
+                    arrow = mpatches.FancyArrowPatch(
+                        (mid_x, y2 + offset), (x2, y2 + offset),
+                        color=edge_col, linewidth=edge_width,
+                        arrowstyle='->', mutation_scale=arrow_size,
+                        alpha=0.7, zorder=1
+                    )
+                    ax.add_patch(arrow)
     
     # Draw nodes with different colors for leaves and hybrids
     node_colors_map = {}
@@ -865,10 +906,12 @@ def plot_directed_network_with_layout(
             node_colors_map[node] = node_color
             node_sizes_map[node] = node_size
     
-    nx.draw_networkx_nodes(
+    node_collection = nx.draw_networkx_nodes(
         G_nx, pos, ax=ax, node_color=[node_colors_map[n] for n in G_nx.nodes],
         node_size=[node_sizes_map[n] for n in G_nx.nodes], alpha=0.9, **kwargs
     )
+    if node_collection is not None:
+        node_collection.set_zorder(2)
     
     # Draw labels
     if with_labels:
