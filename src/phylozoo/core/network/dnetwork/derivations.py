@@ -10,9 +10,6 @@ phylogenetic networks (e.g., splits, quartets, distances, blobtrees, subnetworks
 # - Split extraction
 # - Quartet extraction
 # - Distance calculations
-# - Blobtree construction
-# - Subnetwork extraction
-# - Displayed tree extraction
 import itertools
 from typing import Any, Iterator, Literal
 

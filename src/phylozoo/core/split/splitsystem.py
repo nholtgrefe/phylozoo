@@ -4,10 +4,10 @@ Split systems module.
 This module provides classes for working with split systems.
 """
 
-from typing import Iterator, TYPE_CHECKING
+from typing import Iterator, Set, TYPE_CHECKING
 
 from ...utils.tools import id_generator
-from .split import Split
+from .base import Split
 
 if TYPE_CHECKING:
     from ..network.sdnetwork import SemiDirectedPhyNetwork
@@ -86,7 +86,7 @@ class SplitSystem:
         
         # Compute elements
         if len(splits_frozen) == 0:
-            elements_set: Set = set()
+            elements_set: set = set()
         else:
             # Get elements from first split
             first_split = next(iter(splits_frozen))

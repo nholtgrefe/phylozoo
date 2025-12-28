@@ -7,7 +7,7 @@ the package.
 
 from .network import DirectedPhyNetwork, SemiDirectedPhyNetwork
 from .primitives import Partition, CircularOrdering, CircularSetOrdering
-from .split import Split, SplitSystem
+from .split import Split, SplitSystem, WeightedSplitSystem, to_weightedsplitsystem
 from .distance import DistanceMatrix
 from .sequence import MSA
 
@@ -18,6 +18,8 @@ __all__ = [
     # Split structures
     "Split",
     "SplitSystem",
+    "WeightedSplitSystem",
+    "to_weightedsplitsystem",
     # Other structures
     "Partition",
     "CircularOrdering",
