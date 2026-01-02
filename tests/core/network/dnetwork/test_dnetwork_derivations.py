@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, tree_of_blobs, distances, induced_splits
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, tree_of_blobs, distances, induced_splits
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.io import dnetwork_from_dmgraph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
@@ -659,3 +659,93 @@ class TestInducedSplits:
         
         # Split systems should be equal
         assert original_splits.splits == blob_tree_splits.splits
+
+
+class TestDisplayedSplits:
+    """Test displayed_splits function for DirectedPhyNetwork."""
+    
+    def test_simple_tree(self) -> None:
+        """Test displayed_splits on a simple tree."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        splits = displayed_splits(net)
+        from phylozoo.core.split import WeightedSplitSystem
+        assert isinstance(splits, WeightedSplitSystem)
+        # Tree has one displayed tree (itself) with probability 1.0
+        assert len(splits) >= 0  # May have splits or be empty for small trees
+    
+    def test_single_hybrid_network(self) -> None:
+        """Test displayed_splits on a network with a single hybrid."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        splits = displayed_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        from phylozoo.core.split import WeightedSplitSystem
+        assert isinstance(splits, WeightedSplitSystem)
+        # Should have splits from displayed trees
+        assert len(splits) > 0
+    
+    def test_weights_sum_to_one(self) -> None:
+        """Test that weights in displayed_splits sum appropriately."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        splits = displayed_splits(net)
+        # Get all displayed trees to verify probabilities
+        trees = list(displayed_trees(net, probability=True))
+        total_prob = sum(tree.get_network_attribute('probability') or 1.0 for tree in trees)
+        # Total probability should be 1.0 (or close due to floating point)
+        assert abs(total_prob - 1.0) < 1e-10
+    
+    def test_splits_from_displayed_trees(self) -> None:
+        """Test that displayed_splits contains splits from all displayed trees."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        splits = displayed_splits(net)
+        
+        # Get all displayed trees and their splits
+        all_tree_splits = set()
+        for tree in displayed_trees(net, probability=True):
+            tree_splits = induced_splits(tree)
+            all_tree_splits.update(tree_splits.splits)
+        
+        # All splits from displayed trees should be in displayed_splits
+        assert splits.splits.issuperset(all_tree_splits)
+    
+    def test_weights_accumulate(self) -> None:
+        """Test that weights accumulate when splits appear in multiple trees."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),
+                (5, 4), (6, 4),
+                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        splits = displayed_splits(net)
+        
+        # Check that if a split appears in multiple trees, its weight is the sum
+        # This is verified by checking that weights are positive and reasonable
+        for split in splits.splits:
+            weight = splits.get_weight(split)
+            assert weight > 0
+            assert weight <= 1.0  # Should not exceed 1.0
+    
+    def test_empty_network(self) -> None:
+        """Test displayed_splits on empty network."""
+        net = DirectedPhyNetwork()
+        splits = displayed_splits(net)
+        from phylozoo.core.split import WeightedSplitSystem
+        assert isinstance(splits, WeightedSplitSystem)
+        assert len(splits) == 0

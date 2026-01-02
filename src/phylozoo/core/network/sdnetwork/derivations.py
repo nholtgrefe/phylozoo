@@ -20,9 +20,10 @@ import numpy as np
 import networkx as nx
 
 from . import MixedPhyNetwork
+from .classifications import is_tree
 from .features import blobs
 from .transformations import suppress_2_blobs as suppress_2_blobs_fn, identify_parallel_edges as identify_parallel_edges_fn
-from ...split import Split, SplitSystem
+from ...split import Split, SplitSystem, WeightedSplitSystem
 from .sd_phynetwork import SemiDirectedPhyNetwork
 from ._utils import _suppress_deg2_nodes
 from .io import sdnetwork_from_mmgraph
@@ -717,8 +718,12 @@ def induced_splits(network: MixedPhyNetwork) -> SplitSystem:
     if network.number_of_nodes() == 0:
         return SplitSystem()
     
-    # Step 1: Get tree-of-blobs (this has the same splits as the original network)
-    blob_tree = tree_of_blobs(network)
+    # Optimization: If network is already a tree, use it directly
+    if is_tree(network):
+        blob_tree = network
+    else:
+        # Step 1: Get tree-of-blobs (this has the same splits as the original network)
+        blob_tree = tree_of_blobs(network)
     
     # Get all taxa
     all_taxa = list(blob_tree.taxa)
@@ -774,6 +779,64 @@ def induced_splits(network: MixedPhyNetwork) -> SplitSystem:
     return SplitSystem(splits)
 
 
-def displayed_splits(network: MixedPhyNetwork) -> SplitSystem:
-    """Stub for displayed_splits function."""
-    return SplitSystem()
+def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
+    """
+    Compute weighted split system from all displayed trees of the network.
+    
+    This function iterates through all displayed trees of the network and collects
+    their induced splits, weighted by the probability of each displayed tree. If a
+    split appears in multiple displayed trees, their probabilities are summed.
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    
+    Returns
+    -------
+    WeightedSplitSystem
+        A weighted split system where each split's weight is the sum of probabilities
+        of all displayed trees that contain that split.
+    
+    Examples
+    --------
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[(5, 4), (6, 4)],  # Hybrid edges to hybrid node 4
+    ...     undirected_edges=[
+    ...         (5, 3), (5, 6), (6, 7),  # Tree edges
+    ...         (4, 8), (8, 1), (8, 2)   # Tree edges from hybrid
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> splits = displayed_splits(net)
+    >>> isinstance(splits, WeightedSplitSystem)
+    True
+    >>> len(splits) > 0
+    True
+    """
+    # Handle empty networks
+    if network.number_of_nodes() == 0:
+        return WeightedSplitSystem()
+    
+    # Collect splits with their weights
+    split_weights: dict[Split, float] = {}
+    
+    # Iterate through all displayed trees with probabilities
+    for displayed_tree in displayed_trees(network, probability=True):
+        # Get probability of this displayed tree
+        prob = displayed_tree.get_network_attribute('probability')
+        if prob is None:
+            prob = 1.0
+        
+        # Get induced splits from this displayed tree
+        tree_splits = induced_splits(displayed_tree)
+        
+        # Add each split with its weight (accumulate if split already exists)
+        for split in tree_splits.splits:
+            split_weights[split] = split_weights.get(split, 0.0) + prob
+    
+    # Create weighted split system
+    if not split_weights:
+        return WeightedSplitSystem()
+    
+    return WeightedSplitSystem(list(split_weights.keys()), weights=split_weights)

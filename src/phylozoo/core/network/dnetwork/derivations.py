@@ -25,7 +25,7 @@ from .transformations import (
     suppress_2_blobs as suppress_2_blobs_fn,
     identify_parallel_edges as identify_parallel_edges_dn,
 )
-from ...split import Split, SplitSystem
+from ...split import Split, SplitSystem, WeightedSplitSystem
 from ._utils import _suppress_deg2_nodes as dm_suppress_deg2_nodes
 from ..sdnetwork._utils import _suppress_deg2_nodes as mm_suppress_deg2_nodes
 from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
@@ -797,11 +797,15 @@ def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
     if network.number_of_nodes() == 0:
         return SplitSystem()
     
-    # Step 1: Convert to LSA network
-    lsa_network = to_lsa_network(network) if not is_lsa_network(network) else network
-    
-    # Step 2: Get tree-of-blobs (this has the same splits as the original network)
-    blob_tree = tree_of_blobs(lsa_network)
+    # Optimization: If network is already a tree, use it directly
+    if network.is_tree():
+        blob_tree = network
+    else:
+        # Step 1: Convert to LSA network
+        lsa_network = to_lsa_network(network) if not is_lsa_network(network) else network
+        
+        # Step 2: Get tree-of-blobs (this has the same splits as the original network)
+        blob_tree = tree_of_blobs(lsa_network)
     
     # Get all taxa
     all_taxa = list(blob_tree.taxa)
@@ -857,6 +861,66 @@ def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
     return SplitSystem(splits)
 
 
-def displayed_splits(network: DirectedPhyNetwork) -> SplitSystem:
-    """Stub for displayed_splits function."""
-    return SplitSystem()
+def displayed_splits(network: DirectedPhyNetwork) -> WeightedSplitSystem:
+    """
+    Compute weighted split system from all displayed trees of the network.
+    
+    This function iterates through all displayed trees of the network and collects
+    their induced splits, weighted by the probability of each displayed tree. If a
+    split appears in multiple displayed trees, their probabilities are summed.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    
+    Returns
+    -------
+    WeightedSplitSystem
+        A weighted split system where each split's weight is the sum of probabilities
+        of all displayed trees that contain that split.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (10, 5), (10, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),    # Both lead to hybrid 4 (in-degree 2)
+    ...         (4, 8),            # Hybrid to tree node
+    ...         (8, 1), (8, 2),    # Tree node to leaves
+    ...         (5, 3), (6, 7)     # Additional leaves to satisfy degree constraints
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> splits = displayed_splits(net)
+    >>> isinstance(splits, WeightedSplitSystem)
+    True
+    >>> len(splits) > 0
+    True
+    """
+    # Handle empty networks
+    if network.number_of_nodes() == 0:
+        return WeightedSplitSystem()
+    
+    # Collect splits with their weights
+    split_weights: dict[Split, float] = {}
+    
+    # Iterate through all displayed trees with probabilities
+    for displayed_tree in displayed_trees(network, probability=True):
+        # Get probability of this displayed tree
+        prob = displayed_tree.get_network_attribute('probability')
+        if prob is None:
+            prob = 1.0
+        
+        # Get induced splits from this displayed tree
+        tree_splits = induced_splits(displayed_tree)
+        
+        # Add each split with its weight (accumulate if split already exists)
+        for split in tree_splits.splits:
+            split_weights[split] = split_weights.get(split, 0.0) + prob
+    
+    # Create weighted split system
+    if not split_weights:
+        return WeightedSplitSystem()
+    
+    return WeightedSplitSystem(list(split_weights.keys()), weights=split_weights)
