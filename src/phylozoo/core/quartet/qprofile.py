@@ -315,6 +315,32 @@ class QuartetProfile:
         """
         return len(self._quartets)
     
+    def is_trivial(self) -> bool:
+        """
+        Check if the profile is trivial (contains exactly one quartet).
+        
+        A trivial profile is essentially a single quartet, meaning it represents
+        a single topology rather than a distribution over multiple topologies.
+        
+        Returns
+        -------
+        bool
+            True if the profile contains exactly one quartet, False otherwise.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> q1 = Quartet(Split({1, 2}, {3, 4}))
+        >>> profile = QuartetProfile([q1])
+        >>> profile.is_trivial()
+        True
+        >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+        >>> profile2 = QuartetProfile({q1: 0.8, q2: 0.2})
+        >>> profile2.is_trivial()
+        False
+        """
+        return len(self._quartets) == 1
+    
     def __iter__(self) -> Iterator[Quartet]:
         """
         Return an iterator over the quartets.
