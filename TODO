@@ -14,6 +14,7 @@ biopython
 Allow degree-2 nodes?
 Is cut-vertex or is articulation?
 attribute for splits to store (multiplcitiy, weight etc.)
+squirrel could actually take in any set of input trees?
 
 use novalidation more
 move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?
