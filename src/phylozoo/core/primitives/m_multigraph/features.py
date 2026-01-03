@@ -448,8 +448,9 @@ def cut_edges(
     
     # Check undirected edges
     for u, v, key, edge_data in graph._undirected.edges(keys=True, data=True):
-        # Use string comparison to handle mixed types (e.g., int and str node IDs)
-        edge_normalized = (u, v) if str(u) <= str(v) else (v, u)
+        # Use same normalization as bridges_normalized: (min, max)
+        # This works correctly for both numeric and string types when they're the same type
+        edge_normalized = (min(u, v), max(u, v))
         if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
             processed_edges.add(edge_normalized)
             # Format according to keys and data parameters
@@ -470,8 +471,9 @@ def cut_edges(
     
     # Check directed edges
     for u, v, key, edge_data in graph._directed.edges(keys=True, data=True):
-        # Use string comparison to handle mixed types (e.g., int and str node IDs)
-        edge_normalized = (u, v) if str(u) <= str(v) else (v, u)
+        # Use same normalization as bridges_normalized: (min, max)
+        # This works correctly for both numeric and string types when they're the same type
+        edge_normalized = (min(u, v), max(u, v))
         if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
             processed_edges.add(edge_normalized)
             # Format according to keys and data parameters
