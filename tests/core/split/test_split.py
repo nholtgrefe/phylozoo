@@ -3,7 +3,7 @@ Tests for the split module.
 """
 
 import pytest
-from phylozoo.core.split import Split, SplitSystem
+from phylozoo.core.split import Split, SplitSystem, is_compatible, is_subsplit
 
 
 class TestSplit:
@@ -56,49 +56,61 @@ class TestSplit:
         """Test is_compatible returns True for compatible splits with same elements."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1}, {2, 3, 4})
-        assert split1.is_compatible(split2) is True
+        assert is_compatible(split1, split2) is True
 
     def test_is_compatible_true_other_way(self) -> None:
         """Test is_compatible returns True when other split has subset."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 2, 3}, {4})
-        assert split1.is_compatible(split2) is True
+        assert is_compatible(split1, split2) is True
 
     def test_is_compatible_false_different_elements(self) -> None:
         """Test is_compatible returns False for splits with different elements."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 2}, {3, 5})
-        assert split1.is_compatible(split2) is False
+        assert is_compatible(split1, split2) is False
 
     def test_is_compatible_false_same_elements_incompatible(self) -> None:
         """Test is_compatible returns False for incompatible splits with same elements."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
-        assert split1.is_compatible(split2) is False
+        assert is_compatible(split1, split2) is False
 
-    def test_is_compatible_raises_error(self) -> None:
-        """Test that is_compatible raises error for non-Split."""
+    def test_is_compatible_raises_error_first_arg(self) -> None:
+        """Test that is_compatible raises error for non-Split as first argument."""
         split = Split({1, 2}, {3, 4})
-        with pytest.raises(ValueError, match="Not a Split instance"):
-            split.is_compatible("not a split")
+        with pytest.raises(ValueError, match="First argument must be a Split instance"):
+            is_compatible("not a split", split)  # type: ignore
+
+    def test_is_compatible_raises_error_second_arg(self) -> None:
+        """Test that is_compatible raises error for non-Split as second argument."""
+        split = Split({1, 2}, {3, 4})
+        with pytest.raises(ValueError, match="Second argument must be a Split instance"):
+            is_compatible(split, "not a split")  # type: ignore
 
     def test_is_subsplit_true(self) -> None:
         """Test is_subsplit returns True when one split is subsplit of another."""
         split1 = Split({1, 2, 6}, {3, 4, 5})
         split2 = Split({1, 2}, {3, 4})
-        assert split2.is_subsplit(split1) is True
+        assert is_subsplit(split2, split1) is True
 
     def test_is_subsplit_false(self) -> None:
         """Test is_subsplit returns False when not a subsplit."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
-        assert split1.is_subsplit(split2) is False
+        assert is_subsplit(split1, split2) is False
 
-    def test_is_subsplit_raises_error(self) -> None:
-        """Test that is_subsplit raises error for non-Split."""
+    def test_is_subsplit_raises_error_first_arg(self) -> None:
+        """Test that is_subsplit raises error for non-Split as first argument."""
         split = Split({1, 2}, {3, 4})
-        with pytest.raises(ValueError, match="Not a Split instance"):
-            split.is_subsplit("not a split")
+        with pytest.raises(ValueError, match="First argument must be a Split instance"):
+            is_subsplit("not a split", split)  # type: ignore
+
+    def test_is_subsplit_raises_error_second_arg(self) -> None:
+        """Test that is_subsplit raises error for non-Split as second argument."""
+        split = Split({1, 2}, {3, 4})
+        with pytest.raises(ValueError, match="Second argument must be a Split instance"):
+            is_subsplit(split, "not a split")  # type: ignore
 
     def test_induced_quartetsplits(self) -> None:
         """Test induced_quartetsplits generates correct quartet splits."""

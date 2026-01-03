@@ -109,106 +109,6 @@ class Split(Partition):
         """
         return len(self.set1) == 1 or len(self.set2) == 1
     
-    def is_compatible(self, other: 'Split') -> bool:
-        """
-        Check if this split is compatible with another split.
-        
-        Two splits are compatible if they have the same set of elements, and one
-        of the sets of this split is a subset of one of the sets of the other split
-        (and hence the other set is a superset).
-        
-        Parameters
-        ----------
-        other : Split
-            The split to check against.
-        
-        Returns
-        -------
-        bool
-            True if this split is compatible with the other, False otherwise.
-        
-        Raises
-        ------
-        ValueError
-            If 'other' is not a Split instance.
-        
-        Examples
-        --------
-        >>> split1 = Split({1, 2}, {3, 4})
-        >>> split2 = Split({1}, {2, 3, 4})
-        >>> split1.is_compatible(split2)
-        True
-        >>> split3 = Split({1, 2, 3}, {4})
-        >>> split1.is_compatible(split3)
-        True
-        >>> split4 = Split({1, 3}, {2, 4})
-        >>> split1.is_compatible(split4)
-        False
-        """
-        if not isinstance(other, Split):
-            raise ValueError("Not a Split instance")
-        
-        # First check that they have the same elements
-        if self.elements != other.elements:
-            return False
-        
-        # Check all 4 compatibility cases with early returns
-        # Case 1: self.set1 is subset of other.set1, so self.set2 is superset of other.set2
-        if self.set1.issubset(other.set1) and other.set2.issubset(self.set2):
-            return True
-        
-        # Case 2: self.set1 is subset of other.set2, so self.set2 is superset of other.set1
-        if self.set1.issubset(other.set2) and other.set1.issubset(self.set2):
-            return True
-        
-        # Case 3: other.set1 is subset of self.set1, so other.set2 is superset of self.set2
-        if other.set1.issubset(self.set1) and self.set2.issubset(other.set2):
-            return True
-        
-        # Case 4: other.set1 is subset of self.set2, so other.set2 is superset of self.set1
-        if other.set1.issubset(self.set2) and self.set1.issubset(other.set2):
-            return True
-        
-        return False
-    
-    def is_subsplit(self, other: 'Split') -> bool:
-        """
-        Check if this split is a subsplit of another split.
-        
-        A split is a subsplit of another if one of its sides is a subset of one side
-        of the other split, and the other side of this split is a subset of the other
-        side of the other split. For example, 12|56 is a subsplit of 123|456.
-        
-        Parameters
-        ----------
-        other : Split
-            The split to check against.
-        
-        Returns
-        -------
-        bool
-            True if this split is a subsplit of the other, False otherwise.
-        
-        Raises
-        ------
-        ValueError
-            If 'other' is not a Split instance.
-        
-        Examples
-        --------
-        >>> split1 = Split({1, 2, 6}, {3, 4, 5})
-        >>> split2 = Split({1, 2}, {3, 4})
-        >>> split2.is_subsplit(split1)
-        True
-        >>> split3 = Split({1, 2}, {3, 4, 5})
-        >>> split3.is_subsplit(split1)
-        True
-        """
-        if not isinstance(other, Split):
-            raise ValueError("Not a Split instance")
-        
-        return (self.set1.issubset(other.set1) and self.set2.issubset(other.set2)) or \
-               (self.set1.issubset(other.set2) and self.set2.issubset(other.set1))
     
     def induced_quartetsplits(self, include_trivial: bool = False) -> set['Split']:
         """
@@ -261,3 +161,114 @@ class Split(Partition):
                     res.append(split)
         
         return set(res)
+
+
+def is_compatible(split1: Split, split2: Split) -> bool:
+    """
+    Check if two splits are compatible.
+    
+    Two splits are compatible if they have the same set of elements, and one
+    of the sets of one split is a subset of one of the sets of the other split
+    (and hence the other set is a superset).
+    
+    Parameters
+    ----------
+    split1 : Split[T]
+        The first split to check.
+    split2 : Split[T]
+        The second split to check.
+    
+    Returns
+    -------
+    bool
+        True if the splits are compatible, False otherwise.
+    
+    Raises
+    ------
+    ValueError
+        If either argument is not a Split instance.
+    
+    Examples
+    --------
+    >>> split1 = Split({1, 2}, {3, 4})
+    >>> split2 = Split({1}, {2, 3, 4})
+    >>> is_compatible(split1, split2)
+    True
+    >>> split3 = Split({1, 2, 3}, {4})
+    >>> is_compatible(split1, split3)
+    True
+    >>> split4 = Split({1, 3}, {2, 4})
+    >>> is_compatible(split1, split4)
+    False
+    """
+    if not isinstance(split1, Split):
+        raise ValueError("First argument must be a Split instance")
+    if not isinstance(split2, Split):
+        raise ValueError("Second argument must be a Split instance")
+    
+    # First check that they have the same elements
+    if split1.elements != split2.elements:
+        return False
+    
+    # Check all 4 compatibility cases with early returns
+    # Case 1: split1.set1 is subset of split2.set1, so split1.set2 is superset of split2.set2
+    if split1.set1.issubset(split2.set1) and split2.set2.issubset(split1.set2):
+        return True
+    
+    # Case 2: split1.set1 is subset of split2.set2, so split1.set2 is superset of split2.set1
+    if split1.set1.issubset(split2.set2) and split2.set1.issubset(split1.set2):
+        return True
+    
+    # Case 3: split2.set1 is subset of split1.set1, so split2.set2 is superset of split1.set2
+    if split2.set1.issubset(split1.set1) and split1.set2.issubset(split2.set2):
+        return True
+    
+    # Case 4: split2.set1 is subset of split1.set2, so split2.set2 is superset of split1.set1
+    if split2.set1.issubset(split1.set2) and split1.set1.issubset(split2.set2):
+        return True
+    
+    return False
+
+
+def is_subsplit(split1: Split, split2: Split) -> bool:
+    """
+    Check if one split is a subsplit of another split.
+    
+    A split is a subsplit of another if one of its sides is a subset of one side
+    of the other split, and the other side of this split is a subset of the other
+    side of the other split. For example, 12|56 is a subsplit of 123|456.
+    
+    Parameters
+    ----------
+    split1 : Split[T]
+        The split to check if it is a subsplit.
+    split2 : Split[T]
+        The split to check against.
+    
+    Returns
+    -------
+    bool
+        True if split1 is a subsplit of split2, False otherwise.
+    
+    Raises
+    ------
+    ValueError
+        If either argument is not a Split instance.
+    
+    Examples
+    --------
+    >>> split1 = Split({1, 2, 6}, {3, 4, 5})
+    >>> split2 = Split({1, 2}, {3, 4})
+    >>> is_subsplit(split2, split1)
+    True
+    >>> split3 = Split({1, 2}, {3, 4, 5})
+    >>> is_subsplit(split3, split1)
+    True
+    """
+    if not isinstance(split1, Split):
+        raise ValueError("First argument must be a Split instance")
+    if not isinstance(split2, Split):
+        raise ValueError("Second argument must be a Split instance")
+    
+    return (split1.set1.issubset(split2.set1) and split1.set2.issubset(split2.set2)) or \
+           (split1.set1.issubset(split2.set2) and split1.set2.issubset(split2.set1))
