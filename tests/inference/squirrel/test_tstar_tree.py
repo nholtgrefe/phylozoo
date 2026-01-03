@@ -183,9 +183,9 @@ class TestTstarTree:
             Quartet(Split({'A', 'B'}, {'C', 'D'})),
             Quartet(Split({'A', 'B'}, {'E', 'F'})),
             Quartet(Split({'C', 'D'}, {'E', 'F'})),
-            Quartet(Split({'A', 'C'}, {'B', 'D'})),
-            Quartet(Split({'A', 'E'}, {'B', 'F'})),
-            Quartet(Split({'C', 'E'}, {'D', 'F'})),
+            Quartet(Split({'A', 'C'}, {'D', 'F'})),
+            Quartet(Split({'A', 'D'}, {'E', 'F'})),
+            Quartet(Split({'B', 'C'}, {'D', 'F'})),
         ]
         
         profileset = QuartetProfileSet(profiles=quartets)
@@ -235,20 +235,13 @@ class TestTstarTree:
         q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
         q2 = Quartet(Split({'A', 'B'}, {'C', 'E'}))
         q3 = Quartet(Split({'A', 'B'}, {'D', 'E'}))
-        q4 = Quartet(Split({'A', 'C'}, {'B', 'D'}))
-        q5 = Quartet(Split({'A', 'C'}, {'B', 'E'}))
-        q6 = Quartet(Split({'A', 'D'}, {'B', 'E'}))
-        q7 = Quartet(Split({'C', 'D'}, {'A', 'E'}))
-        q8 = Quartet(Split({'C', 'D'}, {'B', 'E'}))
+        q4 = Quartet(Split({'A', 'C'}, {'D', 'E'}))
+        q5 = Quartet(Split({'B', 'C'}, {'D', 'E'}))
         
-        profileset = QuartetProfileSet(profiles=[q1, q2, q3, q4, q5, q6, q7, q8])
+        profileset = QuartetProfileSet(profiles=[q1, q2, q3, q4, q5])
         
         # Get bstar splits
         bstar_splits = bstar(profileset)
-        
-        # Check if tree-compatible
-        if not is_tree_compatible(bstar_splits):
-            pytest.skip("B* splits are not tree-compatible for this test case")
         
         # Get tstar tree
         tree = tstar_tree(profileset)

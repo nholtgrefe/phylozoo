@@ -779,6 +779,152 @@ def induced_splits(network: MixedPhyNetwork) -> SplitSystem:
     return SplitSystem(splits)
 
 
+def split_from_cutedge(
+    network: SemiDirectedPhyNetwork,
+    u: Any,
+    v: Any,
+    key: int | None = None,
+    return_node_taxa: bool = False,
+) -> Split | tuple[Split, tuple[Any, frozenset[str]], tuple[Any, frozenset[str]]]:
+    """
+    Get the split induced by a cut-edge in the network.
+    
+    This function removes the specified edge from the network and finds the
+    taxa on either side of the resulting partition. If the edge is not a
+    cut-edge (i.e., removing it does not disconnect the graph), an error is raised.
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    u : Any
+        First node of the edge.
+    v : Any
+        Second node of the edge.
+    key : int | None, optional
+        Edge key for parallel edges. If None and multiple parallel edges exist,
+        raises ValueError. If None and exactly one edge exists, that edge is used.
+        By default None.
+    return_node_taxa : bool, optional
+        If True, also returns tuples (u, taxa1) and (v, taxa2) indicating which
+        node is on which side of the split. By default False.
+    
+    Returns
+    -------
+    Split | tuple[Split, tuple[Any, frozenset[str]], tuple[Any, frozenset[str]]]
+        If return_node_taxa is False: The split induced by the cut-edge.
+        If return_node_taxa is True: A tuple (split, (u, taxa1), (v, taxa2)) where
+        taxa1 are the taxa on the side of u and taxa2 are the taxa on the side of v.
+    
+    Raises
+    ------
+    ValueError
+        If the edge does not exist, if multiple parallel edges exist and key is None,
+        or if the edge is not a cut-edge (removal does not disconnect the graph).
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> split = split_from_cutedge(net, 3, 1)
+    >>> 'A' in split.set1 or 'A' in split.set2
+    True
+    """
+    # Create a copy of the underlying graph
+    graph_copy = network._graph.copy()
+    
+    # Check if edge exists and handle keys
+    if graph_copy._undirected.has_edge(u, v):
+        # Get all edge keys between u and v
+        edge_keys = list(graph_copy._undirected[u][v].keys())
+        if len(edge_keys) == 0:
+            raise ValueError(f"Undirected edge ({u}, {v}) does not exist")
+        if len(edge_keys) > 1 and key is None:
+            raise ValueError(
+                f"Multiple parallel undirected edges exist between {u} and {v}. "
+                "Must specify 'key' parameter."
+            )
+        if key is None:
+            key = edge_keys[0]
+        if key not in edge_keys:
+            raise ValueError(f"Edge ({u}, {v}, key={key}) does not exist")
+        # Remove the edge using public API
+        graph_copy.remove_edge(u, v, key=key)
+    elif graph_copy._directed.has_edge(u, v):
+        # Get all edge keys between u and v
+        edge_keys = list(graph_copy._directed[u][v].keys())
+        if len(edge_keys) == 0:
+            raise ValueError(f"Directed edge ({u}, {v}) does not exist")
+        if len(edge_keys) > 1 and key is None:
+            raise ValueError(
+                f"Multiple parallel directed edges exist between {u} and {v}. "
+                "Must specify 'key' parameter."
+            )
+        if key is None:
+            key = edge_keys[0]
+        if key not in edge_keys:
+            raise ValueError(f"Edge ({u}, {v}, key={key}) does not exist")
+        # Remove the edge using public API
+        graph_copy.remove_edge(u, v, key=key)
+    elif graph_copy._directed.has_edge(v, u):
+        # Get all edge keys between v and u
+        edge_keys = list(graph_copy._directed[v][u].keys())
+        if len(edge_keys) == 0:
+            raise ValueError(f"Edge ({u}, {v}) does not exist")
+        if len(edge_keys) > 1 and key is None:
+            raise ValueError(
+                f"Multiple parallel directed edges exist between {v} and {u}. "
+                "Must specify 'key' parameter."
+            )
+        if key is None:
+            key = edge_keys[0]
+        if key not in edge_keys:
+            raise ValueError(f"Edge ({v}, {u}, key={key}) does not exist")
+        # Remove the edge using public API (note: direction is v->u)
+        graph_copy.remove_edge(v, u, key=key)
+    else:
+        raise ValueError(f"Edge ({u}, {v}) does not exist in the network")
+    
+    # Check if removal disconnects the graph
+    components = list(nx.connected_components(graph_copy._combined))
+    if len(components) != 2:
+        raise ValueError(
+            f"Edge ({u}, {v}, key={key}) is not a cut-edge. "
+            f"Removal creates {len(components)} components instead of 2."
+        )
+    
+    # Determine which component contains u and v
+    component_u = None
+    component_v = None
+    for comp in components:
+        if u in comp:
+            component_u = comp
+        if v in comp:
+            component_v = comp
+    
+    # Get taxa in each component (intersection of component with leaves)
+    leaves_set = network.leaves
+    taxa_u = frozenset(
+        network._node_to_label[node]
+        for node in component_u & leaves_set
+        if node in network._node_to_label
+    )
+    taxa_v = frozenset(
+        network._node_to_label[node]
+        for node in component_v & leaves_set
+        if node in network._node_to_label
+    )
+    
+    split = Split(taxa_u, taxa_v)
+    
+    if return_node_taxa:
+        return (split, (u, taxa_u), (v, taxa_v))
+    return split
+
+
 def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
     """
     Compute weighted split system from all displayed trees of the network.

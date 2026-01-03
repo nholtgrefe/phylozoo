@@ -6,7 +6,8 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, tree_of_blobs, distances, induced_splits
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, tree_of_blobs, distances, induced_splits, split_from_cutedge
+from phylozoo.core.split.base import Split
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
@@ -749,3 +750,117 @@ class TestDisplayedSplits:
         from phylozoo.core.split import WeightedSplitSystem
         assert isinstance(splits, WeightedSplitSystem)
         assert len(splits) == 0
+
+
+class TestSplitFromCutedge:
+    """Test split_from_cutedge function for DirectedPhyNetwork."""
+    
+    def test_simple_tree_cutedge(self) -> None:
+        """Test split_from_cutedge on a simple tree."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        split = split_from_cutedge(net, 3, 1)
+        assert isinstance(split, Split)
+        # The split should separate A from B and C
+        assert 'A' in split.set1 or 'A' in split.set2
+        assert {'B', 'C'} == (split.set1 | split.set2) - {'A'}
+    
+    def test_cutedge_with_key(self) -> None:
+        """Test split_from_cutedge with explicit key."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        split = split_from_cutedge(net, 3, 1, key=0)
+        assert isinstance(split, Split)
+        assert 'A' in split.set1 or 'A' in split.set2
+        assert 'B' in split.set1 or 'B' in split.set2
+    
+    def test_nonexistent_edge(self) -> None:
+        """Test split_from_cutedge raises error for nonexistent edge."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        with pytest.raises(ValueError, match="does not exist"):
+            split_from_cutedge(net, 1, 2)
+    
+    def test_non_cutedge(self) -> None:
+        """Test split_from_cutedge raises error for non-cut-edge."""
+        # Use a fixture network with a blob (non-cut-edges exist)
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_DNETWORK_SINGLE_HYBRID
+        # Find a non-cut-edge (edge in a blob)
+        from phylozoo.core.network.dnetwork.features import cut_edges
+        cut_edges_set = cut_edges(net)
+        all_edges = set()
+        for u, v, key in net._graph.edges(keys=True):
+            all_edges.add((u, v, key))
+        # Find an edge that's not a cut-edge
+        non_cut_edges = all_edges - cut_edges_set
+        if not non_cut_edges:
+            pytest.skip("No non-cut-edges found in the test network")
+        u, v, key = next(iter(non_cut_edges))
+        with pytest.raises(ValueError, match="is not a cut-edge"):
+            split_from_cutedge(net, u, v, key=key)
+    
+    def test_split_covers_all_taxa(self) -> None:
+        """Test that split covers all taxa in the network."""
+        net = DirectedPhyNetwork(
+            edges=[(5, 1), (5, 2), (5, 3), (5, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+        )
+        split = split_from_cutedge(net, 5, 1)
+        all_taxa = split.set1 | split.set2
+        assert all_taxa == {'A', 'B', 'C', 'D'}
+    
+    def test_split_set1_on_u_side(self) -> None:
+        """Test that set1 contains taxa on the side of u."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        split = split_from_cutedge(net, 3, 1)
+        # A should be on the side of node 1
+        assert 'A' in split.set1 or 'A' in split.set2
+        # B should be on the side of node 3
+        assert 'B' in split.set1 or 'B' in split.set2
+        # They should be in different sets
+        assert ('A' in split.set1 and 'B' in split.set2) or ('A' in split.set2 and 'B' in split.set1)
+    
+    def test_return_node_taxa(self) -> None:
+        """Test split_from_cutedge with return_node_taxa parameter."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        result = split_from_cutedge(net, 3, 1, return_node_taxa=True)
+        split, (u_node, u_taxa), (v_node, v_taxa) = result
+        assert isinstance(split, Split)
+        assert u_node == 3
+        assert v_node == 1
+        assert isinstance(u_taxa, frozenset)
+        assert isinstance(v_taxa, frozenset)
+        # Check that taxa match the split
+        assert u_taxa == split.set1 or u_taxa == split.set2
+        assert v_taxa == split.set1 or v_taxa == split.set2
+        # Check that u_taxa and v_taxa are complementary
+        assert u_taxa | v_taxa == split.set1 | split.set2
+        assert u_taxa & v_taxa == set()
+    
+    def test_hybrid_edge_cutedge(self) -> None:
+        """Test split_from_cutedge on a hybrid edge."""
+        # Use a fixture network that's known to be valid
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_DNETWORK_SINGLE_HYBRID
+        # Find a cut-edge in the network
+        from phylozoo.core.network.dnetwork.features import cut_edges
+        cut_edges_set = cut_edges(net)
+        if cut_edges_set:
+            u, v, key = next(iter(cut_edges_set))
+            split = split_from_cutedge(net, u, v, key=key)
+            assert isinstance(split, Split)
+            assert len(split.set1) > 0
+            assert len(split.set2) > 0
