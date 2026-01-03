@@ -356,8 +356,12 @@ def source_components(graph: 'MixedMultiGraph') -> list[tuple[list[T], list[tupl
             for u, v, key in graph._undirected.edges(keys=True):
                 if u in component_set and v in component_set:
                     # Include all parallel edges (each with its key)
-                    # Normalize to (min(u,v), max(u,v), key) to avoid duplicates from undirected representation
-                    edge = (min(u, v), max(u, v), key)
+                    # Normalize to avoid duplicates from undirected representation
+                    # Use string comparison to handle mixed types (e.g., int and str node IDs)
+                    if str(u) <= str(v):
+                        edge = (u, v, key)
+                    else:
+                        edge = (v, u, key)
                     undirected_edges.append(edge)
             
             # Collect directed edges (u, v, key) with u in component and v not in component
@@ -444,7 +448,8 @@ def cut_edges(
     
     # Check undirected edges
     for u, v, key, edge_data in graph._undirected.edges(keys=True, data=True):
-        edge_normalized = (min(u, v), max(u, v))
+        # Use string comparison to handle mixed types (e.g., int and str node IDs)
+        edge_normalized = (u, v) if str(u) <= str(v) else (v, u)
         if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
             processed_edges.add(edge_normalized)
             # Format according to keys and data parameters
@@ -465,7 +470,8 @@ def cut_edges(
     
     # Check directed edges
     for u, v, key, edge_data in graph._directed.edges(keys=True, data=True):
-        edge_normalized = (min(u, v), max(u, v))
+        # Use string comparison to handle mixed types (e.g., int and str node IDs)
+        edge_normalized = (u, v) if str(u) <= str(v) else (v, u)
         if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
             processed_edges.add(edge_normalized)
             # Format according to keys and data parameters

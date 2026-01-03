@@ -388,7 +388,11 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
             # Process all undirected edges incident to current
             for u, v, key, data in graph._undirected.edges(current, keys=True, data=True):
                 # Normalize edge representation to avoid processing twice
-                edge_key = (min(u, v), max(u, v), key)
+                # Use string comparison to handle mixed types (e.g., int and str node IDs)
+                if str(u) <= str(v):
+                    edge_key = (u, v, key)
+                else:
+                    edge_key = (v, u, key)
                 if edge_key in processed_undirected_edges:
                     continue
                 processed_undirected_edges.add(edge_key)
@@ -454,7 +458,11 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
             # Process undirected edges incident to current (orient away from current)
             for u, v, key, data in graph._undirected.edges(current, keys=True, data=True):
                 # Normalize edge representation to avoid processing twice
-                edge_key = (min(u, v), max(u, v), key)
+                # Use string comparison to handle mixed types (e.g., int and str node IDs)
+                if str(u) <= str(v):
+                    edge_key = (u, v, key)
+                else:
+                    edge_key = (v, u, key)
                 if edge_key in processed_undirected_edges:
                     continue
                 processed_undirected_edges.add(edge_key)
@@ -489,7 +497,11 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
     
     # Check for unreachable undirected edges
     for u, v, key in graph._undirected.edges(keys=True):
-        edge_key = (min(u, v), max(u, v), key)
+        # Use string comparison to handle mixed types (e.g., int and str node IDs)
+        if str(u) <= str(v):
+            edge_key = (u, v, key)
+        else:
+            edge_key = (v, u, key)
         if edge_key not in processed_undirected_edges:
             raise ValueError(
                 f"Undirected edge ({u}, {v}, key={key}) is not reachable from root {root}. "

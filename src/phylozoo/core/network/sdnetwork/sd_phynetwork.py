@@ -385,11 +385,11 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             )
         
         orig_undirected = {
-            (min(u, v), max(u, v), key if key is not None else 0)
+            ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
             for u, v, key in self._graph.undirected_edges_iter(keys=True)
         }
         roundtrip_undirected = {
-            (min(u, v), max(u, v), key if key is not None else 0)
+            ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
             for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
         }
         if orig_undirected != roundtrip_undirected:
