@@ -62,7 +62,7 @@ class TestMixedPhyNetworkAttributes:
     def test_attributes_from_graph(self):
         """Test that attributes are preserved when creating network from graph."""
         from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-        from phylozoo.core.network.sdnetwork.io import sdnetwork_from_mmgraph
+        from phylozoo.core.network.sdnetwork.conversions import sdnetwork_from_graph
 
         graph = MixedMultiGraph(
             undirected_edges=[(3, 1)],
@@ -70,7 +70,7 @@ class TestMixedPhyNetworkAttributes:
         )
         graph.add_node(1, label='A')
 
-        net = sdnetwork_from_mmgraph(graph, network_type='mixed')
+        net = sdnetwork_from_graph(graph, network_type='mixed')
 
         assert net.get_network_attribute() == {'source': 'file.nex', 'version': '1.0'}
         assert net.get_network_attribute('source') == 'file.nex'
@@ -121,7 +121,7 @@ class TestSemiDirectedPhyNetworkAttributes:
     def test_attributes_from_graph(self):
         """Test that attributes are preserved when creating network from graph."""
         from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-        from phylozoo.core.network.sdnetwork.io import sdnetwork_from_mmgraph
+        from phylozoo.core.network.sdnetwork.conversions import sdnetwork_from_graph
 
         graph = MixedMultiGraph(
             undirected_edges=[(3, 1)],
@@ -129,7 +129,7 @@ class TestSemiDirectedPhyNetworkAttributes:
         )
         graph.add_node(1, label='A')
 
-        net = sdnetwork_from_mmgraph(graph, network_type='semi-directed')
+        net = sdnetwork_from_graph(graph, network_type='semi-directed')
 
         assert net.get_network_attribute() == {'source': 'file.nex', 'version': '1.0'}
         assert net.get_network_attribute('source') == 'file.nex'

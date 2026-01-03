@@ -153,6 +153,52 @@ class TestSdnetworkFromGraph:
         assert isinstance(result, SemiDirectedPhyNetwork)
         assert result.number_of_edges() == 2
 
+    def test_simple_tree_from_nx_multigraph(self) -> None:
+        """Convert simple tree structure from NetworkX MultiGraph."""
+        graph = nx.MultiGraph()
+        graph.add_edge(0, 1)
+        graph.add_edge(0, 2)
+        graph.add_edge(0, 3)
+        graph.nodes[1]['label'] = 'A'
+        graph.nodes[2]['label'] = 'B'
+        graph.nodes[3]['label'] = 'C'
+        result = sdnetwork_from_graph(graph, network_type='semi-directed')
+        assert isinstance(result, SemiDirectedPhyNetwork)
+        assert result.number_of_nodes() == 4
+        assert result.number_of_edges() == 3
+        assert result.get_label(1) == 'A'
+        assert result.get_label(2) == 'B'
+        assert result.get_label(3) == 'C'
+
+    def test_edges_with_attributes_from_nx_multigraph(self) -> None:
+        """Convert NetworkX MultiGraph with edges that have attributes."""
+        graph = nx.MultiGraph()
+        graph.add_edge(0, 1, branch_length=0.5, bootstrap=0.9)
+        graph.nodes[1]['label'] = 'A'
+        result = sdnetwork_from_graph(graph, network_type='semi-directed')
+        assert isinstance(result, SemiDirectedPhyNetwork)
+        assert result.get_branch_length(0, 1) == 0.5
+        assert result.get_bootstrap(0, 1) == 0.9
+
+    def test_graph_attributes_preserved_from_nx_multigraph(self) -> None:
+        """Test that graph attributes are preserved from NetworkX MultiGraph."""
+        graph = nx.MultiGraph()
+        graph.add_edge(0, 1)
+        graph.nodes[1]['label'] = 'A'
+        graph.graph['source'] = 'test'
+        graph.graph['version'] = '1.0'
+        result = sdnetwork_from_graph(graph, network_type='semi-directed')
+        assert result.get_network_attribute('source') == 'test'
+        assert result.get_network_attribute('version') == '1.0'
+
+    def test_empty_graph_from_nx_multigraph(self) -> None:
+        """Convert empty NetworkX MultiGraph."""
+        graph = nx.MultiGraph()
+        result = sdnetwork_from_graph(graph, network_type='semi-directed')
+        assert isinstance(result, SemiDirectedPhyNetwork)
+        assert result.number_of_nodes() == 0
+        assert result.number_of_edges() == 0
+
     def test_node_order_preserved(self) -> None:
         """Test that node ordering is preserved."""
         mmgraph = MixedMultiGraph(undirected_edges=[(0, 1), (0, 2), (0, 3)])

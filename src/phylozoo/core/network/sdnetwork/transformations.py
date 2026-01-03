@@ -10,7 +10,7 @@ from typing import Any, TypeVar
 from . import SemiDirectedPhyNetwork
 from .base import MixedPhyNetwork
 from .features import k_blobs
-from .io import sdnetwork_from_mmgraph
+from .conversions import sdnetwork_from_graph
 from ._utils import (
     _merge_attrs_for_degree2_suppression_mixed,
     _merge_attrs_for_parallel_identification_mixed,
@@ -175,7 +175,7 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
         )
     
     # Create and return new network from the modified graph
-    return sdnetwork_from_mmgraph(working_graph, network_type='semi-directed')
+    return sdnetwork_from_graph(working_graph, network_type='semi-directed')
 
 
 def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
@@ -278,5 +278,5 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     # Create and return new network from the modified graph (will be validated)
     # Return same type as input
     network_type = 'semi-directed' if isinstance(network, SemiDirectedPhyNetwork) else 'mixed'
-    return sdnetwork_from_mmgraph(working_graph, network_type=network_type)
+    return sdnetwork_from_graph(working_graph, network_type=network_type)
 

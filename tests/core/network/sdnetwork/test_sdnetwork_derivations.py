@@ -10,7 +10,7 @@ import pytest
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
 from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, displayed_splits, distances, k_taxon_subnetworks, subnetwork, tree_of_blobs, induced_splits
 from phylozoo.core.network.sdnetwork.features import blobs
-from phylozoo.core.network.sdnetwork.io import sdnetwork_from_mmgraph
+from phylozoo.core.network.sdnetwork.conversions import sdnetwork_from_graph
 from phylozoo.core.network.sdnetwork.transformations import suppress_2_blobs
 from phylozoo.utils.validation import no_validation
 

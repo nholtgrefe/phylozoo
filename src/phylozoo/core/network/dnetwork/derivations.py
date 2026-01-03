@@ -19,7 +19,7 @@ import networkx as nx
 from . import DirectedPhyNetwork
 from .classifications import is_lsa_network
 from .features import blobs
-from .io import dnetwork_from_dmgraph
+from .conversions import dnetwork_from_graph
 from .transformations import (
     to_lsa_network,
     suppress_2_blobs as suppress_2_blobs_fn,
@@ -33,7 +33,7 @@ from ...primitives.d_multigraph.transformations import subgraph as dm_subgraph
 from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.m_multigraph import MixedMultiGraph
 from ..sdnetwork import SemiDirectedPhyNetwork
-from ..sdnetwork.io import sdnetwork_from_mmgraph
+from ..sdnetwork.conversions import sdnetwork_from_graph
 from ....core.distance import DistanceMatrix
 
 
@@ -149,7 +149,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
             mixed._combined.nodes[node]['label'] = label
 
     # Convert the mixed graph to a semi-directed network
-    return sdnetwork_from_mmgraph(mixed, network_type='semi-directed')
+    return sdnetwork_from_graph(mixed, network_type='semi-directed')
 
 
 def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -207,7 +207,7 @@ def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             dm_identify_vertices(working_graph, blob_sorted)
 
     # Convert back to DirectedPhyNetwork
-    return dnetwork_from_dmgraph(working_graph)
+    return dnetwork_from_graph(working_graph)
 
 
 def subnetwork(
@@ -289,7 +289,7 @@ def subnetwork(
     dm_suppress_deg2_nodes(working_dm, exclude_nodes=None)
 
     # Convert to DirectedPhyNetwork for higher-level transformations
-    result_net = dnetwork_from_dmgraph(working_dm)
+    result_net = dnetwork_from_graph(working_dm)
 
     # Optional post-processing steps
     if suppress_2_blobs:
@@ -569,9 +569,9 @@ def displayed_trees(network: DirectedPhyNetwork, probability: bool = False) -> I
         dm_suppress_deg2_nodes(tree_graph, exclude_nodes=None)
         
         # Convert back to DirectedPhyNetwork
-        # Note: dnetwork_from_dmgraph already copies graph attributes, so probability
+        # Note: dnetwork_from_graph already copies graph attributes, so probability
         # is automatically preserved from the switching graph.
-        displayed_tree = dnetwork_from_dmgraph(tree_graph)
+        displayed_tree = dnetwork_from_graph(tree_graph)
         
         yield displayed_tree
 

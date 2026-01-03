@@ -26,7 +26,7 @@ from .transformations import suppress_2_blobs as suppress_2_blobs_fn, identify_p
 from ...split import Split, SplitSystem, WeightedSplitSystem
 from .sd_phynetwork import SemiDirectedPhyNetwork
 from ._utils import _suppress_deg2_nodes
-from .io import sdnetwork_from_mmgraph
+from .conversions import sdnetwork_from_graph
 from ...primitives.m_multigraph.transformations import (
     identify_vertices as mm_identify_vertices,
     suppress_degree2_node as mm_suppress_degree2_node,
@@ -34,7 +34,7 @@ from ...primitives.m_multigraph.transformations import (
 )
 from ...primitives.m_multigraph.features import updown_path_vertices
 from ...primitives.m_multigraph import MixedMultiGraph
-from .io import sdnetwork_from_mmgraph
+from .conversions import sdnetwork_from_graph
 from ....core.distance import DistanceMatrix
 
 
@@ -106,7 +106,7 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     # Convert back to appropriate network type
     # Preserve the input type (SemiDirectedPhyNetwork or MixedPhyNetwork)
     network_type = 'semi-directed' if isinstance(network, SemiDirectedPhyNetwork) else 'mixed'
-    return sdnetwork_from_mmgraph(working_graph, network_type=network_type)
+    return sdnetwork_from_graph(working_graph, network_type=network_type)
 
 
 def subnetwork(
@@ -212,7 +212,7 @@ def subnetwork(
     _suppress_deg2_nodes(working_mm, exclude_nodes=leaf_set)
     
     # Convert to SemiDirectedPhyNetwork for higher-level transformations
-    result_net = sdnetwork_from_mmgraph(working_mm, network_type='semi-directed')
+    result_net = sdnetwork_from_graph(working_mm, network_type='semi-directed')
     
     # Optional post-processing steps
     if suppress_2_blobs:
@@ -494,9 +494,9 @@ def displayed_trees(network: SemiDirectedPhyNetwork, probability: bool = False) 
         _suppress_deg2_nodes(tree_graph, exclude_nodes=None)
         
         # Convert back to SemiDirectedPhyNetwork
-        # Note: sdnetwork_from_mmgraph already copies graph attributes, so probability
+        # Note: sdnetwork_from_graph already copies graph attributes, so probability
         # is automatically preserved from the switching graph.
-        displayed_tree = sdnetwork_from_mmgraph(tree_graph, network_type='semi-directed')
+        displayed_tree = sdnetwork_from_graph(tree_graph, network_type='semi-directed')
         
         yield displayed_tree
 

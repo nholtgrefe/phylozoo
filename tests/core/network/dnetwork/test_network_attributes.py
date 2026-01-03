@@ -62,7 +62,7 @@ class TestDirectedPhyNetworkAttributes:
     def test_attributes_from_graph(self):
         """Test that attributes are preserved when creating network from graph."""
         from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-        from phylozoo.core.network.dnetwork.io import dnetwork_from_dmgraph
+        from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
 
         graph = DirectedMultiGraph(
             edges=[(3, 1)],
@@ -70,7 +70,7 @@ class TestDirectedPhyNetworkAttributes:
         )
         graph.add_node(1, label='A')
 
-        net = dnetwork_from_dmgraph(graph)
+        net = dnetwork_from_graph(graph)
 
         assert net.get_network_attribute() == {'source': 'file.nex', 'version': '1.0'}
         assert net.get_network_attribute('source') == 'file.nex'

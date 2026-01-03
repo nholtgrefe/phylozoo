@@ -9,7 +9,7 @@ from typing import Any
 
 from . import DirectedPhyNetwork
 from .features import k_blobs
-from .io import dnetwork_from_dmgraph
+from .conversions import dnetwork_from_graph
 from ._utils import (
     _merge_attrs_for_degree2_suppression_directed,
     _merge_attrs_for_parallel_identification_directed,
@@ -231,7 +231,7 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         )
     
     # Create and return new network from the modified graph
-    return dnetwork_from_dmgraph(working_graph)
+    return dnetwork_from_graph(working_graph)
 
 
 def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -332,5 +332,5 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
     
     # Create and return new network from the modified graph (will be validated)
-    return dnetwork_from_dmgraph(working_graph)
+    return dnetwork_from_graph(working_graph)
 

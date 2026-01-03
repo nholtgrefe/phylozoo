@@ -8,7 +8,7 @@ import pytest
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, tree_of_blobs, distances, induced_splits
 from phylozoo.core.network.dnetwork.features import blobs
-from phylozoo.core.network.dnetwork.io import dnetwork_from_dmgraph
+from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
 from phylozoo.utils.validation import no_validation
 
