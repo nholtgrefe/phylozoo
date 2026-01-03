@@ -214,6 +214,189 @@ class TestSplitSystemImmutability:
         
         split3 = Split({1, 4}, {2, 3})
         assert split3 not in system
+
+
+class TestSplitClassifications:
+    """Test cases for split system classification functions."""
+
+    def test_is_pairwise_compatible_true(self) -> None:
+        """Test is_pairwise_compatible returns True for compatible splits."""
+        from phylozoo.core.split.classifications import is_pairwise_compatible
+        
+        split1 = Split({1, 2}, {3, 4})
+        split2 = Split({1}, {2, 3, 4})
+        split3 = Split({1, 2, 3}, {4})
+        system = SplitSystem([split1, split2, split3])
+        assert is_pairwise_compatible(system) is True
+
+    def test_is_pairwise_compatible_false(self) -> None:
+        """Test is_pairwise_compatible returns False for incompatible splits."""
+        from phylozoo.core.split.classifications import is_pairwise_compatible
+        
+        split1 = Split({1, 2}, {3, 4})
+        split2 = Split({1, 3}, {2, 4})  # Incompatible with split1
+        system = SplitSystem([split1, split2])
+        assert is_pairwise_compatible(system) is False
+
+    def test_is_pairwise_compatible_empty(self) -> None:
+        """Test is_pairwise_compatible returns True for empty system."""
+        from phylozoo.core.split.classifications import is_pairwise_compatible
+        
+        system = SplitSystem()
+        assert is_pairwise_compatible(system) is True
+
+    def test_is_pairwise_compatible_single_split(self) -> None:
+        """Test is_pairwise_compatible returns True for single split."""
+        from phylozoo.core.split.classifications import is_pairwise_compatible
+        
+        split = Split({1, 2}, {3, 4})
+        system = SplitSystem([split])
+        assert is_pairwise_compatible(system) is True
+
+    def test_has_all_trivial_splits_true(self) -> None:
+        """Test has_all_trivial_splits returns True when all trivial splits present."""
+        from phylozoo.core.split.classifications import has_all_trivial_splits
+        
+        split1 = Split({1}, {2, 3})
+        split2 = Split({2}, {1, 3})
+        split3 = Split({3}, {1, 2})
+        system = SplitSystem([split1, split2, split3])
+        assert has_all_trivial_splits(system) is True
+
+    def test_has_all_trivial_splits_false(self) -> None:
+        """Test has_all_trivial_splits returns False when missing trivial splits."""
+        from phylozoo.core.split.classifications import has_all_trivial_splits
+        
+        split1 = Split({1}, {2, 3})
+        split2 = Split({2}, {1, 3})
+        # Missing split for element 3
+        system = SplitSystem([split1, split2])
+        assert has_all_trivial_splits(system) is False
+
+    def test_has_all_trivial_splits_empty(self) -> None:
+        """Test has_all_trivial_splits returns True for empty system."""
+        from phylozoo.core.split.classifications import has_all_trivial_splits
+        
+        system = SplitSystem()
+        assert has_all_trivial_splits(system) is True
+
+    def test_has_all_trivial_splits_with_non_trivial(self) -> None:
+        """Test has_all_trivial_splits works with non-trivial splits present."""
+        from phylozoo.core.split.classifications import has_all_trivial_splits
+        
+        split1 = Split({1}, {2, 3, 4})
+        split2 = Split({2}, {1, 3, 4})
+        split3 = Split({3}, {1, 2, 4})
+        split4 = Split({4}, {1, 2, 3})
+        split5 = Split({1, 2}, {3, 4})  # Non-trivial
+        system = SplitSystem([split1, split2, split3, split4, split5])
+        assert has_all_trivial_splits(system) is True
+
+    def test_is_tree_compatible_true(self) -> None:
+        """Test is_tree_compatible returns True for tree-compatible system."""
+        from phylozoo.core.split.classifications import is_tree_compatible
+        
+        split1 = Split({1}, {2, 3, 4})
+        split2 = Split({2}, {1, 3, 4})
+        split3 = Split({3}, {1, 2, 4})
+        split4 = Split({4}, {1, 2, 3})
+        split5 = Split({1, 2}, {3, 4})
+        system = SplitSystem([split1, split2, split3, split4, split5])
+        assert is_tree_compatible(system) is True
+
+    def test_is_tree_compatible_false_missing_trivial(self) -> None:
+        """Test is_tree_compatible returns False when trivial splits missing."""
+        from phylozoo.core.split.classifications import is_tree_compatible
+        
+        split1 = Split({1}, {2, 3, 4})
+        split2 = Split({2}, {1, 3, 4})
+        # Missing trivial splits for 3 and 4
+        split5 = Split({1, 2}, {3, 4})
+        system = SplitSystem([split1, split2, split5])
+        assert is_tree_compatible(system) is False
+
+    def test_is_tree_compatible_false_incompatible(self) -> None:
+        """Test is_tree_compatible returns False when splits are incompatible."""
+        from phylozoo.core.split.classifications import is_tree_compatible
+        
+        split1 = Split({1}, {2, 3, 4})
+        split2 = Split({2}, {1, 3, 4})
+        split3 = Split({3}, {1, 2, 4})
+        split4 = Split({4}, {1, 2, 3})
+        split5 = Split({1, 2}, {3, 4})
+        split6 = Split({1, 3}, {2, 4})  # Incompatible with split5
+        system = SplitSystem([split1, split2, split3, split4, split5, split6])
+        assert is_tree_compatible(system) is False
+
+    def test_induced_splits_of_tree_are_tree_compatible(self) -> None:
+        """Test that induced splits from a tree are tree-compatible."""
+        from phylozoo.core.split.classifications import is_tree_compatible
+        from phylozoo.core.network.sdnetwork.derivations import induced_splits
+        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+        
+        # Create a simple tree
+        tree = SemiDirectedPhyNetwork(
+            undirected_edges=[(0, 1), (0, 2), (0, 3), (0, 4)],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (4, {'label': 'D'})
+            ]
+        )
+        
+        splits = induced_splits(tree)
+        assert is_tree_compatible(splits) is True
+
+    def test_induced_splits_of_larger_tree_are_tree_compatible(self) -> None:
+        """Test that induced splits from a larger tree are tree-compatible."""
+        from phylozoo.core.split.classifications import is_tree_compatible
+        from phylozoo.core.network.sdnetwork.derivations import induced_splits
+        from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+        
+        # Create a larger tree with more structure (all internal nodes have degree >= 3)
+        tree = SemiDirectedPhyNetwork(
+            undirected_edges=[
+                (5, 0), (5, 6), (5, 7),
+                (0, 1), (0, 2),
+                (6, 3), (6, 4)
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (4, {'label': 'D'}),
+                (7, {'label': 'E'})
+            ]
+        )
+        
+        splits = induced_splits(tree)
+        assert is_tree_compatible(splits) is True
+
+    def test_induced_splits_of_directed_tree_are_tree_compatible(self) -> None:
+        """Test that induced splits from a directed tree are tree-compatible."""
+        from phylozoo.core.split.classifications import is_tree_compatible
+        from phylozoo.core.network.dnetwork.derivations import induced_splits
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        
+        # Create a directed tree
+        tree = DirectedPhyNetwork(
+            edges=[
+                (5, 0), (5, 6), (5, 7),
+                (0, 1), (0, 2),
+                (6, 3), (6, 4)
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (4, {'label': 'D'}),
+                (7, {'label': 'E'})
+            ]
+        )
+        
+        splits = induced_splits(tree)
+        assert is_tree_compatible(splits) is True
     
     def test_split_system_iteration(self) -> None:
         """Test that SplitSystem is iterable."""
