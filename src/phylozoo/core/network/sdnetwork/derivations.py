@@ -842,30 +842,32 @@ def split_from_cutedge(
         edge_keys = list(graph_copy._undirected[u][v].keys())
         if len(edge_keys) == 0:
             raise ValueError(f"Undirected edge ({u}, {v}) does not exist")
-        if len(edge_keys) > 1 and key is None:
+        elif len(edge_keys) > 1 and key is None:
             raise ValueError(
                 f"Multiple parallel undirected edges exist between {u} and {v}. "
                 "Must specify 'key' parameter."
             )
-        if key is None:
+        elif key is None:
             key = edge_keys[0]
-        if key not in edge_keys:
+        elif key not in edge_keys:
             raise ValueError(f"Edge ({u}, {v}, key={key}) does not exist")
+        
         # Remove the edge using public API
         graph_copy.remove_edge(u, v, key=key)
+
     elif graph_copy._directed.has_edge(u, v):
         # Get all edge keys between u and v
         edge_keys = list(graph_copy._directed[u][v].keys())
         if len(edge_keys) == 0:
             raise ValueError(f"Directed edge ({u}, {v}) does not exist")
-        if len(edge_keys) > 1 and key is None:
+        elif len(edge_keys) > 1 and key is None:
             raise ValueError(
                 f"Multiple parallel directed edges exist between {u} and {v}. "
                 "Must specify 'key' parameter."
             )
-        if key is None:
+        elif key is None:
             key = edge_keys[0]
-        if key not in edge_keys:
+        elif key not in edge_keys:
             raise ValueError(f"Edge ({u}, {v}, key={key}) does not exist")
         # Remove the edge using public API
         graph_copy.remove_edge(u, v, key=key)
@@ -874,14 +876,14 @@ def split_from_cutedge(
         edge_keys = list(graph_copy._directed[v][u].keys())
         if len(edge_keys) == 0:
             raise ValueError(f"Edge ({u}, {v}) does not exist")
-        if len(edge_keys) > 1 and key is None:
+        elif len(edge_keys) > 1 and key is None:
             raise ValueError(
                 f"Multiple parallel directed edges exist between {v} and {u}. "
                 "Must specify 'key' parameter."
             )
-        if key is None:
+        elif key is None:
             key = edge_keys[0]
-        if key not in edge_keys:
+        elif key not in edge_keys:
             raise ValueError(f"Edge ({v}, {u}, key={key}) does not exist")
         # Remove the edge using public API (note: direction is v->u)
         graph_copy.remove_edge(v, u, key=key)

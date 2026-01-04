@@ -15,6 +15,7 @@ Allow degree-2 nodes?
 Is cut-vertex or is articulation?
 attribute for splits to store (multiplcitiy, weight etc.)
 squirrel could actually take in any set of input trees?
+update the qjoining and all other squirrel alg's to take into account nonresolved quartets. Also, add a constant DEFAULT: with default settings into attr's, then we can also add a notehr settings constant etc.
 
 use novalidation more
 move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?
