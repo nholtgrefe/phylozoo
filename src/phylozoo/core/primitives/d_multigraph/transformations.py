@@ -315,7 +315,8 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
             merged_attrs.update(d2)
     
     # Add the new edge u->v
-    graph.add_edge(u, v, key=k1 if k1 == k2 else None, **merged_attrs)
+    # Always use key=None to allow parallel edges to be created if the edge already exists
+    graph.add_edge(u, v, key=None, **merged_attrs)
 
 
 def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs: dict[str, Any] | None = None) -> None:

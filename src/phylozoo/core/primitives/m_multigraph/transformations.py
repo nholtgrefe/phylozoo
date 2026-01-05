@@ -639,19 +639,23 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     
     if type1 == 'undirected' and type2 == 'undirected':
         # undirected + undirected -> undirected
-        graph.add_undirected_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
+        # Always use key=None to allow parallel edges to be created if the edge already exists
+        graph.add_undirected_edge(n1, n2, key=None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'directed_out':
         # u->x, x->v -> u->v
         # n1 is source of incoming (u), n2 is target of outgoing (v) -> u->v
-        graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
+        # Always use key=None to allow parallel edges to be created if the edge already exists
+        graph.add_directed_edge(n1, n2, key=None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'undirected':
         # u->x, x—v -> undirected edge
         # n1 is source of incoming (u), n2 is neighbor of undirected (v) -> undirected u—v
-        graph.add_undirected_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
+        # Always use key=None to allow parallel edges to be created if the edge already exists
+        graph.add_undirected_edge(n1, n2, key=None, **merged_attrs)
     elif type1 == 'undirected' and type2 == 'directed_out':
         # u—x, x->v -> directed edge
         # n1 is neighbor of undirected (u), n2 is target of outgoing (v) -> u->v
-        graph.add_directed_edge(n1, n2, key=k1 if k1 == k2 else None, **merged_attrs)
+        # Always use key=None to allow parallel edges to be created if the edge already exists
+        graph.add_directed_edge(n1, n2, key=None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'directed_in':
         # Multiple incoming directed edges - invalid for degree-2 node
         raise ValueError(

@@ -160,15 +160,60 @@ class TestSuppressDegree2NodeParallelEdges:
         assert G.has_edge(1, 3)  # Edge exists between 1 and 3
 
     def test_same_key_preserved(self) -> None:
-        """Test that same keys are preserved when possible."""
+        """
+        Test that suppression creates an edge even when original edges had the same key.
+        
+        Note: We always use key=None to ensure parallel edges are created when needed.
+        The key will be auto-generated, so we just verify the edge exists.
+        """
         G = DirectedMultiGraph()
         G.add_edge(1, 2, key=5)
         G.add_edge(2, 3, key=5)
         
         suppress_degree2_node(G, 2)
         
-        # Key should be preserved if same
-        assert G.has_edge(1, 3, key=5)
+        # Edge should exist (key will be auto-generated, not necessarily 5)
+        assert G.has_edge(1, 3)
+    
+    def test_two_paths_create_parallel_edges(self) -> None:
+        """
+        Test that suppressing two degree-2 nodes on parallel paths creates parallel edges.
+        
+        This is important for maintaining bi-edge connectivity when suppressing nodes
+        in blob structures. When two paths exist between the same nodes (e.g., u->x->v
+        and u->y->v), suppressing both x and y should create two parallel edges u->v,
+        not overwrite the first edge.
+        """
+        G = DirectedMultiGraph()
+        # Create two parallel paths: 10->5->4 and 10->6->4
+        G.add_edge(10, 5)
+        G.add_edge(10, 6)
+        G.add_edge(5, 4)
+        G.add_edge(6, 4)
+        
+        # Suppress first degree-2 node (5)
+        suppress_degree2_node(G, 5)
+        edges_after_first = list(G.edges(keys=True))
+        assert (10, 4, 0) in edges_after_first
+        assert len([e for e in edges_after_first if e[0] == 10 and e[1] == 4]) == 1
+        
+        # Suppress second degree-2 node (6)
+        suppress_degree2_node(G, 6)
+        edges_after_second = list(G.edges(keys=True))
+        
+        # Should have two parallel edges from 10 to 4
+        edges_10_4 = [e for e in edges_after_second if e[0] == 10 and e[1] == 4]
+        assert len(edges_10_4) == 2, f"Expected 2 parallel edges, got {len(edges_10_4)}: {edges_10_4}"
+        
+        # Verify bi-edge connectivity is maintained
+        from phylozoo.core.primitives.d_multigraph.features import (
+            bi_edge_connected_components,
+            has_parallel_edges,
+        )
+        assert has_parallel_edges(G)
+        comps = list(bi_edge_connected_components(G))
+        assert len(comps) == 1, f"Should be bi-edge connected, got {len(comps)} components: {comps}"
+        assert {10, 4} in comps or comps[0] == {10, 4}
 
 
 class TestSuppressDegree2NodeComplex:
