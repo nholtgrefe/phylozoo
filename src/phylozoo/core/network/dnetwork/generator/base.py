@@ -11,6 +11,7 @@ Based on Gambette, Berry, and Paul (2009): "The Structure of Level-k Phylogeneti
 
 from __future__ import annotations
 
+import warnings
 from functools import cached_property
 from typing import TYPE_CHECKING, Iterator, TypeVar
 
@@ -476,7 +477,7 @@ def generators_from_network(network: 'DirectedPhyNetwork') -> Iterator[DirectedG
     Raises
     ------
     ValueError
-        If the network is not binary or has parallel edges.
+        If the network is not binary.
     
     Examples
     --------
@@ -504,7 +505,13 @@ def generators_from_network(network: 'DirectedPhyNetwork') -> Iterator[DirectedG
     
     # Check that network has no parallel edges
     if has_parallel_edges(network):
-        raise ValueError("Network must have no parallel edges to extract generators")
+        warnings.warn(
+            "Network has parallel edges. The original paper does not treat networks with "
+            "parallel edges. Proceed with care when using this, not everything may work "
+            "as expected.",
+            UserWarning,
+            stacklevel=2
+        )
     
     # Get all internal blobs (excluding leaves)
     internal_blobs = blobs(network, trivial=True, leaves=False)

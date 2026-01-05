@@ -7,6 +7,7 @@ of directed phylogenetic networks.
 
 from .base import DirectedGenerator, generators_from_network
 from .side import Side, HybridSide, DirEdgeSide
+from .construction import all_level_k_generators
 
 __all__ = [
     "DirectedGenerator",
@@ -14,4 +15,5 @@ __all__ = [
     "Side",
     "HybridSide",
     "DirEdgeSide",
+    "all_level_k_generators",
 ]
