@@ -221,6 +221,95 @@ class TestQuartetProfileSetProperties:
         
         # 8 taxa, should have C(8,4) = 70 profiles for dense, but only 1
         assert profileset.is_dense is False
+    
+    def test_is_all_resolved_all_resolved(self) -> None:
+        """Test is_all_resolved when all profiles are resolved."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        q3 = Quartet(Split({5, 6}, {7, 8}))
+        profileset = QuartetProfileSet(profiles=[q1, q2, q3])
+        
+        assert profileset.is_all_resolved is True
+    
+    def test_is_all_resolved_mixed(self) -> None:
+        """Test is_all_resolved when some profiles are not resolved."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        star = Quartet({1, 2, 3, 4})
+        q2 = Quartet(Split({5, 6}, {7, 8}))
+        profileset = QuartetProfileSet(profiles=[q1, star, q2])
+        
+        assert profileset.is_all_resolved is False
+    
+    def test_is_all_resolved_all_star(self) -> None:
+        """Test is_all_resolved when all profiles are star trees."""
+        star1 = Quartet({1, 2, 3, 4})
+        star2 = Quartet({5, 6, 7, 8})
+        profileset = QuartetProfileSet(profiles=[star1, star2])
+        
+        assert profileset.is_all_resolved is False
+    
+    def test_is_all_resolved_empty(self) -> None:
+        """Test is_all_resolved for empty profile set."""
+        profileset = QuartetProfileSet()
+        
+        assert profileset.is_all_resolved is True
+    
+    def test_is_all_resolved_profile_with_multiple_quartets(self) -> None:
+        """Test is_all_resolved with profiles containing multiple resolved quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        q3 = Quartet(Split({1, 4}, {2, 3}))
+        profile = QuartetProfile([q1, q2, q3])
+        profileset = QuartetProfileSet(profiles=[profile])
+        
+        assert profile.is_resolved() is True
+        assert profileset.is_all_resolved is True
+    
+    def test_max_profile_len_single_quartet(self) -> None:
+        """Test max_profile_len with profiles containing single quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({5, 6}, {7, 8}))
+        profileset = QuartetProfileSet(profiles=[q1, q2])
+        
+        assert profileset.max_profile_len == 1
+    
+    def test_max_profile_len_multiple_quartets(self) -> None:
+        """Test max_profile_len with profiles containing multiple quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        q3 = Quartet(Split({1, 4}, {2, 3}))
+        profile1 = QuartetProfile([q1, q2, q3])
+        profile2 = QuartetProfile([Quartet(Split({5, 6}, {7, 8}))])
+        profileset = QuartetProfileSet(profiles=[profile1, profile2])
+        
+        assert profileset.max_profile_len == 3
+    
+    def test_max_profile_len_empty(self) -> None:
+        """Test max_profile_len for empty profile set."""
+        profileset = QuartetProfileSet()
+        
+        assert profileset.max_profile_len == 0
+    
+    def test_max_profile_len_mixed_lengths(self) -> None:
+        """Test max_profile_len with profiles of different lengths."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        profile1 = QuartetProfile([q1])  # length 1
+        profile2 = QuartetProfile([q1, q2])  # length 2
+        q3 = Quartet(Split({5, 6}, {7, 8}))
+        profile3 = QuartetProfile([q3])  # length 1
+        profileset = QuartetProfileSet(profiles=[profile1, profile2, profile3])
+        
+        assert profileset.max_profile_len == 2
+    
+    def test_max_profile_len_with_star_trees(self) -> None:
+        """Test max_profile_len with profiles containing star trees."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        star = Quartet({1, 2, 3, 4})
+        profile = QuartetProfile([q1, star])
+        profileset = QuartetProfileSet(profiles=[profile])
+        
+        assert profileset.max_profile_len == 2
 
 
 class TestQuartetProfileSetMethods:

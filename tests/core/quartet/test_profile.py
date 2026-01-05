@@ -416,3 +416,77 @@ class TestQuartetProfileEdgeCases:
         assert profile.total_weight == 4.0
         assert all(q in profile for q in [q1, q2, q3, star])
 
+
+class TestQuartetProfileIsResolved:
+    """Tests for QuartetProfile.is_resolved method."""
+    
+    def test_all_resolved_quartets(self) -> None:
+        """Test is_resolved with all resolved quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        profile = QuartetProfile([q1, q2])
+        
+        assert profile.is_resolved() is True
+    
+    def test_single_resolved_quartet(self) -> None:
+        """Test is_resolved with single resolved quartet."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        profile = QuartetProfile([q1])
+        
+        assert profile.is_resolved() is True
+    
+    def test_mixed_resolved_and_star(self) -> None:
+        """Test is_resolved with mix of resolved and star quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        star = Quartet({1, 2, 3, 4})
+        profile = QuartetProfile([q1, star])
+        
+        assert profile.is_resolved() is False
+    
+    def test_all_star_quartets(self) -> None:
+        """Test is_resolved with all star quartets."""
+        star1 = Quartet({1, 2, 3, 4})
+        star2 = Quartet({1, 2, 3, 4})  # Same star
+        profile = QuartetProfile([star1, star2])
+        
+        assert profile.is_resolved() is False
+    
+    def test_single_star_quartet(self) -> None:
+        """Test is_resolved with single star quartet."""
+        star = Quartet({1, 2, 3, 4})
+        profile = QuartetProfile([star])
+        
+        assert profile.is_resolved() is False
+    
+    def test_three_resolved_quartets(self) -> None:
+        """Test is_resolved with three resolved quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        q3 = Quartet(Split({1, 4}, {2, 3}))
+        profile = QuartetProfile([q1, q2, q3])
+        
+        assert profile.is_resolved() is True
+    
+    def test_multiple_resolved_one_star(self) -> None:
+        """Test is_resolved with multiple resolved and one star."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        q3 = Quartet(Split({1, 4}, {2, 3}))
+        star = Quartet({1, 2, 3, 4})
+        profile = QuartetProfile([q1, q2, q3, star])
+        
+        assert profile.is_resolved() is False
+    
+    def test_is_resolved_with_weights(self) -> None:
+        """Test is_resolved works correctly with weighted quartets."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        profile = QuartetProfile({q1: 0.7, q2: 0.3})
+        
+        assert profile.is_resolved() is True
+        
+        star = Quartet({1, 2, 3, 4})
+        profile2 = QuartetProfile({q1: 0.7, star: 0.3})
+        
+        assert profile2.is_resolved() is False
+

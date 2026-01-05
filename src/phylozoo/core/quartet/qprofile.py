@@ -341,6 +341,33 @@ class QuartetProfile:
         """
         return len(self._quartets) == 1
     
+    def is_resolved(self) -> bool:
+        """
+        Check if the profile is resolved.
+        
+        A profile is resolved if all its quartets are resolved. A quartet is resolved
+        if it has a non-trivial split (i.e., it's not a star tree).
+        
+        Returns
+        -------
+        bool
+            True if all quartets are resolved (profile is resolved), False otherwise.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> q1 = Quartet(Split({1, 2}, {3, 4}))
+        >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+        >>> profile = QuartetProfile([q1, q2])
+        >>> profile.is_resolved()
+        True
+        >>> q3 = Quartet({1, 2, 3, 4})  # Star tree
+        >>> profile2 = QuartetProfile([q1, q3])
+        >>> profile2.is_resolved()
+        False
+        """
+        return all(q.is_resolved() for q in self._quartets)
+    
     def __iter__(self) -> Iterator[Quartet]:
         """
         Return an iterator over the quartets.

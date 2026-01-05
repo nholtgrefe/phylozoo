@@ -242,6 +242,61 @@ class QuartetProfileSet:
             return len(self._profiles) == 0
         return len(self._profiles) == comb(n, 4)
     
+    @cached_property
+    def is_all_resolved(self) -> bool:
+        """
+        Check if all profiles in the set are resolved.
+        
+        A profile is resolved if all its quartets are resolved (i.e., not star trees).
+        This property returns True only if every profile in the set is resolved.
+        
+        Returns
+        -------
+        bool
+            True if all profiles are resolved, False otherwise.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> from phylozoo.core.quartet.base import Quartet
+        >>> q1 = Quartet(Split({1, 2}, {3, 4}))
+        >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+        >>> profileset = QuartetProfileSet(profiles=[q1, q2])
+        >>> profileset.is_all_resolved
+        True
+        >>> star = Quartet({1, 2, 3, 4})
+        >>> profileset2 = QuartetProfileSet(profiles=[q1, star])
+        >>> profileset2.is_all_resolved
+        False
+        """
+        return all(profile.is_resolved() for profile, _ in self._profiles.values())
+    
+    @cached_property
+    def max_profile_len(self) -> int:
+        """
+        Get the maximum number of quartets in any profile.
+        
+        Returns
+        -------
+        int
+            The largest number of quartets in any profile in the set.
+            Returns 0 if the set is empty.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> from phylozoo.core.quartet.base import Quartet
+        >>> q1 = Quartet(Split({1, 2}, {3, 4}))
+        >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+        >>> q3 = Quartet(Split({1, 4}, {2, 3}))
+        >>> profileset = QuartetProfileSet(profiles=[q1, q2, q3])
+        >>> profileset.max_profile_len
+        3
+        """
+        if len(self._profiles) == 0:
+            return 0
+        return max(len(profile) for profile, _ in self._profiles.values())
+    
     def get_profile(self, taxa: frozenset[str]) -> QuartetProfile | None:
         """
         Get the profile for a 4-taxon set.
