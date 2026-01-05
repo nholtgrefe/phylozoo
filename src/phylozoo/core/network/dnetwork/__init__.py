@@ -5,7 +5,7 @@ This module provides classes for working with directed phylogenetic networks.
 """
 
 from .base import DirectedPhyNetwork
-from . import classifications, features, transformations, derivations, io, conversions
+from . import classifications, features, transformations, derivations, io, conversions, isomorphism
 
 __all__ = [
     "DirectedPhyNetwork",
@@ -15,5 +15,6 @@ __all__ = [
     "derivations",
     "io",
     "conversions",
+    "isomorphism",
 ]
 
