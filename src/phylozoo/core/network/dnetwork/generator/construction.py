@@ -178,7 +178,7 @@ def _apply_R1(
                 new_graph.add_edge(side.node, new_hybrid_node)
     
     # Create and return the new generator (without validation - will validate later if unique)
-    with no_validation():
+    with no_validation(classes=["DirectedGenerator"]):
         new_generator = DirectedGenerator(new_graph)
     return new_generator
 
@@ -283,7 +283,7 @@ def _apply_R2(
         new_graph.add_edge(side_x.node, w_y)
     
     # Create and return the new generator (without validation - will validate later if unique)
-    with no_validation():
+    with no_validation(classes=["DirectedGenerator"]):
         new_generator = DirectedGenerator(new_graph)
     return new_generator
 
