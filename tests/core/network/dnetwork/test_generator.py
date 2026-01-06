@@ -257,10 +257,10 @@ class TestNodeReachabilityMatrix:
         gen = DirectedGenerator(graph)
         
         reach = _get_node_reachability_matrix(gen)
-        assert reach[(0, 1)] is True
-        assert reach[(0, 0)] is True  # Self-reachable
-        assert reach[(1, 1)] is True  # Self-reachable
-        assert reach[(1, 0)] is False  # No path back
+        assert reach.get((0, 1), False) is True
+        assert reach.get((0, 0), False) is True  # Self-reachable
+        assert reach.get((1, 1), False) is True  # Self-reachable
+        assert reach.get((1, 0), False) is False  # No path back
 
     def test_reachability_self_loops(self) -> None:
         """Test that each node is reachable from itself."""
@@ -268,8 +268,8 @@ class TestNodeReachabilityMatrix:
         gen = DirectedGenerator(graph)
         
         reach = _get_node_reachability_matrix(gen)
-        assert reach[(0, 0)] is True
-        assert reach[(1, 1)] is True
+        assert reach.get((0, 0), False) is True
+        assert reach.get((1, 1), False) is True
 
     def test_reachability_parallel_edges(self) -> None:
         """Test reachability with parallel edges."""
@@ -277,8 +277,8 @@ class TestNodeReachabilityMatrix:
         gen = DirectedGenerator(graph)
         
         reach = _get_node_reachability_matrix(gen)
-        assert reach[(0, 1)] is True
-        assert reach[(1, 0)] is False
+        assert reach.get((0, 1), False) is True
+        assert reach.get((1, 0), False) is False
 
 
 class TestApplyRules:

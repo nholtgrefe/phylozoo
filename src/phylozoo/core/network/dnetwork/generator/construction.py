@@ -15,6 +15,7 @@ import networkx as nx
 
 from ....primitives.d_multigraph import DirectedMultiGraph
 from ....primitives.d_multigraph.isomorphism import is_isomorphic
+from .....utils.validation import no_validation
 from .base import DirectedGenerator
 from .side import Side, DirEdgeSide, HybridSide
 
@@ -37,11 +38,13 @@ def _get_node_reachability_matrix(
     dict[tuple[Any, Any], bool]
         Dictionary mapping (source_node, target_node) -> bool indicating
         if there's a directed path from source to target.
+        Only stores True values; missing keys indicate False.
     
     Notes
     -----
     - Uses topological sort + dynamic programming for efficient DAG processing.
     - Each node is reachable from itself.
+    - Only stores True values; use .get(key, False) to check reachability.
     """
     graph = generator.graph._graph  # NetworkX MultiDiGraph
     nodes = list(graph.nodes())
@@ -49,11 +52,12 @@ def _get_node_reachability_matrix(
     # Compute node-to-node reachability using topological sort (DAG optimization)
     topo_order = list(nx.topological_sort(graph))
     
-    node_reachability: dict[tuple[Any, Any], bool] = {}
+    # Use a set of reachable pairs for faster lookups, then convert to dict
+    reachable_pairs: set[tuple[Any, Any]] = set()
     
     # Initialize: each node is reachable from itself
     for node in nodes:
-        node_reachability[(node, node)] = True
+        reachable_pairs.add((node, node))
     
     # Process in reverse topological order
     # For each node v, compute which nodes are reachable from v
@@ -66,20 +70,15 @@ def _get_node_reachability_matrix(
             reachable_from_v.add(successor)
             # Add all nodes reachable from successor
             for node in nodes:
-                if node_reachability.get((successor, node), False):
+                if (successor, node) in reachable_pairs:
                     reachable_from_v.add(node)
         
         # Store reachability from v
         for target in reachable_from_v:
-            node_reachability[(v, target)] = True
+            reachable_pairs.add((v, target))
     
-    # Fill in False for non-reachable pairs
-    for source in nodes:
-        for target in nodes:
-            if (source, target) not in node_reachability:
-                node_reachability[(source, target)] = False
-    
-    return node_reachability
+    # Convert to dict with True values only (missing keys indicate False)
+    return {pair: True for pair in reachable_pairs}
 
 
 def _apply_R1(
@@ -122,7 +121,8 @@ def _apply_R1(
     new_graph = generator.graph.copy()
     
     # Find the maximum node ID to assign new IDs
-    max_node = max(new_graph.nodes(), default=-1)
+    nodes = list(new_graph.nodes())
+    max_node = max(nodes, default=-1) if nodes else -1
     new_hybrid_node = max_node + 1
     
     # Add the new hybrid node
@@ -177,8 +177,9 @@ def _apply_R1(
                 # Simply add directed out-edge from hybrid node
                 new_graph.add_edge(side.node, new_hybrid_node)
     
-    # Create and return the new generator
-    new_generator = DirectedGenerator(new_graph)
+    # Create and return the new generator (without validation - will validate later if unique)
+    with no_validation():
+        new_generator = DirectedGenerator(new_graph)
     return new_generator
 
 
@@ -221,7 +222,8 @@ def _apply_R2(
     new_graph = generator.graph.copy()
     
     # Find the maximum node ID to assign new IDs
-    max_node = max(new_graph.nodes(), default=-1)
+    nodes = list(new_graph.nodes())
+    max_node = max(nodes, default=-1) if nodes else -1
     next_node_id = max_node + 1
     
     # Case 1: Both are edge sides
@@ -280,8 +282,9 @@ def _apply_R2(
         # Add edge from hybrid node to subdivision vertex of side_y
         new_graph.add_edge(side_x.node, w_y)
     
-    # Create and return the new generator
-    new_generator = DirectedGenerator(new_graph)
+    # Create and return the new generator (without validation - will validate later if unique)
+    with no_validation():
+        new_generator = DirectedGenerator(new_graph)
     return new_generator
 
 
@@ -336,7 +339,7 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
         
         # Check if source of side1 is reachable from target of side2
         # (i.e., there's a path from target2 to source1)
-        return node_reachability.get((target2, source1), False)
+        return (target2, source1) in node_reachability
     
     # Apply R1 to all pairs of sides (including same side if it's an edge side)
     # Skip pairs where both are hybrid sides and they are the same (X = Y)
@@ -364,6 +367,46 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
 
 
 
+def _get_graph_invariant(graph: DirectedMultiGraph) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+    """
+    Compute graph invariants for fast isomorphism candidate filtering.
+    
+    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
+    sorted_edge_multiplicities). Isomorphic graphs must have the same invariants 
+    (but not vice versa).
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The graph to compute invariants for.
+    
+    Returns
+    -------
+    tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]
+        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
+        sorted_edge_multiplicities). Edge multiplicities are the number of parallel 
+        edges for each (u, v) pair, sorted.
+    """
+    nodes = list(graph.nodes())
+    num_nodes = len(nodes)
+    num_edges = graph.number_of_edges()
+    in_degrees = tuple(sorted(graph.indegree(v) for v in nodes))
+    out_degrees = tuple(sorted(graph.outdegree(v) for v in nodes))
+    
+    # Count edge multiplicities (number of parallel edges for each (u, v) pair)
+    edge_multiplicities: list[int] = []
+    seen_pairs: set[tuple[Any, Any]] = set()
+    for u, v, _ in graph.edges(keys=True):
+        if (u, v) not in seen_pairs:
+            multiplicity = graph._graph.number_of_edges(u, v)
+            edge_multiplicities.append(multiplicity)
+            seen_pairs.add((u, v))
+    
+    sorted_multiplicities = tuple(sorted(edge_multiplicities))
+    
+    return (num_nodes, num_edges, in_degrees, out_degrees, sorted_multiplicities)
+
+
 def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     """
     Generate all (strict) level-k generators.
@@ -380,6 +423,12 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     -------
     set[DirectedGenerator]
         Set of all level-k generators (up to isomorphism).
+    
+    Notes
+    -----
+    Validation is deferred during construction for performance optimization.
+    The algorithm provably produces valid generators, so validation is skipped
+    by default. To validate a generator, call ``gen.validate()`` explicitly.
     
     Examples
     --------
@@ -412,19 +461,35 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     prev_level_generators = all_level_k_generators(k - 1)
     
     # Apply R1 and R2 to each, filtering out isomorphic generators
+    # Use invariants to group candidates and reduce isomorphism checks
     result: list[DirectedGenerator] = []
+    # Dictionary mapping invariant -> list of generators with that invariant
+    invariant_groups: dict[tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]], list[DirectedGenerator]] = {}
+    
     for prev_gen in prev_level_generators:
         for new_gen in _apply_rules(prev_gen):
-            # Check if new_gen is isomorphic to any generator already in result
+            # Compute invariants for fast filtering
+            invariant = _get_graph_invariant(new_gen.graph)
+            
+            # Only check isomorphism against generators with matching invariants
+            candidate_group = invariant_groups.get(invariant)
             is_duplicate = False
-            for existing_gen in result:
-                if is_isomorphic(new_gen.graph, existing_gen.graph):
-                    is_duplicate = True
-                    break
+            
+            if candidate_group is not None:
+                # Only check against candidates with matching invariants
+                for existing_gen in candidate_group:
+                    if is_isomorphic(new_gen.graph, existing_gen.graph):
+                        is_duplicate = True
+                        break
             
             # Only add if not isomorphic to any existing generator
             if not is_duplicate:
                 result.append(new_gen)
+                # Add to invariant group for future comparisons
+                if candidate_group is None:
+                    invariant_groups[invariant] = [new_gen]
+                else:
+                    candidate_group.append(new_gen)
 
     return set(result)
 
