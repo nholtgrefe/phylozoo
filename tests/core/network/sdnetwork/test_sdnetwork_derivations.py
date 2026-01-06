@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
-from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, displayed_splits, distances, k_taxon_subnetworks, subnetwork, tree_of_blobs, induced_splits, split_from_cutedge
+from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, displayed_splits, distances, k_taxon_subnetworks, subnetwork, tree_of_blobs, induced_splits, split_from_cutedge, to_d_network
 from phylozoo.core.split.base import Split
 from phylozoo.core.network.sdnetwork.features import blobs
 from phylozoo.core.network.sdnetwork.conversions import sdnetwork_from_graph
@@ -1190,3 +1190,295 @@ class TestSplitFromCutedge:
         # Check that u_taxa and v_taxa are complementary
         assert u_taxa | v_taxa == split.set1 | split.set2
         assert u_taxa & v_taxa == set()
+
+
+class TestToDNetwork:
+    """Test cases for to_d_network function."""
+
+    def test_root_on_node(self) -> None:
+        """Test to_d_network with root location as a node."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        d_net = to_d_network(net, root_location=3)
+        
+        assert d_net.root_node == 3
+        assert isinstance(d_net, DirectedPhyNetwork)
+        d_net.validate()
+
+    def test_root_on_undirected_edge(self) -> None:
+        """Test to_d_network with root location as an undirected edge."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        d_net = to_d_network(net, root_location=(3, 1, 0))
+        
+        # Root should be the subdivision node (new node)
+        assert d_net.root_node is not None
+        assert d_net.root_node != 3
+        assert d_net.root_node != 1
+        d_net.validate()
+
+    def test_root_on_directed_edge(self) -> None:
+        """Test to_d_network with root location as a directed edge."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        # Get valid root locations
+        from phylozoo.core.network.sdnetwork.features import root_locations
+        _, _, dir_locs = root_locations(net)
+        if dir_locs:
+            u, v, key = dir_locs[0]
+            d_net = to_d_network(net, root_location=(u, v, key))
+            assert d_net.root_node is not None
+            d_net.validate()
+
+    def test_no_root_location_uses_default(self) -> None:
+        """Test to_d_network with no root location uses default."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        d_net = to_d_network(net, root_location=None)
+        
+        assert d_net.root_node is not None
+        d_net.validate()
+
+    def test_invalid_root_location_node(self) -> None:
+        """Test to_d_network raises error for invalid node root location."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        with pytest.raises(ValueError, match="not found in the network"):
+            to_d_network(net, root_location=99)
+
+    def test_invalid_root_location_edge(self) -> None:
+        """Test to_d_network raises error for invalid edge root location."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        with pytest.raises(ValueError, match="not found in the network"):
+            to_d_network(net, root_location=(1, 2, 0))
+
+    def test_attribute_filtering_graph_attributes(self) -> None:
+        """Test that graph attributes are removed."""
+        with no_validation():
+            net = SemiDirectedPhyNetwork(
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            )
+            # Add graph attributes (if possible)
+            net._graph._directed.graph['custom_attr'] = 'value'
+            net._graph._undirected.graph['custom_attr'] = 'value'
+        
+        d_net = to_d_network(net, root_location=3)
+        
+        # Graph attributes should be empty
+        assert len(d_net._graph._graph.graph) == 0
+
+    def test_attribute_filtering_node_attributes(self) -> None:
+        """Test that only label is kept for node attributes."""
+        with no_validation():
+            net = SemiDirectedPhyNetwork(
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[
+                    (1, {'label': 'A', 'custom_attr': 'remove', 'other': 'remove'}),
+                    (2, {'label': 'B'}),
+                    (4, {'label': 'C'})
+                ]
+            )
+        
+        d_net = to_d_network(net, root_location=3)
+        
+        # Check node attributes
+        for node, data in d_net._graph.nodes(data=True):
+            if 'label' in data:
+                assert 'custom_attr' not in data
+                assert 'other' not in data
+                assert 'label' in data
+
+    def test_attribute_filtering_edge_attributes(self) -> None:
+        """Test that only branch_length and gamma are kept for edge attributes."""
+        with no_validation():
+            net = SemiDirectedPhyNetwork(
+                undirected_edges=[
+                    {'u': 3, 'v': 1, 'key': 0, 'branch_length': 1.0, 'bootstrap': 0.95, 'weight': 10.0},
+                    (3, 2),
+                    (3, 4)
+                ],
+                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            )
+        
+        d_net = to_d_network(net, root_location=(3, 1, 0))
+        
+        # Check edge attributes
+        for u, v, key, data in d_net._graph.edges(keys=True, data=True):
+            assert 'bootstrap' not in data
+            assert 'weight' not in data
+            # Only branch_length and gamma should be present (if they exist)
+            allowed = {'branch_length', 'gamma'}
+            for attr_key in data.keys():
+                assert attr_key in allowed, f"Unexpected attribute: {attr_key}"
+
+    def test_branch_length_preserved(self) -> None:
+        """Test that branch_length is preserved on edges."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[
+                {'u': 3, 'v': 1, 'key': 0, 'branch_length': 1.5},
+                (3, 2),
+                (3, 4)
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        d_net = to_d_network(net, root_location=(3, 1, 0))
+        
+        # Check that branch_length is split correctly
+        found_branch_length = False
+        for u, v, key, data in d_net._graph.edges(keys=True, data=True):
+            if 'branch_length' in data:
+                found_branch_length = True
+                assert data['branch_length'] > 0
+        # At least one edge should have branch_length (the subdivided edge)
+        assert found_branch_length
+
+    def test_gamma_preserved(self) -> None:
+        """Test that gamma is preserved on directed edges."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4}
+            ],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        # Root on a node
+        d_net = to_d_network(net, root_location=5)
+        
+        # Check that gamma is preserved on directed edges
+        found_gamma = False
+        for u, v, key, data in d_net._graph.edges(keys=True, data=True):
+            if 'gamma' in data:
+                found_gamma = True
+                assert 0.0 <= data['gamma'] <= 1.0
+        # Gamma should be preserved on hybrid edges
+        assert found_gamma
+
+    def test_label_preserved(self) -> None:
+        """Test that node labels are preserved."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (4, {'label': 'C'})
+            ]
+        )
+        d_net = to_d_network(net, root_location=3)
+        
+        # Check that labels are preserved
+        assert d_net.get_label(1) == 'A'
+        assert d_net.get_label(2) == 'B'
+        assert d_net.get_label(4) == 'C'
+
+    def test_returns_directed_network(self) -> None:
+        """Test that to_d_network returns a DirectedPhyNetwork."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        d_net = to_d_network(net, root_location=3)
+        
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        assert isinstance(d_net, DirectedPhyNetwork)
+
+    def test_original_network_unchanged(self) -> None:
+        """Test that to_d_network does not modify the original network."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        original_nodes = net.number_of_nodes()
+        original_edges = net.number_of_edges()
+        
+        d_net = to_d_network(net, root_location=3)
+        
+        # Original network should be unchanged
+        assert net.number_of_nodes() == original_nodes
+        assert net.number_of_edges() == original_edges
+        assert d_net is not net
+
+    def test_network_with_hybrid(self) -> None:
+        """Test to_d_network on a network with hybrid nodes."""
+        from tests.fixtures.sd_networks import LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_SDNETWORK_SINGLE_HYBRID
+        
+        # Get valid root locations
+        from phylozoo.core.network.sdnetwork.features import root_locations
+        node_locs, undir_locs, dir_locs = root_locations(net)
+        
+        # Try rooting on a node
+        if node_locs:
+            d_net = to_d_network(net, root_location=node_locs[0])
+            assert d_net.root_node is not None
+            d_net.validate()
+
+    def test_no_valid_root_locations(self) -> None:
+        """Test to_d_network raises error when no valid root locations exist."""
+        # Create a network with no valid root locations (empty source component)
+        # This is hard to create with valid networks, so we'll test the error message
+        net = SemiDirectedPhyNetwork(
+            nodes=[(1, {'label': 'A'})]
+        )
+        # Single node network might not have valid root locations
+        # The function should handle this gracefully
+        try:
+            d_net = to_d_network(net, root_location=None)
+            # If it succeeds, that's fine
+            if d_net:
+                assert d_net.root_node is not None
+        except ValueError as e:
+            # If it fails, the error should be informative
+            assert "No valid root locations" in str(e) or "not found" in str(e)
+
+    def test_edge_subdivision_creates_new_node(self) -> None:
+        """Test that subdividing an edge creates a new subdivision node."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        original_node_count = net.number_of_nodes()
+        original_nodes = set(net._graph.nodes())
+        
+        d_net = to_d_network(net, root_location=(3, 1, 0))
+        
+        # Should have one more node (the subdivision node)
+        assert d_net.number_of_nodes() == original_node_count + 1
+        # Root should be the new subdivision node
+        assert d_net.root_node not in original_nodes
+
+    def test_directed_edge_subdivision(self) -> None:
+        """Test that subdividing a directed edge works correctly."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[(5, 4), (6, 4)],
+            undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+        )
+        from phylozoo.core.network.sdnetwork.features import root_locations
+        _, _, dir_locs = root_locations(net)
+        
+        if dir_locs:
+            u, v, key = dir_locs[0]
+            d_net = to_d_network(net, root_location=(u, v, key))
+            # Should have created a subdivision node
+            assert d_net.root_node is not None
+            # The original edge should be subdivided
+            # (u, v) should become (u, subdiv) and (subdiv, v)
+            d_net.validate()

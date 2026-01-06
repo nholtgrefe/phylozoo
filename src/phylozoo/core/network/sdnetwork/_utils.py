@@ -11,6 +11,7 @@ from ...primitives.m_multigraph.transformations import suppress_degree2_node as 
 
 if TYPE_CHECKING:
     from ...primitives.m_multigraph.base import MixedMultiGraph
+    from .sd_phynetwork import SemiDirectedPhyNetwork
 
 
 def _merge_attrs_for_degree2_suppression_mixed(
@@ -230,4 +231,212 @@ def _merge_attrs_for_parallel_identification_mixed(
     
     # All other attributes (bootstrap, etc.) are removed
     return merged
+
+
+def _split_attrs_for_subdividing_edge(
+    edge_data: dict[str, Any],
+    subdivision_location: float = 0.5,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Split edge attributes for subdividing an edge into two edges.
+    
+    When subdividing an edge (u, v) into (u, w) and (w, v), this function
+    splits the attributes appropriately:
+    - branch_length: Split at subdivision_location
+      - First edge (u, w): branch_length * subdivision_location
+      - Second edge (w, v): branch_length * (1 - subdivision_location)
+    - gamma: If exists, goes to the second edge (w, v) which maintains direction
+      for directed edges. The first edge does not get gamma.
+    - All other attributes (bootstrap, etc.) are removed.
+    
+    Parameters
+    ----------
+    edge_data : dict[str, Any]
+        Attributes of the edge to be subdivided.
+    subdivision_location : float, optional
+        Location along the edge where subdivision occurs, in [0.0, 1.0].
+        A value of 0.5 means the edge is split in the middle.
+        By default 0.5.
+    
+    Returns
+    -------
+    tuple[dict[str, Any], dict[str, Any]]
+        A tuple of two edge data dictionaries:
+        1. Attributes for the first edge (u, w)
+        2. Attributes for the second edge (w, v)
+    
+    Raises
+    ------
+    ValueError
+        If subdivision_location is not in [0.0, 1.0].
+    
+    Notes
+    -----
+    This is an internal helper function for edge subdivision operations.
+    
+    Examples
+    --------
+    >>> edge_data = {'branch_length': 1.0, 'gamma': 0.6, 'bootstrap': 0.95}
+    >>> first_attrs, second_attrs = _split_attrs_for_subdividing_edge(edge_data, 0.5)
+    >>> first_attrs
+    {'branch_length': 0.5}
+    >>> second_attrs
+    {'branch_length': 0.5, 'gamma': 0.6}
+    
+    >>> edge_data = {'branch_length': 2.0}
+    >>> first_attrs, second_attrs = _split_attrs_for_subdividing_edge(edge_data, 0.3)
+    >>> first_attrs
+    {'branch_length': 0.6}
+    >>> second_attrs
+    {'branch_length': 1.4}
+    """
+    if not 0.0 <= subdivision_location <= 1.0:
+        raise ValueError(
+            f"subdivision_location must be in [0.0, 1.0], got {subdivision_location}"
+        )
+    
+    first_attrs: dict[str, Any] = {}
+    second_attrs: dict[str, Any] = {}
+    
+    # Handle branch_length: split at subdivision_location
+    branch_length = edge_data.get('branch_length') if edge_data else None
+    if branch_length is not None:
+        first_attrs['branch_length'] = branch_length * subdivision_location
+        second_attrs['branch_length'] = branch_length * (1.0 - subdivision_location)
+    
+    # Handle gamma: goes to second edge only
+    gamma = edge_data.get('gamma') if edge_data else None
+    if gamma is not None:
+        second_attrs['gamma'] = gamma
+    
+    # All other attributes (bootstrap, etc.) are removed
+    return first_attrs, second_attrs
+
+
+def _subdivide_edge(
+    network: 'SemiDirectedPhyNetwork',
+    u: Any,
+    v: Any,
+    key: int,
+    subdivision_location: float = 0.5,
+) -> tuple['MixedMultiGraph', Any]:
+    """
+    Subdivide an edge in a semi-directed network.
+    
+    This function subdivides an edge (u, v) into two edges: (u, w) and (w, v),
+    where w is a new subdivision node. The edge attributes are split appropriately
+    using `_split_attrs_for_subdividing_edge`.
+    
+    - Directed edge u->v becomes u-w (undirected) and w->v (directed)
+    - Undirected edge u-v becomes u-w-v (both undirected)
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    u : Any
+        First endpoint of the edge to subdivide.
+    v : Any
+        Second endpoint of the edge to subdivide.
+    key : int
+        Edge key for parallel edges.
+    subdivision_location : float, optional
+        Location along the edge where subdivision occurs, in [0.0, 1.0].
+        A value of 0.5 means the edge is split in the middle.
+        By default 0.5.
+    
+    Returns
+    -------
+    tuple[MixedMultiGraph, Any]
+        A tuple containing:
+        1. The modified MixedMultiGraph with the subdivided edge
+        2. The new subdivision node ID
+    
+    Raises
+    ------
+    ValueError
+        If the edge is not found in the network, or if subdivision_location
+        is not in [0.0, 1.0].
+    
+    Notes
+    -----
+    This is an internal helper function for network transformations.
+    The function creates a copy of the network's graph, so the original
+    network is not modified.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[{'u': 3, 'v': 1, 'key': 0, 'branch_length': 1.0}],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
+    >>> graph, subdiv_node = _subdivide_edge(net, 3, 1, 0, 0.5)
+    >>> subdiv_node in graph.nodes()
+    True
+    >>> graph._undirected.has_edge(3, subdiv_node)
+    True
+    >>> graph._undirected.has_edge(subdiv_node, 1)
+    True
+    """
+    
+    # Copy the graph
+    graph_copy = network._graph.copy()
+    
+    # Check if edge exists and determine if it's directed or undirected
+    edge_exists = False
+    is_directed = False
+    edge_data: dict[str, Any] = {}
+    
+    # Check directed edges
+    if graph_copy._directed.has_edge(u, v, key=key):
+        edge_exists = True
+        is_directed = True
+        edge_data = graph_copy._directed[u][v][key].copy()
+    # Check undirected edges (need to check both directions)
+    elif graph_copy._undirected.has_edge(u, v, key=key):
+        edge_exists = True
+        is_directed = False
+        edge_data = graph_copy._undirected[u][v][key].copy()
+    elif graph_copy._undirected.has_edge(v, u, key=key):
+        edge_exists = True
+        is_directed = False
+        edge_data = graph_copy._undirected[v][u][key].copy()
+    
+    if not edge_exists:
+        raise ValueError(
+            f"Edge ({u}, {v}, key={key}) not found in the network"
+        )
+    
+    # Remove the edge
+    if is_directed:
+        graph_copy.remove_directed_edge(u, v, key=key)
+    else:
+        # For undirected edges, try both directions
+        try:
+            graph_copy.remove_edge(u, v, key=key)
+        except (KeyError, ValueError):
+            graph_copy.remove_edge(v, u, key=key)
+    
+    # Create subdivision vertex
+    max_node = max(graph_copy.nodes(), default=-1)
+    subdiv_node = max_node + 1
+    graph_copy.add_node(subdiv_node)
+    
+    # Split attributes using helper function
+    first_attrs, second_attrs = _split_attrs_for_subdividing_edge(
+        edge_data, subdivision_location
+    )
+    
+    # Add edges:
+    # - Directed u->v becomes u-w (undirected) and w->v (directed)
+    # - Undirected u-v becomes u-w-v (both undirected)
+    if is_directed:
+        graph_copy.add_undirected_edge(u, subdiv_node, **first_attrs)
+        graph_copy.add_directed_edge(subdiv_node, v, **second_attrs)
+    else:
+        graph_copy.add_undirected_edge(u, subdiv_node, **first_attrs)
+        graph_copy.add_undirected_edge(subdiv_node, v, **second_attrs)
+    
+    return graph_copy, subdiv_node
 

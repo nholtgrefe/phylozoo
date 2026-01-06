@@ -6,16 +6,21 @@ and mixed phylogenetic networks (e.g., blobs, omnians, etc.).
 """
 
 from functools import lru_cache
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 from ...primitives.m_multigraph.features import (
     bi_edge_connected_components,
     cut_edges as graph_cut_edges,
     cut_vertices as graph_cut_vertices,
+    source_components,
 )
 from .base import MixedPhyNetwork
+from .sd_phynetwork import SemiDirectedPhyNetwork
 
 T = TypeVar('T')
+
+# Root location can be a node or an edge
+RootLocation = Union[T, tuple[T, T, int]]
 
 
 @lru_cache(maxsize=128)
@@ -304,4 +309,68 @@ def cut_vertices(network: MixedPhyNetwork) -> set[T]:
 def omnians(network: MixedPhyNetwork) -> set[T]:
     """Stub for omnians function."""
     return set()
+
+
+def root_locations(
+    network: SemiDirectedPhyNetwork,
+) -> tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]:
+    """
+    Get all valid root locations for a semi-directed network.
+    
+    Returns three separate lists:
+    1. Node root locations: non-leaf nodes in the source component
+    2. Undirected edge root locations: undirected edges in the source component
+    3. Directed edge root locations: directed edges exiting the source component
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    
+    Returns
+    -------
+    tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]
+        A tuple containing:
+        - List of node root locations (non-leaf nodes in source component)
+        - List of undirected edge root locations as (u, v, key) tuples
+        - List of directed edge root locations as (u, v, key) tuples (outgoing from source component)
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> node_locs, undir_locs, dir_locs = root_locations(net)
+    >>> 3 in node_locs  # Node 3 is a valid root location
+    True
+    >>> (3, 1, 0) in undir_locs  # Edge (3, 1) is also a valid root location
+    True
+    """
+    # Find source components
+    components = source_components(network._graph)
+    if len(components) != 1:
+        raise ValueError(
+            f"Semi-directed network must have exactly one source component; found {len(components)}"
+        )
+    
+    nodes_in_component, undirected_edges_in_comp, outgoing_edges = components[0]
+    if not nodes_in_component:
+        raise ValueError("Source component is empty")
+    
+    internal_nodes = network.internal_nodes
+    
+    # 1. Node root locations: all non-leaf nodes in the source component
+    node_locations: list[T] = [
+        node for node in nodes_in_component if node in internal_nodes
+    ]
+    
+    # 2. Undirected edge root locations: all undirected edges in the source component
+    undirected_edge_locations: list[tuple[T, T, int]] = list(undirected_edges_in_comp)
+    
+    # 3. Directed edge root locations: exactly the outgoing edges from the source component
+    directed_edge_locations: list[tuple[T, T, int]] = list(outgoing_edges)
+    
+    return (node_locations, undirected_edge_locations, directed_edge_locations)
 

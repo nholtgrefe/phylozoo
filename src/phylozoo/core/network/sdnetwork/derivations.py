@@ -14,23 +14,27 @@ and mixed phylogenetic networks (e.g., splits, quartets, distances, blobtrees, s
 # - Subnetwork extraction
 # - Displayed tree extraction
 import itertools
-from typing import Any, Iterator, Literal
+from typing import TYPE_CHECKING, Any, Iterator, Literal
 
 import numpy as np
 import networkx as nx
 
+if TYPE_CHECKING:
+    from ...network.dnetwork import DirectedPhyNetwork
+
 from . import MixedPhyNetwork
 from .classifications import is_tree
-from .features import blobs
+from .features import blobs, root_locations, RootLocation
 from .transformations import suppress_2_blobs as suppress_2_blobs_fn, identify_parallel_edges as identify_parallel_edges_fn
 from ...split import Split, SplitSystem, WeightedSplitSystem
 from .sd_phynetwork import SemiDirectedPhyNetwork
-from ._utils import _suppress_deg2_nodes
+from ._utils import _suppress_deg2_nodes, _subdivide_edge
 from .conversions import sdnetwork_from_graph
 from ...primitives.m_multigraph.transformations import (
     identify_vertices as mm_identify_vertices,
     suppress_degree2_node as mm_suppress_degree2_node,
     subgraph as mm_subgraph,
+    orient_away_from_vertex,
 )
 from ...primitives.m_multigraph.features import updown_path_vertices
 from ...primitives.m_multigraph import MixedMultiGraph
@@ -988,3 +992,158 @@ def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
         return WeightedSplitSystem()
     
     return WeightedSplitSystem(list(split_weights.keys()), weights=split_weights)
+
+
+def _root_sd_network_at(
+    network: SemiDirectedPhyNetwork,
+    root_location: RootLocation,
+) -> 'DirectedPhyNetwork':
+    """
+    Root a semi-directed network at the specified location.
+    
+    This is an internal helper function that performs the actual rooting operation.
+    It subdivides edges if needed, orients the graph, and converts to a directed network.
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network to root.
+    root_location : RootLocation
+        The root location. Can be:
+        - A node (T): node in the network
+        - An edge (tuple[T, T, int]): edge in the network as (u, v, key)
+    
+    Returns
+    -------
+    DirectedPhyNetwork
+        A directed phylogenetic network rooted at the specified location.
+    
+    Raises
+    ------
+    ValueError
+        If the root location is not in the network, or if rooting/orientation fails.
+    """
+    # Local import to avoid circular dependencies
+    from ...network.dnetwork.conversions import dnetwork_from_graph
+    
+    # Step 1: Handle root location and get the graph
+    root_vertex: Any
+    
+    if isinstance(root_location, tuple) and len(root_location) == 3:
+        # root_location is an edge: (u, v, key)
+        u, v, key = root_location
+        
+        # Use _subdivide_edge helper to subdivide the edge
+        # This returns a new MixedMultiGraph with the subdivided edge
+        graph_copy, subdiv_node = _subdivide_edge(network, u, v, key)
+        
+        # Root vertex is the subdivision node
+        root_vertex = subdiv_node
+    else:
+        # root_location is a node - copy the graph
+        graph_copy = network._graph.copy()
+        if root_location not in graph_copy.nodes():
+            raise ValueError(
+                f"Node {root_location} not found in the network"
+            )
+        root_vertex = root_location
+    
+    # Step 2: Filter attributes
+    # Remove all graph attributes
+    graph_copy._directed.graph.clear()
+    graph_copy._undirected.graph.clear()
+    
+    # Filter node attributes: only keep 'label'
+    allowed_node_attrs = {'label'}
+    for node in graph_copy.nodes():
+        if node in graph_copy._directed.nodes:
+            for attr_key in list(graph_copy._directed.nodes[node].keys()):
+                if attr_key not in allowed_node_attrs:
+                    del graph_copy._directed.nodes[node][attr_key]
+        if node in graph_copy._undirected.nodes:
+            for attr_key in list(graph_copy._undirected.nodes[node].keys()):
+                if attr_key not in allowed_node_attrs:
+                    del graph_copy._undirected.nodes[node][attr_key]
+    
+    # Filter edge attributes: only keep 'gamma' and 'branch_length'
+    allowed_edge_attrs = {'gamma', 'branch_length'}
+    for u, v, key, data in graph_copy._directed.edges(keys=True, data=True):
+        for attr_key in list(data.keys()):
+            if attr_key not in allowed_edge_attrs:
+                del graph_copy._directed[u][v][key][attr_key]
+    for u, v, key, data in graph_copy._undirected.edges(keys=True, data=True):
+        for attr_key in list(data.keys()):
+            if attr_key not in allowed_edge_attrs:
+                del graph_copy._undirected[u][v][key][attr_key]
+    
+    # Step 3: Orient the graph away from root vertex
+    try:
+        oriented_dm = orient_away_from_vertex(graph_copy, root_vertex)
+    except ValueError as e:
+        raise ValueError(
+            f"Failed to orient network away from root location {root_location}: {e}"
+        )
+    
+    # Step 4: Convert to DirectedPhyNetwork
+    try:
+        return dnetwork_from_graph(oriented_dm)
+    except ValueError as e:
+        raise ValueError(
+            f"Failed to convert oriented network to DirectedPhyNetwork: {e}"
+        )
+
+
+def to_d_network(
+    network: SemiDirectedPhyNetwork,
+    root_location: RootLocation | None = None,
+) -> 'DirectedPhyNetwork':
+    """
+    Convert a semi-directed network to a directed network by rooting it.
+    
+    The network is rooted at the specified location. If no location is provided,
+    a default location is chosen from the valid root locations.
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network to convert.
+    root_location : RootLocation, optional
+        The root location. Can be:
+        - A node (T): non-leaf node in the source component
+        - An edge (tuple[T, T, int]): edge in the source component as (u, v, key)
+        If None, a default location is chosen from valid root locations.
+        By default None.
+    
+    Returns
+    -------
+    DirectedPhyNetwork
+        A directed phylogenetic network rooted at the specified location.
+    
+    Raises
+    ------
+    ValueError
+        If the root location is invalid or not in the network's valid root locations.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> d_net = to_d_network(net, root_location=3)
+    >>> d_net.root_node
+    3
+    """
+    # If no root location provided, find one using root_locations
+    if root_location is None:
+        node_locs, undir_edge_locs, dir_edge_locs = root_locations(network)
+        all_valid_locations: list[RootLocation] = (
+            list(node_locs) + list(undir_edge_locs) + list(dir_edge_locs)
+        )
+        if not all_valid_locations:
+            raise ValueError("No valid root locations found for the network")
+        root_location = all_valid_locations[0]
+    
+    # Call the helper function to perform the rooting
+    return _root_sd_network_at(network, root_location)

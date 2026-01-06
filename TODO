@@ -21,4 +21,5 @@ use novalidation more
 move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?
 check all stubs
 add pretty_print function to classes.
+Io and or parallelrization util module
 

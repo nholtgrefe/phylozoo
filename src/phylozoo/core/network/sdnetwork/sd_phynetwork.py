@@ -313,7 +313,13 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
         root = internal_in_component[0]
         
         # Step 3: Orient away from r
-        oriented_dm = orient_away_from_vertex(self._graph, root)
+        try:
+            oriented_dm = orient_away_from_vertex(self._graph, root)
+        except ValueError as e:
+            raise ValueError(
+                f"Semi-directed network constraint validation failed: "
+                f"orienting away from root location {root} failed: {e}"
+            )
         
         # Step 4: Build a DirectedPhyNetwork from the oriented graph
         directed_edges: list[dict[str, Any]] = []
