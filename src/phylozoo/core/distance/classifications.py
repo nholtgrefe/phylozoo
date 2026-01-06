@@ -8,7 +8,6 @@ TODO: kalmanson should return a circular ordering?
 
 from __future__ import annotations
 
-import itertools
 from typing import TypeVar
 
 import numpy as np
