@@ -73,7 +73,6 @@ def has_parallel_edges(network: 'DirectedPhyNetwork') -> bool:
     return graph_has_parallel_edges(network._graph)
 
 
-@lru_cache(maxsize=128)
 def level(network: 'DirectedPhyNetwork') -> int:
     """
     Return the (strict) level of the network.
@@ -123,7 +122,6 @@ def level(network: 'DirectedPhyNetwork') -> int:
     return max_level
 
 
-@lru_cache(maxsize=128)
 def vertex_level(network: 'DirectedPhyNetwork') -> int:
     """
     Return the vertex level of the network.
@@ -164,7 +162,6 @@ def vertex_level(network: 'DirectedPhyNetwork') -> int:
     return max_vertex_level
 
 
-@lru_cache(maxsize=128)
 def reticulation_number(network: 'DirectedPhyNetwork') -> int:
     """
     Return the reticulation number of the network.
@@ -320,5 +317,15 @@ def is_stackfree(network: 'DirectedPhyNetwork') -> bool:
 
 
 def is_treechild(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_treechild function."""
+    return False
+
+
+def is_treebased(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_treechild function."""
+    return False
+
+
+def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_treechild function."""
     return False

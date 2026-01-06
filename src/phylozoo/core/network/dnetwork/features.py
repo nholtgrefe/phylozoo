@@ -5,6 +5,7 @@ This module provides functions to extract and identify features of directed
 phylogenetic networks (e.g., LSA node, blobs, omnians, etc.).
 """
 
+import warnings
 from collections import deque
 from functools import lru_cache
 from typing import Any, TypeVar
@@ -395,6 +396,89 @@ def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
 
 
 def omnians(network: DirectedPhyNetwork) -> set[T]:
-    """Stub for omnians function."""
-    return set()
+    """
+    Find all omnian nodes in a directed phylogenetic network.
+    
+    An omnian is an internal node (non-leaf) where all of its children are hybrid nodes.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork[T]
+        The directed phylogenetic network.
+    
+    Returns
+    -------
+    set[T]
+        Set of omnian node identifiers.
+    
+    Warns
+    -----
+    UserWarning
+        If the network contains parallel edges, as omnians are not defined for
+        networks with parallel edges in the original paper. Behavior may be unexpected.
+    
+    Notes
+    -----
+    This function is based on the definition from:
+    
+    Jetten, Laura, and Leo van Iersel. "Nonbinary tree-based phylogenetic networks."
+    IEEE/ACM transactions on computational biology and bioinformatics 15.1 (2016): 205-217.
+    
+    Examples
+    --------
+    >>> # Network with omnians (nodes 5 and 8 both have all children as hybrids)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (7, 5), (7, 8), (7, 9),  # Root to tree nodes
+    ...         (5, 4), (5, 6),  # Node 5 to hybrid nodes 4 and 6
+    ...         (8, 4), (8, 6),  # Node 8 to hybrid nodes 4 and 6
+    ...         (9, 4), (9, 6),  # Node 9 to hybrid nodes 4 and 6
+    ...         (4, 1), (6, 2)   # Hybrids to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> omnians(net)
+    {5, 8, 9}
+    
+    >>> # Network with no omnians
+    >>> net2 = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> omnians(net2)
+    set()
+    """
+    # Check for parallel edges and warn (import here to avoid circular import)
+    from .classifications import has_parallel_edges
+    
+    # Single-node network has no omnians
+    if network.number_of_nodes() == 1:
+        return set()
+    
+    # Parallel edges warn
+    if has_parallel_edges(network):
+        warnings.warn(
+            "Network contains parallel edges. Omnians are not defined for networks "
+            "with parallel edges in the original paper (Jetten & van Iersel, 2016). "
+            "Behavior may be unexpected. Proceed with care.",
+            UserWarning,
+            stacklevel=2
+        )
+    
+    # Get sets of leaves and hybrid nodes
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
+    
+    # Find omnians: internal nodes (not leaves) where all children are hybrid nodes
+    omnian_set: set[T] = set()
+    
+    for node in network.internal_nodes:      
+        # Get all children of this node
+        children = list(network.children(node))
+
+        # Check if all children are hybrid nodes
+        if all(child in hybrid_nodes for child in children):
+            omnian_set.add(node)
+    
+    return omnian_set
 

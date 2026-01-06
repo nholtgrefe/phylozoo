@@ -43,7 +43,6 @@ def has_parallel_edges(network: 'MixedPhyNetwork') -> bool:
     return graph_has_parallel_edges(network._graph)
 
 
-@lru_cache(maxsize=128)
 def level(network: 'SemiDirectedPhyNetwork') -> int:
     """
     Return the level of the network.
@@ -94,7 +93,6 @@ def level(network: 'SemiDirectedPhyNetwork') -> int:
     return max_level
 
 
-@lru_cache(maxsize=128)
 def vertex_level(network: 'SemiDirectedPhyNetwork') -> int:
     """
     Return the vertex level of the network.
@@ -136,7 +134,6 @@ def vertex_level(network: 'SemiDirectedPhyNetwork') -> int:
     return max_vertex_level
 
 
-@lru_cache(maxsize=128)
 def reticulation_number(network: 'SemiDirectedPhyNetwork') -> int:
     """
     Return the reticulation number of the network.
@@ -292,3 +289,12 @@ def is_weakly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_weakly_treechild function."""
     return False
 
+
+def is_strongly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_strongly_treebased function."""
+    return False
+
+
+def is_weakly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
+    """Stub for is_weakly_treebased function."""
+    return False
