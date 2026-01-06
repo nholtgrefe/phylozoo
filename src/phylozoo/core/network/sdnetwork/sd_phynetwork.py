@@ -333,7 +333,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
             for leaf in oriented_leaves
         }
         
-        with no_validation(only=["validate", "_validate_*"]):
+        with no_validation(methods=["validate", "_validate_*"]):
             try:
                 nodes = [(leaf, {"label": label}) for leaf, label in taxa_mapping.items()] if taxa_mapping else None
                 d_network = DirectedPhyNetwork(

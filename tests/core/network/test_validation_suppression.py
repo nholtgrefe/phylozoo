@@ -50,7 +50,7 @@ class TestDirectedPhyNetworkValidationSuppression:
             net.validate()
         
         # Should not raise when suppressed
-        with no_validation(only=["validate"]):
+        with no_validation(methods=["validate"]):
             net.validate()  # Should return None silently
 
     def test_helper_methods_can_be_suppressed(self) -> None:
@@ -72,7 +72,7 @@ class TestDirectedPhyNetworkValidationSuppression:
         
         # When structural constraints are suppressed, connectivity check is skipped
         # The network structure is invalid but validation passes because structural checks are suppressed
-        with no_validation(only=["_validate_structural_constraints"]):
+        with no_validation(methods=["_validate_structural_constraints"]):
             net.validate()  # Should succeed because connectivity check is suppressed
 
 
@@ -117,7 +117,7 @@ class TestMixedPhyNetworkValidationSuppression:
             net.validate()
         
         # Should not raise when suppressed
-        with no_validation(only=["validate"]):
+        with no_validation(methods=["validate"]):
             net.validate()  # Should return None silently
 
 
@@ -161,7 +161,7 @@ class TestSemiDirectedPhyNetworkValidationSuppression:
             net.validate()
         
         # Should not raise when suppressed
-        with no_validation(only=["validate"]):
+        with no_validation(methods=["validate"]):
             net.validate()  # Should return None silently
 
 
@@ -229,7 +229,7 @@ class TestWildcardPatterns:
         # When suppressed using wildcard pattern _validate_struct*, connectivity check is skipped
         # The disconnected nodes have valid degrees (5 has in-degree 1, out-degree 0; 6 has in-degree 1, out-degree 0)
         # So validate() should succeed when structural constraints are suppressed
-        with no_validation(only=["_validate_struct*"]):
+        with no_validation(methods=["_validate_struct*"]):
             net.validate()  # Should succeed because connectivity check is suppressed via wildcard pattern
 
 
