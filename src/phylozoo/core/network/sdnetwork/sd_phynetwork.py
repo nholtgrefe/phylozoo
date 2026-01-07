@@ -15,12 +15,13 @@ from ...primitives.m_multigraph.features import (
 )
 from ...primitives.m_multigraph.transformations import orient_away_from_vertex
 from ....utils.validation import no_validation, validation_aware
+from ....utils.io import IOMixin
 from .base import MixedPhyNetwork
 
 T = TypeVar('T')
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class SemiDirectedPhyNetwork(MixedPhyNetwork):
+class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     """
     A semi-directed phylogenetic network.
     
@@ -41,7 +42,8 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
     -----
     The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
     construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
-    ``MixedMultiGraph``, or load from a file/eNewick string.
+    ``MixedMultiGraph``, or load from a file. I/O support: eNewick format (default, extensions: 
+    `.nwk`, `.newick`, `.enewick`, `.eNewick`, `.enw`) and PhyloZoo-DOT format (extension: `.pzdot`).
 
     Parameters
     ----------
@@ -147,6 +149,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork):
     >>> net4.get_gamma(6, 4)
     0.4
     """
+    
+    # I/O format configuration
+    _default_format: str = 'newick'
+    _supported_formats: list[str] = ['newick', 'phylozoo-dot']
     
     def __init__(
         self,
