@@ -398,21 +398,70 @@ class QuartetProfileSet:
     
     def __repr__(self) -> str:
         """
-        Return string representation of the profile set.
+        Return string representation of the profile set that can be used to initialize it.
         
         Returns
         -------
         str
-            String representation showing all profiles.
+            String representation that can be used to recreate the object.
         """
         if len(self._profiles) == 0:
             return "QuartetProfileSet(profiles={})"
         
-        profiles_str = ", ".join(
-            f"{set(taxa)}: {profile}" 
-            for taxa, (profile, weight) in self._profiles.items()
+        # Build list of (profile, weight) tuples for initialization
+        # Use the quartets dict directly since that's what __init__ accepts
+        profile_items = []
+        for taxa, (profile, weight) in self._profiles.items():
+            # Get the quartets dict from the profile
+            quartets_dict = dict(profile.quartets)
+            profile_items.append(f"(QuartetProfile({repr(quartets_dict)}), {weight})")
+        
+        profiles_str = ", ".join(profile_items)
+        return f"QuartetProfileSet(profiles=[{profiles_str}])"
+    
+    def __str__(self) -> str:
+        """
+        Return human-readable string representation of the quartet profile set.
+        
+        Displays one line per profile, showing the profile (using its __str__ method)
+        and its profile weight. Aligns with QuartetProfile's __str__ format.
+        
+        Returns
+        -------
+        str
+            Human-readable string representation.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> q1 = Quartet(Split({1, 2}, {3, 4}))
+        >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+        >>> profile1 = QuartetProfile({q1: 0.8, q2: 0.2})
+        >>> profileset = QuartetProfileSet(profiles=[(profile1, 1.0)])
+        >>> str(profileset)
+        'QuartetProfileSet({\\n  QuartetProfile({...}) [weight: 1.0]\\n})'
+        """
+        if len(self._profiles) == 0:
+            return "QuartetProfileSet({})"
+        
+        # Sort profiles by taxa for consistent display
+        sorted_profiles = sorted(
+            self._profiles.items(),
+            key=lambda item: sorted(item[0])
         )
-        return f"QuartetProfileSet(profiles={{{profiles_str}}})"
+        
+        # Show all profiles with weights, one per line
+        profile_lines = []
+        for taxa, (profile, weight) in sorted_profiles:
+            # Use profile's __str__ directly, followed by weight
+            profile_str = str(profile)
+            profile_lines.append(f"  {profile_str} [weight: {weight}],")
+        
+        # Remove trailing comma from last line
+        if profile_lines:
+            profile_lines[-1] = profile_lines[-1].rstrip(',')
+        
+        return f"QuartetProfileSet({{\n" + "\n".join(profile_lines) + "\n})"
 
 
 

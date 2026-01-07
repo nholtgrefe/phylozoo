@@ -534,7 +534,7 @@ class CircularOrdering(CircularSetOrdering):
             String representation showing the elements in order.
         """
         return f"CircularOrdering({list(self._order)})"
-    
+
     def __iter__(self) -> Iterator[T]:
         """
         Return an iterator over the elements in circular order.

@@ -1035,7 +1035,7 @@ def displayed_splits(network: DirectedPhyNetwork) -> WeightedSplitSystem:
     if not split_weights:
         return WeightedSplitSystem()
     
-    return WeightedSplitSystem(list(split_weights.keys()), weights=split_weights)
+    return WeightedSplitSystem(split_weights)
 
 
 def displayed_quartets(network: DirectedPhyNetwork) -> QuartetProfileSet:

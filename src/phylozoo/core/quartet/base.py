@@ -330,4 +330,39 @@ class Quartet:
         if self._split is None:
             return f"Quartet({set(self._taxa)})"
         return f"Quartet({self._split})"
+    
+    def __str__(self) -> str:
+        """
+        Return human-readable string representation of the quartet.
+        
+        For resolved quartets, displays as "Quartet(a b | c d)".
+        For unresolved (star) quartets, displays as "Quartet(a b c d)".
+        
+        Returns
+        -------
+        str
+            Human-readable string representation.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> quartet = Quartet(Split({1, 2}, {3, 4}))
+        >>> str(quartet)
+        'Quartet(1 2 | 3 4)'
+        >>> star_quartet = Quartet({1, 2, 3, 4})
+        >>> str(star_quartet)
+        'Quartet(1 2 3 4)'
+        """
+        if self._split is None:
+            # Unresolved (star) quartet: show all taxa
+            sorted_taxa = sorted(self._taxa, key=str)
+            taxa_str = " ".join(str(taxon) for taxon in sorted_taxa)
+            return f"Quartet({taxa_str})"
+        else:
+            # Resolved quartet: show split format
+            sorted_set1 = sorted(self._split.set1, key=str)
+            sorted_set2 = sorted(self._split.set2, key=str)
+            set1_str = " ".join(str(taxon) for taxon in sorted_set1)
+            set2_str = " ".join(str(taxon) for taxon in sorted_set2)
+            return f"Quartet({set1_str} | {set2_str})"
 

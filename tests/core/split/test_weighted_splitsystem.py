@@ -19,7 +19,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         assert len(system) == 2
         assert split1 in system
         assert split2 in system
@@ -29,7 +29,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         assert system.get_weight(split1) == 2.5
         assert system.get_weight(split2) == 1.0
 
@@ -39,7 +39,7 @@ class TestWeightedSplitSystem:
         split2 = Split({1, 3}, {2, 4})
         split3 = Split({1, 4}, {2, 3})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         assert system.get_weight(split3) == 0.0
 
     def test_weighted_split_system_get_weight_different_elements_raises_error(self) -> None:
@@ -47,7 +47,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         # Split with different elements
         split_different = Split({1, 2}, {5, 6})
         with pytest.raises(ValueError, match="does not cover the same elements"):
@@ -58,7 +58,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         assert system.total_weight == 3.5
 
     def test_weighted_split_system_weights_property(self) -> None:
@@ -66,7 +66,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         weights_dict = system.weights
         assert weights_dict == {split1: 2.5, split2: 1.0}
         # Verify it's a copy (modifying it shouldn't affect the system)
@@ -81,24 +81,26 @@ class TestWeightedSplitSystem:
         # Zero weight should raise an error
         weights = {split1: 2.5, split2: 1.0, split3: 0.0}
         with pytest.raises(ValueError, match="Weight must be positive"):
-            WeightedSplitSystem([split1, split2, split3], weights=weights)
+            WeightedSplitSystem(weights)
 
     def test_weighted_split_system_no_weights_provided(self) -> None:
-        """Test creating weighted split system with no weights."""
+        """Test creating weighted split system with no weights (list of splits defaults to weight 1.0)."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
-        # No weights provided - should result in empty system
+        # List of splits - should assign weight 1.0 to each
         system = WeightedSplitSystem([split1, split2])
-        assert len(system) == 0
-        assert system.total_weight == 0.0
+        assert len(system) == 2
+        assert system.get_weight(split1) == 1.0
+        assert system.get_weight(split2) == 1.0
+        assert system.total_weight == 2.0
 
     def test_weighted_split_system_weights_from_keys(self) -> None:
         """Test creating weighted split system from weights dict only."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        # Don't provide splits parameter - should derive from weights.keys()
-        system = WeightedSplitSystem(weights=weights)
+        # Provide weights dict directly
+        system = WeightedSplitSystem(weights)
         assert len(system) == 2
         assert split1 in system
         assert split2 in system
@@ -108,23 +110,43 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         weights = {split1: -1.0}
         with pytest.raises(ValueError, match="Weight must be positive"):
-            WeightedSplitSystem([split1], weights=weights)
+            WeightedSplitSystem(weights)
+    
+    def test_weighted_split_system_duplicate_split_in_list_raises_error(self) -> None:
+        """Test that duplicate splits in list raise ValueError."""
+        split1 = Split({1, 2}, {3, 4})
+        split2 = Split({1, 3}, {2, 4})
+        # Duplicate split1 in list
+        with pytest.raises(ValueError, match="Duplicate split found"):
+            WeightedSplitSystem([split1, split2, split1])
+    
+    def test_weighted_split_system_duplicate_split_in_tuples_raises_error(self) -> None:
+        """Test that duplicate splits in list of tuples raise ValueError."""
+        split1 = Split({1, 2}, {3, 4})
+        split2 = Split({1, 3}, {2, 4})
+        # Duplicate split1 in list of tuples
+        with pytest.raises(ValueError, match="Duplicate split found"):
+            WeightedSplitSystem([(split1, 1.0), (split2, 2.0), (split1, 3.0)])
 
-    def test_weighted_split_system_weight_not_in_splits_raises_error(self) -> None:
-        """Test that weight for split not in splits raises ValueError."""
+    def test_weighted_split_system_dict_includes_all_splits(self) -> None:
+        """Test that dict input includes all splits in the dict."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        # split2 not in splits list
-        with pytest.raises(ValueError, match="Weight provided for split.*not in splits"):
-            WeightedSplitSystem([split1], weights=weights)
+        # All splits in dict should be included
+        system = WeightedSplitSystem(weights)
+        assert len(system) == 2
+        assert split1 in system
+        assert split2 in system
+        assert system.get_weight(split1) == 2.5
+        assert system.get_weight(split2) == 1.0
 
     def test_weighted_split_system_inherits_from_splitsystem(self) -> None:
         """Test that WeightedSplitSystem inherits from SplitSystem."""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         assert isinstance(system, SplitSystem)
 
     def test_weighted_split_system_elements(self) -> None:
@@ -132,7 +154,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         assert system.elements == {1, 2, 3, 4}
 
     def test_weighted_split_system_iteration(self) -> None:
@@ -140,7 +162,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         splits_list = list(system)
         assert len(splits_list) == 2
         assert split1 in splits_list
@@ -151,7 +173,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         repr_str = repr(system)
         assert "WeightedSplitSystem" in repr_str
         assert "2.5" in repr_str or "1.0" in repr_str
@@ -161,7 +183,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         # Try to modify attributes
         with pytest.raises(AttributeError, match="Cannot modify attribute"):
@@ -185,7 +207,7 @@ class TestWeightedSplitSystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         # Access multiple times - should return same value
         assert system.total_weight == 3.5
         assert system.total_weight == 3.5

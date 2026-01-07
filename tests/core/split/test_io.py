@@ -257,7 +257,7 @@ class TestWeightedSplitSystemIO:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 0.8, split2: 0.6}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         nexus_str = system.to_string()
         
@@ -272,7 +272,7 @@ class TestWeightedSplitSystemIO:
         """Test basic NEXUS file saving."""
         split1 = Split({1, 2}, {3, 4})
         weights = {split1: 2.5}
-        system = WeightedSplitSystem([split1], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = os.path.join(tmpdir, 'test.nexus')
@@ -357,7 +357,7 @@ END;"""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 0.8, split2: 0.6}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = os.path.join(tmpdir, 'test.nexus')
@@ -376,7 +376,7 @@ END;"""
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 0.8, split2: 0.6}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         nexus_str = system.to_string()
         system2 = WeightedSplitSystem.from_string(nexus_str)
@@ -402,7 +402,7 @@ END;"""
         """Test format conversion between files."""
         split1 = Split({1, 2}, {3, 4})
         weights = {split1: 2.5}
-        system = WeightedSplitSystem([split1], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         with tempfile.TemporaryDirectory() as tmpdir:
             input_file = os.path.join(tmpdir, 'input.nexus')
@@ -495,7 +495,7 @@ END;"""
         """Test I/O with string labels."""
         split1 = Split({'A', 'B'}, {'C', 'D'})
         weights = {split1: 1.5}
-        system = WeightedSplitSystem([split1], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         nexus_str = system.to_string()
         system2 = WeightedSplitSystem.from_string(nexus_str)
@@ -528,7 +528,7 @@ class TestFormatConversion:
         """Test converting WeightedSplitSystem file to SplitSystem."""
         split1 = Split({1, 2}, {3, 4})
         weights = {split1: 0.8}
-        system = WeightedSplitSystem([split1], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         with tempfile.TemporaryDirectory() as tmpdir:
             input_file = os.path.join(tmpdir, 'input.nexus')

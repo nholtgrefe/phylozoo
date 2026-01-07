@@ -19,13 +19,12 @@ class WeightedSplitSystem(SplitSystem):
     
     Parameters
     ----------
-    splits : set[Split] | list[Split], optional
-        Set or list of splits. If a list is provided, it will be converted
-        to a set to ensure uniqueness. By default None (empty set).
-    weights : dict[Split, float], optional
-        Dictionary mapping splits to their weights. All weights must be positive
-        (zero weights are not allowed). By default None (empty dict, which results
-        in an empty system).
+    splits : set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None, optional
+        Input splits with weights. Can be:
+        - A set or list of splits (each assigned weight 1.0)
+        - A dictionary mapping splits to their weights
+        - A list of (split, weight) tuples
+        By default None (empty system).
     
     Attributes
     ----------
@@ -41,24 +40,35 @@ class WeightedSplitSystem(SplitSystem):
     Raises
     ------
     ValueError
-        If not all splits cover the complete set of elements, if any weight
-        is not positive (zero or negative), or if a weight is provided for a split
-        not in the splits.
+        If not all splits cover the complete set of elements, or if any weight
+        is not positive (zero or negative).
     
     Examples
     --------
+    From list of splits (weight 1.0 each):
+    
     >>> split1 = Split({1, 2}, {3, 4})
     >>> split2 = Split({1, 3}, {2, 4})
+    >>> system = WeightedSplitSystem([split1, split2])
+    >>> system.get_weight(split1)
+    1.0
+    >>> system.get_weight(split2)
+    1.0
+    
+    From dictionary with weights:
+    
     >>> weights = {split1: 2.5, split2: 1.0}
-    >>> system = WeightedSplitSystem([split1, split2], weights=weights)
-    >>> len(system)
-    2
+    >>> system = WeightedSplitSystem(weights)
     >>> system.get_weight(split1)
     2.5
-    >>> system.get_weight(Split({1, 4}, {2, 3}))  # Split not in system
-    0.0
     >>> system.total_weight
     3.5
+    
+    From list of tuples:
+    
+    >>> system = WeightedSplitSystem([(split1, 0.8), (split2, 0.2)])
+    >>> system.get_weight(split1)
+    0.8
     
     Notes
     -----
@@ -74,50 +84,80 @@ class WeightedSplitSystem(SplitSystem):
     
     def __init__(
         self,
-        splits: (set[Split] | list[Split]) | None = None,
-        weights: dict[Split, float] | None = None,
+        splits: (
+            set[Split]
+            | list[Split]
+            | dict[Split, float]
+            | list[tuple[Split, float]]
+            | None
+        ) = None,
     ) -> None:
         """
         Initialize a weighted split system.
         
         Parameters
         ----------
-        splits : set[Split] | list[Split], optional
-            Set or list of splits. If a list is provided, it will be converted
-            to a set to ensure uniqueness. By default None (empty set).
-        weights : dict[Split, float], optional
-            Dictionary mapping splits to their weights. All weights must be positive.
-            Only splits with positive weights are stored in the system. By default None
-            (empty dict, which results in an empty system).
+        splits : set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None, optional
+            Input splits with weights. Can be:
+            - A set or list of splits (each assigned weight 1.0)
+            - A dictionary mapping splits to their weights
+            - A list of (split, weight) tuples
+            By default None (empty system).
         
         Raises
         ------
         ValueError
-            If not all splits cover the complete set of elements, if any weight
-            is non-positive, or if a weight is provided for a split not in the splits.
+            If not all splits cover the complete set of elements, or if any weight
+            is non-positive.
         """
-        if weights is None:
-            weights = {}
+        if splits is None:
+            splits = {}
+        
+        weights: dict[Split, float] = {}
+        
+        # Determine input type and extract splits and weights
+        if isinstance(splits, dict):
+            # Dictionary: splits are keys, values are weights
+            weights = dict(splits)
+        elif isinstance(splits, list):
+            # List: check if it's list of tuples or list of splits
+            if len(splits) == 0:
+                weights = {}
+            elif isinstance(splits[0], tuple):
+                # List of (split, weight) tuples
+                # Check for duplicate splits
+                seen_splits: set[Split] = set()
+                for split, weight in splits:
+                    if split in seen_splits:
+                        raise ValueError(f"Duplicate split found: {split}")
+                    seen_splits.add(split)
+                weights = dict(splits)
+            else:
+                # List of splits: assign weight 1.0 to each
+                # Check for duplicate splits
+                seen_splits: set[Split] = set()
+                for split in splits:
+                    if split in seen_splits:
+                        raise ValueError(f"Duplicate split found: {split}")
+                    seen_splits.add(split)
+                weights = {split: 1.0 for split in splits}
+        elif isinstance(splits, set):
+            # Set of splits: assign weight 1.0 to each
+            # Sets automatically handle uniqueness, so no need to check
+            weights = {split: 1.0 for split in splits}
+        else:
+            raise ValueError(
+                f"Expected set[Split], list[Split], dict[Split, float], "
+                f"list[tuple[Split, float]], or None, got {type(splits)}"
+            )
         
         # Validate that all weights are positive (zero and negative are not allowed)
         for split, weight in weights.items():
             if weight <= 0:
                 raise ValueError(f"Weight must be positive, got {weight} for split {split}")
         
-        # Determine splits: if splits is provided, use it; otherwise derive from weights.keys()
-        if splits is None:
-            # If no splits provided, derive from weights
-            splits = set(weights.keys())
-        elif not isinstance(splits, set):
-            splits = set(splits)
-        
-        # Validate that all weights correspond to splits
-        for split in weights:
-            if split not in splits:
-                raise ValueError(f"Weight provided for split {split} not in splits")
-        
         # Only include splits that have weights (all weights are positive at this point)
-        splits_with_weights = {split for split in splits if split in weights}
+        splits_with_weights = set(weights.keys())
         
         # Initialize parent with only splits that have weights
         super().__init__(splits_with_weights)
@@ -176,7 +216,7 @@ class WeightedSplitSystem(SplitSystem):
         --------
         >>> split1 = Split({1, 2}, {3, 4})
         >>> split2 = Split({1, 3}, {2, 4})
-        >>> system = WeightedSplitSystem([split1, split2], weights={split1: 2.5, split2: 1.0})
+        >>> system = WeightedSplitSystem({split1: 2.5, split2: 1.0})
         >>> system.get_weight(split1)
         2.5
         >>> system.get_weight(Split({1, 4}, {2, 3}))  # Split not in system
@@ -198,10 +238,49 @@ class WeightedSplitSystem(SplitSystem):
         Returns
         -------
         str
-            String representation including weights.
+            String representation that can be used to recreate the object.
         """
-        weights_str = ", ".join(f"{split}: {weight}" for split, weight in self._weights.items())
-        return f"WeightedSplitSystem(splits={list(self._splits)}, weights={{{weights_str}}})"
+        if len(self._weights) == 0:
+            return "WeightedSplitSystem()"
+        
+        weights_str = ", ".join(f"{repr(split)}: {weight}" for split, weight in self._weights.items())
+        return f"WeightedSplitSystem({{{weights_str}}})"
+    
+    def __str__(self) -> str:
+        """
+        Return human-readable string representation of the weighted split system.
+        
+        Displays the weighted split system showing all splits with their weights,
+        one per line. No truncation is applied.
+        
+        Returns
+        -------
+        str
+            Human-readable string representation.
+        
+        Examples
+        --------
+        >>> split1 = Split({1, 2}, {3, 4})
+        >>> split2 = Split({1, 3}, {2, 4})
+        >>> system = WeightedSplitSystem({split1: 2.5, split2: 1.0})
+        >>> str(system)
+        'WeightedSplitSystem({\\n  Split(1 2 | 3 4): 2.5,\\n  Split(1 3 | 2 4): 1.0\\n})'
+        """
+        n = len(self._splits)
+        if n == 0:
+            return "WeightedSplitSystem({})"
+        
+        # Sort splits for consistent display
+        sorted_splits = sorted(self._splits, key=lambda s: (str(s.set1), str(s.set2)))
+        
+        # Show all splits with weights, one per line
+        splits_lines = [
+            f"  {split}: {self._weights[split]}," for split in sorted_splits
+        ]
+        # Remove trailing comma from last line
+        if splits_lines:
+            splits_lines[-1] = splits_lines[-1].rstrip(',')
+        return f"WeightedSplitSystem({{\n" + "\n".join(splits_lines) + "\n})"
 
 
 def to_weightedsplitsystem(
@@ -247,5 +326,5 @@ def to_weightedsplitsystem(
         raise ValueError(f"default_weight must be positive, got {default_weight}")
     
     weights = {split: default_weight for split in system.splits}
-    return WeightedSplitSystem(list(system.splits), weights=weights)
+    return WeightedSplitSystem(weights)
 

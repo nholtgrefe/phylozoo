@@ -156,6 +156,40 @@ class SplitSystem(IOMixin):
         """
         return f"SplitSystem({list(self._splits)})"
     
+    def __str__(self) -> str:
+        """
+        Return human-readable string representation of the split system.
+        
+        Displays the split system showing all splits, one per line.
+        No truncation is applied.
+        
+        Returns
+        -------
+        str
+            Human-readable string representation.
+        
+        Examples
+        --------
+        >>> split1 = Split({1, 2}, {3, 4})
+        >>> split2 = Split({1, 3}, {2, 4})
+        >>> system = SplitSystem([split1, split2])
+        >>> str(system)
+        'SplitSystem({\\n  Split(1 2 | 3 4),\\n  Split(1 3 | 2 4)\\n})'
+        """
+        n = len(self._splits)
+        if n == 0:
+            return "SplitSystem({})"
+        
+        # Sort splits for consistent display
+        sorted_splits = sorted(self._splits, key=lambda s: (str(s.set1), str(s.set2)))
+        
+        # Show all splits, one per line
+        splits_lines = [f"  {split}," for split in sorted_splits]
+        # Remove trailing comma from last line
+        if splits_lines:
+            splits_lines[-1] = splits_lines[-1].rstrip(',')
+        return f"SplitSystem({{\n" + "\n".join(splits_lines) + "\n})"
+    
     def __iter__(self) -> Iterator[Split]:
         """
         Return an iterator over the splits.

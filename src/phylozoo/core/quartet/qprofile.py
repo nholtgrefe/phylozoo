@@ -405,4 +405,42 @@ class QuartetProfile:
             String representation.
         """
         return f"QuartetProfile(taxa={set(self._taxa)}, quartets={dict(self._quartets)})"
+    
+    def __str__(self) -> str:
+        """
+        Return human-readable string representation of the quartet profile.
+        
+        Displays one line per quartet, showing the quartet (using its __str__ method)
+        and its weight.
+        
+        Returns
+        -------
+        str
+            Human-readable string representation.
+        
+        Examples
+        --------
+        >>> from phylozoo.core.split.base import Split
+        >>> q1 = Quartet(Split({1, 2}, {3, 4}))
+        >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+        >>> profile = QuartetProfile({q1: 0.8, q2: 0.2})
+        >>> str(profile)
+        'QuartetProfile({\\n  Quartet(1 2 | 3 4): 0.8,\\n  Quartet(1 3 | 2 4): 0.2\\n})'
+        """
+        if len(self._quartets) == 0:
+            return "QuartetProfile({})"
+        
+        # Sort quartets for consistent display
+        # Sort by quartet string representation for deterministic ordering
+        sorted_quartets = sorted(self._quartets.items(), key=lambda item: str(item[0]))
+        
+        # Show all quartets with weights, one per line
+        quartet_lines = [
+            f"  {quartet}: {weight}," for quartet, weight in sorted_quartets
+        ]
+        # Remove trailing comma from last line
+        if quartet_lines:
+            quartet_lines[-1] = quartet_lines[-1].rstrip(',')
+        
+        return f"QuartetProfile({{\n" + "\n".join(quartet_lines) + "\n})"
 

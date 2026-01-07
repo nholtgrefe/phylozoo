@@ -210,7 +210,7 @@ def to_nexus_weighted_split_system(weighted_system: WeightedSplitSystem, **kwarg
     >>> 
     >>> split1 = Split({1, 2}, {3, 4})
     >>> split2 = Split({1, 3}, {2, 4})
-    >>> system = WeightedSplitSystem([split1, split2], weights={split1: 0.8, split2: 0.6})
+    >>> system = WeightedSplitSystem({split1: 0.8, split2: 0.6})
     >>> nexus_str = to_nexus_weighted_split_system(system)
     >>> print(nexus_str)
     #NEXUS
@@ -610,7 +610,7 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
         splits.append(split)
         weights[split] = weight
     
-    return WeightedSplitSystem(splits, weights=weights)
+    return WeightedSplitSystem(weights)
 
 
 # Register format handlers with FormatRegistry

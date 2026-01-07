@@ -20,7 +20,7 @@ class TestDistancesFromSplitsystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.0, split2: 1.5}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -54,7 +54,7 @@ class TestDistancesFromSplitsystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.0, split2: 1.5}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -68,7 +68,7 @@ class TestDistancesFromSplitsystem:
         split1 = Split({1, 2}, {3, 4})
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.0, split2: 1.5}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -80,7 +80,7 @@ class TestDistancesFromSplitsystem:
         """Test with a single split."""
         split = Split({1, 2}, {3, 4})
         weights = {split: 5.0}
-        system = WeightedSplitSystem([split], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -119,7 +119,7 @@ class TestDistancesFromSplitsystem:
         split1 = Split({1}, {2, 3})
         split2 = Split({2}, {1, 3})
         weights = {split1: 1.0, split2: 2.0}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -141,7 +141,7 @@ class TestDistancesFromSplitsystem:
         split3 = Split({1, 3}, {2, 4})  # This separates 1 from 2 and 4
         
         weights = {split1: 1.0, split2: 2.0, split3: 0.5}
-        system = WeightedSplitSystem([split1, split2, split3], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -159,7 +159,7 @@ class TestDistancesFromSplitsystem:
         split2 = Split({1, 3}, {2, 4, 5})
         split3 = Split({1, 2, 3}, {4, 5})
         weights = {split1: 1.0, split2: 2.0, split3: 1.5}
-        system = WeightedSplitSystem([split1, split2, split3], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -190,7 +190,7 @@ class TestDistancesFromSplitsystem:
         split2 = Split({1, 3}, {2, 4})
         split3 = Split({1, 4}, {2, 3})
         weights = {split1: 0.5, split2: 1.0, split3: 1.5}
-        system = WeightedSplitSystem([split1, split2, split3], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         dm = distances_from_splitsystem(system)
         
@@ -289,7 +289,7 @@ class TestQuartetsFromSplitsystem:
         split1 = Split({1, 2, 3}, {4, 5, 6})
         split2 = Split({1, 2}, {3, 4, 5, 6})
         weights = {split1: 2.0, split2: 1.5}
-        system = WeightedSplitSystem([split1, split2], weights=weights)
+        system = WeightedSplitSystem(weights)
         
         profileset = quartets_from_splitsystem(system)
         

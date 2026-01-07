@@ -257,7 +257,7 @@ def distances_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> Dis
     >>> split1 = Split({1, 2}, {3, 4})
     >>> split2 = Split({1, 3}, {2, 4})
     >>> weights = {split1: 2.0, split2: 1.5}
-    >>> system = WeightedSplitSystem([split1, split2], weights=weights)
+    >>> system = WeightedSplitSystem(weights)
     >>> dm = distances_from_splitsystem(system)
     >>> dm.get_distance(1, 2)  # Separated by split2 only
     1.5
