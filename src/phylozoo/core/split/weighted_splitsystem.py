@@ -9,10 +9,6 @@ from typing import TYPE_CHECKING
 from .base import Split
 from .splitsystem import SplitSystem
 
-if TYPE_CHECKING:
-    from ..network.sdnetwork import SemiDirectedPhyNetwork
-
-
 class WeightedSplitSystem(SplitSystem):
     """
     Class for a weighted split system: set of full splits with positive weights.

@@ -4,12 +4,18 @@ Split system algorithms module.
 This module provides algorithms for working with split systems, such as
 converting split systems to trees.
 
-TODO: Use refinement approach clusters for splitsystem to tree function.
+TODO: 
+- Use refinement approach clusters for splitsystem to tree function.
+- quartet from splitsystem
+- circular splitsystem classificaiton
 """
 
 import networkx as nx
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+
+from ..distance import DistanceMatrix
 from ..network.sdnetwork import SemiDirectedPhyNetwork
 from ..network.sdnetwork.conversions import sdnetwork_from_graph
 from ..primitives.m_multigraph import MixedMultiGraph
@@ -17,6 +23,7 @@ from ..primitives.m_multigraph.features import cut_vertices
 from ..primitives.partition import Partition
 from .classifications import is_tree_compatible
 from .splitsystem import SplitSystem
+from .weighted_splitsystem import WeightedSplitSystem
 
 if TYPE_CHECKING:
     pass
@@ -218,4 +225,74 @@ def splitsystem_to_tree(
     
     # Convert MixedMultiGraph to SemiDirectedPhyNetwork
     return sdnetwork_from_graph(T, network_type='semi-directed')
+
+
+def distances_from_splitsystem(system: WeightedSplitSystem) -> DistanceMatrix:
+    """
+    Compute distance matrix from a weighted split system.
+    
+    The distance between two elements x and y is the sum of weights of all splits
+    that separate x and y. A split separates x and y if one element is in set1
+    and the other is in set2.
+    
+    This function uses vectorized numpy operations for efficiency, avoiding nested
+    Python loops by using boolean arrays and broadcasting.
+    
+    Parameters
+    ----------
+    system : WeightedSplitSystem
+        The weighted split system.
+    
+    Returns
+    -------
+    DistanceMatrix
+        A distance matrix on the elements of the split system, where the distance
+        between x and y is the sum of weights of splits that separate them.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.split.base import Split
+    >>> split1 = Split({1, 2}, {3, 4})
+    >>> split2 = Split({1, 3}, {2, 4})
+    >>> weights = {split1: 2.0, split2: 1.5}
+    >>> system = WeightedSplitSystem([split1, split2], weights=weights)
+    >>> dm = distances_from_splitsystem(system)
+    >>> dm.get_distance(1, 2)  # Separated by split2 only
+    1.5
+    >>> dm.get_distance(1, 3)  # Separated by split1 only
+    2.0
+    >>> dm.get_distance(1, 4)  # Separated by both splits
+    3.5
+    >>> dm.get_distance(2, 3)  # Separated by both splits
+    3.5
+    """
+    # Handle empty system
+    if len(system.elements) == 0:
+        return DistanceMatrix(np.zeros((0, 0), dtype=np.float64), labels=[])
+    
+    # Get all elements as a sorted list for consistent ordering
+    elements_list = sorted(system.elements)
+    n = len(elements_list)
+    
+    # Initialize distance matrix
+    distance_matrix = np.zeros((n, n), dtype=np.float64)
+    
+    # For each split, use vectorized operations to add weights
+    for split in system.splits:
+        weight = system.get_weight(split)
+        
+        # Create boolean array: True if element is in set1, False if in set2
+        # This is O(n) instead of O(n^2) for checking each pair
+        in_set1 = np.array([elem in split.set1 for elem in elements_list], dtype=bool)
+        
+        # Use broadcasting to create a boolean matrix where True means the pair is separated
+        # in_set1[:, None] creates a column vector, in_set1[None, :] creates a row vector
+        # The != operation broadcasts to create an n x n matrix
+        separated = in_set1[:, None] != in_set1[None, :]
+        
+        # Add weight to all separated pairs (vectorized operation)
+        distance_matrix += separated.astype(np.float64) * weight
+    
+    # Create DistanceMatrix
+    return DistanceMatrix(distance_matrix, labels=elements_list)
 

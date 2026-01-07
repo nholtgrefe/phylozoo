@@ -5,14 +5,6 @@ This module provides functions to derive other data structures from semi-directe
 and mixed phylogenetic networks (e.g., splits, quartets, distances, blobtrees, subnetworks, etc.).
 """
 
-# TODO: Implement derivation functions here.
-# These could include:
-# - Split extraction
-# - Quartet extraction
-# - Distance calculations
-# - Blobtree construction
-# - Subnetwork extraction
-# - Displayed tree extraction
 import itertools
 from typing import TYPE_CHECKING, Any, Iterator, Literal
 

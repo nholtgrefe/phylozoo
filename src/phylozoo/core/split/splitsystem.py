@@ -9,10 +9,6 @@ from typing import Iterator, Set, TYPE_CHECKING
 from ...utils.io import IOMixin
 from .base import Split
 
-if TYPE_CHECKING:
-    from ..network.sdnetwork import SemiDirectedPhyNetwork
-
-
 class SplitSystem(IOMixin):
     """
     Class for a split system: set of full splits (complete partitions of elements).
@@ -197,11 +193,6 @@ class SplitSystem(IOMixin):
             Number of splits.
         """
         return len(self._splits)
-    
-    def displayed_tree(self) -> 'SemiDirectedPhyNetwork':
-        """Stub for displayed_tree function."""
-        from ..network.sdnetwork import SemiDirectedPhyNetwork
-        return SemiDirectedPhyNetwork()
     
     def induced_quartetsplits(self) -> set[Split]:
         """Stub for induced_quartetsplits function."""
