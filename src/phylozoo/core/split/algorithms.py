@@ -11,6 +11,7 @@ TODO:
 """
 
 import networkx as nx
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -21,6 +22,7 @@ from ..network.sdnetwork.conversions import sdnetwork_from_graph
 from ..primitives.m_multigraph import MixedMultiGraph
 from ..primitives.m_multigraph.features import cut_vertices
 from ..primitives.partition import Partition
+from ..quartet import Quartet, QuartetProfile, QuartetProfileSet
 from .classifications import is_tree_compatible
 from .splitsystem import SplitSystem
 from .weighted_splitsystem import WeightedSplitSystem
@@ -227,9 +229,9 @@ def splitsystem_to_tree(
     return sdnetwork_from_graph(T, network_type='semi-directed')
 
 
-def distances_from_splitsystem(system: WeightedSplitSystem) -> DistanceMatrix:
+def distances_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> DistanceMatrix:
     """
-    Compute distance matrix from a weighted split system.
+    Compute distance matrix from a split system.
     
     The distance between two elements x and y is the sum of weights of all splits
     that separate x and y. A split separates x and y if one element is in set1
@@ -240,8 +242,9 @@ def distances_from_splitsystem(system: WeightedSplitSystem) -> DistanceMatrix:
     
     Parameters
     ----------
-    system : WeightedSplitSystem
-        The weighted split system.
+    system : SplitSystem | WeightedSplitSystem
+        The split system. If WeightedSplitSystem, split weights are used.
+        If SplitSystem, each split has implicit weight 1.0.
     
     Returns
     -------
@@ -265,10 +268,18 @@ def distances_from_splitsystem(system: WeightedSplitSystem) -> DistanceMatrix:
     3.5
     >>> dm.get_distance(2, 3)  # Separated by both splits
     3.5
+    >>> # Unweighted split system (each split has weight 1.0)
+    >>> system2 = SplitSystem([split1, split2])
+    >>> dm2 = distances_from_splitsystem(system2)
+    >>> dm2.get_distance(1, 4)  # Separated by both splits, each with weight 1.0
+    2.0
     """
     # Handle empty system
     if len(system.elements) == 0:
         return DistanceMatrix(np.zeros((0, 0), dtype=np.float64), labels=[])
+    
+    # Check if system is weighted
+    is_weighted = isinstance(system, WeightedSplitSystem)
     
     # Get all elements as a sorted list for consistent ordering
     elements_list = sorted(system.elements)
@@ -279,7 +290,8 @@ def distances_from_splitsystem(system: WeightedSplitSystem) -> DistanceMatrix:
     
     # For each split, use vectorized operations to add weights
     for split in system.splits:
-        weight = system.get_weight(split)
+        # Get weight for this split (1.0 if not weighted, or actual weight if weighted)
+        weight = system.get_weight(split) if is_weighted else 1.0
         
         # Create boolean array: True if element is in set1, False if in set2
         # This is O(n) instead of O(n^2) for checking each pair
@@ -295,4 +307,80 @@ def distances_from_splitsystem(system: WeightedSplitSystem) -> DistanceMatrix:
     
     # Create DistanceMatrix
     return DistanceMatrix(distance_matrix, labels=elements_list)
+
+
+def quartets_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> QuartetProfileSet:
+    """
+    Compute quartet profile set from a split system.
+    
+    For each split in the system, this function extracts all quartets induced by it
+    (all 2|2 splits: 2 elements from one side, 2 from the other). Quartets are then
+    grouped by their 4-taxon set into profiles, with weights equal to how often each
+    quartet appeared (summing weights if the system is weighted).
+    
+    Parameters
+    ----------
+    system : SplitSystem | WeightedSplitSystem
+        The split system. If WeightedSplitSystem, split weights are used.
+        If SplitSystem, each split has implicit weight 1.0.
+    
+    Returns
+    -------
+    QuartetProfileSet
+        A quartet profile set where each profile corresponds to a 4-taxon set,
+        and contains quartets weighted by how often they appeared in the splits.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.split.base import Split
+    >>> split1 = Split({1, 2, 3}, {4, 5, 6})
+    >>> split2 = Split({1, 2}, {3, 4, 5, 6})
+    >>> system = SplitSystem([split1, split2])
+    >>> profileset = quartets_from_splitsystem(system)
+    >>> len(profileset) > 0
+    True
+    """
+    # Handle empty system or system with fewer than 4 elements
+    if len(system.elements) < 4:
+        return QuartetProfileSet()
+    
+    # Check if system is weighted
+    is_weighted = isinstance(system, WeightedSplitSystem)
+    
+    # Collect quartets with their weights, grouped by 4-taxon set
+    # Use defaultdict to avoid nested if checks for efficiency
+    # Structure: {frozenset(taxa): {Quartet: total_weight}}
+    profile_data: dict[frozenset[Any], dict[Quartet, float]] = defaultdict(dict)
+    
+    # Process each split
+    for split in system.splits:
+        # Skip splits that can't produce quartets (need at least 2 elements on each side)
+        if split.is_trivial():
+            continue
+        
+        # Get weight for this split (1.0 if not weighted, or actual weight if weighted)
+        split_weight = system.get_weight(split) if is_weighted else 1.0
+        
+        # Get all quartet splits induced by this split
+        quartet_splits = split.induced_quartetsplits(include_trivial=False)
+        
+        # Convert each quartet split to a Quartet and add to profile
+        for quartet_split in quartet_splits:
+            # Create Quartet from the split
+            quartet = Quartet(quartet_split)
+            quartet_taxa = quartet.taxa
+            
+            # Add weight (sum if quartet appears multiple times)
+            # Using defaultdict, we don't need to check if quartet_taxa exists
+            profile_data[quartet_taxa][quartet] = profile_data[quartet_taxa].get(quartet, 0.0) + split_weight
+    
+    # Create QuartetProfile objects from the grouped data
+    profiles: list[QuartetProfile] = []
+    for quartet_taxa, quartets_dict in profile_data.items():
+        if quartets_dict:  # Only create profile if it has quartets
+            profile = QuartetProfile(quartets_dict)
+            profiles.append(profile)
+    
+    # Create QuartetProfileSet (each profile gets default weight 1.0)
+    return QuartetProfileSet(profiles=profiles)
 
