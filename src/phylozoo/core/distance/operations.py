@@ -15,12 +15,13 @@ from typing import TypeVar
 
 import networkx as nx
 
+from ..primitives.circular_ordering import CircularOrdering
 from .base import DistanceMatrix
 
 T = TypeVar('T')
 
 
-def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> list[T]:
+def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> CircularOrdering:
     """
     Solve TSP to optimality using dynamic programming (Held-Karp algorithm).
     
@@ -34,9 +35,8 @@ def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> list[T]:
     
     Returns
     -------
-    list[T]
-        A circular ordering (tour) of all labels starting and ending at the first label.
-        The tour is represented as a list: [l0, l1, l2, ..., ln-1, l0].
+    CircularOrdering
+        A circular ordering (tour) of all labels. The ordering is in canonical form.
     
     Notes
     -----
@@ -70,14 +70,14 @@ def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> list[T]:
     >>> tour = optimal_tsp_tour(dm)
     >>> len(tour) == len(dm.labels)
     True
-    >>> set(tour) == set(dm.labels)
+    >>> set(tour.order) == set(dm.labels)
     True
     """
     n = len(distance_matrix)
     if n == 0:
-        return []
+        return CircularOrdering([])
     if n == 1:
-        return [distance_matrix.labels[0]]
+        return CircularOrdering([distance_matrix.labels[0]])
     
     # Get initial set {1, 2, ..., n-1} as a frozenset (required for @lru_cache)
     N = frozenset(range(1, n))
@@ -131,13 +131,14 @@ def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> list[T]:
     # Convert solution indices to labels
     label_tour = [distance_matrix.labels[i] for i in solution]
     
-    return label_tour
+    # Return as CircularOrdering (automatically canonicalized)
+    return CircularOrdering(label_tour)
 
 
 def approximate_tsp_tour(
     distance_matrix: DistanceMatrix,
     method: str = 'simulated_annealing'
-) -> list[T]:
+) -> CircularOrdering:
     """
     Find an approximate TSP tour using heuristic methods.
     
@@ -158,9 +159,8 @@ def approximate_tsp_tour(
     
     Returns
     -------
-    list[T]
-        A circular ordering (tour) of all labels. The tour is represented as
-        a list: [l0, l1, l2, ..., ln-1].
+    CircularOrdering
+        A circular ordering (tour) of all labels. The ordering is in canonical form.
     
     Raises
     ------
@@ -207,9 +207,9 @@ def approximate_tsp_tour(
     
     n = len(distance_matrix)
     if n == 0:
-        return []
+        return CircularOrdering([])
     if n == 1:
-        return [distance_matrix.labels[0]]
+        return CircularOrdering([distance_matrix.labels[0]])
     
     # Build complete graph with weights
     complete_graph = nx.Graph()
@@ -244,5 +244,6 @@ def approximate_tsp_tour(
     # Convert indices to labels
     label_tour = [distance_matrix.labels[i] for i in tour]
     
-    return label_tour
+    # Return as CircularOrdering (automatically canonicalized)
+    return CircularOrdering(label_tour)
 

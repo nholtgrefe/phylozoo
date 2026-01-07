@@ -6,7 +6,6 @@ converting split systems to trees.
 
 TODO: 
 - Use refinement approach clusters for splitsystem to tree function.
-- quartet from splitsystem
 - circular splitsystem classificaiton
 """
 
