@@ -14,11 +14,96 @@ from functools import lru_cache
 from typing import TypeVar
 
 import networkx as nx
+import numpy as np
+from numba import njit
 
 from ..primitives.circular_ordering import CircularOrdering
 from .base import DistanceMatrix
 
 T = TypeVar('T')
+
+
+@njit(cache=True)
+def _held_karp_numba(
+    matrix: np.ndarray, n: int, memo: np.ndarray, next_node: np.ndarray
+) -> float:
+    """
+    Numba-accelerated Held-Karp algorithm using bitmasks.
+    
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Distance matrix (n x n).
+    n : int
+        Number of nodes.
+    memo : np.ndarray
+        Memoization table for distances (n x 2^(n-1)).
+    next_node : np.ndarray
+        Table to reconstruct path (n x 2^(n-1)).
+    
+    Returns
+    -------
+    float
+        Optimal tour distance.
+    """
+    # Initialize: dist(node, empty_set) = distance from node to 0
+    for i in range(n):
+        memo[i, 0] = matrix[i, 0]
+    
+    # Fill memo table using dynamic programming
+    # mask represents the set of nodes still to visit (excluding node 0)
+    # mask is a bitmask where bit i-1 represents node i (since node 0 is always visited)
+    # memo[ni, mask] = min distance from ni through all nodes in mask back to 0
+    # So ni should NOT be in mask (we're already at ni)
+    max_mask = 1 << (n - 1)  # 2^(n-1)
+    
+    for mask in range(1, max_mask):
+        for ni in range(n):
+            if ni == 0:
+                continue
+            
+            # Only compute memo[ni, mask] if ni is NOT in mask
+            # (because we're already at ni, so we don't need to visit it again)
+            if mask & (1 << (ni - 1)):
+                continue
+            
+            # If mask is empty, go directly to node 0
+            if mask == 0:
+                min_cost = matrix[ni, 0]
+                best_nj = 0
+            else:
+                # Find minimum over all nodes nj in mask
+                min_cost = np.inf
+                best_nj = -1
+                
+                for nj in range(1, n):
+                    if nj == ni:
+                        continue
+                    if not (mask & (1 << (nj - 1))):
+                        continue
+                    
+                    # Remove nj from mask
+                    mask_without_nj = mask & ~(1 << (nj - 1))
+                    cost = matrix[ni, nj] + memo[nj, mask_without_nj]
+                    if cost < min_cost:
+                        min_cost = cost
+                        best_nj = nj
+            
+            memo[ni, mask] = min_cost
+            next_node[ni, mask] = best_nj
+    
+    # Find optimal tour starting from node 0
+    full_mask = max_mask - 1  # All nodes except 0
+    min_cost = np.inf
+    best_first = -1
+    
+    for nj in range(1, n):
+        cost = matrix[0, nj] + memo[nj, full_mask & ~(1 << (nj - 1))]
+        if cost < min_cost:
+            min_cost = cost
+            best_first = nj
+    
+    return min_cost
 
 
 def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> CircularOrdering:
@@ -40,11 +125,13 @@ def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> CircularOrdering:
     
     Notes
     -----
-    This implementation uses the Held-Karp algorithm with dynamic programming and
-    memoization. The time complexity is O(n^2 * 2^n), so it's only practical for
-    small instances (typically n <= 20).
+    This implementation uses the Held-Karp algorithm with dynamic programming,
+    optimized with Numba JIT compilation and bitmask-based set operations.
+    The time complexity is O(n^2 * 2^n), so it's only practical for small
+    instances (typically n <= 20).
     
-    The algorithm is adapted from the 'python_tsp' package source code (MIT license).
+    The algorithm uses bitmasks to represent sets of nodes, which is more
+    efficient than Python sets and compatible with Numba acceleration.
     
     References
     ----------
@@ -79,54 +166,45 @@ def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> CircularOrdering:
     if n == 1:
         return CircularOrdering([distance_matrix.labels[0]])
     
-    # Get initial set {1, 2, ..., n-1} as a frozenset (required for @lru_cache)
-    N = frozenset(range(1, n))
-    memo: dict[tuple[int, frozenset[int]], int] = {}
-    matrix = distance_matrix._matrix
+    # Convert matrix to contiguous float64 array for Numba
+    matrix = np.ascontiguousarray(distance_matrix._matrix, dtype=np.float64)
     
-    # Step 1: Compute minimum distance using dynamic programming
-    @lru_cache(maxsize=None)
-    def dist(ni: int, N_set: frozenset[int]) -> float:
-        """
-        Compute minimum distance from node ni through all nodes in N_set back to node 0.
-        
-        Parameters
-        ----------
-        ni : int
-            Current node index.
-        N_set : frozenset[int]
-            Set of remaining nodes to visit.
-        
-        Returns
-        -------
-        float
-            Minimum distance.
-        """
-        if not N_set:
-            return float(matrix[ni, 0])
-        
-        # Store costs in the form (nj, dist(nj, N_set - {nj}))
-        costs = [
-            (nj, matrix[ni, nj] + dist(nj, N_set.difference({nj})))
-            for nj in N_set
-        ]
-        nmin, min_cost = min(costs, key=lambda x: x[1])
-        memo[(ni, N_set)] = nmin
-        
-        return min_cost
+    # Initialize memoization tables
+    max_mask = 1 << (n - 1)  # 2^(n-1)
+    memo = np.full((n, max_mask), np.inf, dtype=np.float64)
+    next_node = np.full((n, max_mask), -1, dtype=np.int32)
     
-    # Compute optimal distance
-    best_distance = dist(0, N)
+    # Compute optimal distance using Numba-accelerated function
+    _held_karp_numba(matrix, n, memo, next_node)
     
-    # Step 2: Reconstruct the path with minimum distance
-    ni = 0  # Start at the origin
+    # Reconstruct the path
     solution = [0]
-    N_current = N
+    full_mask = max_mask - 1  # All nodes except 0
     
-    while N_current:
-        ni = memo[(ni, N_current)]
-        solution.append(ni)
-        N_current = N_current.difference({ni})
+    # Find first node after 0
+    min_cost = np.inf
+    best_first = -1
+    for nj in range(1, n):
+        mask_without_nj = full_mask & ~(1 << (nj - 1))
+        cost = matrix[0, nj] + memo[nj, mask_without_nj]
+        if cost < min_cost:
+            min_cost = cost
+            best_first = nj
+    
+    # Reconstruct path starting from best_first
+    ni = best_first
+    current_mask = full_mask & ~(1 << (ni - 1))
+    solution.append(ni)
+    
+    # Reconstruct rest of path using next_node table
+    while current_mask != 0:
+        next_ni = int(next_node[ni, current_mask])
+        if next_ni == 0:
+            # We've visited all nodes, return to start
+            break
+        solution.append(next_ni)
+        ni = next_ni
+        current_mask = current_mask & ~(1 << (ni - 1))
     
     # Convert solution indices to labels
     label_tour = [distance_matrix.labels[i] for i in solution]
