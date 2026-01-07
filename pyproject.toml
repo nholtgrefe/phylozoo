@@ -59,6 +59,7 @@ addopts = [
     "-v",
     "--strict-markers",
     "--tb=short",
+    "--import-mode=importlib",
 ]
 filterwarnings = [
     "ignore:Empty network.*no nodes.*:UserWarning",

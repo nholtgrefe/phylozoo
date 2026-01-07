@@ -9,11 +9,12 @@ from typing import Any, Dict, Iterator, List, Set, Tuple, TypeVar
 import networkx as nx
 
 from phylozoo.utils.identifier_warnings import warn_on_keyword, warn_on_none_value
+from ....utils.io import IOMixin
 
 T = TypeVar('T')
 
 
-class DirectedMultiGraph:
+class DirectedMultiGraph(IOMixin):
     """
     Directed multi-graph where all edges are directed.
 
@@ -43,6 +44,13 @@ class DirectedMultiGraph:
         Combined undirected view of all edges for connectivity analysis.
         **Warning:** Do not modify directly. Use class methods instead.
     
+    I/O format configuration
+    ------------------------
+    _default_format : str
+        Default format for I/O operations ('dot').
+    _supported_formats : list[str]
+        List of supported formats (['dot', 'edgelist']).
+    
     Notes
     -----
     The underlying graphs (`_graph`, `_combined`) are accessible
@@ -68,6 +76,10 @@ class DirectedMultiGraph:
     2
     """
 
+    # I/O format configuration
+    _default_format = 'dot'
+    _supported_formats = ['dot', 'edgelist']
+    
     def __init__(
         self,
         edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,

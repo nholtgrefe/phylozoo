@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterator, List, Set, Tuple, TypeVar, TYPE_CHECKING
 import networkx as nx
 
 from phylozoo.utils.identifier_warnings import warn_on_keyword, warn_on_none_value
+from ....utils.io import IOMixin
 
 if TYPE_CHECKING:
     from ..d_multigraph import DirectedMultiGraph
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 T = TypeVar('T')
 
 
-class MixedMultiGraph:
+class MixedMultiGraph(IOMixin):
     """
     Mixed multi-graph with undirected and directed edges.
 
@@ -96,6 +97,10 @@ class MixedMultiGraph:
     >>> G3.number_of_edges()
     1
     """
+    
+    # I/O format configuration
+    _default_format = 'phylozoo-dot'
+    _supported_formats = ['phylozoo-dot']
 
     def __init__(
         self,
