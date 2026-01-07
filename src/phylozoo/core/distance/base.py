@@ -336,12 +336,130 @@ class DistanceMatrix(IOMixin):
         """
         Return human-readable string representation.
         
+        For small matrices (up to 10 elements), prints the full upper triangle.
+        For larger matrices, truncates the display. Always includes element names.
+        
         Returns
         -------
         str
-            Human-readable string with matrix contents.
+            Human-readable string with matrix contents (upper triangle only).
         """
-        lines = [f"DistanceMatrix on {self._labels}"]
-        lines.append(str(self._matrix))
+        n = len(self)
+        max_display = 10
+        
+        # Format label strings
+        label_strs = [str(label) for label in self._labels]
+        if n > 0:
+            max_label_width = max(len(s) for s in label_strs)
+        else:
+            max_label_width = 0
+        
+        lines = []
+        
+        if n == 0:
+            lines.append("DistanceMatrix (empty)")
+            return "\n".join(lines)
+        
+        # Header
+        lines.append("DistanceMatrix:")
+        
+        if n <= max_display:
+            # Print full upper triangle
+            # Calculate column widths for alignment (need to fit both labels and values)
+            col_widths = []
+            for j in range(n):
+                # Width needed for label
+                label_width = len(label_strs[j])
+                # Width needed for values in this column
+                max_val_width = label_width  # Start with label width
+                for i in range(j):  # Only upper triangle
+                    val_str = f"{self._matrix[i, j]:.6f}".rstrip('0').rstrip('.')
+                    max_val_width = max(max_val_width, len(val_str))
+                # Ensure minimum width for readability
+                col_widths.append(max(max_val_width, 6))
+            
+            # Print header row with labels
+            header = " " * (max_label_width + 2)
+            for j in range(n):
+                header += f"{label_strs[j]:>{col_widths[j] + 1}}"
+            lines.append(header)
+            
+            # Print each row (upper triangle only)
+            for i in range(n):
+                row_str = f"{label_strs[i]:>{max_label_width}}  "
+                for j in range(n):
+                    if j <= i:
+                        # Lower triangle or diagonal: print spaces
+                        row_str += " " * (col_widths[j] + 1)
+                    else:
+                        # Upper triangle: print value
+                        val_str = f"{self._matrix[i, j]:.6f}".rstrip('0').rstrip('.')
+                        row_str += f"{val_str:>{col_widths[j] + 1}}"
+                lines.append(row_str)
+        else:
+            # Truncated display
+            num_cols = max_display // 2
+            col_width = 10
+            
+            # Print header with first few and last few columns
+            header = " " * (max_label_width + 2)
+            # First few columns
+            for j in range(num_cols):
+                header += f"{label_strs[j]:>{col_width}}"
+            header += "  ...  "
+            # Last few columns
+            for j in range(n - num_cols, n):
+                header += f"{label_strs[j]:>{col_width}}"
+            lines.append(header)
+            
+            # Print rows (upper triangle only, truncated)
+            for i in range(n):
+                if i < num_cols:
+                    # First few rows
+                    row_str = f"{label_strs[i]:>{max_label_width}}  "
+                    # First few columns
+                    for j in range(num_cols):
+                        if j <= i:
+                            row_str += " " * col_width
+                        else:
+                            val_str = f"{self._matrix[i, j]:.4f}".rstrip('0').rstrip('.')
+                            row_str += f"{val_str:>{col_width}}"
+                    row_str += "  ...  "
+                    # Last few columns (only if in upper triangle)
+                    for j in range(n - num_cols, n):
+                        if j <= i:
+                            row_str += " " * col_width
+                        else:
+                            val_str = f"{self._matrix[i, j]:.4f}".rstrip('0').rstrip('.')
+                            row_str += f"{val_str:>{col_width}}"
+                    lines.append(row_str)
+                elif i == num_cols:
+                    # Ellipsis row
+                    row_str = " " * (max_label_width + 2)
+                    row_str += " " * (num_cols * col_width) + "  ...  " + " " * (num_cols * col_width)
+                    lines.append(row_str)
+                elif i >= n - num_cols:
+                    # Last few rows
+                    row_str = f"{label_strs[i]:>{max_label_width}}  "
+                    # First few columns (only if in upper triangle)
+                    for j in range(num_cols):
+                        if j <= i:
+                            row_str += " " * col_width
+                        else:
+                            val_str = f"{self._matrix[i, j]:.4f}".rstrip('0').rstrip('.')
+                            row_str += f"{val_str:>{col_width}}"
+                    row_str += "  ...  "
+                    # Last few columns
+                    for j in range(n - num_cols, n):
+                        if j <= i:
+                            row_str += " " * col_width
+                        else:
+                            val_str = f"{self._matrix[i, j]:.4f}".rstrip('0').rstrip('.')
+                            row_str += f"{val_str:>{col_width}}"
+                    lines.append(row_str)
+            
+            # Add summary line
+            lines.append(f"\n... ({n} elements total, showing {num_cols} rows/columns) ...")
+        
         return "\n".join(lines)
 
