@@ -395,6 +395,7 @@ def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
     return graph_cut_vertices(network._graph, data=False)
 
 
+@lru_cache(maxsize=128)
 def omnians(network: DirectedPhyNetwork) -> set[T]:
     """
     Find all omnian nodes in a directed phylogenetic network.

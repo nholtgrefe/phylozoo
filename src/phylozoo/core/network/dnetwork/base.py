@@ -138,7 +138,7 @@ class DirectedPhyNetwork(IOMixin):
     
     # I/O format configuration
     _default_format = 'enewick'
-    _supported_formats = ['enewick']
+    _supported_formats = ['enewick', 'dot']
     
     def __init__(
         self,
