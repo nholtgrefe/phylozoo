@@ -17,6 +17,7 @@ from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.classifications import (
     is_binary,
     is_simple,
+    is_stackfree,
     is_tree,
     level,
     reticulation_number,
@@ -368,4 +369,108 @@ class TestIsSimple:
         assert is_simple(dn.LEVEL_1_DNETWORK_TWO_BLOBS) is False
         assert is_simple(dn.LEVEL_2_DNETWORK_THREE_BLOBS) is False
         assert is_simple(dn.LEVEL_1_DNETWORK_FIVE_BLOBS) is False
+
+
+class TestIsStackfreeWithFixtures:
+    """Test cases for is_stackfree() function using fixture networks."""
+    
+    def test_is_stackfree_tree_fixtures(self) -> None:
+        """Test is_stackfree on tree fixtures (should all be stack-free)."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Trees have no hybrids, so they are stack-free
+        assert is_stackfree(dn.DTREE_EMPTY)
+        assert is_stackfree(dn.DTREE_SINGLE_NODE)
+        assert is_stackfree(dn.DTREE_SMALL_BINARY)
+        assert is_stackfree(dn.DTREE_NON_BINARY_SMALL)
+    
+    def test_is_stackfree_single_hybrid_fixtures(self) -> None:
+        """Test is_stackfree on networks with single hybrid (should be stack-free)."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Single hybrid networks have no stacked hybrids
+        assert is_stackfree(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID)
+        assert is_stackfree(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID_BINARY)
+    
+    def test_is_stackfree_multiple_hybrids_separate_fixtures(self) -> None:
+        """Test is_stackfree on networks with multiple hybrids in separate blobs."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Hybrids in separate blobs don't stack
+        assert is_stackfree(dn.LEVEL_1_DNETWORK_TWO_HYBRIDS_SEPARATE)
+    
+    def test_is_stackfree_nested_hybrids_fixture(self) -> None:
+        """Test is_stackfree on network with nested hybrids (should be stack-free)."""
+        from tests.fixtures import directed_networks as dn
+        
+        # LEVEL_2_DNETWORK_NESTED_HYBRIDS has nested hybrids but they don't stack
+        # (each hybrid has a tree node child, not another hybrid)
+        assert is_stackfree(dn.LEVEL_2_DNETWORK_NESTED_HYBRIDS)
+    
+    def test_is_stackfree_chain_hybrids_fixture(self) -> None:
+        """Test is_stackfree on network with chain of hybrids (should be stack-free)."""
+        from tests.fixtures import directed_networks as dn
+        
+        # LEVEL_3_DNETWORK_CHAIN_HYBRIDS has a chain but hybrids don't stack
+        # (each hybrid has a tree node child)
+        assert is_stackfree(dn.LEVEL_3_DNETWORK_CHAIN_HYBRIDS)
+    
+    def test_is_stackfree_diamond_hybrid_fixture(self) -> None:
+        """Test is_stackfree on diamond hybrid structure (should be stack-free)."""
+        from tests.fixtures import directed_networks as dn
+        
+        # LEVEL_2_DNETWORK_DIAMOND_HYBRID has multiple hybrids but they don't stack
+        assert is_stackfree(dn.LEVEL_2_DNETWORK_DIAMOND_HYBRID)
+
+
+class TestIsStackfreeNotStackfree:
+    """Test cases for is_stackfree() function on networks with stacked hybrids."""
+    
+    def test_is_stackfree_stacked_hybrids_simple(self) -> None:
+        """Test is_stackfree on network with simple stacked hybrids."""
+        # Network: root -> tree nodes -> hybrid 4 -> hybrid 7 -> leaf
+        net = DirectedPhyNetwork(
+            edges=[
+                (9, 5), (9, 6),  # Root to tree nodes
+                (5, 4), (5, 8),  # Tree node 5 to hybrid 4 and leaf 8
+                (6, 4), (6, 10),  # Tree node 6 to hybrid 4 and leaf 10
+                (4, 7), (9, 11), (11, 7), (11, 12),  # Hybrid 4 and tree node 11 lead to hybrid 7
+                (7, 1)  # Hybrid 7 to leaf
+            ],
+            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (10, {'label': 'C'}), (12, {'label': 'D'})]
+        )
+        assert not is_stackfree(net)
+    
+    def test_is_stackfree_multiple_stacked_hybrids(self) -> None:
+        """Test is_stackfree on network with multiple stacked hybrid pairs."""
+        # Network: hybrid 4 -> hybrid 7 -> hybrid 9 -> leaf
+        net = DirectedPhyNetwork(
+            edges=[
+                (11, 5), (11, 6),  # Root to tree nodes
+                (5, 4), (5, 12),  # Tree node 5 to hybrid 4 and leaf 12
+                (6, 4), (6, 13),  # Tree node 6 to hybrid 4 and leaf 13
+                (4, 7), (11, 14), (14, 7), (14, 15),  # Hybrid 4 and tree node 14 lead to hybrid 7
+                (7, 9), (11, 16), (16, 9), (16, 17),  # Hybrid 7 and tree node 16 lead to hybrid 9
+                (9, 1)  # Hybrid 9 to leaf
+            ],
+            nodes=[(1, {'label': 'A'}), (12, {'label': 'B'}), (13, {'label': 'C'}), (15, {'label': 'D'}), (17, {'label': 'E'})]
+        )
+        assert not is_stackfree(net)
+    
+    def test_is_stackfree_mixed_stacked_and_non_stacked(self) -> None:
+        """Test is_stackfree on network with both stacked and non-stacked hybrids."""
+        # Network: hybrid 4 -> hybrid 7 (stacked), but hybrid 9 is not stacked
+        net = DirectedPhyNetwork(
+            edges=[
+                (11, 5), (11, 6), (11, 14),  # Root to tree nodes
+                (5, 4), (5, 12),  # Tree node 5 to hybrid 4 and leaf 12
+                (6, 4), (6, 13),  # Tree node 6 to hybrid 4 and leaf 13
+                (4, 7), (14, 7), (14, 15),  # Hybrid 4 and tree node 14 lead to hybrid 7 (stacked)
+                (7, 1),  # Hybrid 7 to leaf
+                (14, 9), (11, 18), (18, 9), (18, 19),  # Tree node 14 and tree node 18 lead to hybrid 9 (not stacked)
+                (9, 2)  # Hybrid 9 to leaf
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}), (13, {'label': 'D'}), (15, {'label': 'E'}), (19, {'label': 'F'})]
+        )
+        assert not is_stackfree(net)  # Has at least one stack
 

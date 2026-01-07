@@ -311,9 +311,77 @@ def is_OLP(network: 'DirectedPhyNetwork') -> bool:
     return False
 
 
+@lru_cache(maxsize=128)
 def is_stackfree(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_stackfree function."""
-    return False
+    """
+    Check if the network is stack-free.
+    
+    A network is stack-free if no hybrid node has another hybrid node as its child.
+    In other words, there are no "stacked" hybrid nodes.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is stack-free (no hybrid has a hybrid child), False otherwise.
+    
+    Examples
+    --------
+    >>> # Network with no hybrids (stack-free)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_stackfree(net)
+    True
+    
+    >>> # Network with hybrid that has tree node child (stack-free)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (7, 5), (7, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 8),  # Hybrid to tree node
+    ...         (8, 1), (8, 2)  # Tree node to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_stackfree(net)
+    True
+    
+    >>> # Network with stacked hybrids (not stack-free)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (9, 5), (9, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 7), (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
+    ...         (7, 1)  # Hybrid 7 to leaf
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
+    >>> is_stackfree(net)
+    False
+    """
+    hybrid_nodes = network.hybrid_nodes
+    
+    # If no hybrid nodes, network is stack-free
+    if not hybrid_nodes:
+        return True
+    
+    # Check each hybrid node: if its child is also a hybrid, it's stacked
+    for hybrid in hybrid_nodes:
+        # Hybrid nodes have out-degree 1, so get the single child
+        children = list(network.children(hybrid))
+        if children:
+            child = children[0]
+            # If the child is also a hybrid node, we have a stack
+            if child in hybrid_nodes:
+                return False
+    
+    return True
 
 
 def is_treechild(network: 'DirectedPhyNetwork') -> bool:
