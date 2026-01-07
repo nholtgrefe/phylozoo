@@ -6,13 +6,14 @@ This module provides classes for working with split systems.
 
 from typing import Iterator, Set, TYPE_CHECKING
 
+from ...utils.io import IOMixin
 from .base import Split
 
 if TYPE_CHECKING:
     from ..network.sdnetwork import SemiDirectedPhyNetwork
 
 
-class SplitSystem:
+class SplitSystem(IOMixin):
     """
     Class for a split system: set of full splits (complete partitions of elements).
     
@@ -58,6 +59,10 @@ class SplitSystem:
     """
     
     __slots__ = ('_splits', '_elements', '_initialized')
+    
+    # I/O format configuration
+    _default_format = 'nexus'
+    _supported_formats = ['nexus']
     
     def __init__(self, splits: (set[Split] | list[Split]) | None = None) -> None:
         """

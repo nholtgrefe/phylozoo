@@ -45,6 +45,9 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to convert.
+    **kwargs
+        Additional arguments:
+        - triangle (str): Triangle format - 'LOWER', 'UPPER', or 'BOTH' (default: 'LOWER')
     
     Returns
     -------
@@ -60,19 +63,27 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
     >>> nexus_str = to_nexus(dm)
-    >>> print(nexus_str[:50])
-    #NEXUS
-    
-    BEGIN Taxa;
-        DIMENSIONS ntax=3;
+    >>> '#NEXUS' in nexus_str
+    True
+    >>> 'triangle=LOWER' in nexus_str
+    True
+    >>> 
+    >>> # Upper triangular format
+    >>> nexus_str_upper = to_nexus(dm, triangle='UPPER')
+    >>> 'triangle=UPPER' in nexus_str_upper
+    True
     
     Notes
     -----
     The NEXUS format includes:
     - Taxa block with label names
-    - Distances block with lower triangular matrix
-    - Format: triangle=LOWER diagonal LABELS
+    - Distances block with matrix in specified triangle format
+    - Format options: triangle=LOWER, triangle=UPPER, or triangle=BOTH
     """
+    triangle = kwargs.get('triangle', 'LOWER').upper()
+    if triangle not in ('LOWER', 'UPPER', 'BOTH'):
+        raise ValueError(f"triangle must be 'LOWER', 'UPPER', or 'BOTH', got '{triangle}'")
+    
     n = len(distance_matrix)
     nexus_string = "#NEXUS\n\nBEGIN Taxa;\n"
     nexus_string += f"    DIMENSIONS ntax={n};\n"
@@ -82,13 +93,26 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     
     nexus_string += "BEGIN Distances;\n"
     nexus_string += f"    DIMENSIONS ntax={n};\n"
-    nexus_string += "    FORMAT triangle=LOWER diagonal LABELS;\n"
+    nexus_string += f"    FORMAT triangle={triangle} diagonal LABELS;\n"
     nexus_string += "    MATRIX\n"
     
     matrix = distance_matrix._matrix
-    for i, taxon in enumerate(distance_matrix.labels):
-        row = " ".join(f"{matrix[i, j]:.6f}" for j in range(i + 1))
-        nexus_string += f"    {taxon} {row}\n"
+    
+    if triangle == 'LOWER':
+        # Lower triangular: row i has values for columns 0..i
+        for i, taxon in enumerate(distance_matrix.labels):
+            row = " ".join(f"{matrix[i, j]:.6f}" for j in range(i + 1))
+            nexus_string += f"    {taxon} {row}\n"
+    elif triangle == 'UPPER':
+        # Upper triangular: row i has values for columns i..n-1
+        for i, taxon in enumerate(distance_matrix.labels):
+            row = " ".join(f"{matrix[i, j]:.6f}" for j in range(i, n))
+            nexus_string += f"    {taxon} {row}\n"
+    else:  # BOTH
+        # Full matrix: row i has all n values
+        for i, taxon in enumerate(distance_matrix.labels):
+            row = " ".join(f"{matrix[i, j]:.6f}" for j in range(n))
+            nexus_string += f"    {taxon} {row}\n"
     
     nexus_string += ";\nEND;\n"
     
@@ -120,6 +144,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     --------
     >>> from phylozoo.core.distance.io import from_nexus
     >>> 
+    >>> # Lower triangular format
     >>> nexus_str = '''#NEXUS
     ... 
     ... BEGIN Taxa;
@@ -149,10 +174,10 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     
     Notes
     -----
-    This parser expects:
+    This parser supports:
     - A Taxa block with TAXLABELS
-    - A Distances block with FORMAT triangle=LOWER diagonal LABELS
-    - Lower triangular matrix format
+    - A Distances block with FORMAT triangle=LOWER/UPPER/BOTH diagonal LABELS
+    - Lower triangular, upper triangular, or full matrix formats
     """
     # Extract taxa labels
     taxa_match = re.search(
@@ -170,6 +195,22 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
         raise ValueError("No taxa labels found in NEXUS string")
     
     n = len(labels)
+    
+    # Extract FORMAT line to determine triangle type
+    format_match = re.search(
+        r'FORMAT\s+(.*?);',
+        nexus_string,
+        re.IGNORECASE
+    )
+    triangle = 'LOWER'  # Default
+    if format_match:
+        format_section = format_match.group(1).upper()
+        if 'TRIANGLE=UPPER' in format_section:
+            triangle = 'UPPER'
+        elif 'TRIANGLE=BOTH' in format_section:
+            triangle = 'BOTH'
+        elif 'TRIANGLE=LOWER' in format_section:
+            triangle = 'LOWER'
     
     # Extract distance matrix
     matrix_match = re.search(
@@ -189,16 +230,11 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
             f"number of taxa ({n})"
         )
     
-    # Parse matrix (lower triangular format)
+    # Parse matrix based on triangle format
     matrix = np.zeros((n, n), dtype=np.float64)
     
     for i, line in enumerate(matrix_lines):
         parts = line.split()
-        if len(parts) < i + 2:  # label + (i+1) values
-            raise ValueError(
-                f"Matrix row {i+1} has insufficient values. "
-                f"Expected {i+2} values (label + {i+1} distances), got {len(parts)}"
-            )
         
         # First part is the label (should match labels[i])
         label = parts[0]
@@ -207,16 +243,59 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
                 f"Matrix row {i+1} label '{label}' does not match taxa label '{labels[i]}'"
             )
         
-        # Remaining parts are distances
-        for j in range(i + 1):
-            try:
-                value = float(parts[j + 1])
-                matrix[i, j] = value
-                matrix[j, i] = value  # Symmetric
-            except (ValueError, IndexError) as e:
+        if triangle == 'LOWER':
+            # Lower triangular: row i has values for columns 0..i
+            if len(parts) < i + 2:  # label + (i+1) values
                 raise ValueError(
-                    f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
-                ) from e
+                    f"Matrix row {i+1} has insufficient values. "
+                    f"Expected {i+2} values (label + {i+1} distances), got {len(parts)}"
+                )
+            
+            for j in range(i + 1):
+                try:
+                    value = float(parts[j + 1])
+                    matrix[i, j] = value
+                    matrix[j, i] = value  # Symmetric
+                except (ValueError, IndexError) as e:
+                    raise ValueError(
+                        f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
+                    ) from e
+        
+        elif triangle == 'UPPER':
+            # Upper triangular: row i has values for columns i..n-1
+            expected_values = n - i
+            if len(parts) < expected_values + 1:  # label + (n-i) values
+                raise ValueError(
+                    f"Matrix row {i+1} has insufficient values. "
+                    f"Expected {expected_values + 1} values (label + {expected_values} distances), got {len(parts)}"
+                )
+            
+            for j in range(i, n):
+                try:
+                    value = float(parts[j - i + 1])  # Offset by 1 for label
+                    matrix[i, j] = value
+                    matrix[j, i] = value  # Symmetric
+                except (ValueError, IndexError) as e:
+                    raise ValueError(
+                        f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
+                    ) from e
+        
+        else:  # BOTH
+            # Full matrix: row i has all n values
+            if len(parts) < n + 1:  # label + n values
+                raise ValueError(
+                    f"Matrix row {i+1} has insufficient values. "
+                    f"Expected {n + 1} values (label + {n} distances), got {len(parts)}"
+                )
+            
+            for j in range(n):
+                try:
+                    value = float(parts[j + 1])
+                    matrix[i, j] = value
+                except (ValueError, IndexError) as e:
+                    raise ValueError(
+                        f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
+                    ) from e
     
     # Create DistanceMatrix
     return DistanceMatrix(matrix, labels=labels)
