@@ -1,23 +1,43 @@
 """
 Distance matrix I/O module.
 
-This module provides functions for reading and writing distance matrices to/from files.
+This module provides format handlers for reading and writing distance matrices
+to/from files. Format handlers are registered with FormatRegistry for use with
+the IOMixin system.
 
-TODO: Add reading from Nexus files, and string?
-    Add other nexus options (upper, etc.)
+The following format handlers are defined and registered:
+- **nexus**: NEXUS format for distance matrices (extensions: .nexus, .nex, .nxs)
+  - Writer: `to_nexus()` - Converts DistanceMatrix to NEXUS string
+  - Reader: `from_nexus()` - Parses NEXUS string to DistanceMatrix
+- **phylip**: PHYLIP format for distance matrices (extensions: .phy, .phylip)
+  - Writer: `to_phylip()` - Converts DistanceMatrix to PHYLIP string
+  - Reader: `from_phylip()` - Parses PHYLIP string to DistanceMatrix
+- **csv**: CSV format for distance matrices (extensions: .csv)
+  - Writer: `to_csv()` - Converts DistanceMatrix to CSV string
+  - Reader: `from_csv()` - Parses CSV string to DistanceMatrix
+
+These handlers are automatically registered when this module is imported.
+DistanceMatrix inherits from IOMixin, so you can use:
+- `dm.save('file.nexus')` - Save to file (auto-detects format)
+- `dm.load('file.nexus')` - Load from file (auto-detects format)
+- `dm.to_string(format='phylip')` - Convert to string
+- `dm.from_string(string, format='csv')` - Parse from string
+- `DistanceMatrix.convert('in.nexus', 'out.phy')` - Convert between formats
+- `DistanceMatrix.convert_string(str1, 'nexus', 'phylip')` - Convert strings
 """
 
 from __future__ import annotations
 
-import os
-from typing import TypeVar
+import re
+from typing import Any
 
+import numpy as np
+
+from ...utils.io import FormatRegistry
 from .base import DistanceMatrix
 
-T = TypeVar('T')
 
-
-def to_nexus(distance_matrix: DistanceMatrix) -> str:
+def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     """
     Convert a distance matrix to a NEXUS format string.
     
@@ -75,68 +95,505 @@ def to_nexus(distance_matrix: DistanceMatrix) -> str:
     return nexus_string
 
 
-def save_nexus(
-    distance_matrix: DistanceMatrix,
-    file_path: str,
-    overwrite: bool = False
-) -> None:
+def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     """
-    Save a distance matrix to a NEXUS format file.
+    Parse a NEXUS format string and create a DistanceMatrix.
     
     Parameters
     ----------
-    distance_matrix : DistanceMatrix
-        The distance matrix to save.
-    file_path : str
-        Path to the output file. Must end with '.nexus' or '.nex'.
-    overwrite : bool, optional
-        If True, overwrite existing file. If False, raise error if file exists.
-        By default False.
+    nexus_string : str
+        NEXUS format string containing distance matrix data.
+    **kwargs
+        Additional arguments (currently unused, for compatibility).
+    
+    Returns
+    -------
+    DistanceMatrix
+        Parsed distance matrix.
     
     Raises
     ------
     ValueError
-        If file_path does not end with '.nexus' or '.nex'.
-    FileExistsError
-        If file already exists and overwrite is False.
-    OSError
-        If the file cannot be written (e.g., permission error).
+        If the NEXUS string is malformed or cannot be parsed.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.distance.io import from_nexus
+    >>> 
+    >>> nexus_str = '''#NEXUS
+    ... 
+    ... BEGIN Taxa;
+    ...     DIMENSIONS ntax=3;
+    ...     TAXLABELS
+    ...         A
+    ...         B
+    ...         C
+    ...     ;
+    ... END;
+    ... 
+    ... BEGIN Distances;
+    ...     DIMENSIONS ntax=3;
+    ...     FORMAT triangle=LOWER diagonal LABELS;
+    ...     MATRIX
+    ...     A 0.000000
+    ...     B 1.000000 0.000000
+    ...     C 2.000000 1.000000 0.000000
+    ...     ;
+    ... END;'''
+    >>> 
+    >>> dm = from_nexus(nexus_str)
+    >>> len(dm)
+    3
+    >>> dm.get_distance('A', 'B')
+    1.0
+    
+    Notes
+    -----
+    This parser expects:
+    - A Taxa block with TAXLABELS
+    - A Distances block with FORMAT triangle=LOWER diagonal LABELS
+    - Lower triangular matrix format
+    """
+    # Extract taxa labels
+    taxa_match = re.search(
+        r'BEGIN\s+Taxa;.*?TAXLABELS\s+(.*?);\s*END;',
+        nexus_string,
+        re.DOTALL | re.IGNORECASE
+    )
+    if not taxa_match:
+        raise ValueError("Could not find Taxa block with TAXLABELS in NEXUS string")
+    
+    taxa_section = taxa_match.group(1)
+    labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
+    
+    if not labels:
+        raise ValueError("No taxa labels found in NEXUS string")
+    
+    n = len(labels)
+    
+    # Extract distance matrix
+    matrix_match = re.search(
+        r'BEGIN\s+Distances;.*?MATRIX\s+(.*?);\s*END;',
+        nexus_string,
+        re.DOTALL | re.IGNORECASE
+    )
+    if not matrix_match:
+        raise ValueError("Could not find Distances block with MATRIX in NEXUS string")
+    
+    matrix_section = matrix_match.group(1)
+    matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
+    
+    if len(matrix_lines) != n:
+        raise ValueError(
+            f"Number of matrix rows ({len(matrix_lines)}) does not match "
+            f"number of taxa ({n})"
+        )
+    
+    # Parse matrix (lower triangular format)
+    matrix = np.zeros((n, n), dtype=np.float64)
+    
+    for i, line in enumerate(matrix_lines):
+        parts = line.split()
+        if len(parts) < i + 2:  # label + (i+1) values
+            raise ValueError(
+                f"Matrix row {i+1} has insufficient values. "
+                f"Expected {i+2} values (label + {i+1} distances), got {len(parts)}"
+            )
+        
+        # First part is the label (should match labels[i])
+        label = parts[0]
+        if label != labels[i]:
+            raise ValueError(
+                f"Matrix row {i+1} label '{label}' does not match taxa label '{labels[i]}'"
+            )
+        
+        # Remaining parts are distances
+        for j in range(i + 1):
+            try:
+                value = float(parts[j + 1])
+                matrix[i, j] = value
+                matrix[j, i] = value  # Symmetric
+            except (ValueError, IndexError) as e:
+                raise ValueError(
+                    f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
+                ) from e
+    
+    # Create DistanceMatrix
+    return DistanceMatrix(matrix, labels=labels)
+
+
+def to_phylip(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
+    """
+    Convert a distance matrix to PHYLIP format string.
+    
+    PHYLIP format consists of:
+    - First line: number of taxa
+    - Subsequent lines: taxon name (padded to 10 chars) followed by all distances
+    
+    Parameters
+    ----------
+    distance_matrix : DistanceMatrix
+        The distance matrix to convert.
+    **kwargs
+        Additional arguments (currently unused, for compatibility).
+    
+    Returns
+    -------
+    str
+        The PHYLIP format string representation of the distance matrix.
     
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
-    >>> from phylozoo.core.distance.io import save_nexus
+    >>> from phylozoo.core.distance.io import to_phylip
     >>> 
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
-    >>> save_nexus(dm, 'distances.nexus', overwrite=True)
-    >>> 
-    >>> # Read back (future functionality)
-    >>> # dm2 = load_nexus('distances.nexus')
+    >>> phylip_str = to_phylip(dm)
+    >>> print(phylip_str[:30])
+    3
+    A          0.00000 1.00000
     
     Notes
     -----
-    This function uses `to_nexus()` to generate the NEXUS string and then
-    writes it to a file. See `to_nexus()` for details on the NEXUS format.
+    Taxon names are padded to 10 characters (standard PHYLIP format).
+    Distances are formatted with 5 decimal places.
     """
-    # Validate file extension
-    if not (file_path.endswith('.nexus') or file_path.endswith('.nex')):
-        raise ValueError("File path must end with '.nexus' or '.nex'")
+    n = len(distance_matrix)
+    phylip_lines = [str(n)]
     
-    # Check if file exists
-    if not overwrite and os.path.exists(file_path):
-        raise FileExistsError(
-            f"File {file_path} already exists. Use overwrite=True to overwrite it."
+    matrix = distance_matrix._matrix
+    for i, taxon in enumerate(distance_matrix.labels):
+        # Pad taxon name to 10 characters (PHYLIP standard)
+        taxon_padded = str(taxon).ljust(10)
+        # Format all distances for this row
+        distances_str = ' '.join(f"{matrix[i, j]:.5f}" for j in range(n))
+        phylip_lines.append(f"{taxon_padded}{distances_str}")
+    
+    return '\n'.join(phylip_lines) + '\n'
+
+
+def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
+    """
+    Parse a PHYLIP format string and create a DistanceMatrix.
+    
+    Parameters
+    ----------
+    phylip_string : str
+        PHYLIP format string containing distance matrix data.
+    **kwargs
+        Additional arguments (currently unused, for compatibility).
+    
+    Returns
+    -------
+    DistanceMatrix
+        Parsed distance matrix.
+    
+    Raises
+    ------
+    ValueError
+        If the PHYLIP string is malformed or cannot be parsed.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.distance.io import from_phylip
+    >>> 
+    >>> phylip_str = '''3
+    ... A          0.00000 1.00000 2.00000
+    ... B          1.00000 0.00000 1.00000
+    ... C          2.00000 1.00000 0.00000
+    ... '''
+    >>> 
+    >>> dm = from_phylip(phylip_str)
+    >>> len(dm)
+    3
+    >>> dm.get_distance('A', 'B')
+    1.0
+    
+    Notes
+    -----
+    This parser expects:
+    - First line: number of taxa
+    - Subsequent lines: taxon name (first 10 chars or until whitespace) followed by distances
+    - Full matrix format (not just lower triangle)
+    """
+    lines = [line.strip() for line in phylip_string.strip().split('\n') if line.strip()]
+    
+    if not lines:
+        raise ValueError("PHYLIP string is empty")
+    
+    # First line is number of taxa
+    try:
+        n = int(lines[0])
+    except ValueError as e:
+        raise ValueError(f"Could not parse number of taxa from first line: {e}") from e
+    
+    if n <= 0:
+        raise ValueError(f"Number of taxa must be positive, got {n}")
+    
+    if len(lines) < n + 1:
+        raise ValueError(
+            f"Expected {n + 1} lines (header + {n} taxa), got {len(lines)}"
         )
     
-    # Ensure directory exists
-    directory = os.path.dirname(file_path)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
+    labels: list[str] = []
+    matrix = np.zeros((n, n), dtype=np.float64)
     
-    # Generate NEXUS string and write to file
-    nexus_string = to_nexus(distance_matrix)
-    with open(file_path, "w") as file:
-        file.write(nexus_string)
+    # Parse each taxon line
+    for i, line in enumerate(lines[1:n + 1], start=0):
+        # Taxon name is first 10 characters (PHYLIP standard) or until whitespace
+        # Try to extract taxon name (first word or first 10 chars)
+        parts = line.split()
+        if not parts:
+            raise ValueError(f"Empty line {i + 2} in PHYLIP string")
+        
+        taxon = parts[0]
+        labels.append(taxon)
+        
+        # Remaining parts are distances
+        if len(parts) < n + 1:
+            raise ValueError(
+                f"Line {i + 2} has insufficient values. "
+                f"Expected {n + 1} values (taxon + {n} distances), got {len(parts)}"
+            )
+        
+        for j in range(n):
+            try:
+                value = float(parts[j + 1])
+                matrix[i, j] = value
+            except (ValueError, IndexError) as e:
+                raise ValueError(
+                    f"Could not parse distance value at row {i + 1}, column {j + 1}: {e}"
+                ) from e
+    
+    # Verify symmetry (PHYLIP should be symmetric)
+    if not np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-10):
+        raise ValueError("PHYLIP matrix is not symmetric")
+    
+    # Create DistanceMatrix
+    return DistanceMatrix(matrix, labels=labels)
+
+
+def to_csv(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
+    """
+    Convert a distance matrix to CSV format string.
+    
+    CSV format consists of:
+    - First row: header with empty first cell, then taxon labels
+    - Subsequent rows: taxon label in first column, then distances
+    
+    Parameters
+    ----------
+    distance_matrix : DistanceMatrix
+        The distance matrix to convert.
+    **kwargs
+        Additional arguments:
+        - delimiter (str): Field delimiter (default: ',')
+        - include_header (bool): Include header row (default: True)
+    
+    Returns
+    -------
+    str
+        The CSV format string representation of the distance matrix.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from phylozoo.core.distance import DistanceMatrix
+    >>> from phylozoo.core.distance.io import to_csv
+    >>> 
+    >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
+    >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
+    >>> csv_str = to_csv(dm)
+    >>> print(csv_str[:20])
+    ,A,B,C
+    A,0.0,1.0
+    
+    Notes
+    -----
+    Default delimiter is comma. Use delimiter='\t' for tab-separated values.
+    """
+    delimiter = kwargs.get('delimiter', ',')
+    include_header = kwargs.get('include_header', True)
+    
+    n = len(distance_matrix)
+    csv_lines = []
+    
+    matrix = distance_matrix._matrix
+    
+    # Header row
+    if include_header:
+        header = delimiter.join([''] + [str(label) for label in distance_matrix.labels])
+        csv_lines.append(header)
+    
+    # Data rows
+    for i, taxon in enumerate(distance_matrix.labels):
+        row_values = [str(taxon)] + [f"{matrix[i, j]:.6f}" for j in range(n)]
+        csv_lines.append(delimiter.join(row_values))
+    
+    return '\n'.join(csv_lines) + '\n'
+
+
+def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
+    """
+    Parse a CSV format string and create a DistanceMatrix.
+    
+    Parameters
+    ----------
+    csv_string : str
+        CSV format string containing distance matrix data.
+    **kwargs
+        Additional arguments:
+        - delimiter (str): Field delimiter (default: ','). Can be ',' or '\t' or whitespace
+        - has_header (bool): Whether first row is a header (default: True)
+    
+    Returns
+    -------
+    DistanceMatrix
+        Parsed distance matrix.
+    
+    Raises
+    ------
+    ValueError
+        If the CSV string is malformed or cannot be parsed.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.distance.io import from_csv
+    >>> 
+    >>> csv_str = ''',A,B,C
+    ... A,0.0,1.0,2.0
+    ... B,1.0,0.0,1.0
+    ... C,2.0,1.0,0.0
+    ... '''
+    >>> 
+    >>> dm = from_csv(csv_str)
+    >>> len(dm)
+    3
+    >>> dm.get_distance('A', 'B')
+    1.0
+    
+    Notes
+    -----
+    This parser expects:
+    - First row (if has_header=True): empty first cell, then taxon labels
+    - Subsequent rows: taxon label in first column, then distances
+    - Delimiter can be comma, tab, or whitespace
+    """
+    delimiter = kwargs.get('delimiter', ',')
+    has_header = kwargs.get('has_header', True)
+    
+    lines = [line.strip() for line in csv_string.strip().split('\n') if line.strip()]
+    
+    if not lines:
+        raise ValueError("CSV string is empty")
+    
+    # Parse header if present
+    start_idx = 0
+    labels_from_header = None
+    
+    if has_header:
+        if not lines:
+            raise ValueError("CSV string has header flag but is empty")
+        
+        header_parts = [p.strip() for p in lines[0].split(delimiter)]
+        if header_parts[0] == '':  # First cell is empty (standard CSV format)
+            labels_from_header = [label for label in header_parts[1:] if label]
+            start_idx = 1
+        else:
+            # First cell is not empty - might be no header or wrong delimiter
+            # Try to auto-detect: if first value is numeric, it's probably data
+            try:
+                float(header_parts[1])
+                has_header = False  # First line is actually data
+                start_idx = 0
+            except (ValueError, IndexError):
+                # Assume it's a header without empty first cell
+                labels_from_header = [label for label in header_parts if label]
+                start_idx = 1
+    else:
+        start_idx = 0
+    
+    if start_idx >= len(lines):
+        raise ValueError("No data rows found in CSV string")
+    
+    # Parse data rows
+    labels: list[str] = []
+    matrix_rows: list[list[float]] = []
+    
+    for line in lines[start_idx:]:
+        parts = [p.strip() for p in line.split(delimiter) if p.strip()]
+        if not parts:
+            continue
+        
+        taxon = parts[0]
+        labels.append(taxon)
+        
+        try:
+            distances = [float(part) for part in parts[1:]]
+            matrix_rows.append(distances)
+        except ValueError as e:
+            raise ValueError(f"Could not parse distances for taxon '{taxon}': {e}") from e
+    
+    if not labels:
+        raise ValueError("No taxa found in CSV string")
+    
+    n = len(labels)
+    
+    # Verify dimensions
+    if labels_from_header:
+        if len(labels_from_header) != n:
+            raise ValueError(
+                f"Header has {len(labels_from_header)} labels but data has {n} rows"
+            )
+        # Use labels from header (they should match, but header is authoritative)
+        labels = labels_from_header
+    
+    # Check that all rows have the same number of distances
+    expected_distances = n
+    for i, row in enumerate(matrix_rows):
+        if len(row) != expected_distances:
+            raise ValueError(
+                f"Row {i + 1} (taxon '{labels[i]}') has {len(row)} distances, "
+                f"expected {expected_distances}"
+            )
+    
+    # Build matrix
+    matrix = np.zeros((n, n), dtype=np.float64)
+    for i, row in enumerate(matrix_rows):
+        for j, dist in enumerate(row):
+            matrix[i, j] = dist
+    
+    # Verify symmetry
+    if not np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-10):
+        raise ValueError("CSV matrix is not symmetric")
+    
+    # Create DistanceMatrix
+    return DistanceMatrix(matrix, labels=labels)
+
+
+# Register format handlers with FormatRegistry
+# Register format handlers with FormatRegistry
+FormatRegistry.register(
+    DistanceMatrix, 'nexus',
+    reader=from_nexus,
+    writer=to_nexus,
+    extensions=['.nexus', '.nex', '.nxs'],
+    default=True
+)
+
+FormatRegistry.register(
+    DistanceMatrix, 'phylip',
+    reader=from_phylip,
+    writer=to_phylip,
+    extensions=['.phy', '.phylip']
+)
+
+FormatRegistry.register(
+    DistanceMatrix, 'csv',
+    reader=from_csv,
+    writer=to_csv,
+    extensions=['.csv']
+)
 

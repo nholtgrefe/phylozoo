@@ -10,10 +10,12 @@ from typing import TypeVar
 
 import numpy as np
 
+from ...utils.io import IOMixin
+
 T = TypeVar('T')
 
 
-class DistanceMatrix:
+class DistanceMatrix(IOMixin):
     """
     An immutable distance matrix.
     
@@ -69,6 +71,10 @@ class DistanceMatrix:
     _labels = ()
     _indices = ()
     _label_to_index = {}
+    
+    # I/O format configuration
+    _default_format = 'nexus'
+    _supported_formats = ['nexus', 'phylip', 'csv']
 
     def __init__(
         self,
