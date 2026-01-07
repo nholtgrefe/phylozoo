@@ -14,12 +14,13 @@ import networkx as nx
 from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.d_multigraph.features import is_connected, has_self_loops
 from ....utils.validation import validation_aware
+from ....utils.io import IOMixin
 
 T = TypeVar('T')
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class DirectedPhyNetwork:
+class DirectedPhyNetwork(IOMixin):
     """
     A directed phylogenetic network.
     
@@ -134,6 +135,10 @@ class DirectedPhyNetwork:
     >>> net4.get_gamma(6, 4)
     0.4
     """
+    
+    # I/O format configuration
+    _default_format = 'enewick'
+    _supported_formats = ['enewick']
     
     def __init__(
         self,

@@ -8,7 +8,7 @@ various edge cases.
 
 import pytest
 
-from phylozoo.utils.enewick import ENewickParseError, ParsedENewick, parse_enewick
+from phylozoo.core.network.dnetwork._enewick import ENewickParseError, ParsedENewick, parse_enewick
 
 
 class TestBasicTreeParsing:

@@ -47,7 +47,7 @@ def test_enewick_strings():
     print("=" * 60)
     
     try:
-        from phylozoo.utils import parse_enewick
+        from phylozoo.core.network.dnetwork._enewick import parse_enewick
     except ImportError:
         print("Skipping eNewick tests (parser not available)")
         return True

@@ -216,4 +216,3 @@ def _merge_attrs_for_parallel_identification_directed(
     
     # All other attributes (bootstrap, etc.) are removed
     return merged
-

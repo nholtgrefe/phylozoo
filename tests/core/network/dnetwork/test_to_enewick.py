@@ -5,8 +5,8 @@ Tests for DirectedPhyNetwork to eNewick conversion.
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.io import to_enewick
-from phylozoo.utils.enewick import parse_enewick
+from phylozoo.core.network.dnetwork._enewick import to_enewick
+from phylozoo.core.network.dnetwork._enewick import parse_enewick
 
 
 class TestBasicTrees:

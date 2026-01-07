@@ -41,7 +41,7 @@ for name, net in networks.items():
 
 ```python
 from examples.network_examples import get_all_enewick_strings
-from phylozoo.utils import parse_enewick
+from phylozoo.core.network.dnetwork._enewick import parse_enewick
 
 enewick_strings = get_all_enewick_strings()
 for name, enewick_str in enewick_strings.items():

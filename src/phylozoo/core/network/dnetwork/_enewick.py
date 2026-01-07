@@ -1,8 +1,10 @@
 """
-eNewick (Extended Newick) format parser.
+eNewick (Extended Newick) format parser and writer.
 
-This module provides functions for parsing eNewick strings into a generic
-intermediate representation that can be converted to various network types.
+This module provides complete eNewick functionality:
+- Parsing eNewick strings into a generic intermediate representation
+- Converting DirectedPhyNetwork objects to eNewick format strings
+- Converting eNewick strings to DirectedPhyNetwork objects
 
 eNewick format extends Newick format to support phylogenetic networks with
 hybrid nodes. Hybrid nodes are marked with #H1, #H2, etc. in the string.
@@ -129,6 +131,8 @@ Notes
 - Hybrid nodes can have multiple parents by appearing multiple times: `((A)#H1,#H1,#H1)` creates 3 parent edges
 - All labels must be unique; duplicate labels raise ``ENewickParseError``
 """
+
+from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
@@ -673,3 +677,441 @@ class _ENewickParser:
         while self.pos < self.length and self.enewick_string[self.pos].isspace():
             self.pos += 1
 
+
+
+# ========== eNewick Writer and Reader for DirectedPhyNetwork ==========
+
+from typing import TYPE_CHECKING, Any, TypeVar
+
+if TYPE_CHECKING:
+    from .base import DirectedPhyNetwork
+
+T = TypeVar('T')
+
+
+def to_enewick(network: 'DirectedPhyNetwork', **kwargs: Any) -> str:
+    """
+    Convert a DirectedPhyNetwork to Extended Newick (eNewick) format.
+    
+    This function serializes a directed phylogenetic network to the Extended Newick
+    format, which supports hybrid nodes (reticulations) using the #H marker notation.
+    
+    Features:
+    - Branch lengths are encoded as :length (e.g., :0.5)
+    - Gamma and bootstrap values are encoded as comments: [&gamma=0.6,bootstrap=0.95]
+    - Internal node labels are included when present
+    - Hybrid nodes use Extended Newick #Hn markers
+    - Output is deterministic (children sorted by node ID then label)
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to serialize.
+    **kwargs
+        Additional arguments (currently unused, for compatibility).
+    
+    Returns
+    -------
+    str
+        The eNewick string representation of the network.
+    
+    Raises
+    ------
+    ValueError
+        If the network is empty (has no nodes).
+    
+    Examples
+    --------
+    >>> # Simple tree
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> to_enewick(net)
+    '(A,B);'
+    
+    >>> # Tree with branch lengths
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         {'u': 3, 'v': 1, 'branch_length': 0.5},
+    ...         {'u': 3, 'v': 2, 'branch_length': 0.3}
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> to_enewick(net)
+    '(A:0.5,B:0.3);'
+    
+    Notes
+    -----
+    - For parallel edges between the same nodes, only the first edge is used
+    - Labels containing special characters (spaces, parentheses, colons, etc.) 
+      are automatically quoted with single quotes
+    - The output is deterministic: multiple calls on the same network produce 
+      the same string
+    """
+    if network.number_of_nodes() == 0:
+        raise ValueError("Cannot convert empty network to eNewick")
+    
+    # Single node network
+    if network.number_of_nodes() == 1:
+        node = next(iter(network._graph.nodes))
+        label = network.get_label(node)
+        if label:
+            return f"{_quote_label_if_needed(label)};"
+        else:
+            return f"{node};"
+    
+    # Initialize hybrid tracking
+    hybrid_nodes_set = set(network.hybrid_nodes)
+    hybrid_to_id: dict[T, int] = {}
+    hybrid_counter = 1
+    
+    # Assign IDs to hybrid nodes deterministically
+    for hybrid in sorted(hybrid_nodes_set, key=lambda n: (str(n), network.get_label(n) or '')):
+        hybrid_to_id[hybrid] = hybrid_counter
+        hybrid_counter += 1
+    
+    # Track which hybrids have been defined
+    defined_hybrids: set[T] = set()
+    
+    def build_subtree(node: T, parent_edge_data: dict[str, Any] | None = None) -> str:
+        """
+        Recursively build eNewick string for subtree rooted at node.
+        
+        Parameters
+        ----------
+        node : T
+            Current node to process.
+        parent_edge_data : dict[str, Any] | None
+            Edge data from parent to this node (for branch length, gamma, bootstrap).
+        
+        Returns
+        -------
+        str
+            eNewick substring for this subtree.
+        """
+        # Check if this is a hybrid node
+        is_hybrid = node in hybrid_nodes_set
+        
+        # If hybrid and already defined, return reference only
+        if is_hybrid and node in defined_hybrids:
+            # Just return the reference #Hn with parent edge attributes
+            hybrid_id = hybrid_to_id[node]
+            result = f"#H{hybrid_id}"
+            result += _format_edge_attributes(parent_edge_data)
+            return result
+        
+        # Mark hybrid as defined if this is first occurrence
+        if is_hybrid:
+            defined_hybrids.add(node)
+        
+        # Get children (sorted deterministically)
+        children_list = list(network.children(node))
+        children_sorted = sorted(children_list, key=lambda n: (str(n), network.get_label(n) or ''))
+        
+        # If this is a leaf, just return the label
+        if len(children_sorted) == 0:
+            label = network.get_label(node)
+            if label:
+                result = _quote_label_if_needed(label)
+            else:
+                result = str(node)
+            
+            # Add hybrid marker if this is a hybrid leaf
+            if is_hybrid:
+                hybrid_id = hybrid_to_id[node]
+                result += f"#H{hybrid_id}"
+            
+            # Add parent edge attributes
+            result += _format_edge_attributes(parent_edge_data)
+            return result
+        
+        # Internal node: process children
+        child_strings = []
+        for child in children_sorted:
+            # Get edge data from node to child
+            # Handle parallel edges by using the first edge
+            edge_data = _get_first_edge_data(network, node, child)
+            child_str = build_subtree(child, edge_data)
+            child_strings.append(child_str)
+        
+        # Build the result string
+        result = f"({','.join(child_strings)})"
+        
+        # Add internal node label if present
+        label = network.get_label(node)
+        if label:
+            result += _quote_label_if_needed(label)
+        
+        # Add hybrid marker if this is a hybrid
+        if is_hybrid:
+            hybrid_id = hybrid_to_id[node]
+            result += f"#H{hybrid_id}"
+        
+        # Add parent edge attributes
+        result += _format_edge_attributes(parent_edge_data)
+        
+        return result
+    
+    # Start from root
+    root = network.root_node
+    enewick_str = build_subtree(root, None)
+    
+    return enewick_str + ";"
+
+
+def _get_first_edge_data(network: 'DirectedPhyNetwork', u: T, v: T) -> dict[str, Any]:
+    """
+    Get edge data for the first edge from u to v.
+    
+    For parallel edges, returns data from the first edge encountered.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The network.
+    u, v : T
+        Edge endpoints.
+    
+    Returns
+    -------
+    dict[str, Any]
+        Edge data dictionary.
+    """
+    # Use incident_child_edges to get all edges from u
+    for edge_tuple in network.incident_child_edges(u, keys=True, data=True):
+        if len(edge_tuple) == 4:
+            edge_u, edge_v, key, data = edge_tuple
+            if edge_v == v:
+                return dict(data) if data else {}
+    
+    return {}
+
+
+def _format_edge_attributes(edge_data: dict[str, Any] | None) -> str:
+    """
+    Format edge attributes (branch_length, gamma, bootstrap) for eNewick.
+    
+    Parameters
+    ----------
+    edge_data : dict[str, Any] | None
+        Edge data dictionary.
+    
+    Returns
+    -------
+    str
+        Formatted attribute string (e.g., "[&gamma=0.6,bootstrap=0.95]:0.5").
+    """
+    if edge_data is None:
+        return ""
+    
+    result = ""
+    
+    # Build comment section for gamma and bootstrap
+    comment_parts = []
+    if 'gamma' in edge_data:
+        gamma_val = edge_data['gamma']
+        comment_parts.append(f"gamma={gamma_val}")
+    if 'bootstrap' in edge_data:
+        bootstrap_val = edge_data['bootstrap']
+        comment_parts.append(f"bootstrap={bootstrap_val}")
+    
+    if comment_parts:
+        result += f"[&{','.join(comment_parts)}]"
+    
+    # Add branch length
+    if 'branch_length' in edge_data:
+        branch_length = edge_data['branch_length']
+        result += f":{branch_length}"
+    
+    return result
+
+
+def _quote_label_if_needed(label: str) -> str:
+    """
+    Quote a label if it contains special characters.
+    
+    Special characters that require quoting: spaces, parentheses, colons,
+    semicolons, commas, brackets, quotes.
+    
+    Parameters
+    ----------
+    label : str
+        The label to potentially quote.
+    
+    Returns
+    -------
+    str
+        The label, quoted if necessary.
+    """
+    special_chars = {' ', '(', ')', ':', ';', ',', '[', ']', "'", '"', '#'}
+    
+    if any(char in label for char in special_chars):
+        # Escape single quotes in the label
+        escaped_label = label.replace("'", "''")
+        return f"'{escaped_label}'"
+    
+    return label
+
+
+def _parse_comment_attributes(comment: str) -> dict[str, Any]:
+    """
+    Parse comment string to extract edge attributes (gamma, bootstrap).
+    
+    Comments in eNewick format can contain edge attributes in the format:
+    [&gamma=0.6,bootstrap=0.95]
+    
+    Parameters
+    ----------
+    comment : str
+        Comment string, possibly starting with '&'.
+    
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with parsed attributes (gamma, bootstrap, etc.).
+    """
+    attrs: dict[str, Any] = {}
+    
+    if not comment or not comment.startswith('&'):
+        return attrs
+    
+    # Remove leading '&'
+    content = comment[1:].strip()
+    
+    # Parse key=value pairs separated by commas
+    parts = content.split(',')
+    for part in parts:
+        part = part.strip()
+        if '=' not in part:
+            continue
+        
+        key, value = part.split('=', 1)
+        key = key.strip()
+        value = value.strip()
+        
+        # Try to convert to float
+        try:
+            attrs[key] = float(value)
+        except ValueError:
+            attrs[key] = value
+    
+    return attrs
+
+
+def from_enewick(enewick_string: str, **kwargs: Any) -> 'DirectedPhyNetwork':
+    """
+    Parse an eNewick string and create a DirectedPhyNetwork.
+    
+    This function parses an Extended Newick (eNewick) format string and converts
+    it to a DirectedPhyNetwork. It supports:
+    - Branch lengths on edges
+    - Hybrid nodes (reticulations) using #H markers
+    - Gamma and bootstrap values in comments
+    - Node labels (quoted and unquoted)
+    - Internal node labels
+    
+    Parameters
+    ----------
+    enewick_string : str
+        The eNewick format string to parse. Must end with ';'.
+    **kwargs
+        Additional arguments (currently unused, for compatibility).
+    
+    Returns
+    -------
+    DirectedPhyNetwork
+        Parsed directed phylogenetic network.
+    
+    Raises
+    ------
+    ENewickParseError
+        If the eNewick string is malformed or cannot be parsed.
+    ValueError
+        If the parsed network structure is invalid for DirectedPhyNetwork.
+    
+    Examples
+    --------
+    >>> # Simple tree
+    >>> net = from_enewick("((A,B),C);")
+    >>> net.number_of_nodes()
+    4
+    >>> net.number_of_edges()
+    3
+    
+    >>> # Tree with branch lengths
+    >>> net = from_enewick("((A:0.5,B:0.3):0.1,C:0.2);")
+    >>> net.get_branch_length(0, 'A')
+    0.5
+    
+    Notes
+    -----
+    - Comments starting with '&' are parsed for edge attributes (gamma, bootstrap)
+    - Hybrid nodes are identified by #H markers
+    - Internal nodes without labels get auto-generated integer IDs
+    - Leaves use their label as the node ID
+    """
+    # Import here to avoid circular dependency
+    from .base import DirectedPhyNetwork
+    
+    # Parse the eNewick string
+    parsed = parse_enewick(enewick_string)
+    
+    # Convert ParsedENewick to DirectedPhyNetwork
+    # Build edges list with attributes
+    edges: list[dict[str, Any]] = []
+    
+    # Build a mapping of node IDs to their comment attributes
+    node_comments: dict[Any, dict[str, Any]] = {}
+    for node in parsed.nodes:
+        node_id = node['id']
+        if 'comment' in node:
+            comment_attrs = _parse_comment_attributes(node['comment'])
+            if comment_attrs:
+                node_comments[node_id] = comment_attrs
+    
+    # Process edges
+    # Comments on nodes represent attributes for edges TO that node
+    for edge in parsed.edges:
+        edge_dict: dict[str, Any] = {
+            'u': edge['u'],
+            'v': edge['v']
+        }
+        
+        # Copy edge attributes (branch_length is already on edge)
+        if 'branch_length' in edge:
+            edge_dict['branch_length'] = edge['branch_length']
+        
+        # Check if target node has comment attributes (these are edge attributes for edge TO the node)
+        if edge['v'] in node_comments:
+            edge_dict.update(node_comments[edge['v']])
+        
+        # Handle edge key if present
+        if 'key' in edge and edge['key'] != 0:
+            edge_dict['key'] = edge['key']
+        
+        edges.append(edge_dict)
+    
+    # Build nodes list with labels
+    nodes: list[tuple[Any, dict[str, Any]]] = []
+    for node in parsed.nodes:
+        node_id = node['id']
+        node_attrs: dict[str, Any] = {}
+        
+        # Add label if present
+        if 'label' in node:
+            node_attrs['label'] = node['label']
+        
+        # Add other node attributes (excluding comment if it was parsed as edge attr)
+        for key, value in node.items():
+            if key not in ('id', 'label', 'comment'):
+                node_attrs[key] = value
+        
+        # If comment exists but wasn't parsed as edge attributes, keep it
+        if 'comment' in node and node['id'] not in node_comments:
+            node_attrs['comment'] = node['comment']
+        
+        nodes.append((node_id, node_attrs))
+    
+    # Create the network
+    return DirectedPhyNetwork(edges=edges, nodes=nodes if nodes else None)
