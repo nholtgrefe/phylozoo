@@ -7,9 +7,8 @@ phylogenetic networks (e.g., splits, quartets, distances, blobtrees, subnetworks
 
 # TODO: Implement derivation functions here.
 # These could include:
-# - Split extraction
 # - Quartet extraction
-# - Distance calculations
+
 import itertools
 from typing import Any, Iterator, Literal
 
@@ -26,6 +25,7 @@ from .transformations import (
     identify_parallel_edges as identify_parallel_edges_dn,
 )
 from ...split import Split, SplitSystem, WeightedSplitSystem
+from ...quartet import QuartetProfileSet
 from ._utils import _suppress_deg2_nodes as dm_suppress_deg2_nodes
 from ..sdnetwork._utils import _suppress_deg2_nodes as mm_suppress_deg2_nodes
 from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
@@ -1040,3 +1040,44 @@ def displayed_splits(network: DirectedPhyNetwork) -> WeightedSplitSystem:
         return WeightedSplitSystem()
     
     return WeightedSplitSystem(list(split_weights.keys()), weights=split_weights)
+
+
+def displayed_quartets(network: DirectedPhyNetwork) -> QuartetProfileSet:
+    """
+    Compute quartet profile set from all displayed trees of the network.
+    
+    This function converts the directed network to a semi-directed network and then
+    uses the semi-directed displayed_quartets function. This ensures that quartets
+    are unrooted (not rooted quartets).
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    
+    Returns
+    -------
+    QuartetProfileSet
+        A quartet profile set where each profile corresponds to a 4-taxon set,
+        and contains quartets from displayed trees weighted by their probabilities.
+    
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(5, 4), (6, 4), (4, 1), (4, 2), (5, 3), (6, 7)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> profileset = displayed_quartets(net)
+    >>> isinstance(profileset, QuartetProfileSet)
+    True
+    >>> len(profileset) > 0
+    True
+    """
+    # Convert to semi-directed network
+    sd_network = to_sd_network(network)
+    
+    # Import here to avoid circular dependency
+    from ..sdnetwork.derivations import displayed_quartets as sd_displayed_quartets
+    
+    # Use the semi-directed displayed_quartets function
+    return sd_displayed_quartets(sd_network)

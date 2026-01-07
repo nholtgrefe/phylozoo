@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, tree_of_blobs, distances, induced_splits, split_from_cutedge
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, tree_of_blobs, distances, induced_splits, split_from_cutedge
 from phylozoo.core.split.base import Split
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
@@ -864,3 +864,198 @@ class TestSplitFromCutedge:
             assert isinstance(split, Split)
             assert len(split.set1) > 0
             assert len(split.set2) > 0
+
+
+class TestDisplayedQuartets:
+    """Test displayed_quartets function for DirectedPhyNetwork."""
+    
+    def test_simple_tree_four_taxa(self) -> None:
+        """Test displayed_quartets on a simple tree with exactly 4 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[(5, 1), (5, 2), (5, 6), (6, 3), (6, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+        )
+        profileset = displayed_quartets(net)
+        
+        # Should have exactly one profile (one 4-taxon set)
+        assert len(profileset) == 1
+        assert profileset.taxa == frozenset({'A', 'B', 'C', 'D'})
+        
+        # Get the profile
+        profile, profile_weight = profileset.profiles[frozenset({'A', 'B', 'C', 'D'})]
+        # Profile should have default weight 1.0
+        assert abs(profile_weight - 1.0) < 1e-10
+        # Should have exactly one quartet (tree has one displayed tree)
+        assert len(profile) == 1
+        
+        # The quartet should be resolved (not a star tree)
+        quartet = next(iter(profile.quartets.keys()))
+        assert quartet.is_resolved()
+        assert not quartet.is_star()
+        # Weight should be 1.0 (single displayed tree with probability 1.0)
+        assert abs(profile.get_weight(quartet) - 1.0) < 1e-10
+    
+    def test_network_with_hybrid_four_taxa(self) -> None:
+        """Test displayed_quartets on network with hybrid node and 4 taxa."""
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+        net = LEVEL_1_DNETWORK_SINGLE_HYBRID
+        
+        # Check if network has at least 4 taxa
+        if len(net.taxa) >= 4:
+            profileset = displayed_quartets(net)
+            
+            # Should have at least one profile
+            assert len(profileset) >= 1
+            assert profileset.taxa == net.taxa
+            
+            # Get the profile
+            profile, profile_weight = next(iter(profileset.profiles.values()))
+            # Profile should have default weight 1.0
+            assert abs(profile_weight - 1.0) < 1e-10
+            
+            # Network has multiple displayed trees, weights should sum to 1.0
+            total_quartet_weight = sum(profile.quartets.values())
+            assert abs(total_quartet_weight - 1.0) < 1e-10
+    
+    def test_network_with_hybrid_gamma_values(self) -> None:
+        """Test displayed_quartets with explicit gamma values."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2),
+                (5, 3), (5, 6), (6, 7)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (7, {'label': 'D'})
+            ]
+        )
+        profileset = displayed_quartets(net)
+        
+        # Should have exactly one profile
+        assert len(profileset) == 1
+        
+        # Get the profile
+        profile, _ = next(iter(profileset.profiles.values()))
+        
+        # Network has 2 displayed trees with probabilities 0.6 and 0.4
+        # Total weight should be 1.0
+        total_quartet_weight = sum(profile.quartets.values())
+        assert abs(total_quartet_weight - 1.0) < 1e-10
+        
+        # Check that individual weights match probabilities
+        for quartet, weight in profile.quartets.items():
+            assert weight > 0.0
+            assert weight <= 1.0
+    
+    def test_network_fewer_than_four_taxa(self) -> None:
+        """Test displayed_quartets on network with fewer than 4 taxa."""
+        from tests.fixtures.directed_networks import DTREE_SMALL_BINARY
+        net = DTREE_SMALL_BINARY
+        
+        profileset = displayed_quartets(net)
+        
+        # Should return empty QuartetProfileSet
+        assert len(profileset) == 0
+        assert len(profileset.taxa) == 0
+    
+    def test_empty_network(self) -> None:
+        """Test displayed_quartets on empty network."""
+        from tests.fixtures.directed_networks import DTREE_EMPTY
+        net = DTREE_EMPTY
+        
+        profileset = displayed_quartets(net)
+        
+        # Should return empty QuartetProfileSet
+        assert len(profileset) == 0
+        assert len(profileset.taxa) == 0
+    
+    def test_network_more_than_four_taxa(self) -> None:
+        """Test displayed_quartets on network with more than 4 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 1), (7, 2), (7, 8),
+                (8, 3), (8, 4), (8, 5), (8, 6)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (4, {'label': 'D'}),
+                (5, {'label': 'E'}), (6, {'label': 'F'})
+            ]
+        )
+        profileset = displayed_quartets(net)
+        
+        # Should have multiple profiles (one for each 4-taxon combination)
+        # For 6 taxa, there are C(6,4) = 15 combinations
+        assert len(profileset) == 15
+        assert profileset.taxa == net.taxa
+        
+        # Each profile should have default weight 1.0
+        for profile, profile_weight in profileset.profiles.values():
+            assert abs(profile_weight - 1.0) < 1e-10
+            # Each profile should have at least one quartet
+            assert len(profile) >= 1
+            # All quartets in a profile should have the same 4 taxa
+            for quartet in profile.quartets.keys():
+                assert quartet.taxa in profileset.profiles
+    
+    def test_weights_sum_correctly(self) -> None:
+        """Test that weights are correctly summed when same quartet appears multiple times."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2),
+                (5, 3), (5, 6), (6, 7)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (7, {'label': 'D'})
+            ]
+        )
+        profileset = displayed_quartets(net)
+        
+        # Get the profile
+        profile, _ = next(iter(profileset.profiles.values()))
+        
+        # Total weight of all quartets should sum to 1.0
+        # (sum of probabilities of all displayed trees)
+        total_weight = sum(profile.quartets.values())
+        assert abs(total_weight - 1.0) < 1e-10
+    
+    def test_profile_weights_default(self) -> None:
+        """Test that profile weights are default (1.0) as specified."""
+        net = DirectedPhyNetwork(
+            edges=[(5, 1), (5, 2), (5, 6), (6, 3), (6, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+        )
+        profileset = displayed_quartets(net)
+        
+        # All profiles should have default weight 1.0
+        for profile, profile_weight in profileset.profiles.values():
+            assert abs(profile_weight - 1.0) < 1e-10
+    
+    def test_uses_sd_network_conversion(self) -> None:
+        """Test that displayed_quartets uses to_sd_network conversion (unrooted quartets)."""
+        # Create a directed network with a root
+        net = DirectedPhyNetwork(
+            edges=[(5, 1), (5, 2), (5, 6), (6, 3), (6, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+        )
+        profileset = displayed_quartets(net)
+        
+        # Should have one profile
+        assert len(profileset) == 1
+        
+        # Get the quartet
+        profile, _ = next(iter(profileset.profiles.values()))
+        quartet = next(iter(profile.quartets.keys()))
+        
+        # The quartet should be unrooted (not rooted)
+        # This is verified by the fact that it's a resolved quartet with a 2|2 split
+        assert quartet.is_resolved()
+        assert quartet.split is not None
+        # The split should be a 2|2 split (unrooted quartet)
+        assert len(quartet.split.set1) == 2
+        assert len(quartet.split.set2) == 2

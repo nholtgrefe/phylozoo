@@ -27,6 +27,7 @@ from .classifications import is_tree
 from .features import blobs, root_locations, RootLocation
 from .transformations import suppress_2_blobs as suppress_2_blobs_fn, identify_parallel_edges as identify_parallel_edges_fn
 from ...split import Split, SplitSystem, WeightedSplitSystem
+from ...quartet import Quartet, QuartetProfile, QuartetProfileSet
 from .sd_phynetwork import SemiDirectedPhyNetwork
 from ._utils import _suppress_deg2_nodes, _subdivide_edge
 from .conversions import sdnetwork_from_graph
@@ -992,6 +993,105 @@ def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
         return WeightedSplitSystem()
     
     return WeightedSplitSystem(list(split_weights.keys()), weights=split_weights)
+
+
+def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
+    """
+    Compute quartet profile set from all displayed trees of the network.
+    
+    For each quartet (4-leaf subnetwork), this function:
+    1. Extracts the subnetwork induced by those 4 taxa
+    2. Gets all displayed trees of that subnetwork (with probabilities)
+    3. Converts each displayed tree to a quartet (4-leaf tree)
+    4. Creates a quartet profile where each quartet's weight is the probability
+       of the displayed tree that induced it (summing weights if the same quartet
+       appears in multiple displayed trees)
+    
+    The profiles are then returned as a QuartetProfileSet, where each profile
+    (one per quartet) has no weight (default weight 1.0).
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    
+    Returns
+    -------
+    QuartetProfileSet
+        A quartet profile set where each profile corresponds to a 4-taxon set,
+        and contains quartets from displayed trees weighted by their probabilities.
+    
+    Examples
+    --------
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[(5, 4), (6, 4)],
+    ...     undirected_edges=[
+    ...         (5, 3), (5, 6), (6, 7),  # Tree edges
+    ...         (4, 8), (8, 1), (8, 2)   # Tree edges from hybrid
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+    ... )
+    >>> profileset = displayed_quartets(net)
+    >>> isinstance(profileset, QuartetProfileSet)
+    True
+    >>> len(profileset) > 0
+    True
+    """
+    # Handle networks with fewer than 4 taxa
+    taxa_list = sorted(network.taxa)
+    if len(taxa_list) < 4:
+        return QuartetProfileSet()
+    
+    # Collect profiles for each 4-taxon set
+    profiles: list[QuartetProfile] = []
+    
+    # Iterate through all combinations of 4 taxa
+    for four_taxa in itertools.combinations(taxa_list, 4):
+        four_taxa_set = frozenset(four_taxa)
+        
+        # Get subnetwork induced by these 4 taxa
+        quartet_subnet = subnetwork(network, list(four_taxa))
+        
+        # Collect quartets with their weights for this 4-taxon set
+        quartet_weights: dict[Quartet, float] = {}
+        
+        # Get all displayed trees of the subnetwork with probabilities
+        for displayed_tree in displayed_trees(quartet_subnet, probability=True):
+            # Get probability of this displayed tree
+            prob = displayed_tree.get_network_attribute('probability')
+            if prob is None:
+                prob = 1.0
+            
+            # Extract quartet from the displayed tree (4-leaf tree)
+            # For a 4-leaf tree, induced_splits gives us the splits
+            # A resolved 4-leaf tree has exactly one non-trivial split (2|2)
+            # A star 4-leaf tree has no non-trivial splits
+            tree_splits = induced_splits(displayed_tree)
+            
+            # Find the non-trivial split (2|2 split) if it exists
+            quartet_split: Split | None = None
+            for split in tree_splits.splits:
+                if not split.is_trivial() and len(split.set1) == 2 and len(split.set2) == 2:
+                    quartet_split = split
+                    break
+            
+            # Create quartet from split or as star tree
+            if quartet_split is not None:
+                quartet = Quartet(quartet_split)
+            else:
+                # Star tree: no non-trivial split, all 4 taxa are equivalent
+                quartet = Quartet(four_taxa_set)
+            
+            # Add quartet to profile with its weight (sum if duplicate)
+            quartet_weights[quartet] = quartet_weights.get(quartet, 0.0) + prob
+        
+        # Create profile for this 4-taxon set (only if we have quartets)
+        if quartet_weights:
+            profile = QuartetProfile(quartet_weights)
+            profiles.append(profile)
+    
+    # Create QuartetProfileSet (each profile gets default weight 1.0, i.e., no weight)
+    return QuartetProfileSet(profiles=profiles)
 
 
 def _root_sd_network_at(
