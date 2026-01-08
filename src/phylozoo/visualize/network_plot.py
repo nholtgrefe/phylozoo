@@ -13,7 +13,20 @@ import matplotlib.patches as mpatches
 import networkx as nx
 import numpy as np
 
-from .layout import compute_directed_layout, compute_semidirected_layout
+# Old layout functions moved to sandbox - import from there if needed
+import sys
+from pathlib import Path
+# Get project root (go up from src/phylozoo/visualize)
+project_root = Path(__file__).parent.parent.parent.parent
+_sandbox_path = project_root / 'sandbox'
+if str(_sandbox_path) not in sys.path:
+    sys.path.insert(0, str(_sandbox_path))
+try:
+    from layout_old import compute_directed_layout, compute_semidirected_layout
+except ImportError:
+    # Fallback if sandbox not available
+    compute_directed_layout = None
+    compute_semidirected_layout = None
 
 # Try to import pyqtgraph (optional dependency)
 try:
@@ -607,6 +620,321 @@ def plot_tree(
         The axes object containing the plot.
     """
     return plot_network(tree, ax=ax, **kwargs)
+
+
+# ========== New Layout-Based Plotting Functions ==========
+
+
+def plot_network_with_layout_type(
+    network: 'DirectedPhyNetwork',
+    layout_type: str = 'rectangular',
+    ax: plt.Axes | None = None,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 500,
+    leaf_size: int = 600,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    with_labels: bool = True,
+    label_offset: float = 0.1,
+    **layout_kwargs,
+) -> plt.Axes:
+    """
+    Plot a DirectedPhyNetwork with specified layout type.
+
+    This is the main public API for plotting networks with layout classes.
+    It computes the layout, renders the structure, and adds styling (colors,
+    labels, etc.).
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The network to plot.
+    layout_type : str, optional
+        Layout algorithm to use. Currently only 'rectangular' is supported.
+        By default 'rectangular'.
+    ax : matplotlib.axes.Axes, optional
+        Matplotlib axes to plot on. If None, creates a new figure.
+    node_color : str, optional
+        Color for internal tree nodes. By default 'lightblue'.
+    leaf_color : str, optional
+        Color for leaf nodes. By default 'lightgreen'.
+    hybrid_color : str, optional
+        Color for hybrid nodes. By default 'salmon'.
+    node_size : int, optional
+        Size of internal nodes. By default 500.
+    leaf_size : int, optional
+        Size of leaf nodes. By default 600.
+    edge_color : str, optional
+        Color for tree edges. By default 'gray'.
+    hybrid_edge_color : str, optional
+        Color for hybrid edges. By default 'red'.
+    edge_width : float, optional
+        Width of edges. By default 2.0.
+    with_labels : bool, optional
+        Whether to show node labels. By default True.
+    label_offset : float, optional
+        Offset for labels from nodes. By default 0.1.
+    **layout_kwargs
+        Additional keyword arguments passed to layout computation function
+        (e.g., layer_gap, node_gap, iterations, curve_strength, etc.).
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes object containing the plot.
+
+    Raises
+    ------
+    ValueError
+        If layout_type is not supported.
+
+    Examples
+    --------
+    >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+    >>> from phylozoo.visualize.network_plot import plot_network_with_layout_type
+    >>> 
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> plot_network_with_layout_type(net, layout_type='rectangular')
+    <Axes: >
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(12, 10))
+
+    # Compute layout based on layout_type
+    if layout_type == 'rectangular':
+        from .layout.dnetwork import (
+            compute_rectangular_dnet_layout,
+            render_rectangular_dnet_layout,
+        )
+
+        layout = compute_rectangular_dnet_layout(network, **layout_kwargs)
+
+        # Render the structure (nodes and edges only)
+        render_rectangular_dnet_layout(layout, ax)
+
+        # Add styling: colors, labels, etc.
+        _style_rectangular_layout(
+            layout,
+            ax,
+            node_color=node_color,
+            leaf_color=leaf_color,
+            hybrid_color=hybrid_color,
+            node_size=node_size,
+            leaf_size=leaf_size,
+            edge_color=edge_color,
+            hybrid_edge_color=hybrid_edge_color,
+            edge_width=edge_width,
+            with_labels=with_labels,
+            label_offset=label_offset,
+        )
+    else:
+        raise ValueError(
+            f"Unsupported layout_type: {layout_type}. "
+            "Currently only 'rectangular' is supported."
+        )
+
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.autoscale()
+
+    return ax
+
+
+def _style_rectangular_layout(
+    layout: 'RectangularDNetLayout',
+    ax: plt.Axes,
+    node_color: str = 'lightblue',
+    leaf_color: str = 'lightgreen',
+    hybrid_color: str = 'salmon',
+    node_size: int = 500,
+    leaf_size: int = 600,
+    edge_color: str = 'gray',
+    hybrid_edge_color: str = 'red',
+    edge_width: float = 2.0,
+    with_labels: bool = True,
+    label_offset: float = 0.1,
+) -> None:
+    """
+    Add styling (colors, labels) to a rendered rectangular layout.
+
+    This function removes the default black structure from render_rectangular_dnet_layout
+    and redraws it with proper colors, sizes, and labels.
+
+    Parameters
+    ----------
+    layout : RectangularDNetLayout
+        The layout that has already been rendered.
+    ax : matplotlib.axes.Axes
+        The axes containing the rendered layout.
+    node_color : str, optional
+        Color for internal tree nodes. By default 'lightblue'.
+    leaf_color : str, optional
+        Color for leaf nodes. By default 'lightgreen'.
+    hybrid_color : str, optional
+        Color for hybrid nodes. By default 'salmon'.
+    node_size : int, optional
+        Size of internal nodes. By default 500.
+    leaf_size : int, optional
+        Size of leaf nodes. By default 600.
+    edge_color : str, optional
+        Color for tree edges. By default 'gray'.
+    hybrid_edge_color : str, optional
+        Color for hybrid edges. By default 'red'.
+    edge_width : float, optional
+        Width of edges. By default 2.0.
+    with_labels : bool, optional
+        Whether to show node labels. By default True.
+    label_offset : float, optional
+        Offset for labels from nodes. By default 0.1.
+    """
+    from matplotlib.patches import Circle, FancyBboxPatch
+
+    network = layout.network
+    positions = layout.positions
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
+
+    # Remove default black elements from render function
+    # Remove all patches (edges and default nodes)
+    for patch in list(ax.patches):
+        patch.remove()
+    # Remove all lines (edges and default node markers)
+    for line in list(ax.lines):
+        line.remove()
+    # Remove all annotations (arrows)
+    for annotation in list(ax.texts):
+        if hasattr(annotation, '_arrow_patch'):
+            annotation.remove()
+
+    # Redraw edges with proper colors
+    for (u, v, key), route in layout.edge_routes.items():
+        is_hybrid = route.edge_type.is_hybrid
+        edge_col = hybrid_edge_color if is_hybrid else edge_color
+        points = route.points
+
+        if route.edge_type.is_hybrid and route.curve_control:
+            # Draw curved edge with color
+            from matplotlib.path import Path as MPath
+
+            px, py = points[0]
+            cx, cy = route.curve_control
+            ex, ey = points[-1]
+
+            verts = [
+                (px, py),
+                (cx, cy),
+                (ex, ey),
+            ]
+            codes = [MPath.MOVETO, MPath.CURVE3, MPath.CURVE3]
+
+            path = MPath(verts, codes)
+            patch = mpatches.PathPatch(
+                path,
+                edgecolor=edge_col,
+                facecolor='none',
+                linewidth=edge_width,
+                zorder=1,
+            )
+            ax.add_patch(patch)
+
+            # Arrow
+            dx = ex - cx
+            dy = ey - cy
+            ax.annotate(
+                '',
+                xy=(ex, ey),
+                xytext=(ex - 0.1 * dx, ey - 0.1 * dy),
+                arrowprops=dict(
+                    arrowstyle='->',
+                    color=edge_col,
+                    lw=edge_width,
+                ),
+                zorder=2,
+            )
+        else:
+            # Draw polyline with color
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
+            ax.plot(
+                xs,
+                ys,
+                color=edge_col,
+                linewidth=edge_width,
+                zorder=1,
+            )
+            # Arrow
+            if len(points) >= 2:
+                ax.annotate(
+                    '',
+                    xy=(xs[-1], ys[-1]),
+                    xytext=(xs[-2], ys[-2]),
+                    arrowprops=dict(
+                        arrowstyle='->',
+                        color=edge_col,
+                        lw=edge_width,
+                    ),
+                    zorder=2,
+                )
+
+    # Draw styled nodes
+    for node, (x, y) in positions.items():
+        if node in hybrid_nodes:
+            # Hybrid node: colored circle
+            circle = Circle(
+                (x, y),
+                radius=0.15,
+                color=hybrid_color,
+                ec='darkred',
+                lw=2,
+                zorder=3,
+            )
+            ax.add_patch(circle)
+        elif node in leaves:
+            # Leaf node: colored square
+            square = FancyBboxPatch(
+                (x - 0.12, y - 0.12),
+                0.24,
+                0.24,
+                boxstyle="round,pad=0.02",
+                facecolor=leaf_color,
+                edgecolor='darkgreen',
+                linewidth=2,
+                zorder=3,
+            )
+            ax.add_patch(square)
+        else:
+            # Internal tree node: colored circle
+            circle = Circle(
+                (x, y),
+                radius=0.12,
+                color=node_color,
+                ec='darkblue',
+                lw=2,
+                zorder=3,
+            )
+            ax.add_patch(circle)
+
+    # Add labels
+    if with_labels:
+        for node, (x, y) in positions.items():
+            label = network.get_label(node) if hasattr(network, 'get_label') else str(node)
+            if label:
+                ax.text(
+                    x,
+                    y - label_offset,
+                    label,
+                    ha='center',
+                    va='top',
+                    fontsize=9,
+                    fontweight='bold',
+                    zorder=4,
+                )
 
 
 # ========== New Layout-Based Plotting Functions ==========

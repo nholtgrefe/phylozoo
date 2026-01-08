@@ -6,22 +6,35 @@ and graph structures.
 """
 
 from .graph_plot import plot_directed_multigraph, plot_mixed_multigraph
-from .layout import compute_directed_layout, compute_semidirected_layout
+from .layout import (
+    DNetLayout,
+    EdgeRoute,
+    EdgeType,
+    Layout,
+    RectangularDNetLayout,
+    compute_rectangular_dnet_layout,
+    render_rectangular_dnet_layout,
+)
 from .network_plot import (
     plot_network,
     plot_network_with_layout,
+    plot_network_with_layout_type,
     plot_tree,
 )
-from .rectangular_layout import compute_rectangular_layout
 
 __all__ = [
     'plot_directed_multigraph',
     'plot_mixed_multigraph',
     'plot_network',
     'plot_network_with_layout',
+    'plot_network_with_layout_type',
     'plot_tree',
-    'compute_directed_layout',
-    'compute_semidirected_layout',
-    'compute_rectangular_layout',
+    'Layout',
+    'DNetLayout',
+    'RectangularDNetLayout',
+    'compute_rectangular_dnet_layout',
+    'render_rectangular_dnet_layout',
+    'EdgeRoute',
+    'EdgeType',
 ]
 
