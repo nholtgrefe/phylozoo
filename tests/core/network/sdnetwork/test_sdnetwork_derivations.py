@@ -8,8 +8,9 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
-from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, distances, k_taxon_subnetworks, subnetwork, tree_of_blobs, induced_splits, split_from_cutedge, to_d_network
+from phylozoo.core.network.sdnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, distances, k_taxon_subnetworks, subnetwork, tree_of_blobs, induced_splits, split_from_cutedge, to_d_network, partition_from_blob
 from phylozoo.core.split.base import Split
+from phylozoo.core.primitives.partition import Partition
 from phylozoo.core.network.sdnetwork.features import blobs
 from phylozoo.core.network.sdnetwork.conversions import sdnetwork_from_graph
 from phylozoo.core.network.sdnetwork.transformations import suppress_2_blobs
@@ -1719,3 +1720,159 @@ class TestDisplayedQuartets:
                 # Total quartet weights in each profile should sum to 1.0
                 total_weight = sum(profile.quartets.values())
                 assert abs(total_weight - 1.0) < 1e-10
+
+
+class TestPartitionFromBlob:
+    """Test partition_from_blob function for MixedPhyNetwork/SemiDirectedPhyNetwork."""
+
+    def test_basic_partition(self) -> None:
+        """Test basic partition_from_blob functionality."""
+        # Network with hybrid node creating non-leaf blob
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1),  # Hybrid node 5 to leaf
+                (6, 2), (6, 3), (6, 7),  # Tree node 6
+                (7, 8), (7, 9),  # Tree node 7
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (8, {'label': 'D'}),
+                (9, {'label': 'E'}),
+            ],
+        )
+        # Non-leaf blob is {5, 6, 7}
+        partition = partition_from_blob(net, {5, 6, 7})
+        
+        assert isinstance(partition, Partition)
+        assert len(partition) == 5
+        # Each leaf should be in its own part
+        assert {'A'} in partition
+        assert {'B'} in partition
+        assert {'C'} in partition
+        assert {'D'} in partition
+        assert {'E'} in partition
+
+    def test_partition_with_edge_taxa(self) -> None:
+        """Test partition_from_blob with return_edge_taxa=True."""
+        # Network with hybrid node creating non-leaf blob
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1),  # Hybrid node 5 to leaf
+                (6, 2), (6, 3), (6, 7),  # Tree node 6
+                (7, 8), (7, 9),  # Tree node 7
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (8, {'label': 'D'}),
+                (9, {'label': 'E'}),
+            ],
+        )
+        # Non-leaf blob is {5, 6, 7}
+        partition, edge_taxa = partition_from_blob(net, {5, 6, 7}, return_edge_taxa=True)
+        
+        assert isinstance(partition, Partition)
+        assert len(partition) == 5
+        assert isinstance(edge_taxa, list)
+        assert len(edge_taxa) == 5
+        
+        # Check that each tuple has the correct format
+        for u, v, taxa_set in edge_taxa:
+            assert isinstance(u, (int, str))
+            assert isinstance(v, (int, str))
+            assert isinstance(taxa_set, frozenset)
+            assert v in {5, 6, 7}  # All should connect to blob nodes
+            assert len(taxa_set) == 1  # Each component has one taxon
+        
+        # Check that all taxa are covered
+        all_taxa = {taxon for _, _, taxa_set in edge_taxa for taxon in taxa_set}
+        assert all_taxa == {'A', 'B', 'C', 'D', 'E'}
+
+    def test_empty_blob_raises_error(self) -> None:
+        """Test that empty blob raises ValueError."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1), (6, 2), (6, 3), (6, 7), (7, 8), (7, 9),
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'}), (9, {'label': 'E'})]
+        )
+        with pytest.raises(ValueError, match="Blob cannot be empty"):
+            partition_from_blob(net, set())
+
+    def test_blob_not_in_network_raises_error(self) -> None:
+        """Test that blob with nodes not in network raises ValueError."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1), (6, 2), (6, 3), (6, 7), (7, 8), (7, 9),
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'}), (9, {'label': 'E'})]
+        )
+        with pytest.raises(ValueError, match="Blob contains nodes not in network"):
+            partition_from_blob(net, {99})  # Node 99 not in network
+
+    def test_leaf_blob_raises_error(self) -> None:
+        """Test that a leaf blob (single leaf node) raises ValueError."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1), (6, 2), (6, 3), (6, 7), (7, 8), (7, 9),
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'}), (9, {'label': 'E'})]
+        )
+        with pytest.raises(ValueError, match="is not a non-leaf blob"):
+            partition_from_blob(net, {1})  # Leaf node blob
+
+    def test_multiple_node_blob(self) -> None:
+        """Test partition_from_blob with a blob containing multiple nodes."""
+        # Network with hybrid node creating non-leaf blob
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                {'u': 6, 'v': 5, 'gamma': 0.6},
+                {'u': 7, 'v': 5, 'gamma': 0.4},
+            ],
+            undirected_edges=[
+                (5, 1),  # Hybrid node 5 to leaf
+                (6, 2), (6, 3), (6, 7),  # Tree node 6
+                (7, 8), (7, 9),  # Tree node 7
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (8, {'label': 'D'}),
+                (9, {'label': 'E'}),
+            ],
+        )
+        # Non-leaf blob is {5, 6, 7}
+        partition = partition_from_blob(net, {5, 6, 7})
+        
+        assert isinstance(partition, Partition)
+        assert len(partition) == 5
+        # Each leaf should be in its own part
+        assert {'A'} in partition
+        assert {'B'} in partition
+        assert {'C'} in partition
+        assert {'D'} in partition
+        assert {'E'} in partition

@@ -9,7 +9,12 @@ from .sqprofileset import SqQuartetProfileSet
 from .qjoining import adapted_quartet_joining, quartet_joining
 from .unresolve_tree import split_support, unresolve_tree
 from .tstar_tree import bstar, tstar_tree
-from .cycle_resolution import resolve_cycle_ordering
+from .cycle_resolution import (
+    resolve_cycle_ordering,
+    _reticulation_order,
+    cutvertex_to_cycle,
+    reconstruct_network_from_tree,
+)
 
 __all__ = [
     "SqQuartetProfile",
@@ -21,5 +26,8 @@ __all__ = [
     "bstar",
     "tstar_tree",
     "resolve_cycle_ordering",
+    "_reticulation_order",
+    "cutvertex_to_cycle",
+    "reconstruct_network_from_tree",
 ]
 

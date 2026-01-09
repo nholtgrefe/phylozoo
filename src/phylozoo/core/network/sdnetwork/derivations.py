@@ -20,6 +20,7 @@ from .features import blobs, root_locations, RootLocation
 from .transformations import suppress_2_blobs as suppress_2_blobs_fn, identify_parallel_edges as identify_parallel_edges_fn
 from ...split import Split, SplitSystem, WeightedSplitSystem
 from ...quartet import Quartet, QuartetProfile, QuartetProfileSet
+from ...primitives.partition import Partition
 from .sd_phynetwork import SemiDirectedPhyNetwork
 from ._utils import _suppress_deg2_nodes, _subdivide_edge
 from .conversions import sdnetwork_from_graph
@@ -1239,3 +1240,144 @@ def to_d_network(
     
     # Call the helper function to perform the rooting
     return _root_sd_network_at(network, root_location)
+
+
+def partition_from_blob(
+    network: MixedPhyNetwork,
+    blob: set[Any],
+    return_edge_taxa: bool = False,
+) -> Partition | tuple[Partition, list[tuple[Any, Any, frozenset[str]]]]:
+    """
+    Get the partition of taxa induced by removing a blob from the network.
+    
+    When all nodes in the blob are removed, the network splits into connected components.
+    Each component's taxa form a part of the partition.
+    
+    Parameters
+    ----------
+    network : MixedPhyNetwork
+        The mixed phylogenetic network.
+    blob : set[Any]
+        Set of nodes forming the blob to remove. All nodes in this set will be
+        removed to compute the partition.
+    return_edge_taxa : bool, optional
+        If True, also return a list of tuples (u, v, taxa_set) where u is a node
+        in the component, v is a node in the blob, and taxa_set is the frozenset
+        of taxa in that component. By default False.
+    
+    Returns
+    -------
+    Partition | tuple[Partition, list[tuple[Any, Any, frozenset[str]]]]
+        If return_edge_taxa is False: The partition of taxa induced by removing the blob.
+        If return_edge_taxa is True: A tuple (partition, edge_taxa_list) where edge_taxa_list
+        is a list of (u, v, taxa_set) tuples connecting each component to the blob.
+    
+    Raises
+    ------
+    ValueError
+        If blob is empty or if blob contains nodes not in the network.
+        If blob is not a non-leaf blob (internal blob).
+        If removing the blob does not disconnect the network (blob is not a cut-blob).
+    
+    Examples
+    --------
+    >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> partition = partition_from_blob(net, {3})
+    >>> len(partition)
+    3
+    """
+    # Validate blob
+    if not blob:
+        raise ValueError("Blob cannot be empty")
+    
+    # Check all nodes in blob are in network
+    network_nodes = set(network._graph.nodes)
+    missing_nodes = blob - network_nodes
+    if missing_nodes:
+        raise ValueError(
+            f"Blob contains nodes not in network: {missing_nodes}"
+        )
+    
+    # Check that blob is a non-leaf blob
+    non_leaf_blobs = blobs(network, trivial=False, leaves=False)
+    blob_frozen = frozenset(blob)
+    if blob_frozen not in {frozenset(b) for b in non_leaf_blobs}:
+        raise ValueError(
+            f"Blob {blob} is not a non-leaf blob. "
+            "Only non-leaf blobs (internal blobs) can be used for partition_from_blob."
+        )
+    
+    # Create a copy of the graph and remove all blob nodes
+    graph_copy = network._graph.copy()
+    for node in blob:
+        graph_copy.remove_node(node)
+    
+    # Find connected components
+    components = list(nx.connected_components(graph_copy._combined))
+    
+    # Check that removing blob disconnects the network (at least 2 components)
+    if len(components) < 2:
+        raise ValueError(
+            f"Removing blob {blob} does not disconnect the network. "
+            f"Result has {len(components)} component(s), expected at least 2."
+        )
+    
+    # Get leaves set for taxon extraction
+    leaves_set = network.leaves
+    
+    # Build partition parts and edge_taxa list
+    partition_parts: list[set[str]] = []
+    edge_taxa_list: list[tuple[Any, Any, frozenset[str]]] = []
+    
+    # For each component, find taxa and connecting edge
+    for component in components:
+        # Get taxa in this component
+        component_taxa = frozenset(
+            network._node_to_label[node]
+            for node in component & leaves_set
+            if node in network._node_to_label
+        )
+        
+        # Skip components with no taxa
+        if not component_taxa:
+            continue
+        
+        partition_parts.append(set(component_taxa))
+        
+        # If return_edge_taxa is True, find an edge connecting this component to the blob
+        if return_edge_taxa:
+            # Find a node in the component that has an edge to a node in the blob
+            u = None
+            v = None
+            for node_in_component in component:
+                # Check for edges to blob nodes
+                for blob_node in blob:
+                    if network._graph.has_edge(node_in_component, blob_node):
+                        u = node_in_component
+                        v = blob_node
+                        break
+                    elif network._graph.has_edge(blob_node, node_in_component):
+                        u = node_in_component
+                        v = blob_node
+                        break
+                if u is not None:
+                    break
+            
+            if u is not None and v is not None:
+                edge_taxa_list.append((u, v, component_taxa))
+            else:
+                # Should not happen if blob is a cut-blob, but handle gracefully
+                raise ValueError(
+                    f"Could not find edge connecting component with taxa {component_taxa} to blob"
+                )
+    
+    # Create partition (no need to check coverage - non-leaf blobs guarantee all taxa are covered)
+    partition = Partition(partition_parts)
+    
+    if return_edge_taxa:
+        return (partition, edge_taxa_list)
+    return partition

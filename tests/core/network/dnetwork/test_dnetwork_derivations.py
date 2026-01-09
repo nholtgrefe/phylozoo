@@ -6,8 +6,9 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, tree_of_blobs, distances, induced_splits, split_from_cutedge
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, tree_of_blobs, distances, induced_splits, split_from_cutedge, partition_from_blob
 from phylozoo.core.split.base import Split
+from phylozoo.core.primitives.partition import Partition
 from phylozoo.core.network.dnetwork.features import blobs
 from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
@@ -1059,3 +1060,158 @@ class TestDisplayedQuartets:
         # The split should be a 2|2 split (unrooted quartet)
         assert len(quartet.split.set1) == 2
         assert len(quartet.split.set2) == 2
+
+
+class TestPartitionFromBlob:
+    """Test partition_from_blob function for DirectedPhyNetwork."""
+
+    def test_basic_partition(self) -> None:
+        """Test basic partition_from_blob functionality."""
+        # Network with hybrid node creating non-leaf blob
+        net = DirectedPhyNetwork(
+            edges=[
+                (8, 5), (8, 6),
+                (5, 1), (5, 2),
+                (6, 3), (6, 9),
+                (5, 4), (6, 4),  # Hybrid node 4
+                (4, 7),
+                (7, 10), (7, 11),
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (9, {'label': 'D'}),
+                (10, {'label': 'E'}),
+                (11, {'label': 'F'}),
+            ],
+        )
+        # Non-leaf blob is {4, 5, 6, 8}
+        partition = partition_from_blob(net, {4, 5, 6, 8})
+        
+        assert isinstance(partition, Partition)
+        assert len(partition) == 5
+        # Leaves E and F are in the same component (both connected via node 7)
+        assert {'A'} in partition
+        assert {'B'} in partition
+        assert {'C'} in partition
+        assert {'D'} in partition
+        assert {'E', 'F'} in partition
+
+    def test_partition_with_edge_taxa(self) -> None:
+        """Test partition_from_blob with return_edge_taxa=True."""
+        # Network with hybrid node creating non-leaf blob
+        net = DirectedPhyNetwork(
+            edges=[
+                (8, 5), (8, 6),
+                (5, 1), (5, 2),
+                (6, 3), (6, 9),
+                (5, 4), (6, 4),  # Hybrid node 4
+                (4, 7),
+                (7, 10), (7, 11),
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (9, {'label': 'D'}),
+                (10, {'label': 'E'}),
+                (11, {'label': 'F'}),
+            ],
+        )
+        # Non-leaf blob is {4, 5, 6, 8}
+        partition, edge_taxa = partition_from_blob(net, {4, 5, 6, 8}, return_edge_taxa=True)
+        
+        assert isinstance(partition, Partition)
+        assert len(partition) == 5
+        assert isinstance(edge_taxa, list)
+        assert len(edge_taxa) == 5
+        
+        # Check that each tuple has the correct format
+        for u, v, taxa_set in edge_taxa:
+            assert isinstance(u, (int, str))
+            assert isinstance(v, (int, str))
+            assert isinstance(taxa_set, frozenset)
+            assert v in {4, 5, 6, 8}  # All should connect to blob nodes
+        
+        # Check that all taxa are covered
+        all_taxa = {taxon for _, _, taxa_set in edge_taxa for taxon in taxa_set}
+        assert all_taxa == {'A', 'B', 'C', 'D', 'E', 'F'}
+
+    def test_empty_blob_raises_error(self) -> None:
+        """Test that empty blob raises ValueError."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (8, 5), (8, 6),
+                (5, 1), (5, 2),
+                (6, 3), (6, 9),
+                (5, 4), (6, 4),
+                (4, 7), (7, 10), (7, 11),
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})]
+        )
+        with pytest.raises(ValueError, match="Blob cannot be empty"):
+            partition_from_blob(net, set())
+
+    def test_blob_not_in_network_raises_error(self) -> None:
+        """Test that blob with nodes not in network raises ValueError."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (8, 5), (8, 6),
+                (5, 1), (5, 2),
+                (6, 3), (6, 9),
+                (5, 4), (6, 4),
+                (4, 7), (7, 10), (7, 11),
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})]
+        )
+        with pytest.raises(ValueError, match="Blob contains nodes not in network"):
+            partition_from_blob(net, {99})  # Node 99 not in network
+
+    def test_leaf_blob_raises_error(self) -> None:
+        """Test that a leaf blob (single leaf node) raises ValueError."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (8, 5), (8, 6),
+                (5, 1), (5, 2),
+                (6, 3), (6, 9),
+                (5, 4), (6, 4),
+                (4, 7), (7, 10), (7, 11),
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})]
+        )
+        with pytest.raises(ValueError, match="is not a non-leaf blob"):
+            partition_from_blob(net, {1})  # Leaf node blob
+
+    def test_multiple_node_blob(self) -> None:
+        """Test partition_from_blob with a blob containing multiple nodes."""
+        # Network with hybrid node creating non-leaf blob
+        net = DirectedPhyNetwork(
+            edges=[
+                (8, 5), (8, 6),
+                (5, 1), (5, 2),
+                (6, 3), (6, 9),
+                (5, 4), (6, 4),  # Hybrid node 4
+                (4, 7),
+                (7, 10), (7, 11),
+            ],
+            nodes=[
+                (1, {'label': 'A'}),
+                (2, {'label': 'B'}),
+                (3, {'label': 'C'}),
+                (9, {'label': 'D'}),
+                (10, {'label': 'E'}),
+                (11, {'label': 'F'}),
+            ],
+        )
+        # Non-leaf blob is {4, 5, 6, 8}
+        partition = partition_from_blob(net, {4, 5, 6, 8})
+        
+        assert isinstance(partition, Partition)
+        assert len(partition) == 5
+        # Leaves E and F are in the same component (both connected via node 7)
+        assert {'A'} in partition
+        assert {'B'} in partition
+        assert {'C'} in partition
+        assert {'D'} in partition
+        assert {'E', 'F'} in partition
