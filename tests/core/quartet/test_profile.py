@@ -82,6 +82,28 @@ class TestQuartetProfileInit:
         with pytest.raises(ValueError, match="Weight must be positive"):
             QuartetProfile([(q1, 0.0), (q2, 1.0)])
     
+    def test_init_duplicate_quartet_error(self) -> None:
+        """Test that duplicate quartets raise ValueError."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        
+        # Duplicate in list of quartets
+        with pytest.raises(ValueError, match="appears multiple times in the input"):
+            QuartetProfile([q1, q2, q1])
+        
+        # Duplicate in list of tuples
+        with pytest.raises(ValueError, match="appears multiple times in the input"):
+            QuartetProfile([(q1, 0.5), (q2, 0.3), (q1, 0.2)])
+        
+        # Duplicate in dict (can't actually happen with dict syntax, but test explicit dict)
+        # Note: dict syntax automatically overwrites, so we can't test this directly
+        # But we can test that the validation would catch it if we construct it manually
+        quartets_dict = {q1: 0.5, q2: 0.3}
+        quartets_dict[q1] = 0.2  # This overwrites, so no error
+        # The dict itself doesn't have duplicates, so this is fine
+        profile = QuartetProfile(quartets_dict)
+        assert profile.get_weight(q1) == 0.2  # Last value wins
+    
     def test_init_single_quartet(self) -> None:
         """Test creating a profile with a single quartet."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
@@ -251,10 +273,10 @@ class TestQuartetProfileProperties:
         assert len(orderings) == 2
     
     def test_circular_orderings_two_stars(self) -> None:
-        """Test circular_orderings property with two star trees."""
+        """Test circular_orderings property with star tree."""
+        # Note: Can't have duplicate stars (same quartet), so test with one star
         star1 = Quartet({1, 2, 3, 4})
-        star2 = Quartet({1, 2, 3, 4})  # Same star
-        profile = QuartetProfile([star1, star2])
+        profile = QuartetProfile([star1])
         
         orderings = profile.circular_orderings
         assert orderings is not None
@@ -360,18 +382,12 @@ class TestQuartetProfileEdgeCases:
     """Tests for QuartetProfile edge cases."""
     
     def test_duplicate_quartets_in_list(self) -> None:
-        """Test that duplicate quartets in list are handled correctly."""
+        """Test that duplicate quartets in list raise an error."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
-        # Same quartet appears twice
-        profile = QuartetProfile([q1, q1, q2])
-        
-        # Should have 2 unique quartets (duplicates are overwritten in dict)
-        assert len(profile) == 2
-        assert q1 in profile
-        assert q2 in profile
-        # Last occurrence determines weight
-        assert profile.get_weight(q1) == 1.0
+        # Same quartet appears twice - should raise error
+        with pytest.raises(ValueError, match="appears multiple times in the input"):
+            QuartetProfile([q1, q1, q2])
     
     def test_duplicate_quartets_in_dict(self) -> None:
         """Test that duplicate quartets in dict use last weight."""
@@ -446,8 +462,8 @@ class TestQuartetProfileIsResolved:
     def test_all_star_quartets(self) -> None:
         """Test is_resolved with all star quartets."""
         star1 = Quartet({1, 2, 3, 4})
-        star2 = Quartet({1, 2, 3, 4})  # Same star
-        profile = QuartetProfile([star1, star2])
+        # Can't have duplicate stars, so just use one
+        profile = QuartetProfile([star1])
         
         assert profile.is_resolved() is False
     

@@ -98,10 +98,28 @@ class QuartetProfile:
                 quartets = {}
             elif isinstance(quartets[0], Quartet):
                 # List of quartets: assign weight 1.0 to each
-                quartets = {q: 1.0 for q in quartets}
+                # Check for duplicates during iteration using dict itself
+                quartets_dict: dict[Quartet, float] = {}
+                for q in quartets:
+                    if q in quartets_dict:
+                        raise ValueError(
+                            f"Quartet {q} appears multiple times in the input. "
+                            "Each quartet can only appear once in a profile."
+                        )
+                    quartets_dict[q] = 1.0
+                quartets = quartets_dict
             else:
-                # List of tuples: convert to dict
-                quartets = dict(quartets)
+                # List of tuples: convert to dict, checking for duplicates
+                # Check for duplicates during iteration using dict itself
+                quartets_dict: dict[Quartet, float] = {}
+                for q, weight in quartets:
+                    if q in quartets_dict:
+                        raise ValueError(
+                            f"Quartet {q} appears multiple times in the input. "
+                            "Each quartet can only appear once in a profile."
+                        )
+                    quartets_dict[q] = weight
+                quartets = quartets_dict
         
         # Set quartets before validation
         object.__setattr__(self, '_quartets', quartets)

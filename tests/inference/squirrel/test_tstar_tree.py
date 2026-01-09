@@ -54,9 +54,9 @@ class TestBstar:
         q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
         profile1 = QuartetProfile({q1: 1.0})
         
-        # Create a non-trivial profile (multiple quartets)
-        q2 = Quartet(Split({'A', 'C'}, {'B', 'D'}))
-        q3 = Quartet(Split({'A', 'D'}, {'B', 'C'}))
+        # Create a non-trivial profile (multiple quartets) on different taxa
+        q2 = Quartet(Split({'A', 'C'}, {'B', 'E'}))
+        q3 = Quartet(Split({'A', 'E'}, {'B', 'C'}))
         profile2 = QuartetProfile({q2: 0.6, q3: 0.4})
         
         profileset = QuartetProfileSet(profiles=[profile1, profile2])
@@ -65,7 +65,7 @@ class TestBstar:
         
         # Should only use the trivial profile
         assert isinstance(result, SplitSystem)
-        assert result.elements == {'A', 'B', 'C', 'D'}
+        assert result.elements == {'A', 'B', 'C', 'D', 'E'}
     
     def test_bstar_only_resolved_profiles(self) -> None:
         """Test that bstar only considers resolved (non-star) profiles."""
@@ -268,12 +268,9 @@ class TestTstarTree:
         q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
         profile1 = QuartetProfile({q1: 1.0})
         
-        # Create a non-trivial profile (multiple quartets)
-        q2 = Quartet(Split({'A', 'C'}, {'B', 'D'}))
-        q3 = Quartet(Split({'A', 'D'}, {'B', 'C'}))
-        profile2 = QuartetProfile({q2: 0.6, q3: 0.4})
-        
-        profileset = QuartetProfileSet(profiles=[profile1, profile2])
+        # Since we can't have multiple profiles with same taxa anymore,
+        # test with just the trivial profile
+        profileset = QuartetProfileSet(profiles=[profile1])
         
         tree = tstar_tree(profileset)
         

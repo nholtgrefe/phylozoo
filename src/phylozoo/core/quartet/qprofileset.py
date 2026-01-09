@@ -156,6 +156,12 @@ class QuartetProfileSet:
                 profile = obj
                 profile_taxa = profile.taxa
                 all_taxa_from_input.update(profile_taxa)
+                # Check for duplicate taxa sets
+                if profile_taxa in profiles_dict:
+                    raise ValueError(
+                        f"Multiple profiles with the same taxa set {profile_taxa} are not allowed. "
+                        "Each 4-taxon set can only have one profile."
+                    )
                 profiles_dict[profile_taxa] = (profile, weight)
             
             else:
@@ -166,6 +172,12 @@ class QuartetProfileSet:
                 
                 if quartet_taxa not in profile_data:
                     profile_data[quartet_taxa] = {}
+                # Check for duplicate quartets during iteration
+                if quartet in profile_data[quartet_taxa]:
+                    raise ValueError(
+                        f"Quartet {quartet} appears multiple times in the input. "
+                        "Each quartet can only appear once per taxa set."
+                    )
                 profile_data[quartet_taxa][quartet] = weight
         
         # If we processed quartets, create profiles from grouped data

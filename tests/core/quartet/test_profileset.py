@@ -98,6 +98,40 @@ class TestQuartetProfileSetInit:
         with pytest.raises(ValueError, match="Profile weight must be positive"):
             QuartetProfileSet(profiles=[(profile1, -0.5)])
     
+    def test_init_duplicate_profile_taxa_error(self) -> None:
+        """Test that multiple profiles with same taxa raise error."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        profile1 = QuartetProfile([q1])
+        profile2 = QuartetProfile([q2])  # Same taxa as profile1
+        
+        with pytest.raises(ValueError, match="Multiple profiles with the same taxa set"):
+            QuartetProfileSet(profiles=[profile1, profile2])
+        
+        with pytest.raises(ValueError, match="Multiple profiles with the same taxa set"):
+            QuartetProfileSet(profiles=[(profile1, 1.0), (profile2, 2.0)])
+    
+    def test_init_duplicate_quartet_in_quartet_mode_error(self) -> None:
+        """Test that duplicate quartets in quartet mode raise error."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        
+        # Same quartet appears twice (same taxa)
+        with pytest.raises(ValueError, match="appears multiple times in the input"):
+            QuartetProfileSet(profiles=[q1, q2, q1])
+        
+        # Same quartet with different weights
+        with pytest.raises(ValueError, match="appears multiple times in the input"):
+            QuartetProfileSet(profiles=[(q1, 0.5), (q2, 0.3), (q1, 0.2)])
+        
+        # Different quartets with same taxa (this is OK - they get merged)
+        q3 = Quartet(Split({1, 4}, {2, 3}))  # Different quartet, same taxa
+        profileset = QuartetProfileSet(profiles=[q1, q2, q3])
+        # Should work - all three quartets merged into one profile
+        profile = profileset.get_profile(frozenset({1, 2, 3, 4}))
+        assert profile is not None
+        assert len(profile) == 3
+    
     def test_init_non_positive_quartet_weight_error(self) -> None:
         """Test that non-positive quartet weights raise error."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
@@ -130,22 +164,15 @@ class TestQuartetProfileSetInit:
             QuartetProfileSet(profiles=[q1], taxa=frozenset({1, 2, 3}))
     
     def test_init_duplicate_taxa_profiles(self) -> None:
-        """Test that duplicate taxa in profiles overwrite previous profile."""
+        """Test that duplicate taxa in profiles raise an error."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         profile1 = QuartetProfile([q1])
-        profile2 = QuartetProfile([q2])
+        profile2 = QuartetProfile([q2])  # Same taxa as profile1
         
-        profileset = QuartetProfileSet(profiles=[(profile1, 1.0), (profile2, 2.0)])
-        
-        # Should only have one profile (last one wins)
-        assert len(profileset) == 1
-        assert profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 2.0
-        # Should have q2, not q1
-        profile = profileset.get_profile(frozenset({1, 2, 3, 4}))
-        assert profile is not None
-        assert q2 in profile
-        assert q1 not in profile
+        # Should raise error for duplicate taxa sets
+        with pytest.raises(ValueError, match="Multiple profiles with the same taxa set"):
+            QuartetProfileSet(profiles=[(profile1, 1.0), (profile2, 2.0)])
 
 
 class TestQuartetProfileSetProperties:
@@ -295,9 +322,11 @@ class TestQuartetProfileSetProperties:
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         profile1 = QuartetProfile([q1])  # length 1
-        profile2 = QuartetProfile([q1, q2])  # length 2
         q3 = Quartet(Split({5, 6}, {7, 8}))
-        profile3 = QuartetProfile([q3])  # length 1
+        q4 = Quartet(Split({5, 7}, {6, 8}))
+        profile2 = QuartetProfile([q3, q4])  # length 2, different taxa
+        q5 = Quartet(Split({9, 10}, {11, 12}))
+        profile3 = QuartetProfile([q5])  # length 1, different taxa
         profileset = QuartetProfileSet(profiles=[profile1, profile2, profile3])
         
         assert profileset.max_profile_len == 2
