@@ -114,8 +114,10 @@ class TestSplit:
 
     def test_induced_quartetsplits(self) -> None:
         """Test induced_quartetsplits generates correct quartet splits."""
+        from phylozoo.core.split.base import induced_quartetsplits
+        
         split = Split({1, 2, 3}, {4, 5, 6})
-        quartets = split.induced_quartetsplits()
+        quartets = induced_quartetsplits(split)
         
         # Should generate C(3,2) * C(3,2) = 3 * 3 = 9 quartet splits
         assert len(quartets) == 9
@@ -127,8 +129,10 @@ class TestSplit:
 
     def test_induced_quartetsplits_include_trivial(self) -> None:
         """Test induced_quartetsplits with include_trivial=True."""
+        from phylozoo.core.split.base import induced_quartetsplits
+        
         split = Split({1, 2}, {3, 4, 5})
-        quartets = split.induced_quartetsplits(include_trivial=True)
+        quartets = induced_quartetsplits(split, include_trivial=True)
         
         # Should have 2|2 splits: C(2,2) * C(3,2) = 1 * 3 = 3
         # Plus trivial 1|3 splits: C(2,1) * C(3,3) + C(2,3) * C(3,1) = 2 * 1 + 0 * 3 = 2

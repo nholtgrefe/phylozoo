@@ -193,4 +193,30 @@ class SqQuartetProfileSet(QuartetProfileSet):
         """
         result = self._profiles.get(taxa)
         return result[0] if result else None  # type: ignore
+    
+    def __repr__(self) -> str:
+        """
+        Return string representation of the profile set that can be used to initialize it.
+        
+        Returns
+        -------
+        str
+            String representation that can be used to recreate the object.
+        """
+        if len(self._profiles) == 0:
+            return "SqQuartetProfileSet(profiles={})"
+        
+        # Build list of (profile, weight) tuples for initialization
+        # Use the quartets dict directly since that's what __init__ accepts
+        profile_items = []
+        for taxa, (profile, weight) in self._profiles.items():
+            # Get the quartets dict from the profile
+            quartets_dict = dict(profile.quartets)
+            ret_leaf_str = f", reticulation_leaf='{profile.reticulation_leaf}'" if profile.reticulation_leaf else ""
+            profile_items.append(
+                f"(SqQuartetProfile({repr(quartets_dict)}{ret_leaf_str}), {weight})"
+            )
+        
+        profiles_str = ", ".join(profile_items)
+        return f"SqQuartetProfileSet(profiles=[{profiles_str}])"
 

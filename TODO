@@ -18,6 +18,7 @@ squirrel could actually take in any set of input trees?
 update the qjoining and all other squirrel alg's to take into account nonresolved quartets. Also, add a constant DEFAULT: with default settings into attr's, then we can also add a notehr settings constant etc.
 add undirected network and make mixed a superclass or child?
 check which squirrel helper methods should use general qpset or sq qpset
+squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
 
 use novalidation more
 move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?

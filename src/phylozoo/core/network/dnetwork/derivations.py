@@ -1140,8 +1140,8 @@ def partition_from_blob(
             f"Blob contains nodes not in network: {missing_nodes}"
         )
     
-    # Check that blob is a non-leaf blob
-    non_leaf_blobs = blobs(network, trivial=False, leaves=False)
+    # Check that blob is a non-leaf blob (including trivial single-node blobs)
+    non_leaf_blobs = blobs(network, trivial=True, leaves=False)
     blob_frozen = frozenset(blob)
     if blob_frozen not in {frozenset(b) for b in non_leaf_blobs}:
         raise ValueError(

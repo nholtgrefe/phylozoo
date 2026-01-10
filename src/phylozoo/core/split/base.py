@@ -108,59 +108,61 @@ class Split(Partition):
             True if the split is trivial, False otherwise.
         """
         return len(self.set1) == 1 or len(self.set2) == 1
+
+
+def induced_quartetsplits(split: Split, include_trivial: bool = False) -> set[Split]:
+    """
+    Return a set of all subsplits of size 4 of the split.
     
+    Generates all quartet splits (2|2 splits) that can be induced from this
+    split by selecting 2 elements from each side.
     
-    def induced_quartetsplits(self, include_trivial: bool = False) -> set['Split']:
-        """
-        Return a set of all subsplits of size 4 of the split.
+    Parameters
+    ----------
+    split : Split[T]
+        The split to generate quartet splits from.
+    include_trivial : bool, optional
+        If True, also include trivial quartet splits (1|3 splits).
+        By default False.
+    
+    Returns
+    -------
+    set[Split[T]]
+        A set of quartet splits induced from this split.
+    
+    Examples
+    --------
+    >>> split = Split({1, 2, 3}, {4, 5, 6})
+    >>> quartets = induced_quartetsplits(split)
+    >>> len(quartets) > 0
+    True
+    
+    Notes
+    -----
+    This function returns a set[Split[T]] instead of QuartetSplitSet
+    since QuartetSplitSet has been temporarily removed.
+    """
+    res: list[Split] = []
+    
+    # Generate 2|2 splits
+    for s1 in itertools.combinations(split.set1, 2):
+        for s2 in itertools.combinations(split.set2, 2):
+            quartet_split = Split(set(s1), set(s2))
+            res.append(quartet_split)
+    
+    # Optionally include trivial splits (1|3)
+    if include_trivial:
+        for s1 in itertools.combinations(split.set1, 1):
+            for s2 in itertools.combinations(split.set2, 3):
+                quartet_split = Split(set(s1), set(s2))
+                res.append(quartet_split)
         
-        Generates all quartet splits (2|2 splits) that can be induced from this
-        split by selecting 2 elements from each side.
-        
-        Parameters
-        ----------
-        include_trivial : bool, optional
-            If True, also include trivial quartet splits (1|3 splits).
-            By default False.
-        
-        Returns
-        -------
-        set[Split[T]]
-            A set of quartet splits induced from this split.
-        
-        Examples
-        --------
-        >>> split = Split({1, 2, 3}, {4, 5, 6})
-        >>> quartets = split.induced_quartetsplits()
-        >>> len(quartets) > 0
-        True
-        
-        Notes
-        -----
-        This method returns a set[Split[T]] instead of QuartetSplitSet
-        since QuartetSplitSet has been temporarily removed.
-        """
-        res: list[Split] = []
-        
-        # Generate 2|2 splits
-        for s1 in itertools.combinations(self.set1, 2):
-            for s2 in itertools.combinations(self.set2, 2):
-                split = Split(set(s1), set(s2))
-                res.append(split)
-        
-        # Optionally include trivial splits (1|3)
-        if include_trivial:
-            for s1 in itertools.combinations(self.set1, 1):
-                for s2 in itertools.combinations(self.set2, 3):
-                    split = Split(set(s1), set(s2))
-                    res.append(split)
-            
-            for s1 in itertools.combinations(self.set1, 3):
-                for s2 in itertools.combinations(self.set2, 1):
-                    split = Split(set(s1), set(s2))
-                    res.append(split)
-        
-        return set(res)
+        for s1 in itertools.combinations(split.set1, 3):
+            for s2 in itertools.combinations(split.set2, 1):
+                quartet_split = Split(set(s1), set(s2))
+                res.append(quartet_split)
+    
+    return set(res)
 
 
 def is_compatible(split1: Split, split2: Split) -> bool:

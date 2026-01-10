@@ -361,7 +361,8 @@ def quartets_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> Quar
         split_weight = system.get_weight(split) if is_weighted else 1.0
         
         # Get all quartet splits induced by this split
-        quartet_splits = split.induced_quartetsplits(include_trivial=False)
+        from ..split.base import induced_quartetsplits
+        quartet_splits = induced_quartetsplits(split, include_trivial=False)
         
         # Convert each quartet split to a Quartet and add to profile
         for quartet_split in quartet_splits:
