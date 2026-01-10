@@ -2596,3 +2596,122 @@ class TestUpdownPathVertices:
         # Path exists: 1 -> 2 -> 3 -> 4
         assert vertices == {1, 2, 3, 4}
 
+
+class TestNormalizeUndirectedEdge:
+    """Test cases for the normalize_undirected_edge classmethod."""
+
+    def test_same_type_integers(self) -> None:
+        """Test normalization with integer node IDs."""
+        # Normal order
+        result = MixedMultiGraph.normalize_undirected_edge(1, 2)
+        assert result == (1, 2)
+        
+        # Reversed order
+        result = MixedMultiGraph.normalize_undirected_edge(2, 1)
+        assert result == (1, 2)
+        
+        # With key
+        result = MixedMultiGraph.normalize_undirected_edge(1, 2, key=0)
+        assert result == (1, 2, 0)
+        
+        result = MixedMultiGraph.normalize_undirected_edge(2, 1, key=0)
+        assert result == (1, 2, 0)
+
+    def test_same_type_strings(self) -> None:
+        """Test normalization with string node IDs."""
+        # Normal order
+        result = MixedMultiGraph.normalize_undirected_edge('a', 'b')
+        assert result == ('a', 'b')
+        
+        # Reversed order
+        result = MixedMultiGraph.normalize_undirected_edge('b', 'a')
+        assert result == ('a', 'b')
+        
+        # With key
+        result = MixedMultiGraph.normalize_undirected_edge('a', 'b', key=1)
+        assert result == ('a', 'b', 1)
+
+    def test_mixed_types(self) -> None:
+        """Test normalization with mixed node ID types (int and str)."""
+        # int and str - should use type-aware comparison
+        result = MixedMultiGraph.normalize_undirected_edge(1, 'a')
+        assert result == (1, 'a')
+        
+        result = MixedMultiGraph.normalize_undirected_edge('a', 1)
+        assert result == (1, 'a')
+        
+        # With key
+        result = MixedMultiGraph.normalize_undirected_edge(1, 'a', key=2)
+        assert result == (1, 'a', 2)
+        
+        result = MixedMultiGraph.normalize_undirected_edge('a', 1, key=2)
+        assert result == (1, 'a', 2)
+
+    def test_mixed_types_different_order(self) -> None:
+        """Test that type comparison works correctly for ordering."""
+        # 'int' < 'str' lexicographically, so int comes first
+        result = MixedMultiGraph.normalize_undirected_edge('b', 1)
+        assert result == (1, 'b')
+        
+        # Even if string value is smaller numerically
+        result = MixedMultiGraph.normalize_undirected_edge('1', 2)
+        assert result == (2, '1')  # 'str' > 'int', so int comes first
+        
+        # But if both are strings, compare by value
+        result = MixedMultiGraph.normalize_undirected_edge('1', '2')
+        assert result == ('1', '2')
+
+    def test_without_key(self) -> None:
+        """Test normalization without key parameter."""
+        result = MixedMultiGraph.normalize_undirected_edge(3, 4)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert result == (3, 4)
+
+    def test_with_key_none(self) -> None:
+        """Test normalization with key=None explicitly."""
+        result = MixedMultiGraph.normalize_undirected_edge(3, 4, key=None)
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert result == (3, 4)
+
+    def test_consistency(self) -> None:
+        """Test that normalization is consistent (same result for (u,v) and (v,u))."""
+        test_cases = [
+            (1, 2),
+            (2, 1),
+            ('a', 'b'),
+            ('b', 'a'),
+            (1, 'a'),
+            ('a', 1),
+            (10, 5),
+            (5, 10),
+        ]
+        
+        for u, v in test_cases:
+            result1 = MixedMultiGraph.normalize_undirected_edge(u, v)
+            result2 = MixedMultiGraph.normalize_undirected_edge(v, u)
+            assert result1 == result2, f"Normalization inconsistent for ({u}, {v})"
+            
+            # With key
+            result1_key = MixedMultiGraph.normalize_undirected_edge(u, v, key=0)
+            result2_key = MixedMultiGraph.normalize_undirected_edge(v, u, key=0)
+            assert result1_key == result2_key, f"Normalization with key inconsistent for ({u}, {v})"
+
+    def test_edge_cases(self) -> None:
+        """Test edge cases like same node, negative numbers, etc."""
+        # Same node
+        result = MixedMultiGraph.normalize_undirected_edge(1, 1)
+        assert result == (1, 1)
+        
+        result = MixedMultiGraph.normalize_undirected_edge(1, 1, key=0)
+        assert result == (1, 1, 0)
+        
+        # Negative numbers
+        result = MixedMultiGraph.normalize_undirected_edge(-1, -2)
+        assert result == (-2, -1)
+        
+        # Zero
+        result = MixedMultiGraph.normalize_undirected_edge(0, 1)
+        assert result == (0, 1)
+

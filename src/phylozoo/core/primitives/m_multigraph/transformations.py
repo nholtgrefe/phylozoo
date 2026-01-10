@@ -124,7 +124,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
             if neighbor == first_vertex or neighbor in other_vertices:
                 continue  # Skip self-loops and edges to other vertices being merged
             # Normalize edge key (undirected edges are symmetric)
-            edge_key = (min(first_vertex, neighbor), max(first_vertex, neighbor))
+            edge_key = graph.normalize_undirected_edge(first_vertex, neighbor)
             if edge_key not in edges_to_create:
                 edges_to_create[edge_key] = set()
             edges_to_create[edge_key].add('undirected')
@@ -432,7 +432,7 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
                     if current in visited and u not in visited:
                         # Check if current was reached via undirected edges
                         current_reached_via_undirected = any(
-                            (min(current, n), max(current, n), k) in processed_undirected_edges
+                            graph.normalize_undirected_edge(current, n, k) in processed_undirected_edges
                             for n in visited
                             for k in range(graph._undirected.number_of_edges(current, n) if graph._undirected.has_edge(current, n) else 0)
                         )
@@ -458,11 +458,7 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
             # Process undirected edges incident to current (orient away from current)
             for u, v, key, data in graph._undirected.edges(current, keys=True, data=True):
                 # Normalize edge representation to avoid processing twice
-                # Use string comparison to handle mixed types (e.g., int and str node IDs)
-                if str(u) <= str(v):
-                    edge_key = (u, v, key)
-                else:
-                    edge_key = (v, u, key)
+                edge_key = graph.normalize_undirected_edge(u, v, key)
                 if edge_key in processed_undirected_edges:
                     continue
                 processed_undirected_edges.add(edge_key)

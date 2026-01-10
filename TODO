@@ -19,6 +19,10 @@ update the qjoining and all other squirrel alg's to take into account nonresolve
 add undirected network and make mixed a superclass or child?
 check which squirrel helper methods should use general qpset or sq qpset
 squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
+let squirrel take as input any set of trees?
+standard function for mmgraph etc. to make new node_ids
+fix bridge normalization in cutedges (does not work for mixed types)
+do the network classes need .edges and.nodes?
 
 use novalidation more
 move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?

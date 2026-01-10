@@ -220,7 +220,7 @@ def k_blobs(
                 neighbor = v if u == node else u
                 if neighbor not in blob_set:  # Edge crosses blob boundary
                     # Normalize edge to avoid double-counting undirected edges
-                    edge = (min(u, v), max(u, v), key)
+                    edge = graph.normalize_undirected_edge(u, v, key)
                     if edge not in seen_undirected:
                         seen_undirected.add(edge)
                         incident_edge_count += 1

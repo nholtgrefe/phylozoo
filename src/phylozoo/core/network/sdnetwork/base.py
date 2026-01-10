@@ -606,11 +606,11 @@ class MixedPhyNetwork:
                 directed_edge_groups[edge_key] = []
             directed_edge_groups[edge_key].append((key, data or {}))
         
-        # Check undirected edges (normalize to (min(u,v), max(u,v)) for consistency)
+        # Check undirected edges (normalize for consistency)
         undirected_edge_groups: dict[tuple[T, T], list[tuple[int, dict[str, Any]]]] = {}
         
         for u, v, key, data in self._graph.undirected_edges_iter(keys=True, data=True):
-            edge_key = (min(u, v), max(u, v))
+            edge_key = self._graph.normalize_undirected_edge(u, v)
             if edge_key not in undirected_edge_groups:
                 undirected_edge_groups[edge_key] = []
             undirected_edge_groups[edge_key].append((key, data or {}))

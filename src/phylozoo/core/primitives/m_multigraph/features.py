@@ -437,7 +437,7 @@ def cut_edges(
     bridges_set = set(nx.bridges(graph._combined))
     
     # Normalize bridges to (min, max) for efficient lookup
-    bridges_normalized = {(min(u, v), max(u, v)) for u, v in bridges_set}
+    bridges_normalized = {graph.normalize_undirected_edge(u, v) for u, v in bridges_set}
     
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
@@ -448,9 +448,8 @@ def cut_edges(
     
     # Check undirected edges
     for u, v, key, edge_data in graph._undirected.edges(keys=True, data=True):
-        # Use same normalization as bridges_normalized: (min, max)
-        # This works correctly for both numeric and string types when they're the same type
-        edge_normalized = (min(u, v), max(u, v))
+        # Use same normalization as bridges_normalized
+        edge_normalized = graph.normalize_undirected_edge(u, v)
         if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
             processed_edges.add(edge_normalized)
             # Format according to keys and data parameters
@@ -471,9 +470,8 @@ def cut_edges(
     
     # Check directed edges
     for u, v, key, edge_data in graph._directed.edges(keys=True, data=True):
-        # Use same normalization as bridges_normalized: (min, max)
-        # This works correctly for both numeric and string types when they're the same type
-        edge_normalized = (min(u, v), max(u, v))
+        # Use same normalization as bridges_normalized
+        edge_normalized = graph.normalize_undirected_edge(u, v)
         if edge_normalized in bridges_normalized and edge_normalized not in processed_edges:
             processed_edges.add(edge_normalized)
             # Format according to keys and data parameters

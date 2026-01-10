@@ -805,6 +805,73 @@ class MixedMultiGraph(IOMixin):
         self._directed.add_nodes_from(nodes, **attr)
         self._combined.add_nodes_from(nodes, **attr)
 
+    @classmethod
+    def normalize_undirected_edge(
+        cls,
+        u: Any,
+        v: Any,
+        key: int | None = None,
+    ) -> tuple[Any, Any] | tuple[Any, Any, int]:
+        """
+        Normalize an undirected edge tuple to a canonical form.
+        
+        Uses type-aware comparison to handle mixed node ID types (e.g., int and str).
+        The normalization ensures that (u, v) and (v, u) map to the same tuple.
+        
+        Parameters
+        ----------
+        u : Any
+            First node ID.
+        v : Any
+            Second node ID.
+        key : int | None, optional
+            Optional edge key. If provided, included in the returned tuple.
+            By default None.
+        
+        Returns
+        -------
+        tuple[Any, Any] | tuple[Any, Any, int]
+            Normalized edge tuple. If key is None, returns (smaller, larger).
+            If key is provided, returns (smaller, larger, key).
+        
+        Examples
+        --------
+        >>> MixedMultiGraph.normalize_undirected_edge(1, 2)
+        (1, 2)
+        >>> MixedMultiGraph.normalize_undirected_edge(2, 1, key=0)
+        (1, 2, 0)
+        >>> MixedMultiGraph.normalize_undirected_edge(1, 'a')
+        (1, 'a')
+        >>> MixedMultiGraph.normalize_undirected_edge('b', 'a')
+        ('a', 'b')
+        """
+        try:
+            # Fast path: same types, direct comparison
+            if u <= v:
+                if key is None:
+                    return (u, v)
+                else:
+                    return (u, v, key)
+            else:
+                if key is None:
+                    return (v, u)
+                else:
+                    return (v, u, key)
+        except TypeError:
+            # Slow path: mixed types, use type-aware comparison
+            u_key = (type(u).__name__, u)
+            v_key = (type(v).__name__, v)
+            if u_key <= v_key:
+                if key is None:
+                    return (u, v)
+                else:
+                    return (u, v, key)
+            else:
+                if key is None:
+                    return (v, u)
+                else:
+                    return (v, u, key)
+
     def remove_node(self, v: T) -> None:
         """
         Remove node v from the graph.
