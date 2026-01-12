@@ -131,26 +131,6 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
                     f"which is not allowed."
                 )
     
-    # Also check if edges being merged would create bidirectional edges between external nodes
-    # This handles the case where other_vertex has u->v and first_vertex has v->u
-    for target in external_outgoing_targets:
-        # After merge: first_vertex -> target
-        # Check if first_vertex already has target -> first_vertex
-        if graph.has_edge(target, first_vertex) and target not in vertices_list:
-            raise ValueError(
-                f"Identification would create edges in both directions between {first_vertex} and {target}, "
-                f"which is not allowed."
-            )
-    
-    for source in external_incoming_sources:
-        # After merge: source -> first_vertex
-        # Check if first_vertex already has first_vertex -> source
-        if graph.has_edge(first_vertex, source) and source not in vertices_list:
-            raise ValueError(
-                f"Identification would create edges in both directions between {first_vertex} and {source}, "
-                f"which is not allowed."
-            )
-    
     # Collect node attributes from first vertex
     first_vertex_attrs = {}
     if first_vertex in graph._graph.nodes():

@@ -133,14 +133,14 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
     # Also check for bidirectional directed edges (u->v and v->u)
     # Also check against existing edges from first_vertex
     for (u, v), edge_types in edges_to_create.items():
-        # Check if edges_to_create has both types (directed and undirected)
+        # Check 1: Mixed types in edges_to_create
         if 'directed' in edge_types and 'undirected' in edge_types:
             raise ValueError(
                 f"Identification would create both directed and undirected edges between {u} and {v}, "
                 f"which violates mutual exclusivity."
             )
         
-        # Check for bidirectional directed edges (u->v and v->u)
+        # Check 2: Bidirectional directed edges in edges_to_create
         reverse_key = (v, u)
         if reverse_key in edges_to_create:
             reverse_types = edges_to_create[reverse_key]
@@ -150,91 +150,51 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
                     f"which is not allowed."
                 )
         
-        # Check against existing edges from first_vertex
-        # Check if first_vertex already has a directed edge to/from this node
+        # Check 3: Conflicts with existing edges from first_vertex
+        # Determine which node is first_vertex and which is the other
         if u == first_vertex:
-            if graph._directed.has_edge(first_vertex, v):
-                if 'undirected' in edge_types:
-                    raise ValueError(
-                        f"Identification would create both directed and undirected edges between {first_vertex} and {v}, "
-                        f"which violates mutual exclusivity."
-                    )
-                # Check for bidirectional: first_vertex->v exists, and we'd create v->first_vertex
-                if 'directed' in edge_types:
-                    # Check if reverse direction would be created
-                    if (v, first_vertex) in edges_to_create and 'directed' in edges_to_create[(v, first_vertex)]:
-                        raise ValueError(
-                            f"Identification would create edges in both directions between {first_vertex} and {v}, "
-                            f"which is not allowed."
-                        )
-            if graph._directed.has_edge(v, first_vertex):
-                if 'undirected' in edge_types:
-                    raise ValueError(
-                        f"Identification would create both directed and undirected edges between {first_vertex} and {v}, "
-                        f"which violates mutual exclusivity."
-                    )
-                # Check for bidirectional: v->first_vertex exists, and we'd create first_vertex->v
-                if 'directed' in edge_types:
-                    raise ValueError(
-                        f"Identification would create edges in both directions between {first_vertex} and {v}, "
-                        f"which is not allowed."
-                    )
+            other_node = v
         elif v == first_vertex:
-            if graph._directed.has_edge(first_vertex, u):
-                if 'undirected' in edge_types:
-                    raise ValueError(
-                        f"Identification would create both directed and undirected edges between {first_vertex} and {u}, "
-                        f"which violates mutual exclusivity."
-                    )
-                # Check for bidirectional: first_vertex->u exists, and we'd create u->first_vertex
-                if 'directed' in edge_types:
-                    raise ValueError(
-                        f"Identification would create edges in both directions between {first_vertex} and {u}, "
-                        f"which is not allowed."
-                    )
-            if graph._directed.has_edge(u, first_vertex):
-                if 'undirected' in edge_types:
-                    raise ValueError(
-                        f"Identification would create both directed and undirected edges between {first_vertex} and {u}, "
-                        f"which violates mutual exclusivity."
-                    )
-                # Check for bidirectional: u->first_vertex exists, and we'd create first_vertex->u
-                if 'directed' in edge_types:
-                    # Check if reverse direction would be created
-                    if (first_vertex, u) in edges_to_create and 'directed' in edges_to_create[(first_vertex, u)]:
-                        raise ValueError(
-                            f"Identification would create edges in both directions between {first_vertex} and {u}, "
-                            f"which is not allowed."
-                        )
+            other_node = u
+        else:
+            # Neither is first_vertex - skip conflict checks (edges are between external nodes)
+            continue
         
-        # Check if first_vertex already has an undirected edge to this node
-        if u == first_vertex:
-            if graph._undirected.has_edge(first_vertex, v):
-                if 'directed' in edge_types:
-                    raise ValueError(
-                        f"Identification would create both directed and undirected edges between {first_vertex} and {v}, "
-                        f"which violates mutual exclusivity."
-                    )
-        elif v == first_vertex:
-            if graph._undirected.has_edge(first_vertex, u):
-                if 'directed' in edge_types:
-                    raise ValueError(
-                        f"Identification would create both directed and undirected edges between {first_vertex} and {u}, "
-                        f"which violates mutual exclusivity."
-                    )
-        
-        # Also check reverse direction for undirected edges
-        reverse_key_undir = (v, u) if u < v else (u, v)
-        if reverse_key_undir in edges_to_create:
-            reverse_types = edges_to_create[reverse_key_undir]
-            if 'directed' in edge_types and 'undirected' in reverse_types:
+        # Check existing directed edges
+        if graph._directed.has_edge(first_vertex, other_node):
+            if 'undirected' in edge_types:
                 raise ValueError(
-                    f"Identification would create both directed and undirected edges between {u} and {v}, "
+                    f"Identification would create both directed and undirected edges between {first_vertex} and {other_node}, "
                     f"which violates mutual exclusivity."
                 )
-            if 'undirected' in edge_types and 'directed' in reverse_types:
+            # Check for bidirectional: first_vertex->other_node exists
+            if 'directed' in edge_types:
+                # Check if we'd also create other_node->first_vertex
+                reverse_in_new = (other_node, first_vertex) in edges_to_create
+                if reverse_in_new and 'directed' in edges_to_create[(other_node, first_vertex)]:
+                    raise ValueError(
+                        f"Identification would create edges in both directions between {first_vertex} and {other_node}, "
+                        f"which is not allowed."
+                    )
+        
+        if graph._directed.has_edge(other_node, first_vertex):
+            if 'undirected' in edge_types:
                 raise ValueError(
-                    f"Identification would create both directed and undirected edges between {u} and {v}, "
+                    f"Identification would create both directed and undirected edges between {first_vertex} and {other_node}, "
+                    f"which violates mutual exclusivity."
+                )
+            # Check for bidirectional: other_node->first_vertex exists
+            if 'directed' in edge_types:
+                raise ValueError(
+                    f"Identification would create edges in both directions between {first_vertex} and {other_node}, "
+                    f"which is not allowed."
+                )
+        
+        # Check existing undirected edges
+        if graph._undirected.has_edge(first_vertex, other_node):
+            if 'directed' in edge_types:
+                raise ValueError(
+                    f"Identification would create both directed and undirected edges between {first_vertex} and {other_node}, "
                     f"which violates mutual exclusivity."
                 )
     
