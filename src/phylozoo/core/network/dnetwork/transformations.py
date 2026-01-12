@@ -5,7 +5,7 @@ This module provides functions to transform directed phylogenetic networks
 (e.g., suppress degree-2 nodes, convert to LSA network, etc.).
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from . import DirectedPhyNetwork
 from .features import k_blobs
@@ -19,6 +19,9 @@ from ...primitives.d_multigraph.transformations import (
     identify_parallel_edge as dm_identify_parallel_edge,
     identify_vertices as dm_identify_vertices,
 )
+
+if TYPE_CHECKING:
+    from ...primitives.d_multigraph import DirectedMultiGraph
 
 def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     """
@@ -332,5 +335,412 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
     
     # Create and return new network from the modified graph (will be validated)
+    return dnetwork_from_graph(working_graph)
+
+
+def _compute_caterpillar_gammas(
+    original_gammas: list[float],
+) -> list[tuple[float, float]]:
+    """
+    Compute gamma values for hybrid edges in a caterpillar structure.
+    
+    For a hybrid node with in-degree k > 2, we create a caterpillar where each
+    caterpillar node becomes a hybrid node with 2 incoming edges. The gammas
+    are computed to preserve ratios as we go down the caterpillar.
+    
+    Parameters
+    ----------
+    original_gammas : list[float]
+        List of original gamma values for edges entering the hybrid node,
+        in order. All edges go into the caterpillar (the node is replaced).
+        Must sum to 1.0.
+    
+    Returns
+    -------
+    list[tuple[float, float]]
+        List of (gamma1, gamma2) pairs for each caterpillar hybrid node.
+        Each pair sums to 1.0. The first pair preserves the ratio of the
+        original top two edges. Subsequent pairs use (1.0 - next, next)
+        where gamma1 is for the tree edge from previous cat node and gamma2
+        is for the hybrid edge from the next parent.
+    
+    Examples
+    --------
+    >>> # Original: [0.1, 0.2, 0.3, 0.4] (sums to 1.0)
+    >>> # First pair preserves 0.1:0.2 = 1:2 ratio = (0.3333, 0.6666)
+    >>> gammas = _compute_caterpillar_gammas([0.1, 0.2, 0.3, 0.4])
+    >>> len(gammas) == 3
+    True
+    >>> # First pair: (0.1/(0.1+0.2), 0.2/(0.1+0.2)) = (0.3333, 0.6666)
+    >>> abs(gammas[0][0] - 0.3333) < 0.01 and abs(gammas[0][1] - 0.6666) < 0.01
+    True
+    >>> # Second pair: (1.0 - 0.3, 0.3) = (0.7, 0.3)
+    >>> abs(gammas[1][0] - 0.7) < 0.01 and abs(gammas[1][1] - 0.3) < 0.01
+    True
+    >>> # Third pair: (1.0 - 0.4, 0.4) = (0.6, 0.4)
+    >>> abs(gammas[2][0] - 0.6) < 0.01 and abs(gammas[2][1] - 0.4) < 0.01
+    True
+    """
+    if len(original_gammas) < 2:
+        return []
+    
+    g1 = original_gammas[0]  # First edge is kept with its original gamma
+    remaining = original_gammas[1:]  # Rest go into caterpillar
+    
+    if len(remaining) == 1:
+        # Only one remaining edge: (1.0 - next, next)
+        g2 = remaining[0]
+        return [(1.0 - g2, g2)]
+    
+    # First caterpillar node: preserves ratio of top two edges
+    g2 = remaining[0]
+    top_two_total = g1 + g2
+    if top_two_total == 0:
+        first_pair = (0.5, 0.5)
+    else:
+        first_pair = (g1 / top_two_total, g2 / top_two_total)
+    
+    caterpillar_pairs = [first_pair]
+    
+    # Process remaining edges: each pair is (1.0 - next, next)
+    for i in range(1, len(remaining)):
+        g_next = remaining[i]
+        pair = (1.0 - g_next, g_next)
+        caterpillar_pairs.append(pair)
+    
+    return caterpillar_pairs
+
+
+def _binary_resolve_tree_nodes(
+    graph: 'DirectedMultiGraph',  # type: ignore[name-defined]
+    has_branch_lengths: bool,
+) -> None:
+    """
+    Resolve high out-degree nodes in a directed multigraph using caterpillar structures.
+    
+    This function modifies the graph in place by replacing nodes with out-degree > 2
+    with caterpillar structures. The node is completely removed and replaced by a
+    caterpillar chain. All incoming edges to the original node are redirected to the
+    first caterpillar node, and outgoing edges are distributed through the caterpillar.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The directed multigraph to modify in place.
+    has_branch_lengths : bool
+        Whether the graph has branch lengths. If True, new edges get branch_length=0.0.
+    
+    Notes
+    -----
+    - The function modifies the graph in place.
+    - Only branch_length attributes are preserved on edges.
+    - New caterpillar edges get branch_length=0.0 if has_branch_lengths is True.
+    - The high out-degree node is completely removed and replaced by caterpillar nodes.
+    - Structure: For node u with children [v1, v2, v3, v4], creates:
+      cat1 -> v1, cat1 -> cat2, cat2 -> v2, cat2 -> cat3, cat3 -> v3, cat3 -> v4.
+      All incoming edges to u are redirected to cat1.
+    """
+    # Helper function to filter edge attributes (keep only branch_length)
+    def _filter_attrs(data: dict) -> dict:
+        """Filter edge attributes to keep only branch_length."""
+        filtered = {}
+        if 'branch_length' in data:
+            filtered['branch_length'] = data['branch_length']
+        return filtered
+    
+    # Find high out-degree nodes
+    high_outdegree_nodes = [
+        n for n in graph.nodes() 
+        if graph.outdegree(n) > 2
+    ]
+    
+    # Process each high out-degree node
+    for u in high_outdegree_nodes:
+        out_neighbors = list(graph.successors(u))
+        if len(out_neighbors) <= 2:
+            continue  # May have been resolved already
+        
+        # Collect all outgoing edges and their data
+        out_edges_data = {}
+        for v in out_neighbors:
+            edge_data = next(iter(graph._graph[u][v].values()))
+            out_edges_data[v] = _filter_attrs(edge_data)
+            graph.remove_edge(u, v)
+        
+        # Collect all incoming edges (to reconnect to first caterpillar node)
+        in_predecessors = list(graph.predecessors(u))
+        in_edges_data = {}
+        for pred in in_predecessors:
+            edge_data = next(iter(graph._graph[pred][u].values()))
+            in_edges_data[pred] = _filter_attrs(edge_data)
+            graph.remove_edge(pred, u)
+        
+        # Remove the node
+        graph.remove_node(u)
+        
+        # Build caterpillar: cat1 -> v1, cat1 -> cat2, cat2 -> v2, cat2 -> cat3, cat3 -> v3, cat3 -> v4, ...
+        # Structure: first cat node connects to first child, then chain of cats connecting to remaining children
+        first_v = out_neighbors[0]
+        rest_v = out_neighbors[1:]
+        
+        # Create first caterpillar node
+        cat1 = next(graph.generate_node_ids(1))
+        graph.add_node(cat1)
+        
+        # Connect first child to first cat node
+        graph.add_edge(cat1, first_v, **out_edges_data[first_v])
+        
+        # Build caterpillar chain for remaining children
+        last_cat = cat1
+        for i, v in enumerate(rest_v):
+            if i < len(rest_v) - 1:
+                # Create next caterpillar node
+                next_cat = next(graph.generate_node_ids(1))
+                graph.add_node(next_cat)
+                # Connect: last_cat -> next_cat
+                tree_attrs = {'branch_length': 0.0} if has_branch_lengths else {}
+                graph.add_edge(last_cat, next_cat, **tree_attrs)
+                # Connect: next_cat -> v
+                graph.add_edge(next_cat, v, **out_edges_data[v])
+                last_cat = next_cat
+            else:
+                # Last child: connect directly to last caterpillar node
+                graph.add_edge(last_cat, v, **out_edges_data[v])
+        
+        # Reconnect all incoming edges to first caterpillar node
+        for pred in in_predecessors:
+            graph.add_edge(pred, cat1, **in_edges_data[pred])
+
+
+def _binary_resolve_hybrid_nodes(
+    graph: 'DirectedMultiGraph',  # type: ignore[name-defined]
+    has_branch_lengths: bool,
+) -> None:
+    """
+    Resolve high in-degree nodes (hybrid nodes) in a directed multigraph using caterpillar structures.
+    
+    This function modifies the graph in place by replacing nodes with in-degree > 2
+    with caterpillar structures. The node is completely removed and replaced by a
+    caterpillar chain, with all outgoing edges redirected to the last caterpillar node.
+    
+    Parameters
+    ----------
+    graph : DirectedMultiGraph
+        The directed multigraph to modify in place.
+    has_branch_lengths : bool
+        Whether the graph has branch lengths. If True, new edges get branch_length=0.0.
+    
+    Notes
+    -----
+    - The function modifies the graph in place.
+    - Branch_length and gamma attributes are preserved on edges.
+    - Gamma values are computed using _compute_caterpillar_gammas to preserve ratios.
+      The top two hybrid edges (u1 -> cat1, u2 -> cat1) preserve the ratio of the
+      original top two edges. Subsequent caterpillar nodes use (1.0 - gamma_next, gamma_next)
+      for the tree edge and hybrid edge respectively.
+    - New caterpillar edges get branch_length=0.0 if has_branch_lengths is True.
+    - The high in-degree node is completely removed and replaced by caterpillar nodes.
+    - Structure: For node v with parents [u1, u2, u3, u4], creates:
+      u1 -> cat1, u2 -> cat1, cat1 -> cat2, u3 -> cat2, cat2 -> cat3, u4 -> cat3.
+      All outgoing edges from v are redirected to cat3 (the last caterpillar node).
+    """
+    # Helper function to filter edge attributes (keep only branch_length and gamma)
+    def _filter_attrs(data: dict) -> dict:
+        """Filter edge attributes to keep only branch_length and gamma."""
+        filtered = {}
+        if 'branch_length' in data:
+            filtered['branch_length'] = data['branch_length']
+        if 'gamma' in data:
+            filtered['gamma'] = data['gamma']
+        return filtered
+    
+    # Find high in-degree nodes
+    high_indegree_nodes = [
+        n for n in graph.nodes() 
+        if graph.indegree(n) > 2
+    ]
+    
+    # Process each high in-degree node
+    for v in high_indegree_nodes:
+        in_neighbors = list(graph.predecessors(v))
+        if len(in_neighbors) <= 2:
+            continue  # May have been resolved already
+        
+        # Collect all incoming edges and their data (with gammas)
+        in_edges_data = {}
+        original_gammas = []
+        for u in in_neighbors:
+            edge_data = next(iter(graph._graph[u][v].values()))
+            original_gammas.append(edge_data.get('gamma', 0.0))
+            in_edges_data[u] = _filter_attrs(edge_data)
+            graph.remove_edge(u, v)
+        
+        # Collect all outgoing edges (to reconnect to last caterpillar node)
+        out_successors = list(graph.successors(v))
+        out_edges_data = {}
+        for succ in out_successors:
+            edge_data = next(iter(graph._graph[v][succ].values()))
+            out_edges_data[succ] = _filter_attrs(edge_data)
+            graph.remove_edge(v, succ)
+        
+        # Remove the node
+        graph.remove_node(v)
+        
+        # Compute caterpillar gammas
+        caterpillar_pairs = _compute_caterpillar_gammas(original_gammas)
+        
+        # Build caterpillar: u1 -> cat1, u2 -> cat1, cat1 -> cat2, u3 -> cat2, cat2 -> cat3, u4 -> cat3
+        first_u = in_neighbors[0]
+        rest_u = in_neighbors[1:]
+        
+        if len(rest_u) == 1:
+            # Special case: only one additional edge
+            # Create single caterpillar node: u1 -> cat1, u2 -> cat1
+            cat_node = next(graph.generate_node_ids(1))
+            graph.add_node(cat_node)
+            
+            gamma_cumulative, gamma_next = caterpillar_pairs[0]
+            
+            # Edge from u1 to cat_node (with gamma)
+            cum_attrs = in_edges_data[first_u].copy()
+            cum_attrs['gamma'] = gamma_cumulative
+            graph.add_edge(first_u, cat_node, **cum_attrs)
+            
+            # Hybrid edge: u2 -> cat_node (with gamma)
+            hybrid_attrs = in_edges_data[rest_u[0]].copy()
+            hybrid_attrs['gamma'] = gamma_next
+            graph.add_edge(rest_u[0], cat_node, **hybrid_attrs)
+            
+            last_cat = cat_node
+        else:
+            # Multiple additional edges: build caterpillar chain
+            # Structure: u1 -> cat1, u2 -> cat1, cat1 -> cat2, u3 -> cat2, cat2 -> cat3, u4 -> cat3
+            last_cat = None
+            for i, u in enumerate(rest_u):
+                # Create caterpillar node for this neighbor
+                cat_node = next(graph.generate_node_ids(1))
+                graph.add_node(cat_node)
+                
+                # Get gamma pair for this caterpillar node
+                gamma_cumulative, gamma_next = caterpillar_pairs[i]
+                
+                if i == 0:
+                    # First caterpillar node: receives from u1 and u2
+                    # Top two hybrid edges preserve the ratio of original top two edges
+                    # Edge from u1 to cat_node (with gamma preserving ratio)
+                    cum_attrs = in_edges_data[first_u].copy()
+                    cum_attrs['gamma'] = gamma_cumulative
+                    graph.add_edge(first_u, cat_node, **cum_attrs)
+                    
+                    # Hybrid edge: u2 -> cat_node (with gamma preserving ratio)
+                    hybrid_attrs = in_edges_data[u].copy()
+                    hybrid_attrs['gamma'] = gamma_next
+                    graph.add_edge(u, cat_node, **hybrid_attrs)
+                else:
+                    # Subsequent caterpillar nodes: receive from previous cat and next u
+                    # Tree edge from previous hybrid node: (1.0 - gamma_next, gamma_next)
+                    tree_attrs = {}
+                    if has_branch_lengths:
+                        tree_attrs['branch_length'] = 0.0
+                    tree_attrs['gamma'] = gamma_cumulative  # This is (1.0 - gamma_next)
+                    graph.add_edge(last_cat, cat_node, **tree_attrs)
+                    
+                    # Hybrid edge: u -> cat_node (with gamma_next)
+                    hybrid_attrs = in_edges_data[u].copy()
+                    hybrid_attrs['gamma'] = gamma_next
+                    graph.add_edge(u, cat_node, **hybrid_attrs)
+                
+                last_cat = cat_node
+        
+        # Reconnect all outgoing edges from v to the last caterpillar node
+        for succ in out_successors:
+            graph.add_edge(last_cat, succ, **out_edges_data[succ])
+
+
+def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
+    """
+    Convert a non-binary network to a binary network by resolving high-degree nodes.
+    
+    This function creates a binary resolution of the network by replacing nodes with
+    in-degree > 2 or out-degree > 2 with caterpillar structures. The first neighbor
+    (incoming or outgoing) is kept, and additional neighbors are connected through
+    a caterpillar chain.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to convert.
+    
+    Returns
+    -------
+    DirectedPhyNetwork
+        A new binary network. If the input network is already binary, returns a copy.
+    
+    Raises
+    ------
+    ValueError
+        If the network has parallel edges (binary resolution is not defined for
+        networks with parallel edges).
+    
+    Notes
+    -----
+    - Attribute handling:
+      - All attributes are removed except branch_length and gamma
+      - Branch length handling:
+        - If the original network had branch lengths on any edges, new edges in the
+          caterpillar structures are assigned branch_length=0.0
+        - Original edges keep their branch_length values
+      - Gamma handling (for high in-degree nodes only):
+        - The top two hybrid edges in the caterpillar maintain the same ratio as
+          the original top two hybrid edges
+        - As we go down the caterpillar, each new hybrid edge's gamma accounts for
+          the cumulative probability from previous edges
+        - Gamma values are computed using _compute_caterpillar_gammas()
+    - Node labels are preserved
+    - The network must not have parallel edges
+    
+    Examples
+    --------
+    >>> # Network with high out-degree node
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (5, 1), (5, 2), (5, 3), (5, 4)  # Node 5 has out-degree 4
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+    ... )
+    >>> binary_net = binary_resolution(net)
+    >>> binary_net.is_binary()
+    True
+    """
+    from .classifications import has_parallel_edges, is_binary
+    from .conversions import dnetwork_from_graph
+    
+    # Check for parallel edges
+    if has_parallel_edges(network):
+        raise ValueError(
+            "binary_resolution cannot be applied to networks with parallel edges"
+        )
+    
+    # Check if network is already binary
+    if is_binary(network):
+        return network.copy()
+    
+    # Check if network has any branch lengths
+    has_branch_lengths = False
+    for u, v, key, data in network._graph.edges(keys=True, data=True):
+        if data.get('branch_length') is not None:
+            has_branch_lengths = True
+            break
+    
+    # Work on a copy of the graph
+    working_graph = network._graph.copy()
+    
+    # Resolve high out-degree nodes (tree nodes)
+    _binary_resolve_tree_nodes(working_graph, has_branch_lengths)
+    
+    # Resolve high in-degree nodes (hybrid nodes)
+    _binary_resolve_hybrid_nodes(working_graph, has_branch_lengths)
+    
+    # Create and return new network from the modified graph
     return dnetwork_from_graph(working_graph)
 

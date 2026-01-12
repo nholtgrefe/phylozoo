@@ -3,6 +3,8 @@ Classification functions for directed phylogenetic networks.
 
 This module provides functions to classify and check properties of
 directed phylogenetic networks (e.g., is_tree, is_binary, level, etc.).
+
+TODO: add is ultrametric
 """
 
 from functools import lru_cache

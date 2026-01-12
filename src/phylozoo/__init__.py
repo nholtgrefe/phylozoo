@@ -40,12 +40,6 @@ split = _split_module
 distance = _distance_module
 sequence = _sequence_module
 
-# Import inference classes
-from .inference import (
-    NetworkInferrer,
-    infer_network_from_msa,
-)
-
 __all__ = [
     "__version__",
     # Core module
@@ -69,7 +63,4 @@ __all__ = [
     "DistanceMatrix",
     # Core - Sequence
     "MSA",
-    # Inference
-    "NetworkInferrer",
-    "infer_network_from_msa",
 ]
