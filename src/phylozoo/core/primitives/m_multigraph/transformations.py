@@ -388,11 +388,8 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
             # Process all undirected edges incident to current
             for u, v, key, data in graph._undirected.edges(current, keys=True, data=True):
                 # Normalize edge representation to avoid processing twice
-                # Use string comparison to handle mixed types (e.g., int and str node IDs)
-                if str(u) <= str(v):
-                    edge_key = (u, v, key)
-                else:
-                    edge_key = (v, u, key)
+                # Use the same normalization method as elsewhere
+                edge_key = graph.normalize_undirected_edge(u, v, key)
                 if edge_key in processed_undirected_edges:
                     continue
                 processed_undirected_edges.add(edge_key)
@@ -493,11 +490,8 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
     
     # Check for unreachable undirected edges
     for u, v, key in graph._undirected.edges(keys=True):
-        # Use string comparison to handle mixed types (e.g., int and str node IDs)
-        if str(u) <= str(v):
-            edge_key = (u, v, key)
-        else:
-            edge_key = (v, u, key)
+        # Use the same normalization method as when processing edges
+        edge_key = graph.normalize_undirected_edge(u, v, key)
         if edge_key not in processed_undirected_edges:
             raise ValueError(
                 f"Undirected edge ({u}, {v}, key={key}) is not reachable from root {root}. "

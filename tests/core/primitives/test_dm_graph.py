@@ -1621,7 +1621,7 @@ class TestGenerateNodeIds:
         """Test that negative count raises ValueError."""
         G = DirectedMultiGraph()
         with pytest.raises(ValueError, match="count must be non-negative"):
-            G.generate_node_ids(-1)
+            list(G.generate_node_ids(-1))
 
     def test_negative_integers(self) -> None:
         """Test generating node IDs when graph has negative integer nodes."""

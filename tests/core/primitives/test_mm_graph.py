@@ -2722,7 +2722,7 @@ class TestGenerateNodeIds:
     def test_empty_graph(self) -> None:
         """Test generating node IDs from an empty graph."""
         G = MixedMultiGraph()
-        node_ids = G.generate_node_ids(3)
+        node_ids = list(G.generate_node_ids(3))
         assert node_ids == [0, 1, 2]
 
     def test_single_node(self) -> None:
@@ -2765,7 +2765,7 @@ class TestGenerateNodeIds:
         """Test that negative count raises ValueError."""
         G = MixedMultiGraph()
         with pytest.raises(ValueError, match="count must be non-negative"):
-            G.generate_node_ids(-1)
+            list(G.generate_node_ids(-1))
 
     def test_negative_integers(self) -> None:
         """Test generating node IDs when graph has negative integer nodes."""
