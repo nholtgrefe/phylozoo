@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import itertools
 
-import numpy as np
-
 from ...core.distance import DistanceMatrix
 from ...core.quartet.base import Quartet
 from ...core.split.base import Split
