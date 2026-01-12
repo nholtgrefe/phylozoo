@@ -1,9 +1,26 @@
 """
-Panda module (formerly diversity).
+Panda module for phylogenetic diversity calculations.
 
-This module provides classes and functions for phylogenetic diversity calculations.
+This module provides a framework for computing various phylogenetic diversity
+measures with a common interface.
 """
 
-# Placeholder - to be implemented
+from .measure import (
+    diversity,
+    greedy_max_diversity,
+    marginal_diversities,
+    solve_max_diversity,
+    all_paths,
+    AllPathsDiversity,
+    DiversityMeasure,
+)
 
-__all__ = []
+__all__ = [
+    "diversity",
+    "marginal_diversities",
+    "greedy_max_diversity",
+    "solve_max_diversity",
+    "all_paths",
+    "AllPathsDiversity",
+    "DiversityMeasure",
+]

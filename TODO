@@ -23,6 +23,7 @@ let squirrel take as input any set of trees?
 standard function for mmgraph etc. to make new node_ids
 fix bridge normalization in cutedges (does not work for mixed types)
 do the network classes need .edges and.nodes?
+panda, MAPPD, handle 2-blobs, par edges, and better scanwidth reliance (ideally, input tree extension is a nxDigraph on the same nodes, or None, and then is computed with scanwidth module, otherwise )
 
 use novalidation more
 move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?
