@@ -2715,3 +2715,82 @@ class TestNormalizeUndirectedEdge:
         result = MixedMultiGraph.normalize_undirected_edge(0, 1)
         assert result == (0, 1)
 
+
+class TestGenerateNodeIds:
+    """Test cases for the generate_node_ids method."""
+
+    def test_empty_graph(self) -> None:
+        """Test generating node IDs from an empty graph."""
+        G = MixedMultiGraph()
+        node_ids = G.generate_node_ids(3)
+        assert node_ids == [0, 1, 2]
+
+    def test_single_node(self) -> None:
+        """Test generating node IDs when graph has one node."""
+        G = MixedMultiGraph()
+        G.add_node(5)
+        node_ids = list(G.generate_node_ids(3))
+        assert node_ids == [6, 7, 8]
+
+    def test_multiple_integer_nodes(self) -> None:
+        """Test generating node IDs when graph has multiple integer nodes."""
+        G = MixedMultiGraph()
+        G.add_node(1)
+        G.add_node(5)
+        G.add_node(3)
+        node_ids = list(G.generate_node_ids(4))
+        assert node_ids == [6, 7, 8, 9]
+
+    def test_with_string_nodes(self) -> None:
+        """Test that string nodes are ignored when finding max integer."""
+        G = MixedMultiGraph()
+        G.add_node(1)
+        G.add_node('a')
+        G.add_node(5)
+        G.add_node('b')
+        node_ids = list(G.generate_node_ids(3))
+        assert node_ids == [6, 7, 8]
+        # Verify string nodes are still in graph
+        assert 'a' in G
+        assert 'b' in G
+
+    def test_zero_count(self) -> None:
+        """Test generating zero node IDs."""
+        G = MixedMultiGraph()
+        G.add_node(10)
+        node_ids = list(G.generate_node_ids(0))
+        assert node_ids == []
+
+    def test_negative_count_raises_error(self) -> None:
+        """Test that negative count raises ValueError."""
+        G = MixedMultiGraph()
+        with pytest.raises(ValueError, match="count must be non-negative"):
+            G.generate_node_ids(-1)
+
+    def test_negative_integers(self) -> None:
+        """Test generating node IDs when graph has negative integer nodes."""
+        G = MixedMultiGraph()
+        G.add_node(-5)
+        G.add_node(-1)
+        node_ids = list(G.generate_node_ids(3))
+        assert node_ids == [0, 1, 2]
+
+    def test_mixed_positive_negative(self) -> None:
+        """Test with both positive and negative integers."""
+        G = MixedMultiGraph()
+        G.add_node(-2)
+        G.add_node(5)
+        G.add_node(10)
+        node_ids = list(G.generate_node_ids(2))
+        assert node_ids == [11, 12]
+
+    def test_large_count(self) -> None:
+        """Test generating a large number of node IDs."""
+        G = MixedMultiGraph()
+        G.add_node(100)
+        node_ids = list(G.generate_node_ids(1000))
+        assert len(node_ids) == 1000
+        assert node_ids[0] == 101
+        assert node_ids[-1] == 1100
+        assert node_ids == list(range(101, 1101))
+

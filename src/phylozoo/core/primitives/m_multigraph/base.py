@@ -872,6 +872,53 @@ class MixedMultiGraph(IOMixin):
                 else:
                     return (v, u, key)
 
+    def generate_node_ids(self, count: int) -> Iterator[int]:
+        """
+        Generate new integer node IDs that are not in the graph.
+        
+        Finds the largest integer node ID in the graph and generates count
+        consecutive integer IDs starting from max + 1.
+        
+        Parameters
+        ----------
+        count : int
+            Number of node IDs to generate.
+        
+        Yields
+        ------
+        int
+            Consecutive integer node IDs starting from max + 1.
+        
+        Raises
+        ------
+        ValueError
+            If count is negative.
+        
+        Examples
+        --------
+        >>> G = MixedMultiGraph()
+        >>> G.add_node(1)
+        >>> G.add_node(5)
+        >>> list(G.generate_node_ids(3))
+        [6, 7, 8]
+        >>> G = MixedMultiGraph()
+        >>> list(G.generate_node_ids(2))
+        [0, 1]
+        """
+        if count < 0:
+            raise ValueError(f"count must be non-negative, got {count}")
+        
+        if count == 0:
+            return
+        
+        # Find maximum integer node ID
+        int_nodes = [n for n in self.nodes() if isinstance(n, int)]
+        max_node = max(int_nodes) if int_nodes else -1
+        
+        # Generate consecutive IDs starting from max + 1
+        for i in range(max_node + 1, max_node + 1 + count):
+            yield i
+
     def remove_node(self, v: T) -> None:
         """
         Remove node v from the graph.
