@@ -8,9 +8,12 @@ components that represent the core structure of level-k networks.
 
 from .base import SemiDirectedGenerator
 from .side import UndirEdgeSide
+from .construction import dgenerator_to_sdgenerator, all_level_k_generators
 
 __all__ = [
     "SemiDirectedGenerator",
     "UndirEdgeSide",
+    "dgenerator_to_sdgenerator",
+    "all_level_k_generators",
 ]
 

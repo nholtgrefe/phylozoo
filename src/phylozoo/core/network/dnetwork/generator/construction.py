@@ -14,7 +14,7 @@ from typing import Any, Iterator
 import networkx as nx
 
 from ....primitives.d_multigraph import DirectedMultiGraph
-from ....primitives.d_multigraph.isomorphism import is_isomorphic
+from ....primitives.d_multigraph.isomorphism import is_isomorphic, _get_graph_invariant
 from .....utils.validation import no_validation
 from .base import DirectedGenerator
 from .side import Side, DirEdgeSide, HybridSide
@@ -365,46 +365,6 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
             new_gen = _apply_R2(generator, side_x, side_y)
             yield new_gen
 
-
-
-def _get_graph_invariant(graph: DirectedMultiGraph) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
-    """
-    Compute graph invariants for fast isomorphism candidate filtering.
-    
-    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
-    sorted_edge_multiplicities). Isomorphic graphs must have the same invariants 
-    (but not vice versa).
-    
-    Parameters
-    ----------
-    graph : DirectedMultiGraph
-        The graph to compute invariants for.
-    
-    Returns
-    -------
-    tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]
-        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
-        sorted_edge_multiplicities). Edge multiplicities are the number of parallel 
-        edges for each (u, v) pair, sorted.
-    """
-    nodes = list(graph.nodes())
-    num_nodes = len(nodes)
-    num_edges = graph.number_of_edges()
-    in_degrees = tuple(sorted(graph.indegree(v) for v in nodes))
-    out_degrees = tuple(sorted(graph.outdegree(v) for v in nodes))
-    
-    # Count edge multiplicities (number of parallel edges for each (u, v) pair)
-    edge_multiplicities: list[int] = []
-    seen_pairs: set[tuple[Any, Any]] = set()
-    for u, v, _ in graph.edges(keys=True):
-        if (u, v) not in seen_pairs:
-            multiplicity = graph._graph.number_of_edges(u, v)
-            edge_multiplicities.append(multiplicity)
-            seen_pairs.add((u, v))
-    
-    sorted_multiplicities = tuple(sorted(edge_multiplicities))
-    
-    return (num_nodes, num_edges, in_degrees, out_degrees, sorted_multiplicities)
 
 
 def all_level_k_generators(k: int) -> set[DirectedGenerator]:

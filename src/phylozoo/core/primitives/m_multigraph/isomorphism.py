@@ -7,7 +7,7 @@ MixedMultiGraph instances.
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import networkx as nx
 
@@ -183,4 +183,69 @@ def is_isomorphic(
     )
     
     return matcher.is_isomorphic()
+
+
+def _get_graph_invariant(graph: MixedMultiGraph) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+    """
+    Compute graph invariants for fast isomorphism candidate filtering.
+    
+    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
+    sorted_undirected_degrees, sorted_edge_multiplicities). Isomorphic graphs must have 
+    the same invariants (but not vice versa).
+    
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The graph to compute invariants for.
+    
+    Returns
+    -------
+    tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]
+        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
+        sorted_undirected_degrees, sorted_edge_multiplicities). Edge multiplicities are 
+        the number of parallel edges for each (u, v) pair, sorted.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
+    >>> G = MixedMultiGraph(
+    ...     directed_edges=[(1, 2), (1, 2)],
+    ...     undirected_edges=[(2, 3)]
+    ... )
+    >>> inv = _get_graph_invariant(G)
+    >>> inv[0]  # num_nodes
+    3
+    >>> inv[1]  # num_edges
+    3
+    """
+    nodes = list(graph.nodes())
+    num_nodes = len(nodes)
+    num_edges = graph.number_of_edges()
+    in_degrees = tuple(sorted(graph.indegree(v) for v in nodes))
+    out_degrees = tuple(sorted(graph.outdegree(v) for v in nodes))
+    undirected_degrees = tuple(sorted(graph._undirected.degree(v) for v in nodes))
+    
+    # Count edge multiplicities (number of parallel edges for each (u, v) pair)
+    edge_multiplicities: list[int] = []
+    seen_pairs: set[tuple[Any, Any]] = set()
+    
+    # Count directed edge multiplicities
+    for u, v, _ in graph.directed_edges_iter(keys=True):
+        if (u, v) not in seen_pairs:
+            multiplicity = graph._directed.number_of_edges(u, v)
+            edge_multiplicities.append(multiplicity)
+            seen_pairs.add((u, v))
+    
+    # Count undirected edge multiplicities
+    for u, v, _ in graph.undirected_edges_iter(keys=True):
+        # Normalize edge for undirected (order doesn't matter)
+        edge_key = MixedMultiGraph.normalize_undirected_edge(u, v)
+        if edge_key not in seen_pairs:
+            multiplicity = graph._undirected.number_of_edges(u, v)
+            edge_multiplicities.append(multiplicity)
+            seen_pairs.add(edge_key)
+    
+    sorted_multiplicities = tuple(sorted(edge_multiplicities))
+    
+    return (num_nodes, num_edges, in_degrees, out_degrees, undirected_degrees, sorted_multiplicities)
 
