@@ -1,8 +1,8 @@
 """
-Multiple Sequence Alignment (MSA) module.
+Multiple Sequence Alignment (MSA) base module.
 
-This module provides classes and functions for working with multiple sequence alignments.
-TODO: fix
+This module provides the MSA class for working with multiple sequence alignments.
+Sequences are stored internally as numpy arrays for efficient computation.
 """
 
 from __future__ import annotations
@@ -11,7 +11,9 @@ from typing import Any
 
 import numpy as np
 
-# Default nucleotide encoding (can be extended)
+from ...utils.io import IOMixin
+
+# Default nucleotide encoding
 DEFAULT_NUCLEOTIDE_ENCODING = {
     "A": 0,
     "a": 0,
@@ -27,7 +29,7 @@ DEFAULT_NUCLEOTIDE_ENCODING = {
 }
 
 
-class MSA:
+class MSA(IOMixin):
     """
     Immutable Multiple Sequence Alignment.
     
@@ -35,6 +37,7 @@ class MSA:
     where all sequences have the same length. Each sequence is associated with a
     taxon (sequence identifier).
     
+    Sequences are stored internally as numpy arrays (int8) for efficient computation.
     This class is immutable - once created, the alignment structure cannot be
     modified. All sequences are stored internally in a canonical order.
     
@@ -43,10 +46,6 @@ class MSA:
     sequences : dict[str, str]
         Dictionary mapping taxon names (sequence identifiers) to sequence strings.
         All sequences must have the same length.
-    character_encoding : dict[str, int] | None, optional
-        Dictionary mapping characters to integer codes. If None, uses default
-        nucleotide encoding (A/C/G/T = 0/1/2/3, gaps/unknown = -1).
-        By default None.
     
     Attributes
     ----------
@@ -88,27 +87,31 @@ class MSA:
     Notes
     -----
     The internal representation uses:
-    - Dictionary (`_sequences`) for O(1) lookup by taxon name
-    - Tuple (`_sequences_list`) for fast ordered iteration
+    - Numpy array (`_coded_array`) of shape (num_taxa, sequence_length) with dtype int8
     - Precomputed lookup table for efficient character encoding
-    - Numpy arrays for efficient computation of coded sequences
+    - Reverse lookup table for decoding back to strings when needed
+    - Taxa order for consistent indexing
     """
     
+    # I/O format configuration
+    _default_format = 'fasta'
+    _supported_formats = ['fasta', 'nexus']
+    
     __slots__ = (
-        "_sequences",
-        "_sequences_list",
+        "_coded_array",
         "_taxa",
         "_taxa_order",
         "_sequence_length",
         "_num_taxa",
         "_character_encoding",
         "_lookup_table",
+        "_reverse_lookup",
+        "_taxa_to_index",
     )
     
     def __init__(
         self,
         sequences: dict[str, str],
-        character_encoding: dict[str, int] | None = None,
     ) -> None:
         """
         Initialize an MSA object.
@@ -117,9 +120,6 @@ class MSA:
         ----------
         sequences : dict[str, str]
             Dictionary mapping taxon names to sequence strings.
-        character_encoding : dict[str, int] | None, optional
-            Character encoding dictionary. If None, uses default nucleotide encoding.
-            By default None.
         """
         # Input validation
         if not isinstance(sequences, dict):
@@ -145,32 +145,59 @@ class MSA:
         
         # Store sequences in canonical order (sorted by taxon name) for fast iteration
         self._taxa_order: tuple[str, ...] = tuple(sorted(sequences.keys()))
-        
-        # Store as dict for O(1) lookup by taxon name
-        self._sequences: dict[str, str] = {
-            taxon: sequences[taxon] for taxon in self._taxa_order
-        }
-        
-        # Store as list in canonical order for fast iteration (no dict lookup needed)
-        self._sequences_list: tuple[str, ...] = tuple(
-            sequences[taxon] for taxon in self._taxa_order
-        )
-        
         self._taxa: frozenset[str] = frozenset(self._taxa_order)
         self._sequence_length: int = lengths[0]
         self._num_taxa: int = len(self._taxa_order)
         
-        # Character encoding
-        if character_encoding is None:
-            self._character_encoding: dict[str, int] = DEFAULT_NUCLEOTIDE_ENCODING.copy()
-        else:
-            self._character_encoding = character_encoding.copy()
+        # Build taxa to index mapping for O(1) lookup
+        self._taxa_to_index: dict[str, int] = {
+            taxon: idx for idx, taxon in enumerate(self._taxa_order)
+        }
+        
+        # Character encoding (nucleotide only for now)
+        self._character_encoding: dict[str, int] = DEFAULT_NUCLEOTIDE_ENCODING.copy()
         
         # Build lookup table for efficient encoding (256 entries for ASCII)
         self._lookup_table: np.ndarray = np.full(256, -1, dtype=np.int8)
         for char, code in self._character_encoding.items():
             if len(char) == 1:
                 self._lookup_table[ord(char)] = code
+        
+        # Build reverse lookup for decoding (prefer uppercase)
+        self._reverse_lookup: dict[int, str] = {}
+        for char, code in self._character_encoding.items():
+            if code >= 0 and code not in self._reverse_lookup:
+                self._reverse_lookup[code] = char.upper()
+        self._reverse_lookup[-1] = '-'  # Gap/unknown
+        
+        # Convert sequences to numpy array immediately (primary storage)
+        self._coded_array: np.ndarray = self._build_coded_array(sequences)
+    
+    def _build_coded_array(self, sequences: dict[str, str]) -> np.ndarray:
+        """
+        Build the coded array representation of the MSA.
+        
+        Parameters
+        ----------
+        sequences : dict[str, str]
+            Dictionary mapping taxon names to sequence strings.
+        
+        Returns
+        -------
+        np.ndarray
+            Array of shape (num_taxa, sequence_length) with dtype int8.
+        """
+        coded_sequences = []
+        for taxon in self._taxa_order:
+            seq = sequences[taxon]
+            # Encode sequence using lookup table (vectorized)
+            coded = self._lookup_table[
+                np.frombuffer(seq.encode("ascii"), dtype=np.uint8)
+            ]
+            coded_sequences.append(coded)
+        
+        # Stack into single array: shape (num_taxa, sequence_length)
+        return np.vstack(coded_sequences)
     
     @property
     def taxa(self) -> frozenset[str]:
@@ -265,19 +292,6 @@ class MSA:
         str
             String representation showing number of taxa and sequence length.
         """
-        preview_len = min(40, self._sequence_length)
-        preview = "..."
-        if self._sequence_length <= 40:
-            preview = ""
-        
-        lines = []
-        for taxon in self._taxa_order[:5]:  # Show first 5 taxa
-            seq = self._sequences[taxon]
-            lines.append(f"  {taxon:<30} {seq[:preview_len]}{preview}")
-        
-        if len(self._taxa_order) > 5:
-            lines.append(f"  ... ({len(self._taxa_order) - 5} more taxa)")
-        
         return (
             f"MSA(num_taxa={self._num_taxa}, "
             f"sequence_length={self._sequence_length})"
@@ -299,14 +313,15 @@ class MSA:
         
         lines = [f"MSA with {self._num_taxa} taxa, sequence length {self._sequence_length}:"]
         for taxon in self._taxa_order:
-            seq = self._sequences[taxon]
-            lines.append(f"  {taxon:<30} {seq[:preview_len]}{preview}")
+            seq = self.get_sequence(taxon)
+            if seq:
+                lines.append(f"  {taxon:<30} {seq[:preview_len]}{preview}")
         
         return "\n".join(lines)
     
     def get_sequence(self, taxon: str) -> str | None:
         """
-        Get the sequence for a given taxon.
+        Get the sequence for a given taxon (lazy decoding from numpy array).
         
         Parameters
         ----------
@@ -327,7 +342,14 @@ class MSA:
         >>> msa.get_sequence("taxon3")
         None
         """
-        return self._sequences.get(taxon)
+        if taxon not in self._taxa_to_index:
+            return None
+        
+        idx = self._taxa_to_index[taxon]
+        coded_seq = self._coded_array[idx, :]
+        
+        # Decode using reverse lookup
+        return ''.join(self._reverse_lookup.get(int(code), 'N') for code in coded_seq)
     
     def get_sequences(self) -> dict[str, str]:
         """
@@ -343,9 +365,13 @@ class MSA:
         Returns a copy to maintain immutability. The returned dictionary
         can be modified without affecting the MSA.
         """
-        return self._sequences.copy()
+        result = {}
+        for taxon in self._taxa_order:
+            result[taxon] = self.get_sequence(taxon) or ''
+        return result
     
-    def _coded_array(self) -> np.ndarray:
+    @property
+    def coded_array(self) -> np.ndarray:
         """
         Get the coded array representation of the MSA.
         
@@ -361,22 +387,10 @@ class MSA:
         
         Notes
         -----
-        This method uses vectorized numpy operations for efficiency. The lookup
-        table is precomputed during initialization. Uses pre-stored sequence list
-        for faster iteration (no dict lookup needed).
+        This returns the internal array directly (not a copy for efficiency).
+        The array is read-only from the user's perspective due to immutability.
         """
-        # Convert sequences to coded arrays using vectorized operations
-        # Use _sequences_list for faster iteration (no dict lookup)
-        coded_sequences = []
-        for seq in self._sequences_list:
-            # Encode sequence using lookup table
-            coded = self._lookup_table[
-                np.frombuffer(seq.encode("ascii"), dtype=np.uint8)
-            ]
-            coded_sequences.append(coded)
-        
-        # Stack into single array: shape (num_taxa, sequence_length)
-        return np.vstack(coded_sequences)
+        return self._coded_array
     
     def copy(self) -> MSA:
         """
@@ -385,14 +399,12 @@ class MSA:
         Returns
         -------
         MSA
-            A new MSA instance with the same sequences and encoding.
+            A new MSA instance with the same sequences.
         
         Notes
         -----
         Returns a new instance with the same data. The copy shares no mutable
         state with the original.
         """
-        return MSA(
-            sequences=self._sequences.copy(),
-            character_encoding=self._character_encoding.copy(),
-        )
+        return MSA(sequences=self.get_sequences())
+

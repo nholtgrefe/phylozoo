@@ -5,7 +5,7 @@ Tests for the MSA module.
 import pytest
 import numpy as np
 
-from phylozoo.core.sequence.msa import MSA, DEFAULT_NUCLEOTIDE_ENCODING
+from phylozoo.core.sequence.base import MSA, DEFAULT_NUCLEOTIDE_ENCODING
 
 
 class TestMSACreation:
@@ -158,7 +158,7 @@ class TestMSACharacterEncoding:
         sequences = {"taxon1": "ACGT", "taxon2": "ACGT"}
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         assert coded.shape == (2, 4)
         assert coded.dtype == np.int8
         
@@ -169,23 +169,22 @@ class TestMSACharacterEncoding:
         assert coded[0, 3] == 3  # T
     
     def test_custom_encoding(self) -> None:
-        """Test custom character encoding."""
+        """Test that custom encoding is not supported (nucleotide only)."""
+        # Custom encoding is no longer supported - only nucleotide encoding
+        # This test verifies that the parameter is not accepted
         custom_encoding = {"A": 0, "B": 1, "C": 2, "-": -1}
         sequences = {"taxon1": "ABC", "taxon2": "ABC"}
-        msa = MSA(sequences, character_encoding=custom_encoding)
         
-        coded = msa._coded_array()
-        assert coded.shape == (2, 3)
-        assert coded[0, 0] == 0  # A
-        assert coded[0, 1] == 1  # B
-        assert coded[0, 2] == 2  # C
+        # Should raise TypeError since character_encoding parameter doesn't exist
+        with pytest.raises(TypeError, match="unexpected keyword argument"):
+            MSA(sequences, character_encoding=custom_encoding)
     
     def test_unknown_characters_encoded_as_minus_one(self) -> None:
         """Test that unknown characters are encoded as -1."""
         sequences = {"taxon1": "AXGT", "taxon2": "AXGT"}  # X is not in encoding
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         assert coded[0, 1] == -1  # X should be -1
     
     def test_gaps_encoded_as_minus_one(self) -> None:
@@ -193,7 +192,7 @@ class TestMSACharacterEncoding:
         sequences = {"taxon1": "AC-GT", "taxon2": "AC-GT"}
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         assert coded[0, 2] == -1  # Gap should be -1
 
 
@@ -253,7 +252,7 @@ class TestMSACodedArray:
         sequences = {"taxon1": "ACGT", "taxon2": "TGCA", "taxon3": "AAAA"}
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         assert coded.shape == (3, 4)  # (num_taxa, sequence_length)
         assert coded.dtype == np.int8
     
@@ -262,7 +261,7 @@ class TestMSACodedArray:
         sequences = {"taxon1": "ACGT"}
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         # A=0, C=1, G=2, T=3
         assert coded[0, 0] == 0
         assert coded[0, 1] == 1
@@ -274,7 +273,7 @@ class TestMSACodedArray:
         sequences = {"taxon1": "acgt", "taxon2": "ACGT"}
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         # Both should be encoded the same
         assert np.array_equal(coded[0, :], coded[1, :])
     
@@ -283,7 +282,7 @@ class TestMSACodedArray:
         sequences = {"taxon1": "AC-GT", "taxon2": "AC-GT"}
         msa = MSA(sequences)
         
-        coded = msa._coded_array()
+        coded = msa.coded_array
         assert coded[0, 2] == -1  # Gap
         assert coded[0, 0] == 0   # A
         assert coded[0, 1] == 1   # C
