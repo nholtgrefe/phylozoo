@@ -16,6 +16,7 @@ from .cycle_resolution import (
     resolve_cycles,
 )
 from .qsimilarity import sqprofileset_similarity, sqprofileset_from_network
+from .delta_heuristic import delta_heuristic
 
 __all__ = [
     "SqQuartetProfile",
@@ -32,5 +33,6 @@ __all__ = [
     "resolve_cycles",
     "sqprofileset_similarity",
     "sqprofileset_from_network",
+    "delta_heuristic",
 ]
 
