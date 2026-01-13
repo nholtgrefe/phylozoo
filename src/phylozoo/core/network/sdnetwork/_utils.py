@@ -419,8 +419,8 @@ def _subdivide_edge(
             graph_copy.remove_edge(v, u, key=key)
     
     # Create subdivision vertex
-    max_node = max(graph_copy.nodes(), default=-1)
-    subdiv_node = max_node + 1
+    # Use generate_node_ids to handle both integer and non-integer node IDs
+    subdiv_node = next(graph_copy.generate_node_ids(1))
     graph_copy.add_node(subdiv_node)
     
     # Split attributes using helper function
