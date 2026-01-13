@@ -11,6 +11,7 @@ from ...core.distance.operations import approximate_tsp_tour, optimal_tsp_tour
 from ...core.primitives.circular_ordering import CircularSetOrdering
 from ...core.primitives.partition import Partition
 from ...core.quartet.qdistance import quartet_distance_with_partition
+from ...core.network.sdnetwork import SemiDirectedPhyNetwork, MixedPhyNetwork
 
 if TYPE_CHECKING:
     from ...core.quartet.qprofileset import QuartetProfileSet
@@ -311,14 +312,28 @@ def _insert_cycle(
         network, {vertex}, return_edge_taxa=True
     )
     
-    # Validate that circular_setorder matches the partition
-    # Use the parent Partition.__eq__ method directly (CircularSetOrdering is a Partition)
-    from ...core.primitives.partition import Partition
-    if not Partition.__eq__(circular_setorder, induced_partition):
+    # Validate that circular_setorder matches the partition, i.e., 
+    # each set in the circular set ordering is a set in the partition,
+    # and all sets in the partition are in the circular set ordering.
+    if len(circular_setorder.parts) != len(induced_partition.parts):
         raise ValueError(
-            "Circular set ordering does not match partition induced by vertex. "
-            f"Partition: {induced_partition.parts}, Ordering: {circular_setorder.parts}"
+            f"Circular set ordering does not match partition induced by vertex. "
+            f"Ordering has {len(circular_setorder.parts)} sets, but partition has {len(induced_partition.parts)} sets."
         )
+    
+    for set in circular_setorder.parts:
+        if set not in induced_partition.parts:
+            raise ValueError(
+                f"Circular set ordering does not match partition induced by vertex. "
+                f"Set {set} in ordering is not in partition."
+            )
+    
+    for set in induced_partition.parts:
+        if set not in circular_setorder.parts:
+            raise ValueError(
+                f"Circular set ordering does not match partition induced by vertex. "
+                f"Set {set} in partition is not in ordering."
+            )
     
     # Validate reticulation_ranking if provided
     if reticulation_ranking is not None:
@@ -344,14 +359,8 @@ def _insert_cycle(
         graph.remove_node(vertex)
         
         # Generate new cycle node IDs
-        existing_nodes = set(graph.nodes)
-        max_node = max(existing_nodes, default=-1) if existing_nodes else -1
         n_cycle_nodes = len(circular_setorder)
-        cycle_nodes = list(range(max_node + 1, max_node + 1 + n_cycle_nodes))
-        
-        # Add cycle nodes to the graph
-        for cycle_node in cycle_nodes:
-            graph.add_node(cycle_node)
+        cycle_nodes = list(graph.generate_node_ids(n_cycle_nodes))
         
         # Create cycle edges (undirected) - connect consecutive nodes in the cycle
         cycle_edges: list[tuple[Any, Any]] = []
@@ -577,7 +586,7 @@ def resolve_cycles(
             continue  # Skip nodes with degree <= 3
         
         # Get partition from cut-vertex
-        induced_partition, _ = partition_from_blob(
+        induced_partition = partition_from_blob(
             network, {vertex}, return_edge_taxa=False
         )
         

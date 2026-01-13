@@ -174,15 +174,6 @@ def adapted_quartet_joining(
     total_edges = current_tree.number_of_edges()
     nr_iterations = n - 3 - (total_edges - n)
     
-    # Store next available node index for internal nodes
-    next_node_index = [0]  # Use list to allow modification in nested function
-    
-    def _get_next_internal_node() -> str:
-        """Generate next internal node ID."""
-        node_id = f"_i{next_node_index[0]}"
-        next_node_index[0] += 1
-        return node_id
-    
     # Main iteration loop
     for _ in range(nr_iterations):
         # Find center nodes (internal nodes with degree > 3)
@@ -247,8 +238,8 @@ def adapted_quartet_joining(
         if tree_graph.has_edge(cstar, u2star):
             tree_graph.remove_edge(cstar, u2star)
         
-        # Create new internal node
-        w = _get_next_internal_node()
+        # Create new internal node using generate_node_ids
+        w = next(tree_graph.generate_node_ids(1))
         tree_graph.add_node(w)
         
         # Add edges: (w, u1star), (w, u2star), (w, cstar)

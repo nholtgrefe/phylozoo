@@ -10,6 +10,12 @@ from phylozoo.core.split.base import Split
 from phylozoo.core.quartet.base import Quartet
 from phylozoo.inference.squirrel.delta_heuristic import delta_heuristic
 from phylozoo.inference.squirrel.sqprofileset import SqQuartetProfileSet
+from phylozoo.inference.squirrel.squirrel import squirrel
+from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+from phylozoo.core.network.sdnetwork.classifications import has_parallel_edges
+from phylozoo.core.network.sdnetwork.features import blobs, k_blobs
+from phylozoo.core.network.sdnetwork.isomorphism import is_isomorphic
+from phylozoo.inference.squirrel.qsimilarity import sqprofileset_from_network
 
 
 class TestDeltaHeuristic:
@@ -179,3 +185,130 @@ class TestDeltaHeuristic:
             for quartet in profile.quartets:
                 assert quartet.is_resolved()
 
+
+class TestDeltaHeuristicToNetwork:
+    """Test cases for delta heuristic to network pipeline."""
+    
+    def test_delta_heuristic_to_network_no_errors(self) -> None:
+        """
+        Test that going from delta-heuristic to full network doesn't raise errors.
+        
+        This tests the complete pipeline:
+        1. Create distance matrix
+        2. Run delta_heuristic to get profileset
+        3. Run squirrel to get network
+        4. Verify network is valid (no errors)
+        """
+        # Create a distance matrix with clear structure
+        matrix = np.array([
+            [0.0, 0.1, 0.9, 0.9, 0.9],
+            [0.1, 0.0, 0.9, 0.9, 0.9],
+            [0.9, 0.9, 0.0, 0.1, 0.9],
+            [0.9, 0.9, 0.1, 0.0, 0.9],
+            [0.9, 0.9, 0.9, 0.9, 0.0]
+        ])
+        dm = DistanceMatrix(matrix, labels=['A', 'B', 'C', 'D', 'E'])
+        
+        # Step 1: Get profileset from delta heuristic
+        profileset = delta_heuristic(dm, lam=0.3)
+        assert len(profileset) > 0
+        
+        # Step 2: Run squirrel to get network
+        # This should not raise any errors
+        network = squirrel(profileset)
+        
+        # Step 3: Verify network is valid
+        assert isinstance(network, SemiDirectedPhyNetwork)
+        assert network.number_of_nodes() > 0
+        assert len(network.taxa) == 5
+        network.validate()  # Should not raise errors
+    
+    def test_delta_heuristic_to_network_multiple_taxa(self) -> None:
+        """Test delta heuristic to network with more taxa."""
+        # Create distance matrix for 6 taxa
+        matrix = np.array([
+            [0.0, 0.1, 0.9, 0.9, 0.9, 0.9],
+            [0.1, 0.0, 0.9, 0.9, 0.9, 0.9],
+            [0.9, 0.9, 0.0, 0.1, 0.9, 0.9],
+            [0.9, 0.9, 0.1, 0.0, 0.9, 0.9],
+            [0.9, 0.9, 0.9, 0.9, 0.0, 0.1],
+            [0.9, 0.9, 0.9, 0.9, 0.1, 0.0]
+        ])
+        dm = DistanceMatrix(matrix, labels=['A', 'B', 'C', 'D', 'E', 'F'])
+        
+        profileset = delta_heuristic(dm, lam=0.3)
+        assert len(profileset) > 0
+        
+        # Should not raise errors
+        network = squirrel(profileset)
+        assert isinstance(network, SemiDirectedPhyNetwork)
+        assert len(network.taxa) == 6
+        network.validate()
+
+
+class TestNetworkRoundTrip:
+    """Test cases for network -> profileset -> network round-trip."""
+    
+    def _has_3_cycle(self, network: SemiDirectedPhyNetwork) -> bool:
+        """Check if network has a 3-node blob (3-cycle)."""
+        network_blobs = blobs(network, trivial=False, leaves=False)
+        return any(len(blob) == 3 for blob in network_blobs)
+    
+    def _has_2_blobs(self, network: SemiDirectedPhyNetwork) -> bool:
+        """Check if network has multi-node 2-blobs."""
+        two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
+        return any(len(blob) > 1 for blob in two_blobs)
+    
+    def test_network_round_trip_simple_tree(self) -> None:
+        """
+        Test round-trip: network -> profileset -> network for a simple tree.
+        
+        A tree has no 3-cycles, no parallel edges, and no 2-blobs (except trivial).
+        """
+        # Use a fixture tree network with at least 4 taxa
+        from tests.fixtures.sd_networks import SDTREE_MEDIUM_BINARY
+        network = SDTREE_MEDIUM_BINARY
+        
+        # Verify network properties
+        assert not has_parallel_edges(network)
+        assert not self._has_2_blobs(network)
+        assert not self._has_3_cycle(network)
+        
+        # Get profileset from network
+        profileset = sqprofileset_from_network(network)
+        assert len(profileset) > 0
+        
+        # Run squirrel to reconstruct network
+        reconstructed = squirrel(profileset)
+        
+        # Verify reconstructed network is valid
+        assert isinstance(reconstructed, SemiDirectedPhyNetwork)
+        reconstructed.validate()
+        
+        # Check that networks are isomorphic (same topology)
+        assert is_isomorphic(network, reconstructed)
+        
+    def test_network_round_trip_larger_tree(self) -> None:
+        """Test round-trip for a larger tree."""
+        # Use a fixture tree network
+        from tests.fixtures.sd_networks import SDTREE_MEDIUM_BINARY
+        network = SDTREE_MEDIUM_BINARY
+        
+        # Verify network properties
+        assert not has_parallel_edges(network)
+        assert not self._has_2_blobs(network)
+        assert not self._has_3_cycle(network)
+        
+        # Get profileset from network
+        profileset = sqprofileset_from_network(network)
+        assert len(profileset) > 0
+        
+        # Run squirrel to reconstruct network
+        reconstructed = squirrel(profileset)
+        
+        # Verify reconstructed network is valid
+        assert isinstance(reconstructed, SemiDirectedPhyNetwork)
+        reconstructed.validate()
+        
+        # Check that networks are isomorphic
+        assert is_isomorphic(network, reconstructed)

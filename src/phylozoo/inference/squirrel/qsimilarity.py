@@ -17,6 +17,7 @@ from ...core.primitives.circular_ordering import CircularSetOrdering
 from .sqprofile import SqQuartetProfile
 from .sqprofileset import SqQuartetProfileSet
 
+
 if TYPE_CHECKING:
     from ...core.network.sdnetwork import MixedPhyNetwork, SemiDirectedPhyNetwork
 
@@ -93,12 +94,69 @@ def _circular_orders_from_cycles(
             f"but got level {net_level}"
         )
     
+    def _find_cycle_in_blob(
+        graph: Any,
+        blob: set[Any],
+    ) -> list[Any]:
+        """
+        Find a cycle in a blob by traversing neighbors.
+        
+        Parameters
+        ----------
+        graph : Any
+            The combined graph (undirected view).
+        blob : set[Any]
+            Set of nodes forming the blob.
+        
+        Returns
+        -------
+        list[Any]
+            List of nodes in cycle order.
+        """
+        # Start at one node and traverse neighbors to find the cycle
+        start_node = next(iter(blob))
+        cycle_nodes: list[Any] = [start_node]
+        visited: set[Any] = {start_node}
+        
+        # Traverse the blob to find the cycle
+        current = start_node
+        previous = None
+        
+        while len(cycle_nodes) < len(blob):
+            # Find a neighbor within the blob that we haven't visited yet
+            # and is not the previous node
+            next_node: Any | None = None
+            
+            for neighbor in graph.neighbors(current):
+                if neighbor in blob and neighbor != previous:
+                    next_node = neighbor
+                    break
+            
+            if next_node is None:
+                # This should not happen in a valid cycle blob
+                raise ValueError(
+                    f"Could not find a valid next node in blob {blob} from {current}. "
+                    "Blob may not form a valid cycle."
+                )
+            
+            cycle_nodes.append(next_node)
+            visited.add(next_node)
+            previous = current
+            current = next_node
+        
+        # After traversing all nodes, the last node must connect back to the start_node
+        if start_node not in graph.neighbors(current):
+            raise ValueError(
+                f"Cycle in blob {blob} is not closed. Last node {current} does not connect to start node {start_node}."
+            )
+        
+        return cycle_nodes
+    
     # Get all non-trivial, non-leaf blobs
     # In level-1 networks, each blob forms a cycle
     network_blobs = blobs(network, trivial=False, leaves=False)
     
     # Process each blob to extract its cycle
-    cycles: list[list[Any]] = []
     combined_graph = network._graph._combined
     
     for blob in network_blobs:
@@ -107,56 +165,12 @@ def _circular_orders_from_cycles(
                 f"Blob {blob} has fewer than 3 nodes. "
                 "Level-1 networks should not have such blobs."
             )
-        
-        # Find a cycle in the blob by starting at one node and traversing neighbors
-        # In a cycle, each node has exactly 2 neighbors within the cycle
-        # Start at an arbitrary node in the blob
-        start_node = next(iter(blob))
-        cycle_nodes: list[Any] = [start_node]
-        prev_node: Any | None = None
-        current = start_node
-        
-        # Traverse the blob to find the cycle
-        # At each step, pick the neighbor that's not the previous node
-        while len(cycle_nodes) < len(blob):
-            # Get neighbors of current node within the blob
-            neighbors = [
-                n for n in combined_graph.neighbors(current)
-                if n in blob
-            ]
-            
-            # In a cycle, each node should have exactly 2 neighbors
-            if len(neighbors) != 2:
-                raise ValueError(
-                    f"Node {current} in blob {blob} has {len(neighbors)} neighbors, "
-                    "expected 2 for a cycle in a level-1 network."
-                )
-            
-            # Pick the neighbor that's not the previous node
-            if prev_node is None:
-                # First step: pick either neighbor
-                next_node = neighbors[0]
-            else:
-                # Subsequent steps: pick the neighbor that's not prev_node
-                next_node = neighbors[1] if neighbors[0] == prev_node else neighbors[0]
-            
-            cycle_nodes.append(next_node)
-            prev_node = current
-            current = next_node
-        
-        # Verify the cycle is closed (last node connects to first)
-        if cycle_nodes[-1] not in combined_graph.neighbors(cycle_nodes[0]):
-            raise ValueError(
-                f"Blob {blob} does not form a closed cycle. "
-                f"Last node {cycle_nodes[-1]} does not connect to first node {cycle_nodes[0]}."
-            )
-        
-        cycles.append(cycle_nodes)
-    
-    # Process each cycle
-    for cycle_nodes in cycles:
-        
-        cycle_vertices = set(cycle_nodes)
+
+        # Process blobs with 3 or more nodes
+        # Note: 3-node cycles are returned but should be filtered when used for cycle quartets
+
+        # Find cycle in the blob
+        cycle_nodes = _find_cycle_in_blob(combined_graph, blob)
         
         # Find the hybrid node in the cycle (if any)
         network_hybrid_nodes = network.hybrid_nodes
@@ -166,7 +180,7 @@ def _circular_orders_from_cycles(
         
         # Get partition and edge_taxa_list from the cycle blob
         _, edge_taxa_list = partition_from_blob(
-            network, cycle_vertices, return_edge_taxa=True
+            network, blob, return_edge_taxa=True
         )
         
         # Create mapping from blob node (v) to position in cycle
@@ -193,7 +207,7 @@ def _circular_orders_from_cycles(
             
             if ret_set is None:
                 raise ValueError(
-                    f"Could not find reticulation set for hybrid {hybrid} in cycle {cycle_vertices}"
+                    f"Could not find reticulation set for hybrid {hybrid} in cycle {blob}"
                 )
         
         # Create circular set ordering
@@ -389,7 +403,11 @@ def sqprofileset_from_network(
     
     # Step 1: Process cycles to get quartets from cycles
     # Get circular set orderings and reticulation sets for all cycles
+    # Only consider cycles with 4+ sets (needed for cycle quartets)
     for set_ordering, ret_set in _circular_orders_from_cycles(network):
+        # Skip cycles with fewer than 4 sets (can't form cycle quartets)
+        if len(set_ordering) < 4:
+            continue
         # Get 4-suborderings and create quartets
         for sub_order in set_ordering.suborderings(4):
             # If no reticulation set, create a four-cycle (i.e. 2 quartets)
@@ -410,12 +428,14 @@ def sqprofileset_from_network(
             
             # If there is a reticulation set and it is in the sub-ordering, create a 
             # four-cycle with a reticulation leaf for each representative ordering
-            elif ret_set is not None and ret_set in sub_order:
+            # Check if ret_set is one of the sets in sub_order
+            elif ret_set is not None and any(ret_set == part for part in sub_order.parts):
                 for repr_order in sub_order.representative_orderings():
                     # Create both quartets from the circular ordering
                     order_list = list(repr_order.order)
 
                     # Find the reticulation leaf in the sub-ordering
+                    # repr_order is a CircularOrdering, which has an elements property from Partition
                     ret_leaf = next(iter(ret_set & repr_order.elements))
 
                     # Create both quartets from the circular ordering
@@ -427,7 +447,7 @@ def sqprofileset_from_network(
             
             # If there is a reticulation set and it is not in the sub-ordering, create a 
             # quartet tree for each representative ordering
-            elif ret_set is not None and ret_set not in sub_order:
+            elif ret_set is not None and not any(ret_set == part for part in sub_order.parts):
                 for repr_order in sub_order.representative_orderings():
                     # Get the split from the sub-ordering (i.e. the 2|2 split)
                     # by taking the first two and last two elements of the ordering
@@ -440,15 +460,18 @@ def sqprofileset_from_network(
     # Step 2: Process induced splits to get quartets from splits
     # Get all induced splits with weights
     split_system = induced_splits(network)
-    
+    seen_quartet_splits: set[Split] = set()
     # Extract all 2|2 splits on 4 taxa (induced quartetsplits)    
     for split in split_system.splits:
-        # Skip trivial splits
+        # Skip trivial splits and splits we have already seen
         if split.is_trivial():
             continue
 
         # Get all quartet splits induced by this split
         for quartet_split in induced_quartetsplits(split):
+            if quartet_split in seen_quartet_splits:
+                continue
+            seen_quartet_splits.add(quartet_split)
             quartet = Quartet(quartet_split)
             sq_profile = SqQuartetProfile([quartet])
             sq_quartet_profiles.append(sq_profile)
