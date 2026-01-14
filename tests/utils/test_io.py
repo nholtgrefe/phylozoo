@@ -14,7 +14,6 @@ from pathlib import Path
 import pytest
 
 from phylozoo.utils.exceptions import (
-    PhyloZooFileNotFoundError,
     PhyloZooFormatError,
     PhyloZooIOError,
     PhyloZooValueError,
@@ -44,8 +43,8 @@ class TestUtilityFunctions:
             os.unlink(temp_path)
 
     def test_read_file_safely_file_not_found(self) -> None:
-        """Test that read_file_safely raises PhyloZooFileNotFoundError for missing file."""
-        with pytest.raises(PhyloZooFileNotFoundError, match="File not found"):
+        """Test that read_file_safely raises FileNotFoundError for missing file."""
+        with pytest.raises(FileNotFoundError, match="File not found"):
             read_file_safely("nonexistent_file.txt")
 
     def test_read_file_safely_not_a_file(self) -> None:
@@ -432,8 +431,8 @@ class TestIOMixin:
             os.unlink(temp_path)
 
     def test_load_file_not_found(self) -> None:
-        """Test that load raises PhyloZooFileNotFoundError for missing file."""
-        with pytest.raises(PhyloZooFileNotFoundError, match="File not found"):
+        """Test that load raises FileNotFoundError for missing file."""
+        with pytest.raises(FileNotFoundError, match="File not found"):
             self.TestNetwork.load("nonexistent.fmt1")
 
     def test_from_string_default_format(self) -> None:
@@ -555,7 +554,7 @@ class TestIOMixin:
             temp_path = f.name
         
         try:
-            with pytest.raises(PhyloZooFileNotFoundError):
+            with pytest.raises(FileNotFoundError):
                 self.TestNetwork.convert("nonexistent.fmt1", temp_path, overwrite=True)
         finally:
             if os.path.exists(temp_path):

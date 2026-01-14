@@ -147,8 +147,8 @@ def test_invalid_default_pattern_raises() -> None:
     """
     Decorator raises if default patterns are not subset of allowed.
     """
-    from phylozoo.utils.exceptions import PhyloZooValidationError
-    with pytest.raises(PhyloZooValidationError):
+    from phylozoo.utils.exceptions import PhyloZooValueError
+    with pytest.raises(PhyloZooValueError):
         @validation_aware(allowed=["validate"], default=["other"])
         class _Bad:
             def validate(self) -> bool:

@@ -37,6 +37,7 @@ import re
 from typing import Any
 
 from ....utils.io import FormatRegistry
+from ....utils.exceptions import PhyloZooParseError
 from .base import MixedMultiGraph
 
 
@@ -250,7 +251,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> MixedMultiGraph:
     
     Raises
     ------
-    ValueError
+    PhyloZooParseError
         If the phylozoo-dot string is malformed or cannot be parsed.
     
     Examples
@@ -293,7 +294,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> MixedMultiGraph:
     # Extract graph name and body
     graph_match = re.search(r'graph\s+(\w+|"[^"]+")?\s*\{', content, re.IGNORECASE)
     if not graph_match:
-        raise ValueError("Could not find graph declaration in phylozoo-dot string")
+        raise PhyloZooParseError("Could not find graph declaration in phylozoo-dot string")
     
     # Extract graph body (between { and })
     brace_count = 0
@@ -310,7 +311,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> MixedMultiGraph:
                 break
     
     if brace_count != 0:
-        raise ValueError("Unmatched braces in phylozoo-dot string")
+        raise PhyloZooParseError("Unmatched braces in phylozoo-dot string")
     
     body = content[start_idx + 1:end_idx]
     

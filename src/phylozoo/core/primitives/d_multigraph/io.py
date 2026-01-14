@@ -40,6 +40,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from phylozoo.utils.exceptions import PhyloZooParseError
+
 from ....utils.io import FormatRegistry
 from .base import DirectedMultiGraph
 
@@ -224,7 +226,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedMultiGraph:
     
     Raises
     ------
-    ValueError
+    PhyloZooParseError
         If the DOT string is malformed or cannot be parsed.
     
     Examples
@@ -270,7 +272,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedMultiGraph:
     # Extract graph name and body
     digraph_match = re.search(r'digraph\s+(\w+|"[^"]+")?\s*\{', content, re.IGNORECASE)
     if not digraph_match:
-        raise ValueError("Could not find digraph declaration in DOT string")
+        raise PhyloZooParseError("Could not find digraph declaration in DOT string")
     
     # Extract graph body (between { and })
     brace_count = 0
@@ -287,7 +289,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedMultiGraph:
                 break
     
     if brace_count != 0:
-        raise ValueError("Unmatched braces in DOT string")
+        raise PhyloZooParseError("Unmatched braces in DOT string")
     
     body = content[start_idx + 1:end_idx]
     
@@ -572,7 +574,7 @@ def from_edgelist(edgelist_string: str, **kwargs: Any) -> DirectedMultiGraph:
     
     Raises
     ------
-    ValueError
+    PhyloZooParseError
         If the edge-list string is malformed or cannot be parsed.
     
     Examples
@@ -605,7 +607,7 @@ def from_edgelist(edgelist_string: str, **kwargs: Any) -> DirectedMultiGraph:
         
         parts = line.split()
         if len(parts) < 2:
-            raise ValueError(f"Invalid edge line (need at least 2 values): {line}")
+            raise PhyloZooParseError(f"Invalid edge line (need at least 2 values): {line}")
         
         u_str = parts[0]
         v_str = parts[1]

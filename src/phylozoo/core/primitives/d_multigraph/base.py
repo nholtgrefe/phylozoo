@@ -10,6 +10,7 @@ import networkx as nx
 
 from phylozoo.utils.identifier_warnings import warn_on_keyword, warn_on_none_value
 from ....utils.io import IOMixin
+from phylozoo.utils.exceptions import PhyloZooValueError, PhyloZooWarning
 
 T = TypeVar('T')
 
@@ -101,6 +102,13 @@ class DirectedMultiGraph(IOMixin):
             These attributes are stored in the NetworkX graph's `.graph` attribute.
             By default None.
 
+        Raises
+        ------
+        PhyloZooValueError
+            If the edge format is invalid.
+        PhyloZooWarning
+            If a Python keyword is used as an edge attribute.
+
         Examples
         --------
         >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
@@ -136,7 +144,7 @@ class DirectedMultiGraph(IOMixin):
                     u, v, key = edge
                     self.add_edge(u, v, key=key)
                 else:
-                    raise ValueError(f"Invalid edge format: {edge}")
+                    raise PhyloZooValueError(f"Invalid edge format: {edge}")
 
     # ========== NetworkX Compatibility Methods ==========
 
@@ -673,6 +681,13 @@ class DirectedMultiGraph(IOMixin):
         **attr
             Node attributes.
 
+        Raises
+        ------
+        PhyloZooValueError
+            If the edge format is invalid.
+        PhyloZooWarning
+            If a Python keyword is used as an edge attribute.
+
         Examples
         --------
         >>> G = DirectedMultiGraph()
@@ -755,7 +770,7 @@ class DirectedMultiGraph(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If count is negative.
         
         Examples
@@ -770,7 +785,7 @@ class DirectedMultiGraph(IOMixin):
         [0, 1]
         """
         if count < 0:
-            raise ValueError(f"count must be non-negative, got {count}")
+            raise PhyloZooValueError(f"count must be non-negative, got {count}")
         
         if count == 0:
             return
@@ -829,6 +844,13 @@ class DirectedMultiGraph(IOMixin):
         -------
         int
             The key of the added edge.
+
+        Raises
+        ------
+        PhyloZooValueError
+            If the edge format is invalid.
+        PhyloZooWarning
+            If a Python keyword is used as an edge attribute.
 
         Examples
         --------
@@ -913,7 +935,7 @@ class DirectedMultiGraph(IOMixin):
 
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If no edge (u, v) exists with the specified key.
 
         Examples
@@ -925,11 +947,11 @@ class DirectedMultiGraph(IOMixin):
         """
         if key is None:
             if not self._graph.has_edge(u, v):
-                raise ValueError(f"No edge ({u}, {v}) exists.")
+                raise PhyloZooValueError(f"No edge ({u}, {v}) exists.")
             key = next(iter(self._graph[u][v].keys()))
 
         if not self._graph.has_edge(u, v, key):
-            raise ValueError(f"Edge ({u}, {v}, {key}) does not exist.")
+            raise PhyloZooValueError(f"Edge ({u}, {v}, {key}) does not exist.")
 
         self._graph.remove_edge(u, v, key)
         self._combined.remove_edge(u, v, key)
@@ -944,6 +966,11 @@ class DirectedMultiGraph(IOMixin):
         ----------
         edges : list[tuple[T, T] | tuple[T, T, int]]
             List of edges to remove. Can be (u, v) or (u, v, key) tuples.
+
+        Raises
+        ------
+        PhyloZooValueError
+            If the edge format is invalid.
 
         Examples
         --------
@@ -962,7 +989,7 @@ class DirectedMultiGraph(IOMixin):
                 u, v, key = edge
                 self.remove_edge(u, v, key=key)
             else:
-                raise ValueError(f"Invalid edge format: {edge}")
+                raise PhyloZooValueError(f"Invalid edge format: {edge}")
 
     # ========== Query Operations ==========
 

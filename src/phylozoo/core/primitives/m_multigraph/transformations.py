@@ -10,6 +10,8 @@ from collections import deque
 
 import networkx as nx
 
+from phylozoo.utils.exceptions import PhyloZooValueError
+
 if TYPE_CHECKING:
     from ..d_multigraph import DirectedMultiGraph
     from . import MixedMultiGraph
@@ -47,7 +49,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the vertices list is empty, if any vertex is not in the graph, if
         identification would create both directed and undirected edges between
         the same pair of nodes, or if identification would create edges in both
@@ -61,7 +63,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
     Identification may create parallel edges. However, if identification would
     result in both directed and undirected edges between the same pair of nodes
     (e.g., both a directed edge u->v and an undirected edge u-v), or edges in
-    both directions (e.g., both u->v and v->u), a ValueError is raised as this
+    both directions (e.g., both u->v and v->u), a PhyloZooValueError is raised as this
     violates the graph's constraints.
     
     Examples
@@ -81,7 +83,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
     True
     """
     if not vertices:
-        raise ValueError("Vertices list cannot be empty")
+        raise PhyloZooValueError("Vertices list cannot be empty")
     
     vertices_list = list(vertices)
     if len(vertices_list) < 2:
@@ -93,7 +95,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
     # Check that all vertices exist
     for v in vertices_list:
         if v not in graph.nodes():
-            raise ValueError(f"Vertex {v} not found in graph")
+            raise PhyloZooValueError(f"Vertex {v} not found in graph")
     
     # Before merging, check if identification would create conflicting edge types
     # Collect all edges that would be created, tracking their types
@@ -135,7 +137,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
     for (u, v), edge_types in edges_to_create.items():
         # Check 1: Mixed types in edges_to_create
         if 'directed' in edge_types and 'undirected' in edge_types:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Identification would create both directed and undirected edges between {u} and {v}, "
                 f"which violates mutual exclusivity."
             )
@@ -145,7 +147,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
         if reverse_key in edges_to_create:
             reverse_types = edges_to_create[reverse_key]
             if 'directed' in edge_types and 'directed' in reverse_types:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create edges in both directions between {u} and {v}, "
                     f"which is not allowed."
                 )
@@ -163,7 +165,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
         # Check existing directed edges
         if graph._directed.has_edge(first_vertex, other_node):
             if 'undirected' in edge_types:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create both directed and undirected edges between {first_vertex} and {other_node}, "
                     f"which violates mutual exclusivity."
                 )
@@ -172,20 +174,20 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
                 # Check if we'd also create other_node->first_vertex
                 reverse_in_new = (other_node, first_vertex) in edges_to_create
                 if reverse_in_new and 'directed' in edges_to_create[(other_node, first_vertex)]:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Identification would create edges in both directions between {first_vertex} and {other_node}, "
                         f"which is not allowed."
                     )
         
         if graph._directed.has_edge(other_node, first_vertex):
             if 'undirected' in edge_types:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create both directed and undirected edges between {first_vertex} and {other_node}, "
                     f"which violates mutual exclusivity."
                 )
             # Check for bidirectional: other_node->first_vertex exists
             if 'directed' in edge_types:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create edges in both directions between {first_vertex} and {other_node}, "
                     f"which is not allowed."
                 )
@@ -193,7 +195,7 @@ def identify_vertices(graph: 'MixedMultiGraph', vertices: list[T], merged_attrs:
         # Check existing undirected edges
         if graph._undirected.has_edge(first_vertex, other_node):
             if 'directed' in edge_types:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create both directed and undirected edges between {first_vertex} and {other_node}, "
                     f"which violates mutual exclusivity."
                 )
@@ -300,7 +302,7 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the root vertex is not in the graph, or if the graph contains cycles that
         prevent a valid orientation.
     
@@ -317,7 +319,7 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
     [(1, 2), (2, 3)]
     """
     if root not in graph.nodes():
-        raise ValueError(f"Root vertex {root} not found in graph")
+        raise PhyloZooValueError(f"Root vertex {root} not found in graph")
     
     # Create a new DirectedMultiGraph
     from ..d_multigraph import DirectedMultiGraph
@@ -394,7 +396,7 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
                             for k in range(graph._undirected.number_of_edges(current, n) if graph._undirected.has_edge(current, n) else 0)
                         )
                         if current_reached_via_undirected:
-                            raise ValueError(
+                            raise PhyloZooValueError(
                                 f"Directed edge ({u}, {current}, key={key}) points towards vertex "
                                 f"{current} which is already in the BFS path from root {root}."
                             )
@@ -453,14 +455,14 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
         # Use the same normalization method as when processing edges
         edge_key = graph.normalize_undirected_edge(u, v, key)
         if edge_key not in processed_undirected_edges:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Undirected edge ({u}, {v}, key={key}) is not reachable from root {root}. "
                 f"This may indicate disconnected components."
             )
     
     # Verify all nodes are included
     if dm.number_of_nodes() != graph.number_of_nodes():
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Orientation failed: resulting graph has {dm.number_of_nodes()} nodes, "
             f"expected {graph.number_of_nodes()}. This may indicate disconnected components "
             f"or cycles that prevent a valid orientation."
@@ -514,7 +516,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the node is not degree-2, or has an invalid edge configuration (e.g., multiple
         directed edges in the same direction, or more than 2 incident edges).
     
@@ -532,11 +534,11 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     """
     # Check that node exists
     if node not in graph.nodes():
-        raise ValueError(f"Node {node} not found in graph")
+        raise PhyloZooValueError(f"Node {node} not found in graph")
     
     # Verify node is degree-2 using the public API
     if graph.degree(node) != 2:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has degree {graph.degree(node)}, expected degree 2"
         )
     
@@ -567,7 +569,7 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     # Defensive check: we already verified degree == 2, so this should always be true
     # This check catches potential inconsistencies in the graph implementation
     if len(neighbors) != 2:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has {len(neighbors)} incident edges, expected exactly 2. "
             f"This may indicate an inconsistency in the graph implementation."
         )
@@ -608,18 +610,18 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
         graph.add_directed_edge(n1, n2, key=None, **merged_attrs)
     elif type1 == 'directed_in' and type2 == 'directed_in':
         # Multiple incoming directed edges - invalid for degree-2 node
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has multiple incoming directed edges, "
             f"cannot determine suppression direction"
         )
     elif type1 == 'directed_out' and type2 == 'directed_out':
         # Multiple outgoing directed edges - invalid for degree-2 node
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has multiple outgoing directed edges, "
             f"cannot determine suppression direction"
         )
     else:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Unexpected edge type combination for node {node}: "
             f"{type1} and {type2}"
         )
@@ -664,7 +666,7 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If either node is not in the graph, or if no edges exist between u and v.
     
     Examples
@@ -695,13 +697,13 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
     """
     # Check that nodes exist
     if u not in graph.nodes():
-        raise ValueError(f"Node {u} not found in graph")
+        raise PhyloZooValueError(f"Node {u} not found in graph")
     if v not in graph.nodes():
-        raise ValueError(f"Node {v} not found in graph")
+        raise PhyloZooValueError(f"Node {v} not found in graph")
     
     # Check if there are any edges between u and v
     if not graph.has_edge(u, v):
-        raise ValueError(f"No edges exist between nodes {u} and {v}")
+        raise PhyloZooValueError(f"No edges exist between nodes {u} and {v}")
     
     # Check if edges are directed or undirected (mutually exclusive)
     has_directed = graph._directed.has_edge(u, v)
@@ -711,7 +713,7 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
         # Handle parallel directed edges
         edges_dict = graph._directed[u].get(v, {})
         if not edges_dict:
-            raise ValueError(f"No directed edges exist between nodes {u} and {v}")
+            raise PhyloZooValueError(f"No directed edges exist between nodes {u} and {v}")
         
         num_edges = len(edges_dict)
         if num_edges <= 1:
@@ -750,7 +752,7 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
             edges_dict = graph._undirected[v].get(u, {})
         
         if not edges_dict:
-            raise ValueError(f"No undirected edges exist between nodes {u} and {v}")
+            raise PhyloZooValueError(f"No undirected edges exist between nodes {u} and {v}")
         
         num_edges = len(edges_dict)
         if num_edges <= 1:
@@ -779,14 +781,14 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
             # Try removing as (u, v) first, then (v, u)
             try:
                 graph.remove_edge(u, v, key=key)
-            except (ValueError, KeyError):
+            except (PhyloZooValueError, KeyError):
                 graph.remove_edge(v, u, key=key)
         
         # Add back a single edge with merged attributes
         graph.add_undirected_edge(u, v, key=first_key, **merged_attrs)
     
     else:
-        raise ValueError(f"No edges exist between nodes {u} and {v}")
+        raise PhyloZooValueError(f"No edges exist between nodes {u} and {v}")
 
 
 def subgraph(graph: 'MixedMultiGraph', nodes: Iterable[T]) -> 'MixedMultiGraph':
@@ -812,7 +814,7 @@ def subgraph(graph: 'MixedMultiGraph', nodes: Iterable[T]) -> 'MixedMultiGraph':
 
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If any node in `nodes` is not present in `graph`.
     
     Examples
@@ -839,7 +841,7 @@ def subgraph(graph: 'MixedMultiGraph', nodes: Iterable[T]) -> 'MixedMultiGraph':
     # Validate nodes exist in source graph
     for n in nodes_set:
         if n not in graph.nodes():
-            raise ValueError(f"Node {n} not found in graph")
+            raise PhyloZooValueError(f"Node {n} not found in graph")
 
     new_graph = MixedMultiGraph()
 

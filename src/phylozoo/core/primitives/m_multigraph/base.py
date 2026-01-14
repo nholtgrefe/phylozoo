@@ -10,6 +10,7 @@ import networkx as nx
 
 from phylozoo.utils.identifier_warnings import warn_on_keyword, warn_on_none_value
 from ....utils.io import IOMixin
+from phylozoo.utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:
     from ..d_multigraph import DirectedMultiGraph
@@ -130,6 +131,13 @@ class MixedMultiGraph(IOMixin):
             These attributes are stored in both the directed and undirected NetworkX graphs' `.graph` attributes.
             By default None.
 
+        Raises
+        ------
+        PhyloZooValueError
+            If the edge format is invalid.
+        PhyloZooWarning
+            If a Python keyword is used as an edge attribute.
+
         Examples
         --------
         >>> G = MixedMultiGraph(undirected_edges=[(1, 2), (2, 3)])
@@ -167,7 +175,7 @@ class MixedMultiGraph(IOMixin):
                     u, v, key = edge
                     self.add_undirected_edge(u, v, key=key)
                 else:
-                    raise ValueError(f"Invalid edge format: {edge}")
+                    raise PhyloZooValueError(f"Invalid edge format: {edge}")
 
         # Load directed edges if given
         if directed_edges:
@@ -185,7 +193,7 @@ class MixedMultiGraph(IOMixin):
                     u, v, key = edge
                     self.add_directed_edge(u, v, key=key)
                 else:
-                    raise ValueError(f"Invalid edge format: {edge}")
+                    raise PhyloZooValueError(f"Invalid edge format: {edge}")
 
     # ========== NetworkX Compatibility Methods ==========
 

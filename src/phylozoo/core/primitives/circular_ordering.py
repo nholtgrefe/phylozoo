@@ -9,6 +9,7 @@ import warnings
 from typing import Any, Dict, Iterator, List, Set, TypeVar, Generator
 
 from .partition import Partition
+from phylozoo.utils.exceptions import PhyloZooWarning, PhyloZooValueError, PhyloZooAttributeError
 
 T = TypeVar('T')
 
@@ -65,6 +66,15 @@ class CircularSetOrdering(Partition):
             Attribute name.
         value : Any
             Attribute value.
+
+        Raises
+        ------
+        PhyloZooAttributeError
+            If attempting to modify any attribute after initialization.
+        PhyloZooValueError
+            If the sets overlap.
+        PhyloZooWarning
+            If an empty set is added to the circular set ordering.
         """
         # Allow setting _setorder during initialization (before _initialized exists)
         if name == '_setorder' and not hasattr(self, '_initialized'):
@@ -88,7 +98,7 @@ class CircularSetOrdering(Partition):
             if len(part_frozen) == 0:
                 warnings.warn(
                     "Empty set added to circular set ordering. This may cause unexpected behavior.",
-                    UserWarning,
+                    PhyloZooWarning,
                     stacklevel=2
                 )
             
@@ -99,12 +109,12 @@ class CircularSetOrdering(Partition):
             # Check for overlaps during element collection (early validation)
             for elt in part_frozen:
                 if elt in elements_set:
-                    raise ValueError("Invalid partition: sets overlap")
+                    raise PhyloZooValueError("Invalid partition: sets overlap")
                 elements_set.add(elt)
         
         # Validate total size matches
         if total_size != len(elements_set):
-            raise ValueError("Invalid partition: sets overlap")
+            raise PhyloZooValueError("Invalid partition: sets overlap")
         
         # Store parts in original order (not sorted, unlike Partition)
         # We need to preserve order for circular ordering
@@ -312,7 +322,7 @@ class CircularSetOrdering(Partition):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If not all sets are singletons.
         
         Examples
@@ -323,7 +333,7 @@ class CircularSetOrdering(Partition):
         CircularOrdering([1, 2, 3])
         """
         if not self.are_singletons():
-            raise ValueError("Not all sets are singletons")
+            raise PhyloZooValueError("Not all sets are singletons")
         elements = [next(iter(s)) for s in self._setorder]
         return CircularOrdering(elements)
     
@@ -350,7 +360,7 @@ class CircularSetOrdering(Partition):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If set1 equals set2, or if either set is not in the setorder.
         
         Examples
@@ -367,11 +377,11 @@ class CircularSetOrdering(Partition):
         set2_frozen = frozenset(set2) if isinstance(set2, set) else set2
         
         if set1_frozen == set2_frozen:
-            raise ValueError("Cannot check if a set is neighbour of itself")
+            raise PhyloZooValueError("Cannot check if a set is neighbour of itself")
         if set1_frozen not in self._setorder:
-            raise ValueError(f"Set {set1} not found in setorder")
+            raise PhyloZooValueError(f"Set {set1} not found in setorder")
         if set2_frozen not in self._setorder:
-            raise ValueError(f"Set {set2} not found in setorder")
+            raise PhyloZooValueError(f"Set {set2} not found in setorder")
         
         i = self._setorder.index(set1_frozen)
         j = self._setorder.index(set2_frozen)
@@ -487,6 +497,13 @@ class CircularOrdering(CircularSetOrdering):
             Attribute name.
         value : Any
             Attribute value.
+
+        Raises
+        ------
+        PhyloZooAttributeError
+            If attempting to modify any attribute after initialization.
+        PhyloZooValueError
+            If the elements are not unique.
         """
         # Allow setting _order during initialization (before _initialized exists)
         if name == '_order' and not hasattr(self, '_initialized'):
@@ -499,7 +516,7 @@ class CircularOrdering(CircularSetOrdering):
     def __init__(self, order: list[T]) -> None:
         # Check for duplicates before creating partition
         if len(order) != len(set(order)):
-            raise ValueError("Elements in CircularOrdering must be unique")
+            raise PhyloZooValueError("Elements in CircularOrdering must be unique")
         
         # Convert elements to singleton sets for the partition
         parts = [{elt} for elt in order]
@@ -630,7 +647,7 @@ class CircularOrdering(CircularSetOrdering):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If elt1 equals elt2, or if either element is not in the order.
         
         Examples

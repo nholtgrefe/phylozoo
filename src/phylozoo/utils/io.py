@@ -111,7 +111,6 @@ from pathlib import Path
 from typing import Any, Callable, TypeVar
 
 from phylozoo.utils.exceptions import (
-    PhyloZooFileNotFoundError,
     PhyloZooFormatError,
     PhyloZooIOError,
     PhyloZooValueError,
@@ -138,7 +137,7 @@ def read_file_safely(filepath: str | Path, encoding: str = 'utf-8') -> str:
     
     Raises
     ------
-    PhyloZooFileNotFoundError
+    FileNotFoundError
         If the file does not exist.
     PhyloZooValueError
         If the path is not a file.
@@ -154,7 +153,7 @@ def read_file_safely(filepath: str | Path, encoding: str = 'utf-8') -> str:
     """
     path = Path(filepath)
     if not path.exists():
-        raise PhyloZooFileNotFoundError(f"File not found: {filepath}")
+        raise FileNotFoundError(f"File not found: {filepath}")
     if not path.is_file():
         raise PhyloZooValueError(f"Path is not a file: {filepath}")
     
@@ -606,7 +605,7 @@ class IOMixin:
         
         Raises
         ------
-        PhyloZooFileNotFoundError
+        FileNotFoundError
             If file does not exist.
         PhyloZooFormatError
             If format cannot be detected or is not supported.
@@ -708,7 +707,7 @@ class IOMixin:
         
         Raises
         ------
-        PhyloZooFileNotFoundError
+        FileNotFoundError
             If input file does not exist.
         FileExistsError
             If output file exists and overwrite is False.

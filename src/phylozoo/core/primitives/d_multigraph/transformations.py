@@ -10,6 +10,7 @@ from typing import Any, TypeVar, Iterable
 import networkx as nx
 
 from . import DirectedMultiGraph
+from phylozoo.utils.exceptions import PhyloZooValueError
 
 T = TypeVar('T')
 
@@ -41,7 +42,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the vertices list is empty, if any vertex is not in the graph, or
         if identification would create edges in both directions between the
         same pair of nodes (u->v and v->u), which is not allowed.
@@ -73,7 +74,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
     True
     """
     if not vertices:
-        raise ValueError("Vertices list cannot be empty")
+        raise PhyloZooValueError("Vertices list cannot be empty")
     
     vertices_list = list(vertices)
     if len(vertices_list) < 2:
@@ -85,7 +86,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
     # Check that all vertices exist
     for v in vertices_list:
         if v not in graph.nodes():
-            raise ValueError(f"Vertex {v} not found in graph")
+            raise PhyloZooValueError(f"Vertex {v} not found in graph")
     
     # Before merging, check if identification would create bidirectional edges
     # After merging, edges from other_vertices will be moved to first_vertex
@@ -115,7 +116,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
             # After merge: first_vertex -> v (already exists)
             # Check if merging would also create v -> first_vertex
             if v in external_incoming_sources:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create edges in both directions between {first_vertex} and {v}, "
                     f"which is not allowed."
                 )
@@ -126,7 +127,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
             # After merge: u -> first_vertex (already exists)
             # Check if merging would also create first_vertex -> u
             if u in external_outgoing_targets:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Identification would create edges in both directions between {first_vertex} and {u}, "
                     f"which is not allowed."
                 )
@@ -218,7 +219,7 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the node is not degree-2, or has an invalid edge configuration (indegree=2
         with outdegree=0, or indegree=0 with outdegree=2).
     
@@ -236,11 +237,11 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     """
     # Check that node exists
     if node not in graph.nodes():
-        raise ValueError(f"Node {node} not found in graph")
+        raise PhyloZooValueError(f"Node {node} not found in graph")
     
     # Verify node is degree-2 using the public API
     if graph.degree(node) != 2:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has degree {graph.degree(node)}, expected degree 2"
         )
     
@@ -250,19 +251,19 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     
     # Invalid configurations
     if in_deg == 2 and out_deg == 0:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has indegree 2 and outdegree 0. "
             f"Cannot suppress node with multiple incoming directed edges."
         )
     if in_deg == 0 and out_deg == 2:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has indegree 0 and outdegree 2. "
             f"Cannot suppress node with multiple outgoing directed edges."
         )
     
     # Valid configuration: indegree=1, outdegree=1
     if in_deg != 1 or out_deg != 1:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has indegree {in_deg} and outdegree {out_deg}. "
             f"Expected indegree 1 and outdegree 1 for suppression."
         )
@@ -273,7 +274,7 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     
     # We should have exactly one incoming and one outgoing edge
     if len(directed_in) != 1 or len(directed_out) != 1:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Node {node} has {len(directed_in)} incoming and {len(directed_out)} outgoing edges. "
             f"Expected exactly 1 of each."
         )
@@ -331,7 +332,7 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If either node is not in the graph, or if no edges exist between u and v.
     
     Examples
@@ -362,18 +363,18 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
     """
     # Check that nodes exist
     if u not in graph.nodes():
-        raise ValueError(f"Node {u} not found in graph")
+        raise PhyloZooValueError(f"Node {u} not found in graph")
     if v not in graph.nodes():
-        raise ValueError(f"Node {v} not found in graph")
+        raise PhyloZooValueError(f"Node {v} not found in graph")
     
     # Check if there are any edges between u and v
     if not graph.has_edge(u, v):
-        raise ValueError(f"No edges exist between nodes {u} and {v}")
+        raise PhyloZooValueError(f"No edges exist between nodes {u} and {v}")
     
     # Get all parallel edges between u and v
     edges_dict = graph._graph[u].get(v, {})
     if not edges_dict:
-        raise ValueError(f"No edges exist between nodes {u} and {v}")
+        raise PhyloZooValueError(f"No edges exist between nodes {u} and {v}")
     
     num_edges = len(edges_dict)
     if num_edges <= 1:
@@ -431,7 +432,7 @@ def subgraph(graph: 'DirectedMultiGraph', nodes: Iterable[T]) -> 'DirectedMultiG
 
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If any node in `nodes` is not present in `graph`.
 
     Examples
@@ -456,7 +457,7 @@ def subgraph(graph: 'DirectedMultiGraph', nodes: Iterable[T]) -> 'DirectedMultiG
     # Validate nodes exist in source graph
     for n in nodes_set:
         if n not in graph.nodes():
-            raise ValueError(f"Node {n} not found in graph")
+            raise PhyloZooValueError(f"Node {n} not found in graph")
 
     new_graph = DirectedMultiGraph()
 

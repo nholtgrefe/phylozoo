@@ -11,7 +11,7 @@ from typing import Any
 from ...core.network.dnetwork import DirectedPhyNetwork
 from ...core.network.sdnetwork import SemiDirectedPhyNetwork
 from ...core.network.sdnetwork.derivations import to_d_network
-
+from ...utils.exceptions import PhyloZooValueError
 
 def root_at_outgroup(
     network: SemiDirectedPhyNetwork,
@@ -37,7 +37,7 @@ def root_at_outgroup(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the outgroup taxon is not found in the network.
         If no edge is found incident to the outgroup leaf.
         If the edge is not a valid root location.
@@ -57,7 +57,7 @@ def root_at_outgroup(
     # Get the node ID for the outgroup taxon
     outgroup_node = network.get_node_id(outgroup)
     if outgroup_node is None:
-        raise ValueError(f"Outgroup taxon '{outgroup}' not found in network")
+        raise PhyloZooValueError(f"Outgroup taxon '{outgroup}' not found in network")
     
     # Find an edge incident to the outgroup leaf node
     # Check undirected edges first (most common case)
@@ -72,7 +72,7 @@ def root_at_outgroup(
             incident_edges.append((u, v, key))
     
     if not incident_edges:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"No edge found incident to outgroup leaf node {outgroup_node} "
             f"(taxon '{outgroup}')"
         )

@@ -145,24 +145,6 @@ class PhyloZooRuntimeError(PhyloZooError, RuntimeError):
     pass
 
 
-class PhyloZooValidationError(PhyloZooError, ValueError):
-    """
-    Raised when validation fails.
-    
-    This exception is used for general validation failures that don't fit
-    into more specific categories. Inherits from both PhyloZooError and
-    ValueError for backward compatibility.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooValidationError
-    >>> 
-    >>> if not is_valid(data):
-    ...     raise PhyloZooValidationError("Data validation failed")
-    """
-    pass
-
-
 class PhyloZooImportError(PhyloZooError, ImportError):
     """
     Raised when an import fails.
@@ -185,6 +167,15 @@ class PhyloZooImportError(PhyloZooError, ImportError):
     """
     pass
 
+
+class PhyloZooAttributeError(PhyloZooError, AttributeError):
+    """
+    Raised when an attribute is invalid.
+    
+    This exception is used when an attribute is invalid. Inherits from both
+    PhyloZooError and AttributeError for backward compatibility.
+    """
+    pass
 
 # ============================================================================
 # Network Domain Exceptions
@@ -252,27 +243,6 @@ class PhyloZooNetworkDegreeError(PhyloZooNetworkError):
     pass
 
 
-class PhyloZooNetworkTopologyError(PhyloZooNetworkError):
-    """
-    Raised when network topology is invalid.
-    
-    This exception is used for topology-related errors such as:
-    - Invalid blob structure
-    - Invalid network type (e.g., level-k violations)
-    - Invalid generator structure
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNetworkTopologyError
-    >>> 
-    >>> if network.level > max_level:
-    ...     raise PhyloZooNetworkTopologyError(
-    ...         f"Network level {network.level} exceeds maximum {max_level}"
-    ...     )
-    """
-    pass
-
-
 class PhyloZooNetworkAttributeError(PhyloZooNetworkError):
     """
     Raised when network edge attributes are invalid.
@@ -317,25 +287,7 @@ class PhyloZooIOError(PhyloZooError, IOError):
     pass
 
 
-class PhyloZooFileNotFoundError(PhyloZooIOError, FileNotFoundError):
-    """
-    Raised when a file is not found.
-    
-    This exception is used when attempting to read or access a file that
-    doesn't exist. Inherits from both PhyloZooIOError and FileNotFoundError
-    for backward compatibility.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooFileNotFoundError
-    >>> 
-    >>> if not path.exists():
-    ...     raise PhyloZooFileNotFoundError(f"File not found: {path}")
-    """
-    pass
-
-
-class PhyloZooParseError(PhyloZooError):
+class PhyloZooParseError(PhyloZooIOError):
     """
     Raised when parsing fails.
     
@@ -400,92 +352,6 @@ class PhyloZooAlgorithmError(PhyloZooError):
     pass
 
 
-class PhyloZooInferenceError(PhyloZooAlgorithmError):
-    """
-    Raised when inference algorithms fail.
-    
-    This exception is used for inference algorithm failures such as:
-    - Network reconstruction failures
-    - Profile set inference errors
-    - Tree inference errors
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooInferenceError
-    >>> 
-    >>> if not can_reconstruct(profileset):
-    ...     raise PhyloZooInferenceError(
-    ...         "Cannot reconstruct network from profile set"
-    ...     )
-    """
-    pass
-
-
-class PhyloZooComputationError(PhyloZooAlgorithmError):
-    """
-    Raised when computation fails.
-    
-    This exception is used for general computation failures such as:
-    - Distance matrix computation errors
-    - Diversity calculation errors
-    - Optimization failures
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooComputationError
-    >>> 
-    >>> if computation_failed:
-    ...     raise PhyloZooComputationError(
-    ...         "Computation failed due to numerical instability"
-    ...     )
-    """
-    pass
-
-
-# ============================================================================
-# State/Operation Domain Exceptions
-# ============================================================================
-
-class PhyloZooStateError(PhyloZooError):
-    """
-    Raised when an operation is attempted in an invalid state.
-    
-    This exception is used when an operation requires a certain state
-    (e.g., object must be initialized, plot must be created) but that
-    state is not met.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooStateError
-    >>> 
-    >>> if self._figure is None:
-    ...     raise PhyloZooStateError(
-    ...         "Figure must be created before showing"
-    ...     )
-    """
-    pass
-
-
-class PhyloZooNotFoundError(PhyloZooError):
-    """
-    Raised when an entity is not found.
-    
-    This exception is used when looking up entities that don't exist,
-    such as taxa, nodes, profiles, or other identifiers.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNotFoundError
-    >>> 
-    >>> node_id = network.get_node_id(taxon)
-    >>> if node_id is None:
-    ...     raise PhyloZooNotFoundError(
-    ...         f"Taxon '{taxon}' not found in network"
-    ...     )
-    """
-    pass
-
-
 # ============================================================================
 # Visualization Domain Exceptions
 # ============================================================================
@@ -546,6 +412,26 @@ class PhyloZooBackendError(PhyloZooVisualizationError):
     >>> if backend_name not in registered_backends:
     ...     raise PhyloZooBackendError(
     ...         f"Backend '{backend_name}' not registered"
+    ...     )
+    """
+    pass
+
+
+class PhyloZooStateError(PhyloZooVisualizationError):
+    """
+    Raised when an operation is attempted in an invalid state.
+    
+    This exception is used when an operation requires a certain state
+    (e.g., plot must be created, figure must be initialized) but that
+    state is not met. This is specific to visualization operations.
+    
+    Examples
+    --------
+    >>> from phylozoo.utils.exceptions import PhyloZooStateError
+    >>> 
+    >>> if self._figure is None:
+    ...     raise PhyloZooStateError(
+    ...         "Figure must be created before showing"
     ...     )
     """
     pass

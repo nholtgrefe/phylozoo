@@ -8,6 +8,13 @@ import itertools
 import warnings
 from typing import Any, Iterator, TypeVar
 
+from phylozoo.utils.exceptions import (
+    PhyloZooWarning,
+    PhyloZooValueError,
+    PhyloZooAttributeError,
+    PhyloZooTypeError,
+)
+
 T = TypeVar('T')
 
 
@@ -36,8 +43,10 @@ class Partition:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the sets overlap (i.e., the partition is invalid).
+    PhyloZooWarning
+        If an empty set is added to the partition.
     
     Examples
     --------
@@ -74,7 +83,7 @@ class Partition:
             if len(part_frozen) == 0:
                 warnings.warn(
                     "Empty set added to partition. This may cause unexpected behavior.",
-                    UserWarning,
+                    PhyloZooWarning,
                     stacklevel=2
                 )
             
@@ -85,12 +94,12 @@ class Partition:
             # Check for overlaps during element collection (early validation)
             for elt in part_frozen:
                 if elt in elements_set:
-                    raise ValueError("Invalid partition: sets overlap")
+                    raise PhyloZooValueError("Invalid partition: sets overlap")
                 elements_set.add(elt)
         
         # Validate total size matches (catches any remaining edge cases)
         if total_size != len(elements_set):
-            raise ValueError("Invalid partition: sets overlap")
+            raise PhyloZooValueError("Invalid partition: sets overlap")
         
         # Store in canonical form
         self._parts: tuple = self._canonical_form(tuple(parts_frozen))
@@ -142,7 +151,7 @@ class Partition:
         
         Raises
         ------
-        AttributeError
+        PhyloZooAttributeError
             If attempting to modify any attribute after initialization.
         """
         # Allow setting during initialization
@@ -152,10 +161,10 @@ class Partition:
         
         # Prevent modification after initialization
         if name in self.__slots__:
-            raise AttributeError(
+            raise PhyloZooAttributeError(
                 f"Cannot modify attribute '{name}'. Partition is immutable."
             )
-        raise AttributeError(
+        raise PhyloZooAttributeError(
             f"Cannot set attribute '{name}'. Partition is immutable."
         )
     
@@ -358,7 +367,7 @@ class Partition:
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the element is not found in any part of the partition.
         
         Examples
@@ -372,7 +381,7 @@ class Partition:
         for part in self._parts:
             if element in part:
                 return part
-        raise ValueError(f"Element {element} not found in partition")
+        raise PhyloZooValueError(f"Element {element} not found in partition")
     
     def subpartitions(self, size: int = 4) -> Iterator['Partition']:
         """
@@ -444,8 +453,10 @@ class Partition:
         
         Raises
         ------
-        ValueError
-            If 'other' is not a Partition instance or covers different elements.
+        PhyloZooValueError
+            If 'other' covers different elements.
+        PhyloZooTypeError
+            If 'other' is not a Partition instance.
         
         Examples
         --------
@@ -457,9 +468,9 @@ class Partition:
         False
         """
         if not isinstance(other, Partition):
-            raise ValueError("The argument must be an instance of Partition")
+            raise PhyloZooTypeError("The argument must be an instance of Partition")
         if not self._elements == other._elements:
-            raise ValueError("Other partition covers different elements.")
+            raise PhyloZooValueError("Other partition covers different elements.")
         
         for part in self._parts:
             if not any(part.issubset(other_part) for other_part in other._parts):
