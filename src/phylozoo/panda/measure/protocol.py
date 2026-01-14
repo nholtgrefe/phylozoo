@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any, Protocol, Set
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-
+from phylozoo.utils.exceptions import PhyloZooNotImplementedError
 
 class DiversityMeasure(Protocol):
     """
@@ -45,7 +45,7 @@ class DiversityMeasure(Protocol):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If any taxa are not found in the network.
         """
         ...
@@ -78,10 +78,10 @@ class DiversityMeasure(Protocol):
         
         Raises
         ------
-        NotImplementedError
+        PhyloZooNotImplementedError
             If the measure doesn't support optimization.
         """
-        raise NotImplementedError(
+        raise PhyloZooNotImplementedError(
             "This measure does not implement custom optimization."
         )
 

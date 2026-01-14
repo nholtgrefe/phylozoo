@@ -21,6 +21,7 @@ from phylozoo.core.network.dnetwork.classifications import has_parallel_edges, i
 from phylozoo.core.network.dnetwork.features import k_blobs
 from phylozoo.core.network.dnetwork.transformations import binary_resolution
 from phylozoo.panda.utils.scanwidth import ScanwidthDAG, Extension, TreeExtension
+from phylozoo.utils.exceptions import PhyloZooValueError, PhyloZooNotImplementedError, PhyloZooRuntimeError
 
 from .protocol import DiversityMeasure
 
@@ -491,12 +492,12 @@ class AllPathsDiversity:
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If k is invalid, network has parallel edges, network has 2-blobs,
             or network is invalid.
-        RuntimeError
+        PhyloZooRuntimeError
             If tree extension computation fails.
-        NotImplementedError
+        PhyloZooNotImplementedError
             If tree_extension method is not "optimal_XP" (other methods not yet available).
         
         Notes
@@ -506,18 +507,18 @@ class AllPathsDiversity:
         recomputed after binary resolution.
         """
         if k < 0 or k > len(network.taxa):
-            raise ValueError(f"k must be between 0 and {len(network.taxa)}, got {k}")
+            raise PhyloZooValueError(f"k must be between 0 and {len(network.taxa)}, got {k}")
         
         # Check for parallel edges
         if has_parallel_edges(network):
-            raise ValueError(
+            raise PhyloZooValueError(
                 "MAPPD algorithm cannot be applied to networks with parallel edges"
             )
         
         # Check for 2-blobs
         two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
         if two_blobs:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"MAPPD algorithm cannot be applied to networks with 2-blobs "
                 f"(found {len(two_blobs)} 2-blob(s))"
             )
@@ -533,7 +534,7 @@ class AllPathsDiversity:
         # Compute tree extension if needed
         if not isinstance(tree_extension, TreeExtension):
             if tree_extension != "optimal_XP":
-                raise NotImplementedError(
+                raise PhyloZooNotImplementedError(
                     f"Tree extension method '{tree_extension}' not yet implemented. "
                     "Only 'optimal_XP' is currently supported."
                 )
@@ -542,7 +543,7 @@ class AllPathsDiversity:
             res = dag.optimal_scanwidth(**kwargs)
             
             if res[0] is None:
-                raise RuntimeError("Failed to compute tree extension")
+                raise PhyloZooRuntimeError("Failed to compute tree extension")
             
             scanwidth, extension = res
             tree_extension = extension.canonical_tree_extension()
@@ -559,7 +560,7 @@ class AllPathsDiversity:
                 solution_taxa.add(label)
             else:
                 # Should not happen for leaves, but handle gracefully
-                raise ValueError(f"Leaf node {node_id} has no label")
+                raise PhyloZooRuntimeError(f"Leaf node {node_id} has no label")
         
         return pd_value, solution_taxa
 

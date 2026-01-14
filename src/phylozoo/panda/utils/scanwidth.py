@@ -20,8 +20,6 @@ TreeExtension
     Class representing a tree extension of a DAG.
 """
 
-import itertools
-from collections import defaultdict
 from typing import Any
 
 import networkx as nx

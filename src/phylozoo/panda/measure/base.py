@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any, Dict, Set
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+from phylozoo.utils.exceptions import PhyloZooValueError, PhyloZooNotImplementedError
 
 from .protocol import DiversityMeasure
 
@@ -44,7 +45,7 @@ def diversity(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If any taxa are not found in the network.
     
     Examples
@@ -58,7 +59,7 @@ def diversity(
     network_taxa = set(network.taxa)
     if not taxa.issubset(network_taxa):
         missing = taxa - network_taxa
-        raise ValueError(f"Taxa not found in network: {missing}")
+        raise PhyloZooValueError(f"Taxa not found in network: {missing}")
     
     return measure.compute_diversity(network, taxa, **kwargs)
 
@@ -151,7 +152,7 @@ def greedy_max_diversity(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If k is invalid (negative or greater than number of taxa).
     
     Examples
@@ -164,9 +165,9 @@ def greedy_max_diversity(
     all_taxa = set(network.taxa)
     
     if k < 0:
-        raise ValueError(f"k must be non-negative, got {k}")
+        raise PhyloZooValueError(f"k must be non-negative, got {k}")
     if k > len(all_taxa):
-        raise ValueError(f"k must be <= {len(all_taxa)}, got {k}")
+        raise PhyloZooValueError(f"k must be <= {len(all_taxa)}, got {k}")
     
     saved_taxa: set[str] = set()
     
@@ -223,7 +224,7 @@ def solve_max_diversity(
     
     Raises
     ------
-    NotImplementedError
+    PhyloZooNotImplementedError
         If the measure doesn't implement solve_maximization.
     
     Examples

@@ -135,6 +135,16 @@ class PhyloZooTypeError(PhyloZooError, TypeError):
     pass
 
 
+class PhyloZooRuntimeError(PhyloZooError, RuntimeError):
+    """
+    Raised when a runtime error occurs.
+    
+    This exception is used for general runtime errors. Inherits from both
+    PhyloZooError and RuntimeError for backward compatibility.
+    """
+    pass
+
+
 class PhyloZooValidationError(PhyloZooError, ValueError):
     """
     Raised when validation fails.
