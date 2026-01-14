@@ -115,8 +115,9 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
     
     Raises
     ------
-    ValueError
-        If the FASTA string is malformed or cannot be parsed.
+    PhyloZooParseError
+        If the FASTA string is malformed or cannot be parsed (e.g., empty taxon identifier,
+        sequence data before header, no sequences found).
     
     Examples
     --------
@@ -160,7 +161,7 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
             # Extract taxon identifier (everything after '>', stripped)
             current_taxon = line[1:].strip()
             if not current_taxon:
-                raise ValueError("FASTA header line has empty taxon identifier")
+                raise PhyloZooParseError("FASTA header line has empty taxon identifier")
         
         elif current_taxon is not None:
             # This is a sequence line
@@ -170,7 +171,7 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
                 current_seq.append(seq_line)
         else:
             # Sequence line before any header
-            raise ValueError("FASTA string has sequence data before first header line")
+            raise PhyloZooParseError("FASTA string has sequence data before first header line")
     
     # Don't forget the last sequence
     if current_taxon is not None:
@@ -179,7 +180,7 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
             sequences[current_taxon] = seq_str
     
     if not sequences:
-        raise ValueError("No sequences found in FASTA string")
+        raise PhyloZooParseError("No sequences found in FASTA string")
     
     # Create MSA (will validate that all sequences have same length)
     return MSA(sequences)
@@ -283,8 +284,9 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     
     Raises
     ------
-    ValueError
-        If the NEXUS string is malformed or cannot be parsed.
+    PhyloZooParseError
+        If the NEXUS string is malformed or cannot be parsed (e.g., missing TAXA or CHARACTERS blocks,
+        mismatched number of taxa and matrix rows, invalid matrix format).
     
     Examples
     --------
@@ -330,13 +332,13 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
         re.DOTALL | re.IGNORECASE
     )
     if not taxa_match:
-        raise ValueError("Could not find TAXA block with TAXLABELS in NEXUS string")
+        raise PhyloZooParseError("Could not find TAXA block with TAXLABELS in NEXUS string")
     
     taxa_section = taxa_match.group(1)
     labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
     
     if not labels:
-        raise ValueError("No taxa labels found in NEXUS string")
+        raise PhyloZooParseError("No taxa labels found in NEXUS string")
     
     n = len(labels)
     
@@ -347,13 +349,13 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
         re.DOTALL | re.IGNORECASE
     )
     if not chars_match:
-        raise ValueError("Could not find CHARACTERS block with MATRIX in NEXUS string")
+        raise PhyloZooParseError("Could not find CHARACTERS block with MATRIX in NEXUS string")
     
     matrix_section = chars_match.group(1)
     matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
     if len(matrix_lines) != n:
-        raise ValueError(
+        raise PhyloZooParseError(
             f"Number of matrix rows ({len(matrix_lines)}) does not match "
             f"number of taxa ({n})"
         )
@@ -367,7 +369,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
         parts = line.split(None, 1)  # Split on whitespace, max 1 split
         
         if len(parts) < 2:
-            raise ValueError(
+            raise PhyloZooParseError(
                 f"Matrix row {i+1} does not have both taxon identifier and sequence"
             )
         
@@ -376,7 +378,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
         
         # Verify taxon matches expected label
         if taxon != labels[i]:
-            raise ValueError(
+            raise PhyloZooParseError(
                 f"Matrix row {i+1} taxon '{taxon}' does not match taxa label '{labels[i]}'"
             )
         

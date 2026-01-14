@@ -7,6 +7,7 @@ This module provides classes for working with phylogenetic splits.
 import itertools
 from typing import Set, TypeVar
 
+from ...utils.exceptions import PhyloZooValueError
 from ..primitives.partition import Partition
 
 T = TypeVar('T')
@@ -37,7 +38,7 @@ class Split(Partition):
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the sets overlap (i.e., the split is invalid).
     
     Examples
@@ -65,12 +66,12 @@ class Split(Partition):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the sets overlap (i.e., the split is invalid) or if either set is empty.
         """
         # Validate that neither set is empty
         if len(set1) == 0 or len(set2) == 0:
-            raise ValueError("Split sets cannot be empty")
+            raise PhyloZooValueError("Split sets cannot be empty")
         
         # Initialize parent Partition with the two parts first
         super().__init__([set1, set2])
@@ -187,7 +188,7 @@ def is_compatible(split1: Split, split2: Split) -> bool:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If either argument is not a Split instance.
     
     Examples
@@ -204,9 +205,9 @@ def is_compatible(split1: Split, split2: Split) -> bool:
     False
     """
     if not isinstance(split1, Split):
-        raise ValueError("First argument must be a Split instance")
+        raise PhyloZooValueError("First argument must be a Split instance")
     if not isinstance(split2, Split):
-        raise ValueError("Second argument must be a Split instance")
+        raise PhyloZooValueError("Second argument must be a Split instance")
     
     # First check that they have the same elements
     if split1.elements != split2.elements:
@@ -254,7 +255,7 @@ def is_subsplit(split1: Split, split2: Split) -> bool:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If either argument is not a Split instance.
     
     Examples
@@ -268,9 +269,9 @@ def is_subsplit(split1: Split, split2: Split) -> bool:
     True
     """
     if not isinstance(split1, Split):
-        raise ValueError("First argument must be a Split instance")
+        raise PhyloZooValueError("First argument must be a Split instance")
     if not isinstance(split2, Split):
-        raise ValueError("Second argument must be a Split instance")
+        raise PhyloZooValueError("Second argument must be a Split instance")
     
     return (split1.set1.issubset(split2.set1) and split1.set2.issubset(split2.set2)) or \
            (split1.set1.issubset(split2.set2) and split1.set2.issubset(split2.set1))

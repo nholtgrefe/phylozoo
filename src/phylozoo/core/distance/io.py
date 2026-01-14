@@ -33,6 +33,7 @@ from typing import Any
 
 import numpy as np
 
+from ...utils.exceptions import PhyloZooParseError, PhyloZooValueError
 from ...utils.io import FormatRegistry
 from .base import DistanceMatrix
 
@@ -82,7 +83,7 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     """
     triangle = kwargs.get('triangle', 'LOWER').upper()
     if triangle not in ('LOWER', 'UPPER', 'BOTH'):
-        raise ValueError(f"triangle must be 'LOWER', 'UPPER', or 'BOTH', got '{triangle}'")
+        raise PhyloZooValueError(f"triangle must be 'LOWER', 'UPPER', or 'BOTH', got '{triangle}'")
     
     n = len(distance_matrix)
     nexus_string = "#NEXUS\n\nBEGIN Taxa;\n"
@@ -137,8 +138,9 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     
     Raises
     ------
-    ValueError
-        If the NEXUS string is malformed or cannot be parsed.
+    PhyloZooParseError
+        If the NEXUS string is malformed or cannot be parsed (e.g., missing Taxa or Distances blocks,
+        mismatched number of taxa and matrix rows, invalid matrix format, invalid distance values).
     
     Examples
     --------
@@ -186,13 +188,13 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
         re.DOTALL | re.IGNORECASE
     )
     if not taxa_match:
-        raise ValueError("Could not find Taxa block with TAXLABELS in NEXUS string")
+        raise PhyloZooParseError("Could not find Taxa block with TAXLABELS in NEXUS string")
     
     taxa_section = taxa_match.group(1)
     labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
     
     if not labels:
-        raise ValueError("No taxa labels found in NEXUS string")
+        raise PhyloZooParseError("No taxa labels found in NEXUS string")
     
     n = len(labels)
     
@@ -219,13 +221,13 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
         re.DOTALL | re.IGNORECASE
     )
     if not matrix_match:
-        raise ValueError("Could not find Distances block with MATRIX in NEXUS string")
+        raise PhyloZooParseError("Could not find Distances block with MATRIX in NEXUS string")
     
     matrix_section = matrix_match.group(1)
     matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
     if len(matrix_lines) != n:
-        raise ValueError(
+        raise PhyloZooParseError(
             f"Number of matrix rows ({len(matrix_lines)}) does not match "
             f"number of taxa ({n})"
         )
@@ -239,14 +241,14 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
         # First part is the label (should match labels[i])
         label = parts[0]
         if label != labels[i]:
-            raise ValueError(
+            raise PhyloZooParseError(
                 f"Matrix row {i+1} label '{label}' does not match taxa label '{labels[i]}'"
             )
         
         if triangle == 'LOWER':
             # Lower triangular: row i has values for columns 0..i
             if len(parts) < i + 2:  # label + (i+1) values
-                raise ValueError(
+                raise PhyloZooParseError(
                     f"Matrix row {i+1} has insufficient values. "
                     f"Expected {i+2} values (label + {i+1} distances), got {len(parts)}"
                 )
@@ -257,7 +259,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
                     matrix[i, j] = value
                     matrix[j, i] = value  # Symmetric
                 except (ValueError, IndexError) as e:
-                    raise ValueError(
+                    raise PhyloZooParseError(
                         f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
                     ) from e
         
@@ -265,7 +267,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
             # Upper triangular: row i has values for columns i..n-1
             expected_values = n - i
             if len(parts) < expected_values + 1:  # label + (n-i) values
-                raise ValueError(
+                raise PhyloZooParseError(
                     f"Matrix row {i+1} has insufficient values. "
                     f"Expected {expected_values + 1} values (label + {expected_values} distances), got {len(parts)}"
                 )
@@ -276,14 +278,14 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
                     matrix[i, j] = value
                     matrix[j, i] = value  # Symmetric
                 except (ValueError, IndexError) as e:
-                    raise ValueError(
+                    raise PhyloZooParseError(
                         f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
                     ) from e
         
         else:  # BOTH
             # Full matrix: row i has all n values
             if len(parts) < n + 1:  # label + n values
-                raise ValueError(
+                raise PhyloZooParseError(
                     f"Matrix row {i+1} has insufficient values. "
                     f"Expected {n + 1} values (label + {n} distances), got {len(parts)}"
                 )
@@ -293,7 +295,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
                     value = float(parts[j + 1])
                     matrix[i, j] = value
                 except (ValueError, IndexError) as e:
-                    raise ValueError(
+                    raise PhyloZooParseError(
                         f"Could not parse distance value at row {i+1}, column {j+1}: {e}"
                     ) from e
     
@@ -371,8 +373,11 @@ def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
     
     Raises
     ------
-    ValueError
-        If the PHYLIP string is malformed or cannot be parsed.
+    PhyloZooParseError
+        If the PHYLIP string is malformed or cannot be parsed (e.g., empty string, invalid number of taxa,
+        insufficient values, invalid distance values, non-symmetric matrix).
+    PhyloZooValueError
+        If the number of taxa is not positive.
     
     Examples
     --------
@@ -400,19 +405,19 @@ def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
     lines = [line.strip() for line in phylip_string.strip().split('\n') if line.strip()]
     
     if not lines:
-        raise ValueError("PHYLIP string is empty")
+        raise PhyloZooParseError("PHYLIP string is empty")
     
     # First line is number of taxa
     try:
         n = int(lines[0])
     except ValueError as e:
-        raise ValueError(f"Could not parse number of taxa from first line: {e}") from e
+        raise PhyloZooParseError(f"Could not parse number of taxa from first line: {e}") from e
     
     if n <= 0:
-        raise ValueError(f"Number of taxa must be positive, got {n}")
+        raise PhyloZooValueError(f"Number of taxa must be positive, got {n}")
     
     if len(lines) < n + 1:
-        raise ValueError(
+        raise PhyloZooParseError(
             f"Expected {n + 1} lines (header + {n} taxa), got {len(lines)}"
         )
     
@@ -425,14 +430,14 @@ def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
         # Try to extract taxon name (first word or first 10 chars)
         parts = line.split()
         if not parts:
-            raise ValueError(f"Empty line {i + 2} in PHYLIP string")
+            raise PhyloZooParseError(f"Empty line {i + 2} in PHYLIP string")
         
         taxon = parts[0]
         labels.append(taxon)
         
         # Remaining parts are distances
         if len(parts) < n + 1:
-            raise ValueError(
+            raise PhyloZooParseError(
                 f"Line {i + 2} has insufficient values. "
                 f"Expected {n + 1} values (taxon + {n} distances), got {len(parts)}"
             )
@@ -442,13 +447,13 @@ def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
                 value = float(parts[j + 1])
                 matrix[i, j] = value
             except (ValueError, IndexError) as e:
-                raise ValueError(
+                raise PhyloZooParseError(
                     f"Could not parse distance value at row {i + 1}, column {j + 1}: {e}"
                 ) from e
     
     # Verify symmetry (PHYLIP should be symmetric)
     if not np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-10):
-        raise ValueError("PHYLIP matrix is not symmetric")
+        raise PhyloZooParseError("PHYLIP matrix is not symmetric")
     
     # Create DistanceMatrix
     return DistanceMatrix(matrix, labels=labels)
@@ -534,8 +539,9 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
     
     Raises
     ------
-    ValueError
-        If the CSV string is malformed or cannot be parsed.
+    PhyloZooParseError
+        If the CSV string is malformed or cannot be parsed (e.g., empty string, no data rows,
+        invalid distance values, mismatched dimensions, non-symmetric matrix).
     
     Examples
     --------
@@ -566,7 +572,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
     lines = [line.strip() for line in csv_string.strip().split('\n') if line.strip()]
     
     if not lines:
-        raise ValueError("CSV string is empty")
+        raise PhyloZooParseError("CSV string is empty")
     
     # Parse header if present
     start_idx = 0
@@ -574,7 +580,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
     
     if has_header:
         if not lines:
-            raise ValueError("CSV string has header flag but is empty")
+            raise PhyloZooParseError("CSV string has header flag but is empty")
         
         header_parts = [p.strip() for p in lines[0].split(delimiter)]
         if header_parts[0] == '':  # First cell is empty (standard CSV format)
@@ -595,7 +601,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
         start_idx = 0
     
     if start_idx >= len(lines):
-        raise ValueError("No data rows found in CSV string")
+        raise PhyloZooParseError("No data rows found in CSV string")
     
     # Parse data rows
     labels: list[str] = []
@@ -613,17 +619,17 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
             distances = [float(part) for part in parts[1:]]
             matrix_rows.append(distances)
         except ValueError as e:
-            raise ValueError(f"Could not parse distances for taxon '{taxon}': {e}") from e
+            raise PhyloZooParseError(f"Could not parse distances for taxon '{taxon}': {e}") from e
     
     if not labels:
-        raise ValueError("No taxa found in CSV string")
+        raise PhyloZooParseError("No taxa found in CSV string")
     
     n = len(labels)
     
     # Verify dimensions
     if labels_from_header:
         if len(labels_from_header) != n:
-            raise ValueError(
+            raise PhyloZooParseError(
                 f"Header has {len(labels_from_header)} labels but data has {n} rows"
             )
         # Use labels from header (they should match, but header is authoritative)
@@ -633,7 +639,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
     expected_distances = n
     for i, row in enumerate(matrix_rows):
         if len(row) != expected_distances:
-            raise ValueError(
+            raise PhyloZooParseError(
                 f"Row {i + 1} (taxon '{labels[i]}') has {len(row)} distances, "
                 f"expected {expected_distances}"
             )
@@ -646,7 +652,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
     
     # Verify symmetry
     if not np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-10):
-        raise ValueError("CSV matrix is not symmetric")
+        raise PhyloZooParseError("CSV matrix is not symmetric")
     
     # Create DistanceMatrix
     return DistanceMatrix(matrix, labels=labels)

@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from ...utils.exceptions import PhyloZooValueError
 from ..distance import DistanceMatrix
 from ..network.sdnetwork import SemiDirectedPhyNetwork
 from ..network.sdnetwork.conversions import sdnetwork_from_graph
@@ -60,7 +61,7 @@ def splitsystem_to_tree(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If check_compatibility is True and the system is not tree-compatible.
         If a split cannot be created (indicating incompatibility).
     
@@ -80,7 +81,7 @@ def splitsystem_to_tree(
     """
     if check_compatibility:
         if not is_tree_compatible(system):
-            raise ValueError("Split system is not compatible with a tree")
+            raise PhyloZooValueError("Split system is not compatible with a tree")
     
     # Handle empty system
     if len(system.elements) == 0:
@@ -216,7 +217,7 @@ def splitsystem_to_tree(
         
         if not found:
             # This should not happen if the system is compatible
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Could not find a cut-vertex to create split {split}. "
                 "This indicates the split system may not be compatible."
             )

@@ -10,6 +10,7 @@ from typing import TypeVar
 
 import numpy as np
 
+from ...utils.exceptions import PhyloZooValueError
 from ...utils.io import IOMixin
 
 T = TypeVar('T')
@@ -96,9 +97,9 @@ class DistanceMatrix(IOMixin):
         ------
         TypeError
             If distance_matrix is not a numpy ndarray.
-        ValueError
+        PhyloZooValueError
             If distance_matrix is not square, not symmetric, or dimensions don't
-            match the number of labels.
+            match the number of labels, or if labels are not unique.
         """
         # Type checking
         if not isinstance(distance_matrix, np.ndarray):
@@ -106,13 +107,13 @@ class DistanceMatrix(IOMixin):
         
         # Shape validation
         if len(distance_matrix.shape) != 2:
-            raise ValueError("Distance matrix must be a 2D array")
+            raise PhyloZooValueError("Distance matrix must be a 2D array")
         if distance_matrix.shape[0] != distance_matrix.shape[1]:
-            raise ValueError("Distance matrix must be square")
+            raise PhyloZooValueError("Distance matrix must be square")
         
         # Symmetry validation (with tolerance for floating point)
         if not np.allclose(distance_matrix, distance_matrix.T, rtol=1e-10, atol=1e-10):
-            raise ValueError("Distance matrix must be symmetric")
+            raise PhyloZooValueError("Distance matrix must be symmetric")
         
         # Convert to float64 and make contiguous for better performance
         matrix = np.ascontiguousarray(distance_matrix, dtype=np.float64)
@@ -130,13 +131,13 @@ class DistanceMatrix(IOMixin):
         else:
             labels_list = list(labels)
             if len(labels_list) != n:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Number of labels ({len(labels_list)}) must match "
                     f"matrix size ({n})"
                 )
             # Ensure labels are unique to avoid ambiguous lookups
             if len(set(labels_list)) != len(labels_list):
-                raise ValueError("Labels must be unique")
+                raise PhyloZooValueError("Labels must be unique")
             # Store as tuple for immutability
             self._labels = tuple(labels_list)
 
@@ -210,7 +211,7 @@ class DistanceMatrix(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If label is not found in the distance matrix.
         
         Examples
@@ -225,7 +226,7 @@ class DistanceMatrix(IOMixin):
         try:
             return self._label_to_index[label]
         except KeyError as exc:
-            raise ValueError(f"Label {label} not found in distance matrix") from exc
+            raise PhyloZooValueError(f"Label {label} not found in distance matrix") from exc
     
     def get_distance(self, label1: T, label2: T) -> float:
         """

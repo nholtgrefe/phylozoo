@@ -235,8 +235,9 @@ END;"""
             system.to_string(format='invalid_format')
     
     def test_from_string_malformed_nexus_raises_error(self) -> None:
-        """Test that malformed NEXUS string raises ValueError."""
-        with pytest.raises(ValueError, match="Could not find"):
+        """Test that malformed NEXUS string raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError, match="Could not find"):
             SplitSystem.from_string("invalid nexus", format='nexus')
     
     def test_string_labels(self) -> None:
@@ -419,7 +420,8 @@ END;"""
             assert loaded.get_weight(split1) == 2.5
     
     def test_from_string_missing_weight_raises_error(self) -> None:
-        """Test that missing weight when WEIGHTS=YES raises ValueError."""
+        """Test that missing weight when WEIGHTS=YES raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         nexus_str = """#NEXUS
 
 BEGIN TAXA;
@@ -440,11 +442,12 @@ BEGIN SPLITS;
     ;
 END;"""
         
-        with pytest.raises(ValueError, match="Weight required but missing"):
+        with pytest.raises(PhyloZooParseError, match="Weight required but missing"):
             WeightedSplitSystem.from_string(nexus_str, format='nexus')
     
     def test_from_string_invalid_weight_raises_error(self) -> None:
-        """Test that invalid weight raises ValueError."""
+        """Test that invalid weight raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         nexus_str = """#NEXUS
 
 BEGIN TAXA;
@@ -465,7 +468,7 @@ BEGIN SPLITS;
     ;
 END;"""
         
-        with pytest.raises(ValueError, match="Could not parse weight"):
+        with pytest.raises(PhyloZooParseError, match="Could not parse weight"):
             WeightedSplitSystem.from_string(nexus_str, format='nexus')
     
     def test_from_string_negative_weight_raises_error(self) -> None:
@@ -490,7 +493,8 @@ BEGIN SPLITS;
     ;
 END;"""
         
-        with pytest.raises(ValueError, match="Weight must be positive"):
+        from phylozoo.utils.exceptions import PhyloZooValueError
+        with pytest.raises(PhyloZooValueError, match="Weight must be positive"):
             WeightedSplitSystem.from_string(nexus_str, format='nexus')
     
     def test_string_labels(self) -> None:

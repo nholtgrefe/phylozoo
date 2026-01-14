@@ -32,6 +32,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from ...utils.exceptions import PhyloZooParseError, PhyloZooValueError
 from ...utils.io import FormatRegistry
 from .base import Split
 from .splitsystem import SplitSystem
@@ -305,8 +306,11 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
     
     Raises
     ------
-    ValueError
-        If the NEXUS string is malformed or cannot be parsed.
+    PhyloZooParseError
+        If the NEXUS string is malformed or cannot be parsed (e.g., missing TAXA or SPLITS blocks,
+        invalid split format, split sets overlap or don't cover all taxa).
+    PhyloZooValueError
+        If weights are non-positive.
     
     Examples
     --------
@@ -351,7 +355,7 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
         re.DOTALL | re.IGNORECASE
     )
     if not taxa_match:
-        raise ValueError("Could not find TAXA block with TAXLABELS in NEXUS string")
+        raise PhyloZooParseError("Could not find TAXA block with TAXLABELS in NEXUS string")
     
     taxa_section = taxa_match.group(1)
     labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
@@ -387,7 +391,7 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
         re.DOTALL | re.IGNORECASE
     )
     if not splits_match:
-        raise ValueError("Could not find SPLITS block with MATRIX in NEXUS string")
+        raise PhyloZooParseError("Could not find SPLITS block with MATRIX in NEXUS string")
     
     matrix_section = splits_match.group(1)
     split_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
@@ -401,7 +405,7 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
     for line in split_lines:
         match = re.match(split_pattern, line)
         if not match:
-            raise ValueError(f"Could not parse split line: {line}")
+            raise PhyloZooParseError(f"Could not parse split line: {line}")
         
         set1_str = match.group(1).strip()
         set2_str = match.group(2).strip()
@@ -412,18 +416,18 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
         set2_elems = {label_to_elem[label.strip()] for label in set2_str.split() if label.strip()}
         
         if not set1_elems or not set2_elems:
-            raise ValueError(f"Empty set in split: {line}")
+            raise PhyloZooParseError(f"Empty set in split: {line}")
         
         # Verify all elements are in the taxa set
         if not set1_elems.issubset(elements_set) or not set2_elems.issubset(elements_set):
-            raise ValueError(f"Split contains elements not in taxa: {line}")
+            raise PhyloZooParseError(f"Split contains elements not in taxa: {line}")
         
         # Verify sets are disjoint and cover all elements
         if set1_elems & set2_elems:
-            raise ValueError(f"Split sets overlap: {line}")
+            raise PhyloZooParseError(f"Split sets overlap: {line}")
         
         if set1_elems | set2_elems != elements_set:
-            raise ValueError(f"Split does not cover all taxa: {line}")
+            raise PhyloZooParseError(f"Split does not cover all taxa: {line}")
         
         splits.append(Split(set1_elems, set2_elems))
     
@@ -448,9 +452,11 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
     
     Raises
     ------
-    ValueError
-        If the NEXUS string is malformed, cannot be parsed, or weights are missing
-        when FORMAT WEIGHTS=YES is specified.
+    PhyloZooParseError
+        If the NEXUS string is malformed or cannot be parsed (e.g., missing TAXA or SPLITS blocks,
+        invalid split format, missing weights when WEIGHTS=YES, invalid weight format).
+    PhyloZooValueError
+        If weights are non-positive.
     
     Examples
     --------
@@ -496,7 +502,7 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
         re.DOTALL | re.IGNORECASE
     )
     if not taxa_match:
-        raise ValueError("Could not find TAXA block with TAXLABELS in NEXUS string")
+        raise PhyloZooParseError("Could not find TAXA block with TAXLABELS in NEXUS string")
     
     taxa_section = taxa_match.group(1)
     labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
@@ -532,7 +538,7 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
         re.DOTALL | re.IGNORECASE
     )
     if not splits_match:
-        raise ValueError("Could not find SPLITS block with MATRIX in NEXUS string")
+        raise PhyloZooParseError("Could not find SPLITS block with MATRIX in NEXUS string")
     
     format_section = splits_match.group(1)
     matrix_section = splits_match.group(2)
@@ -552,7 +558,7 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
     for line in split_lines:
         match = re.match(split_pattern, line)
         if not match:
-            raise ValueError(f"Could not parse weighted split line: {line}")
+            raise PhyloZooParseError(f"Could not parse weighted split line: {line}")
         
         set1_str = match.group(1).strip()
         set2_str = match.group(2).strip()
@@ -561,30 +567,30 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
         # If weights are required, they must be present and valid
         if has_weights:
             if weight_str is None:
-                raise ValueError(f"Weight required but missing in line: {line}")
+                raise PhyloZooParseError(f"Weight required but missing in line: {line}")
             try:
                 weight = float(weight_str)
                 if weight <= 0:
-                    raise ValueError(f"Weight must be positive, got {weight} in line: {line}")
+                    raise PhyloZooValueError(f"Weight must be positive, got {weight} in line: {line}")
             except ValueError as e:
                 # Check if it's our custom error about positive weights
                 if "must be positive" in str(e):
                     raise
                 # Otherwise it's a parsing error
-                raise ValueError(f"Could not parse weight '{weight_str}' in line: {line}") from e
+                raise PhyloZooParseError(f"Could not parse weight '{weight_str}' in line: {line}") from e
         else:
             # Weights optional - use default weight of 1.0 if not present
             if weight_str is not None:
                 try:
                     weight = float(weight_str)
                     if weight <= 0:
-                        raise ValueError(f"Weight must be positive, got {weight} in line: {line}")
+                        raise PhyloZooValueError(f"Weight must be positive, got {weight} in line: {line}")
                 except ValueError as e:
                     # Check if it's our custom error about positive weights
                     if "must be positive" in str(e):
                         raise
                     # Otherwise it's a parsing error
-                    raise ValueError(f"Could not parse weight '{weight_str}' in line: {line}") from e
+                    raise PhyloZooParseError(f"Could not parse weight '{weight_str}' in line: {line}") from e
             else:
                 weight = 1.0
         
@@ -593,18 +599,18 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
         set2_elems = {label_to_elem[label.strip()] for label in set2_str.split() if label.strip()}
         
         if not set1_elems or not set2_elems:
-            raise ValueError(f"Empty set in split: {line}")
+            raise PhyloZooParseError(f"Empty set in split: {line}")
         
         # Verify all elements are in the taxa set
         if not set1_elems.issubset(elements_set) or not set2_elems.issubset(elements_set):
-            raise ValueError(f"Split contains elements not in taxa: {line}")
+            raise PhyloZooParseError(f"Split contains elements not in taxa: {line}")
         
         # Verify sets are disjoint and cover all elements
         if set1_elems & set2_elems:
-            raise ValueError(f"Split sets overlap: {line}")
+            raise PhyloZooParseError(f"Split sets overlap: {line}")
         
         if set1_elems | set2_elems != elements_set:
-            raise ValueError(f"Split does not cover all taxa: {line}")
+            raise PhyloZooParseError(f"Split does not cover all taxa: {line}")
         
         split = Split(set1_elems, set2_elems)
         splits.append(split)

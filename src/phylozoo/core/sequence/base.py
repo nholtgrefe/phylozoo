@@ -11,6 +11,7 @@ from typing import Any
 
 import numpy as np
 
+from ...utils.exceptions import PhyloZooValueError
 from ...utils.io import IOMixin
 
 # Default nucleotide encoding
@@ -126,7 +127,7 @@ class MSA(IOMixin):
             raise TypeError("sequences must be a dictionary")
         
         if len(sequences) == 0:
-            raise ValueError("sequences dictionary cannot be empty")
+            raise PhyloZooValueError("sequences dictionary cannot be empty")
         
         # Validate all values are strings
         for taxon, seq in sequences.items():
@@ -138,7 +139,7 @@ class MSA(IOMixin):
         # Check sequence lengths
         lengths = [len(seq) for seq in sequences.values()]
         if len(set(lengths)) != 1:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"All sequences must have the same length. "
                 f"Found lengths: {set(lengths)}"
             )

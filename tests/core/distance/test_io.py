@@ -283,8 +283,9 @@ END;'''
         assert np.allclose(dm2._matrix, dm._matrix)
     
     def test_from_string_malformed_raises_error(self) -> None:
-        """Test that malformed NEXUS string raises ValueError."""
-        with pytest.raises(ValueError):
+        """Test that malformed NEXUS string raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError):
             DistanceMatrix.from_string("not a nexus file")
     
     def test_from_string_missing_taxa_block(self) -> None:
@@ -300,7 +301,8 @@ BEGIN Distances;
     ;
 END;'''
         
-        with pytest.raises(ValueError, match="Could not find Taxa block"):
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError, match="Could not find Taxa block"):
             DistanceMatrix.from_string(nexus_str)
     
     def test_from_string_missing_distances_block(self) -> None:
@@ -315,7 +317,8 @@ BEGIN Taxa;
     ;
 END;'''
         
-        with pytest.raises(ValueError, match="Could not find Distances block"):
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError, match="Could not find Distances block"):
             DistanceMatrix.from_string(nexus_str)
     
     def test_from_string_mismatched_dimensions(self) -> None:
@@ -340,7 +343,8 @@ BEGIN Distances;
     ;
 END;'''
         
-        with pytest.raises(ValueError, match="Number of matrix rows"):
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError, match="Number of matrix rows"):
             DistanceMatrix.from_string(nexus_str)
 
 
@@ -400,28 +404,31 @@ C         2.00000 1.00000 0.00000
             assert np.allclose(dm2._matrix, dm._matrix)
     
     def test_from_phylip_malformed(self) -> None:
-        """Test that malformed PHYLIP string raises ValueError."""
-        with pytest.raises(ValueError):
+        """Test that malformed PHYLIP string raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError):
             DistanceMatrix.from_string("not phylip", format='phylip')
     
     def test_from_phylip_insufficient_rows(self) -> None:
-        """Test that insufficient rows raise ValueError."""
+        """Test that insufficient rows raise PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         phylip_str = '''3
 A         0.00000 1.00000 2.00000
 B         1.00000 0.00000 1.00000
 '''
         
-        with pytest.raises(ValueError, match="Expected.*lines"):
+        with pytest.raises(PhyloZooParseError, match="Expected.*lines"):
             DistanceMatrix.from_string(phylip_str, format='phylip')
     
     def test_from_phylip_non_symmetric(self) -> None:
-        """Test that non-symmetric matrix raises ValueError."""
+        """Test that non-symmetric matrix raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         phylip_str = '''2
 A         0.00000 1.00000
 B         2.00000 0.00000
 '''
         
-        with pytest.raises(ValueError, match="not symmetric"):
+        with pytest.raises(PhyloZooParseError, match="not symmetric"):
             DistanceMatrix.from_string(phylip_str, format='phylip')
 
 
@@ -526,28 +533,31 @@ B	1.0	0.0
             assert np.allclose(dm2._matrix, dm._matrix)
     
     def test_from_csv_malformed(self) -> None:
-        """Test that malformed CSV string raises ValueError."""
-        with pytest.raises(ValueError):
+        """Test that malformed CSV string raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError):
             DistanceMatrix.from_string("not csv", format='csv')
     
     def test_from_csv_non_symmetric(self) -> None:
-        """Test that non-symmetric matrix raises ValueError."""
+        """Test that non-symmetric matrix raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         csv_str = ''',A,B
 A,0.0,1.0
 B,2.0,0.0
 '''
         
-        with pytest.raises(ValueError, match="not symmetric"):
+        with pytest.raises(PhyloZooParseError, match="not symmetric"):
             DistanceMatrix.from_string(csv_str, format='csv')
     
     def test_from_csv_mismatched_dimensions(self) -> None:
-        """Test that mismatched dimensions raise ValueError."""
+        """Test that mismatched dimensions raise PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         csv_str = ''',A,B,C
 A,0.0,1.0
 B,1.0,0.0
 '''
         
-        with pytest.raises(ValueError, match="has.*distances|Header has"):
+        with pytest.raises(PhyloZooParseError, match="has.*distances|Header has"):
             DistanceMatrix.from_string(csv_str, format='csv')
 
 

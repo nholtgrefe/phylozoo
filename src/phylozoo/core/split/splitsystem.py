@@ -6,6 +6,7 @@ This module provides classes for working with split systems.
 
 from typing import Iterator, TYPE_CHECKING
 
+from ...utils.exceptions import PhyloZooValueError
 from ...utils.io import IOMixin
 from .base import Split
 
@@ -32,7 +33,7 @@ class SplitSystem(IOMixin):
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If not all splits cover the complete set of elements (i.e., not a set
         of full splits).
     
@@ -95,7 +96,7 @@ class SplitSystem(IOMixin):
         # Validate that all splits cover the same element set
         for split in splits_frozen:
             if split.elements != elements_set:
-                raise ValueError("Not a set of full splits.")
+                raise PhyloZooValueError("Not a set of full splits.")
         
         # Store as frozen sets for immutability
         self._splits: frozenset[Split] = splits_frozen

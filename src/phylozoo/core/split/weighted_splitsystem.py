@@ -6,6 +6,7 @@ This module provides classes for working with weighted split systems.
 
 from typing import TYPE_CHECKING
 
+from ...utils.exceptions import PhyloZooValueError
 from .base import Split
 from .splitsystem import SplitSystem
 
@@ -39,9 +40,10 @@ class WeightedSplitSystem(SplitSystem):
     
     Raises
     ------
-    ValueError
-        If not all splits cover the complete set of elements, or if any weight
-        is not positive (zero or negative).
+    PhyloZooValueError
+        If not all splits cover the complete set of elements, if any weight
+        is not positive (zero or negative), if duplicate splits are found, or if
+        split elements don't match system elements.
     
     Examples
     --------
@@ -129,7 +131,7 @@ class WeightedSplitSystem(SplitSystem):
                 seen_splits: set[Split] = set()
                 for split, weight in splits:
                     if split in seen_splits:
-                        raise ValueError(f"Duplicate split found: {split}")
+                        raise PhyloZooValueError(f"Duplicate split found: {split}")
                     seen_splits.add(split)
                 weights = dict(splits)
             else:
@@ -138,7 +140,7 @@ class WeightedSplitSystem(SplitSystem):
                 seen_splits: set[Split] = set()
                 for split in splits:
                     if split in seen_splits:
-                        raise ValueError(f"Duplicate split found: {split}")
+                        raise PhyloZooValueError(f"Duplicate split found: {split}")
                     seen_splits.add(split)
                 weights = {split: 1.0 for split in splits}
         elif isinstance(splits, set):
@@ -146,7 +148,7 @@ class WeightedSplitSystem(SplitSystem):
             # Sets automatically handle uniqueness, so no need to check
             weights = {split: 1.0 for split in splits}
         else:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Expected set[Split], list[Split], dict[Split, float], "
                 f"list[tuple[Split, float]], or None, got {type(splits)}"
             )
@@ -154,7 +156,7 @@ class WeightedSplitSystem(SplitSystem):
         # Validate that all weights are positive (zero and negative are not allowed)
         for split, weight in weights.items():
             if weight <= 0:
-                raise ValueError(f"Weight must be positive, got {weight} for split {split}")
+                raise PhyloZooValueError(f"Weight must be positive, got {weight} for split {split}")
         
         # Only include splits that have weights (all weights are positive at this point)
         splits_with_weights = set(weights.keys())
@@ -209,7 +211,7 @@ class WeightedSplitSystem(SplitSystem):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the split does not cover the same elements as the split system.
         
         Examples
@@ -224,7 +226,7 @@ class WeightedSplitSystem(SplitSystem):
         """
         # Validate that split covers the same elements as the system
         if split.elements != self._elements:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Split {split} does not cover the same elements as the split system. "
                 f"Expected elements: {self._elements}, got: {split.elements}"
             )
@@ -306,7 +308,7 @@ def to_weightedsplitsystem(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If default_weight is not positive.
     
     Examples
@@ -323,7 +325,7 @@ def to_weightedsplitsystem(
     2.0
     """
     if default_weight <= 0:
-        raise ValueError(f"default_weight must be positive, got {default_weight}")
+        raise PhyloZooValueError(f"default_weight must be positive, got {default_weight}")
     
     weights = {split: default_weight for split in system.splits}
     return WeightedSplitSystem(weights)

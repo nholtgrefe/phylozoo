@@ -6,6 +6,7 @@ This module provides the Quartet class for representing quartets (4-taxon trees)
 
 from typing import TYPE_CHECKING
 
+from ...utils.exceptions import PhyloZooValueError
 from ..primitives.circular_ordering import CircularOrdering
 from ..split.base import Split
 
@@ -36,7 +37,7 @@ class Quartet:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If not exactly 4 taxa, or if split is trivial (not 2|2).
     
     Examples
@@ -69,7 +70,7 @@ class Quartet:
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If not exactly 4 taxa, or if split is trivial (not 2|2).
         """
         if isinstance(split, Split):
@@ -78,11 +79,11 @@ class Quartet:
             
             # Validate split is 2|2 (not trivial)
             if split.is_trivial():
-                raise ValueError("Split must be a 2|2 split (non-trivial)")
+                raise PhyloZooValueError("Split must be a 2|2 split (non-trivial)")
             
             # Validate exactly 4 taxa
             if len(taxa_set) != 4:
-                raise ValueError(f"Split must have exactly 4 elements, got {len(taxa_set)}")
+                raise PhyloZooValueError(f"Split must have exactly 4 elements, got {len(taxa_set)}")
             
             # Store split
             stored_split = split
@@ -92,7 +93,7 @@ class Quartet:
             
             # Validate exactly 4 taxa
             if len(taxa_set) != 4:
-                raise ValueError(f"Taxa must have exactly 4 elements, got {len(taxa_set)}")
+                raise PhyloZooValueError(f"Taxa must have exactly 4 elements, got {len(taxa_set)}")
             
             # No split for star tree
             stored_split = None

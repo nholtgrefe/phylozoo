@@ -16,6 +16,7 @@ import networkx as nx
 import numpy as np
 from numba import njit
 
+from ...utils.exceptions import PhyloZooValueError
 from ..primitives.circular_ordering import CircularOrdering
 from .base import DistanceMatrix
 
@@ -241,7 +242,7 @@ def approximate_tsp_tour(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If method is not one of the supported methods.
     
     Notes
@@ -277,7 +278,7 @@ def approximate_tsp_tour(
     True
     """
     if method not in ['simulated_annealing', 'greedy', 'christofides']:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Method must be one of ['simulated_annealing', 'greedy', 'christofides'], "
             f"got '{method}'"
         )

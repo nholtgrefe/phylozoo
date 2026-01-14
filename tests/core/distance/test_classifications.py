@@ -14,6 +14,7 @@ from phylozoo.core.distance.classifications import (
     is_nonnegative,
 )
 from phylozoo.core.primitives.circular_ordering import CircularOrdering
+from phylozoo.utils.exceptions import PhyloZooValueError
 
 
 class TestIsMetric:
@@ -151,11 +152,11 @@ class TestIsKalmanson:
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
         co = CircularOrdering(['A', 'B'])
-        with pytest.raises(ValueError, match="must contain all labels"):
+        with pytest.raises(PhyloZooValueError, match="must contain all labels"):
             is_kalmanson(dm, co)
     
     def test_kalmanson_non_pseudo_metric_raises_error(self) -> None:
-        """Test that non-pseudo-metric matrix raises ValueError."""
+        """Test that non-pseudo-metric matrix raises PhyloZooValueError."""
         # Matrix violating triangle inequality
         matrix = np.array([
             [0, 1, 5],
@@ -164,7 +165,7 @@ class TestIsKalmanson:
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
         co = CircularOrdering(['A', 'B', 'C'])
-        with pytest.raises(ValueError, match="must be pseudo-metric"):
+        with pytest.raises(PhyloZooValueError, match="must be pseudo-metric"):
             is_kalmanson(dm, co)
     
     def test_small_kalmanson_matrix(self) -> None:
@@ -187,11 +188,11 @@ class TestIsKalmanson:
             is_kalmanson(dm, ['A', 'B'])  # type: ignore
     
     def test_kalmanson_empty_order(self) -> None:
-        """Test that empty circular_order raises ValueError."""
+        """Test that empty circular_order raises PhyloZooValueError."""
         matrix = np.array([[0, 1], [1, 0]])
         dm = DistanceMatrix(matrix, labels=['A', 'B'])
         co = CircularOrdering([])
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(PhyloZooValueError, match="cannot be empty"):
             is_kalmanson(dm, co)
     
     def test_kalmanson_very_small_matrices(self) -> None:

@@ -12,6 +12,7 @@ from typing import TypeVar
 import numpy as np
 from numba import njit
 
+from ...utils.exceptions import PhyloZooValueError
 from ..primitives.circular_ordering import CircularOrdering
 from .base import DistanceMatrix
 
@@ -246,8 +247,8 @@ def is_kalmanson(
     
     Raises
     ------
-    ValueError
-        If circular_order does not contain all labels, or if the matrix is not
+    PhyloZooValueError
+        If circular_order is empty, does not contain all labels, or if the matrix is not
         a pseudo-metric.
     TypeError
         If circular_order is not a CircularOrdering.
@@ -279,24 +280,24 @@ def is_kalmanson(
         )
     
     if len(circular_order) == 0:
-        raise ValueError("circular_order cannot be empty")
+        raise PhyloZooValueError("circular_order cannot be empty")
     
     # Extract order list from CircularOrdering
     order_list = list(circular_order.order)
     
     if not set(order_list) == set(distance_matrix.labels):
-        raise ValueError(
+        raise PhyloZooValueError(
             "circular_order must contain all labels of the distance matrix"
         )
     
     if len(order_list) != len(distance_matrix.labels):
-        raise ValueError(
+        raise PhyloZooValueError(
             f"circular_order has {len(order_list)} elements, but distance matrix "
             f"has {len(distance_matrix.labels)} labels"
         )
     
     if not is_pseudo_metric(distance_matrix):
-        raise ValueError(
+        raise PhyloZooValueError(
             "Distance matrix must be pseudo-metric to check Kalmanson property"
         )
     
@@ -312,8 +313,8 @@ def is_kalmanson(
             [distance_matrix.get_index(label) for label in order_list],
             dtype=np.int64
         )
-    except ValueError as e:
-        raise ValueError(
+    except PhyloZooValueError as e:
+        raise PhyloZooValueError(
             f"circular_order contains invalid labels: {e}"
         ) from e
     

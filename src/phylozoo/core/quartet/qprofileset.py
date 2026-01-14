@@ -10,6 +10,7 @@ from math import comb
 from types import MappingProxyType
 from typing import Iterator, Mapping, TYPE_CHECKING
 
+from ...utils.exceptions import PhyloZooValueError
 from .base import Quartet
 from .qprofile import QuartetProfile
 
@@ -52,8 +53,9 @@ class QuartetProfileSet:
     
     Raises
     ------
-    ValueError
-        If any profile would be empty, or if any weight is non-positive.
+    PhyloZooValueError
+        If any profile would be empty, if any weight is non-positive, if profiles/quartets
+        are mixed incorrectly, or if provided taxa is not a superset of profile taxa.
     
     Examples
     --------
@@ -132,22 +134,22 @@ class QuartetProfileSet:
                 elif isinstance(obj, Quartet):
                     mode = 'quartet'
                 else:
-                    raise ValueError(f"Expected QuartetProfile or Quartet, got {type(obj)}")
+                    raise PhyloZooValueError(f"Expected QuartetProfile or Quartet, got {type(obj)}")
             else:
                 # Validate that subsequent items match the mode
                 if mode == 'profile' and not isinstance(obj, QuartetProfile):
                     if isinstance(obj, Quartet):
-                        raise ValueError("Cannot mix QuartetProfile and Quartet objects in profiles list")
-                    raise ValueError(f"Expected QuartetProfile, got {type(obj)}")
+                        raise PhyloZooValueError("Cannot mix QuartetProfile and Quartet objects in profiles list")
+                    raise PhyloZooValueError(f"Expected QuartetProfile, got {type(obj)}")
                 elif mode == 'quartet' and not isinstance(obj, Quartet):
                     if isinstance(obj, QuartetProfile):
-                        raise ValueError("Cannot mix QuartetProfile and Quartet objects in profiles list")
-                    raise ValueError(f"Expected Quartet, got {type(obj)}")
+                        raise PhyloZooValueError("Cannot mix QuartetProfile and Quartet objects in profiles list")
+                    raise PhyloZooValueError(f"Expected Quartet, got {type(obj)}")
             
             # Validate weight
             if weight <= 0:
                 obj_type = "profile" if mode == 'profile' else "quartet"
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"{obj_type.capitalize()} weight must be positive, got {weight} for {obj_type} {obj}"
                 )
             
@@ -158,7 +160,7 @@ class QuartetProfileSet:
                 all_taxa_from_input.update(profile_taxa)
                 # Check for duplicate taxa sets
                 if profile_taxa in profiles_dict:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Multiple profiles with the same taxa set {profile_taxa} are not allowed. "
                         "Each 4-taxon set can only have one profile."
                     )
@@ -174,7 +176,7 @@ class QuartetProfileSet:
                     profile_data[quartet_taxa] = {}
                 # Check for duplicate quartets during iteration
                 if quartet in profile_data[quartet_taxa]:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Quartet {quartet} appears multiple times in the input. "
                         "Each quartet can only appear once per taxa set."
                     )
@@ -185,7 +187,7 @@ class QuartetProfileSet:
             for taxa_set, quartets_dict in profile_data.items():
                 # Validate no empty profiles
                 if len(quartets_dict) == 0:
-                    raise ValueError(f"Cannot have empty profile for taxa {taxa_set}")
+                    raise PhyloZooValueError(f"Cannot have empty profile for taxa {taxa_set}")
                 
                 profile = QuartetProfile(quartets_dict)
                 # Profile weight = sum of quartet weights
@@ -200,7 +202,7 @@ class QuartetProfileSet:
             # Validate that provided taxa is a superset
             if not all_taxa_from_input.issubset(taxa):
                 missing = all_taxa_from_input - taxa
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Provided taxa must be a superset of all taxa in profiles/quartets. "
                     f"Missing taxa: {missing}"
                 )

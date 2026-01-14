@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ...utils.exceptions import PhyloZooValueError
 from ..distance import DistanceMatrix
 
 if TYPE_CHECKING:
@@ -86,18 +87,18 @@ def quartet_distance(
     """
     # Validate rho vector
     if len(rho) != 4:
-        raise ValueError(f"Rho vector must have 4 elements, got {len(rho)}")
+        raise PhyloZooValueError(f"Rho vector must have 4 elements, got {len(rho)}")
     rho_c, rho_s, rho_a, rho_o = rho
     
     # Validate rho constraints
     if rho_a > rho_o or rho_c > rho_s:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Rho vector must satisfy: rho_a <= rho_o and rho_c <= rho_s"
         )
     
     # Check if profile set is dense
     if not profileset.is_dense:
-        raise ValueError("Profile set must be dense (have a profile for every 4-taxon combination)")
+        raise PhyloZooValueError("Profile set must be dense (have a profile for every 4-taxon combination)")
     
     # Get all taxa and initialize distance matrix as numpy array
     taxa = sorted(profileset.taxa)
@@ -113,7 +114,7 @@ def quartet_distance(
         profile = profileset.get_profile(four_taxa_set)
         
         if profile is None:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"No profile found for 4-taxon set {four_taxa_set}. "
                 "Profile set must be dense."
             )
@@ -121,11 +122,11 @@ def quartet_distance(
         # Validate profile: must have 1 or 2 quartets, all resolved
         num_quartets = len(profile.quartets)
         if num_quartets == 0:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Profile for {four_taxa_set} has no quartets"
             )
         if num_quartets > 2:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Profile for {four_taxa_set} has {num_quartets} quartets. "
                 "Each profile must contain exactly 1 or 2 quartets."
             )
@@ -133,7 +134,7 @@ def quartet_distance(
         # Check all quartets are resolved
         for quartet in profile.quartets:
             if not quartet.is_resolved():
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Profile for {four_taxa_set} contains unresolved quartet (star tree). "
                     "All quartets must be resolved."
                 )
@@ -200,7 +201,7 @@ def _rho_distance(
         quartet = next(iter(profile.quartets))
         split = quartet.split
         if split is None:
-            raise ValueError("Quartet must be resolved (have a split)")
+            raise PhyloZooValueError("Quartet must be resolved (have a split)")
         
         # Check if both leaves are on the same side of the split
         same_side = (leaf1 in split.set1 and leaf2 in split.set1) or (
@@ -216,7 +217,7 @@ def _rho_distance(
         # Two quartets: use circular ordering logic
         circular_orderings = profile.circular_orderings
         if circular_orderings is None or len(circular_orderings) == 0:
-            raise ValueError(
+            raise PhyloZooValueError(
                 "Profile with 2 quartets must have a circular ordering"
             )
         
@@ -232,7 +233,7 @@ def _rho_distance(
             return float(rho_o)
     
     else:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Profile must have 1 or 2 quartets, got {num_quartets}"
         )
 
@@ -271,10 +272,11 @@ def quartet_distance_with_partition(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If rho vector has invalid length or values.
         If partition elements don't match profile set taxa.
         If profile set is not dense.
+        If any profile contains more than 2 quartets or contains unresolved quartets.
     
     Examples
     --------
@@ -297,25 +299,25 @@ def quartet_distance_with_partition(
     """
     # Validate rho vector
     if len(rho) != 4:
-        raise ValueError(f"Rho vector must have 4 elements, got {len(rho)}")
+        raise PhyloZooValueError(f"Rho vector must have 4 elements, got {len(rho)}")
     rho_c, rho_s, rho_a, rho_o = rho
     
     # Validate rho constraints
     if rho_a > rho_o or rho_c > rho_s:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Rho vector must satisfy: rho_a <= rho_o and rho_c <= rho_s"
         )
     
     # Validate partition matches profile set taxa
     if partition.elements != profileset.taxa:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Partition elements must match profile set taxa. "
             f"Partition has {partition.elements}, profile set has {profileset.taxa}"
         )
     
     # Check if profile set is dense
     if not profileset.is_dense:
-        raise ValueError("Profile set must be dense (have a profile for every 4-taxon combination)")
+        raise PhyloZooValueError("Profile set must be dense (have a profile for every 4-taxon combination)")
     
     # Get partition size and set order
     n = len(partition)  # Number of sets in partition
@@ -356,7 +358,7 @@ def quartet_distance_with_partition(
             # Get profile for this 4-taxon set
             profile = profileset.get_profile(four_taxa_set)
             if profile is None:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"No profile found for 4-taxon set {four_taxa_set}. "
                     "Profile set must be dense."
                 )
@@ -364,11 +366,11 @@ def quartet_distance_with_partition(
             # Validate profile: must have 1 or 2 quartets, all resolved
             num_quartets = len(profile.quartets)
             if num_quartets == 0:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Profile for {four_taxa_set} has no quartets"
                 )
             if num_quartets > 2:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Profile for {four_taxa_set} has {num_quartets} quartets. "
                     "Each profile must contain exactly 1 or 2 quartets."
                 )
@@ -376,7 +378,7 @@ def quartet_distance_with_partition(
             # Check all quartets are resolved
             for quartet in profile.quartets:
                 if not quartet.is_resolved():
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Profile for {four_taxa_set} contains unresolved quartet. "
                         "All quartets must be resolved."
                     )

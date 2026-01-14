@@ -8,6 +8,7 @@ on the same 4-taxon set with weights.
 from types import MappingProxyType
 from typing import Iterator, Mapping
 
+from ...utils.exceptions import PhyloZooValueError
 from ..primitives.circular_ordering import CircularOrdering
 from ..split.base import Split
 from .base import Quartet
@@ -39,7 +40,7 @@ class QuartetProfile:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If quartets is empty, if quartets have different taxa, or if any
         weight is non-positive.
     
@@ -87,9 +88,9 @@ class QuartetProfile:
         
         Raises
         ------
-        ValueError
-            If quartets is empty, if quartets have different taxa, or if any
-            weight is non-positive.
+        PhyloZooValueError
+            If quartets is empty, if quartets have different taxa, if any quartet appears
+            multiple times, or if any weight is non-positive.
         """
         if isinstance(quartets, list):
             # Check if it's a list of quartets or list of tuples
@@ -101,7 +102,7 @@ class QuartetProfile:
                 quartets_dict: dict[Quartet, float] = {}
                 for q in quartets:
                     if q in quartets_dict:
-                        raise ValueError(
+                        raise PhyloZooValueError(
                             f"Quartet {q} appears multiple times in the input. "
                             "Each quartet can only appear once in a profile."
                         )
@@ -113,7 +114,7 @@ class QuartetProfile:
                 quartets_dict: dict[Quartet, float] = {}
                 for q, weight in quartets:
                     if q in quartets_dict:
-                        raise ValueError(
+                        raise PhyloZooValueError(
                             f"Quartet {q} appears multiple times in the input. "
                             "Each quartet can only appear once in a profile."
                         )
@@ -140,17 +141,17 @@ class QuartetProfile:
         """
         Validate quartets.
         
-        Raises ValueError if validation fails. Does nothing if validation passes.
+        Raises PhyloZooValueError if validation fails. Does nothing if validation passes.
         Uses self._quartets for validation.
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If quartets is empty, if quartets have different taxa, or if any
             weight is non-positive.
         """
         if len(self._quartets) == 0:
-            raise ValueError("QuartetProfile must have at least one quartet")
+            raise PhyloZooValueError("QuartetProfile must have at least one quartet")
         
         # Get taxa from first quartet
         first_quartet = next(iter(self._quartets.keys()))
@@ -159,7 +160,7 @@ class QuartetProfile:
         # Validate all quartets have same taxa
         for quartet in self._quartets:
             if quartet.taxa != taxa_set:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"All quartets must have the same taxa. "
                     f"Expected {taxa_set}, got {quartet.taxa}"
                 )
@@ -167,7 +168,7 @@ class QuartetProfile:
         # Validate weights are positive
         for quartet, weight in self._quartets.items():
             if weight <= 0:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Weight must be positive, got {weight} for quartet {quartet}"
                 )
     
