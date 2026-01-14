@@ -10,9 +10,6 @@ from .qjoining import adapted_quartet_joining, quartet_joining
 from .unresolve_tree import split_support, unresolve_tree
 from .tstar_tree import bstar, tstar_tree
 from .cycle_resolution import (
-    _qprofiles_to_circular_ordering,
-    _qprofiles_to_hybrid_ranking,
-    _insert_cycle,
     resolve_cycles,
 )
 from .qsimilarity import sqprofileset_similarity, sqprofileset_from_network
@@ -28,9 +25,6 @@ __all__ = [
     "unresolve_tree",
     "bstar",
     "tstar_tree",
-    "_qprofiles_to_circular_ordering",
-    "_qprofiles_to_hybrid_ranking",
-    "_insert_cycle",
     "resolve_cycles",
     "sqprofileset_similarity",
     "sqprofileset_from_network",

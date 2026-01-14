@@ -15,52 +15,92 @@ from .core import (
     # Structures
     Split,
     SplitSystem,
-    Partition,
-    CircularOrdering,
-    CircularSetOrdering,
     # Distance
     DistanceMatrix,
     # Sequence
     MSA,
+    # Quartet
+    Quartet,
+    QuartetProfile,
+    QuartetProfileSet,
 )
 
-# Make core submodules available at package level
-from . import core
-# Import submodules so they're accessible as phylozoo.network, phylozoo.primitives, etc.
-from .core import network as _network_module
-from .core import primitives as _primitives_module
-from .core import split as _split_module
-from .core import distance as _distance_module
-from .core import sequence as _sequence_module
+# Import alias modules to register them
+# These allow: from phylozoo.core.dnetwork import ... instead of from phylozoo.core.network.dnetwork import ...
+from .core import dnetwork  # noqa: F401
+from .core import sdnetwork  # noqa: F401
 
-# Re-export submodules at package level
-network = _network_module
-primitives = _primitives_module
-split = _split_module
-distance = _distance_module
-sequence = _sequence_module
+# Import exceptions for top-level access
+from .utils.exceptions import (
+    PhyloZooError,
+    PhyloZooNotImplementedError,
+    PhyloZooValueError,
+    PhyloZooTypeError,
+    PhyloZooRuntimeError,
+    PhyloZooImportError,
+    PhyloZooAttributeError,
+    PhyloZooNetworkError,
+    PhyloZooNetworkStructureError,
+    PhyloZooNetworkDegreeError,
+    PhyloZooNetworkAttributeError,
+    PhyloZooIOError,
+    PhyloZooParseError,
+    PhyloZooFormatError,
+    PhyloZooAlgorithmError,
+    PhyloZooVisualizationError,
+    PhyloZooLayoutError,
+    PhyloZooBackendError,
+    PhyloZooStateError,
+    PhyloZooWarning,
+    PhyloZooIdentifierWarning,
+    PhyloZooEmptyNetworkWarning,
+    PhyloZooSingleNodeNetworkWarning,
+    PhyloZooGeneratorError,
+    PhyloZooGeneratorStructureError,
+    PhyloZooGeneratorDegreeError,
+)
 
 __all__ = [
     "__version__",
-    # Core module
-    "core",
-    # Core submodules (available as phylozoo.network, phylozoo.primitives, etc.)
-    "network",
-    "primitives",
-    "split",
-    "distance",
-    "sequence",
     # Core - Networks
     "DirectedPhyNetwork",
     "SemiDirectedPhyNetwork",
     # Core - Structures
     "Split",
     "SplitSystem",
-    "Partition",
-    "CircularOrdering",
-    "CircularSetOrdering",
     # Core - Distance
     "DistanceMatrix",
     # Core - Sequence
     "MSA",
+    # Core - Quartet
+    "Quartet",
+    "QuartetProfile",
+    "QuartetProfileSet",
+    # Exceptions
+    "PhyloZooError",
+    "PhyloZooNotImplementedError",
+    "PhyloZooValueError",
+    "PhyloZooTypeError",
+    "PhyloZooRuntimeError",
+    "PhyloZooImportError",
+    "PhyloZooAttributeError",
+    "PhyloZooNetworkError",
+    "PhyloZooNetworkStructureError",
+    "PhyloZooNetworkDegreeError",
+    "PhyloZooNetworkAttributeError",
+    "PhyloZooIOError",
+    "PhyloZooParseError",
+    "PhyloZooFormatError",
+    "PhyloZooAlgorithmError",
+    "PhyloZooVisualizationError",
+    "PhyloZooLayoutError",
+    "PhyloZooBackendError",
+    "PhyloZooStateError",
+    "PhyloZooWarning",
+    "PhyloZooIdentifierWarning",
+    "PhyloZooEmptyNetworkWarning",
+    "PhyloZooSingleNodeNetworkWarning",
+    "PhyloZooGeneratorError",
+    "PhyloZooGeneratorStructureError",
+    "PhyloZooGeneratorDegreeError",
 ]

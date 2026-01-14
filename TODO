@@ -6,10 +6,9 @@ Standard considerations:
 
 First release:
 - General:
-    - reconsider/standardize imports
     - Docs + Tutorials
         - Explain editable install
-    - parallelrization util module or not?
+    - parallelization util module or not?
 - Core:
     - Network:
         - fix/check eNewick parser and writer
