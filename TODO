@@ -1,34 +1,35 @@
-Standard things:
-- use cached property
+Standard considerations:
+- Use cached property
 - Optimize code
-- Use validation manager within methods (such as subnetworks)
+- Use novalidation manager within methods (such as subnetworks)
+- Use jit and numba etc.
 
-update doc strings to include Raise.
-use jit and numba etc.
-Validate MixedPhyNetwork (perhaps remove the second condition from our paper), or for now only validate sd network and not m network.
-reconsider/standardize imports
-Fix eNewick parser and writer / Fix plotting
-permute method for dsitances
-biopython
-Allow degree-2 nodes?
-Is cut-vertex or is articulation?
-attribute for splits to store (multiplcitiy, weight etc.)
-squirrel could actually take in any set of input trees?
-update the qjoining and all other squirrel alg's to take into account nonresolved quartets. Also, add a constant DEFAULT: with default settings into attr's, then we can also add a notehr settings constant etc.
-add undirected network and make mixed a superclass or child?
-check which squirrel helper methods should use general qpset or sq qpset
-squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
-let squirrel take as input any set of trees?
-standard function for mmgraph etc. to make new node_ids
-fix bridge normalization in cutedges (does not work for mixed types)
-do the network classes need .edges and.nodes?
-panda, MAPPD, handle 2-blobs, par edges, and better scanwidth reliance (ideally, input tree extension is a nxDigraph on the same nodes, or None, and then is computed with scanwidth module, otherwise )
 
-use novalidation more
-move dnetworkfromdgraph to anothe submodule? More nxgraph to network methods?
-check all stubs
-add pretty_print function to classes.
-parallelrization util module
+First release:
+- update doc strings to include Raise.
+- reconsider/standardize imports
+- fix/check eNewick parser and writer
+- add sd-plotting
+- do the network classes need .edges and.nodes?
+- Squirel:
+    - squirrel could actually take in any set of input trees?
+    - update the qjoining and all other squirrel alg's to take into account nonresolved quartets. 
+    - Also, add a constant DEFAULT: with default settings into attr's, then we can also add anotehr settings constant etc.
+    - check which squirrel helper methods should use general qpset or sq qpset
+    - squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
+- check all stubs (or add Not implemented error)
+- parallelrization util module
+- bootstrap msa and gene lengths bootstrap
+- Error handling
+- Docs + Tutorials
 
-bootstrap msa and gene lengths bootstrap
-stub error/Not implemented error
+
+Later releases:
+- PANDA/MAPPD: handle 2-blobs and parallel edges better
+- Validate MixedPhyNetwork (perhaps remove the second condition from our paper)
+- permute method for dsitances
+- biopython/phylox conversions
+- add undirected network and make mixed a superclass or child?
+- external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?
+- Split binary resolution into out_resolution and in_resolution methods?
+- add pretty_print function to classes.
