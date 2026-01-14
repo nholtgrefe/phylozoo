@@ -4,41 +4,52 @@ Standard considerations:
 - Use novalidation manager within methods (such as subnetworks)
 - Use jit and numba etc.
 
-
 First release:
-- update doc strings to include Raise.
-- reconsider/standardize imports
-- fix/check eNewick parser and writer
-- add sd-plotting
-- do the network classes need .edges and.nodes?
-- Squirel:
-    - squirrel could actually take in any set of input trees?
-    - update the qjoining and all other squirrel alg's to take into account nonresolved quartets. 
-    - Also, add a constant DEFAULT: with default settings into attr's, then we can also add anotehr settings constant etc.
-    - check which squirrel helper methods should use general qpset or sq qpset
-    - squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
-- check all stubs (or add Not implemented error)
-- parallelrization util module
-- bootstrap msa and gene lengths bootstrap
-- Error handling
-- Docs + Tutorials
-- SD generator validation
-
+- General:
+    - update doc strings to include Raise.
+    - reconsider/standardize imports
+    - check all stubs (or add Not implemented error)
+    - Error handling
+    - Docs + Tutorials
+    - parallelrization util module or not?
+- Core:
+    - Network:
+        - fix/check eNewick parser and writer
+        - do the network classes need .edges and.nodes?
+        - SD generator validation
+    - MSA:
+        - bootstrap msa and gene lengths bootstrap
+- Inference:
+    - Squirel:
+        - CF/gene tree support?
+- Vizualize:
+    - add sd-plotting
 
 Later releases:
 - improved testing
-- PANDA/MAPPD: handle 2-blobs and parallel edges better
-- Validate MixedPhyNetwork (perhaps remove the second condition from our paper)
-- permute method for dsitances
-- biopython/phylox conversions
-- add undirected network and make mixed a superclass or child?
-- external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?
-- Split binary resolution into out_resolution and in_resolution methods?
-- add pretty_print function to classes.
-- Distances:
-    - is_kalmanson should return a circular ordering? or add function that does that
-    - 
-
+- Core:
+    - Distances:
+        - is_kalmanson should return a circular ordering? or add function that does that
+        - permute method for dsitances
+    - Networks:
+        - Validate MixedPhyNetwork (perhaps remove the second condition from our paper)
+        - add undirected network and make mixed a superclass or child?
+        - Split binary resolution into out_resolution and in_resolution methods?
+    - biopython/phylox conversions
+    - add pretty_print function to classes.
+- Inference:
+    - Squirrel:
+        - Add a constant 'DEFAULT', with default settings into attr's, then we can also add anotehr settings constant etc.
+        - squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
+        - update the qjoining and all other squirrel alg's to take into account nonresolved quartets. 
+        - check which squirrel helper methods should use general qpset or sq qpset
+        - squirrel could actually take in any set of input trees?
+    - Add invariant/algebra support
+- PANDA: 
+    - MAPPD:handle 2-blobs and parallel edges better
+    - external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?
+- Visualization:
+    - other layouts
 
 Other  ideas:
 - random generators using dgenerators and sides
