@@ -376,8 +376,9 @@ class TestRootLocations:
                 nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
             )
         
-        # root_locations should raise ValueError for multiple source components
-        with pytest.raises(ValueError, match="exactly one source component"):
+        # root_locations should raise PhyloZooNetworkStructureError for multiple source components
+        from phylozoo.utils.exceptions import PhyloZooNetworkStructureError
+        with pytest.raises(PhyloZooNetworkStructureError, match="exactly one source component"):
             root_locations(net)
 
     def test_empty_source_component_error(self) -> None:
@@ -392,8 +393,9 @@ class TestRootLocations:
             from phylozoo.core.network.sdnetwork.base import MixedPhyNetwork
             net = MixedPhyNetwork()
         
-        # root_locations should raise ValueError for no source components
-        with pytest.raises(ValueError, match="exactly one source component"):
+        # root_locations should raise PhyloZooNetworkStructureError for no source components
+        from phylozoo.utils.exceptions import PhyloZooNetworkStructureError
+        with pytest.raises(PhyloZooNetworkStructureError, match="exactly one source component"):
             root_locations(net)
 
     def test_return_type(self) -> None:

@@ -9,6 +9,16 @@ import warnings
 from functools import cached_property
 from typing import Any, Iterator, TypeVar
 
+from ....utils.exceptions import (
+    PhyloZooNetworkDegreeError,
+    PhyloZooNetworkStructureError,
+    PhyloZooNetworkAttributeError,
+    PhyloZooValueError,
+    PhyloZooTypeError,
+    PhyloZooEmptyNetworkWarning,
+    PhyloZooSingleNodeNetworkWarning,
+)
+
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.features import is_connected, has_self_loops
 from ....utils.validation import validation_aware
@@ -268,12 +278,14 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
-            If label is not a string, or if the label is already used by a different node.
+        PhyloZooValueError
+            If the label is already used by a different node.
+        PhyloZooTypeError
+            If the label is not a string.
         """
         # Validate string type
         if not isinstance(label, str):
-            raise ValueError(
+            raise PhyloZooTypeError(
                 f"Node {node_id} has non-string label '{label}' (type: {type(label).__name__}). "
                 f"Labels must be strings. For non-string metadata, store it under a "
                 f"different node attribute instead of 'label'."
@@ -282,7 +294,7 @@ class MixedPhyNetwork:
         # Check for duplicate labels
         if label in self._label_to_node and self._label_to_node[label] != node_id:
             existing_node = self._label_to_node[label]
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Label '{label}' is already used by node {existing_node}. "
                 f"Each label must be unique."
             )
@@ -309,8 +321,8 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
-            If a node tuple does not provide a dict of attributes, or if duplicate labels are found.
+        PhyloZooTypeError
+            If a node tuple does not provide a dict of attributes.
         """
         if not nodes:
             return
@@ -319,7 +331,7 @@ class MixedPhyNetwork:
             if isinstance(node_spec, tuple) and len(node_spec) == 2:
                 node_id, attrs = node_spec
                 if not isinstance(attrs, dict):
-                    raise ValueError(
+                    raise PhyloZooTypeError(
                         f"Node tuple must be (node_id, dict_of_attributes), got {node_spec}"
                     )
                 self._graph.add_node(node_id, **attrs)
@@ -370,7 +382,7 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkAttributeError
             If any edge has a bootstrap value outside [0.0, 1.0].
         """
         # Quick check: if no bootstrap values are set, skip validation
@@ -392,12 +404,12 @@ class MixedPhyNetwork:
             if 'bootstrap' in data:
                 bootstrap = data['bootstrap']
                 if not isinstance(bootstrap, (int, float)):
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Bootstrap value on directed edge ({u}, {v}, key={key}) must be numeric, "
                         f"got {type(bootstrap).__name__}"
                     )
                 if math.isnan(bootstrap) or bootstrap < 0.0 or bootstrap > 1.0:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Bootstrap value on directed edge ({u}, {v}, key={key}) is {bootstrap}, "
                         f"but must be in [0.0, 1.0]"
                     )
@@ -407,12 +419,12 @@ class MixedPhyNetwork:
             if 'bootstrap' in data:
                 bootstrap = data['bootstrap']
                 if not isinstance(bootstrap, (int, float)):
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Bootstrap value on undirected edge ({u}, {v}, key={key}) must be numeric, "
                         f"got {type(bootstrap).__name__}"
                     )
                 if math.isnan(bootstrap) or bootstrap < 0.0 or bootstrap > 1.0:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Bootstrap value on undirected edge ({u}, {v}, key={key}) is {bootstrap}, "
                         f"but must be in [0.0, 1.0]"
                     )
@@ -429,7 +441,7 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkAttributeError
             If gamma constraints are violated, including gamma set on non-hybrid edges
             or undirected edges.
         """
@@ -455,7 +467,7 @@ class MixedPhyNetwork:
             if 'gamma' in data:
                 # Check if this edge is a hybrid edge
                 if (u, v, key) not in hybrid_edges_set:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Gamma value can only be set on hybrid edges (edges pointing into "
                         f"hybrid nodes). Directed edge ({u}, {v}, key={key}) is not a hybrid edge."
                     )
@@ -463,7 +475,7 @@ class MixedPhyNetwork:
         # Check that gamma is not set on undirected edges
         for u, v, key, data in self._graph._undirected.edges(keys=True, data=True):
             if 'gamma' in data:
-                raise ValueError(
+                raise PhyloZooNetworkAttributeError(
                     f"Gamma values cannot be set on undirected edges. "
                     f"Undirected edge ({u}, {v}, key={key}) cannot have gamma values."
                 )
@@ -482,13 +494,13 @@ class MixedPhyNetwork:
                     if gamma is not None:
                         # Validate gamma is numeric
                         if not isinstance(gamma, (int, float)):
-                            raise ValueError(
+                            raise PhyloZooNetworkAttributeError(
                                 f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
                                 f"{hybrid_node} must be numeric, got {type(gamma).__name__}"
                             )
                         # Validate gamma is in [0.0, 1.0]
                         if gamma < 0.0 or gamma > 1.0:
-                            raise ValueError(
+                            raise PhyloZooNetworkAttributeError(
                                 f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
                                 f"{hybrid_node} is {gamma}, but must be in [0.0, 1.0]"
                             )
@@ -504,7 +516,7 @@ class MixedPhyNetwork:
                         missing_edges.append(f"({u}, {v}, key={key})")
                 
                 if missing_edges:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Hybrid node {hybrid_node} has some edges with gamma values "
                         f"but others without. If ANY gamma is specified, ALL incoming edges "
                         f"must have gamma values. Missing gamma on edges: {', '.join(missing_edges)}"
@@ -513,7 +525,7 @@ class MixedPhyNetwork:
                 # All gammas are present, check they sum to 1.0
                 gamma_sum = sum(gamma_values)
                 if abs(gamma_sum - 1.0) > 1e-10:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Hybrid node {hybrid_node} has gamma values that sum to {gamma_sum}, "
                         f"but must sum to exactly 1.0"
                     )
@@ -555,7 +567,7 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkDegreeError
             If any degree constraints are violated.
         """
         # 1. Check that all internal nodes have degree >= 3
@@ -563,7 +575,7 @@ class MixedPhyNetwork:
         for node in internal_nodes:
             degree = self._graph.degree(node)
             if degree < 3:
-                raise ValueError(
+                raise PhyloZooNetworkDegreeError(
                     f"Internal node {node} has degree {degree}, but all internal nodes "
                     f"must have degree >= 3."
                 )
@@ -574,7 +586,7 @@ class MixedPhyNetwork:
             indegree = self._graph.indegree(node)
             total_degree = self._graph.degree(node)
             if indegree != 0 and indegree != total_degree - 1:
-                raise ValueError(
+                raise PhyloZooNetworkDegreeError(
                     f"Node {node} has indegree {indegree} and total degree {total_degree}. "
                     f"Each node must have indegree either 0 or total_degree-1."
                 )
@@ -590,7 +602,7 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkAttributeError
             If branch length constraints are violated for any set of parallel edges.
         
         Notes
@@ -629,7 +641,7 @@ class MixedPhyNetwork:
                     missing_branch_lengths.append(key)
                 else:
                     if not isinstance(bl, (int, float)):
-                        raise ValueError(
+                        raise PhyloZooNetworkAttributeError(
                             f"Directed edge ({u}, {v}, key={key}) has branch_length of type {type(bl).__name__}, "
                             f"but must be numeric."
                         )
@@ -637,7 +649,7 @@ class MixedPhyNetwork:
             
             if branch_lengths and missing_branch_lengths:
                 missing_keys_str = ', '.join(str(k) for k in missing_branch_lengths)
-                raise ValueError(
+                raise PhyloZooNetworkAttributeError(
                     f"Parallel directed edges between {u} and {v} have inconsistent branch_length attributes. "
                     f"Some edges have branch_length (keys: {[k for k, d in edges if d.get('branch_length') is not None]}), "
                     f"but others do not (keys: {missing_keys_str}). "
@@ -649,7 +661,7 @@ class MixedPhyNetwork:
                 for i, bl in enumerate(branch_lengths[1:], start=1):
                     if abs(bl - first_bl) > 1e-10:
                         keys_with_bl = [k for k, d in edges if d.get('branch_length') is not None]
-                        raise ValueError(
+                        raise PhyloZooNetworkAttributeError(
                             f"Parallel directed edges between {u} and {v} have different branch_length values. "
                             f"All parallel edges must have the same branch_length. "
                             f"Found values: {branch_lengths} for keys: {keys_with_bl}"
@@ -669,7 +681,7 @@ class MixedPhyNetwork:
                     missing_branch_lengths.append(key)
                 else:
                     if not isinstance(bl, (int, float)):
-                        raise ValueError(
+                        raise PhyloZooNetworkAttributeError(
                             f"Undirected edge ({u}, {v}, key={key}) has branch_length of type {type(bl).__name__}, "
                             f"but must be numeric."
                         )
@@ -677,7 +689,7 @@ class MixedPhyNetwork:
             
             if branch_lengths and missing_branch_lengths:
                 missing_keys_str = ', '.join(str(k) for k in missing_branch_lengths)
-                raise ValueError(
+                raise PhyloZooNetworkAttributeError(
                     f"Parallel undirected edges between {u} and {v} have inconsistent branch_length attributes. "
                     f"Some edges have branch_length (keys: {[k for k, d in edges if d.get('branch_length') is not None]}), "
                     f"but others do not (keys: {missing_keys_str}). "
@@ -689,7 +701,7 @@ class MixedPhyNetwork:
                 for i, bl in enumerate(branch_lengths[1:], start=1):
                     if abs(bl - first_bl) > 1e-10:
                         keys_with_bl = [k for k, d in edges if d.get('branch_length') is not None]
-                        raise ValueError(
+                        raise PhyloZooNetworkAttributeError(
                             f"Parallel undirected edges between {u} and {v} have different branch_length values. "
                             f"All parallel edges must have the same branch_length. "
                             f"Found values: {branch_lengths} for keys: {keys_with_bl}"
@@ -712,14 +724,21 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
-            If any structural or edge attribute constraints are violated.
+        PhyloZooNetworkStructureError
+            If connectivity or self-loop constraints are violated.
+        PhyloZooNetworkDegreeError
+            If degree constraints are violated.
+        PhyloZooNetworkAttributeError
+            If bootstrap, gamma, or branch length constraints are violated.
+        PhyloZooEmptyNetworkWarning
+            If empty network is detected.
+        PhyloZooSingleNodeNetworkWarning
+            If single-node network is detected.
         
         Warns
         -----
         UserWarning
             Always issued to indicate that additional validation checks may be added later.
-            Also issued for empty and single-node networks.
         
         Notes
         -----
@@ -733,7 +752,7 @@ class MixedPhyNetwork:
         if self.number_of_nodes() == 0:
             warnings.warn(
                 "Empty network (no nodes) detected. While valid, this may not be useful for phylogenetic analysis.",
-                UserWarning,
+                PhyloZooEmptyNetworkWarning,
                 stacklevel=2
             )
             return
@@ -741,10 +760,10 @@ class MixedPhyNetwork:
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
             if has_self_loops(self._graph):
-                raise ValueError("Self-loops are not allowed in MixedPhyNetwork.")
+                raise PhyloZooNetworkStructureError("Self-loops are not allowed in MixedPhyNetwork.")
             warnings.warn(
                 "Single-node network detected. While valid, this may not be useful for phylogenetic analysis.",
-                UserWarning,
+                PhyloZooSingleNodeNetworkWarning,
                 stacklevel=2
             )
             return
@@ -772,18 +791,18 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkStructureError
             If connectivity or self-loop constraints are violated.
         """
         # 1. Check that network is connected (weakly connected)
         if not is_connected(self._graph):
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Network is not connected. All nodes must be in a single connected component."
             )
         
         # 2. Disallow self-loops
         if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in MixedPhyNetwork.")
+            raise PhyloZooNetworkStructureError("Self-loops are not allowed in MixedPhyNetwork.")
     
     # ========== Label Operations ==========
     
@@ -857,7 +876,7 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the node does not exist in the network.
         
         Examples
@@ -880,7 +899,7 @@ class MixedPhyNetwork:
         {'label': 'root', 'custom': 42}
         """
         if node_id not in self._graph:
-            raise ValueError(f"Node {node_id} does not exist in the network.")
+            raise PhyloZooValueError(f"Node {node_id} does not exist in the network.")
         
         # Use undirected graph for node attributes (nodes exist in both)
         if attr is None:
@@ -944,7 +963,7 @@ class MixedPhyNetwork:
             Edge endpoints.
         key : int | None, optional
             Edge key for parallel edges. If None and multiple parallel edges exist,
-            raises ValueError. Must specify key when parallel edges exist.
+            raises PhyloZooValueError. Must specify key when parallel edges exist.
         attr : str | None, optional
             Attribute name. If None, returns all attributes as a dict.
             If specified, returns the value of that specific attribute.
@@ -958,7 +977,7 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the edge does not exist, or if key is None and multiple parallel edges exist.
         
         Notes
@@ -985,12 +1004,12 @@ class MixedPhyNetwork:
                     return edge_attrs.get(attr)
             else:
                 if key is None:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Multiple parallel directed edges exist between {u} and {v}. "
                         f"Must specify 'key' parameter to get attributes from a specific edge."
                     )
                 if key not in edges_data:
-                    raise ValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
+                    raise PhyloZooValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
                 edge_attrs = edges_data[key]
                 if attr is None:
                     return edge_attrs.copy()
@@ -1016,12 +1035,12 @@ class MixedPhyNetwork:
                     return edge_attrs.get(attr)
             else:
                 if key is None:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Multiple parallel undirected edges exist between {u} and {v}. "
                         f"Must specify 'key' parameter to get attributes from a specific edge."
                     )
                 if key not in edges_data:
-                    raise ValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
+                    raise PhyloZooValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
                 edge_attrs = edges_data[key]
                 if attr is None:
                     return edge_attrs.copy()
@@ -1107,12 +1126,12 @@ class MixedPhyNetwork:
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the edge is undirected (gamma can only be on directed edges).
         """
         # Gamma is only on directed hybrid edges - check if edge is undirected
         if self._graph._undirected.has_edge(u, v, key=key):
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Gamma values cannot be set on undirected edges. "
                 f"Edge ({u}, {v}, key={key}) is undirected."
             )

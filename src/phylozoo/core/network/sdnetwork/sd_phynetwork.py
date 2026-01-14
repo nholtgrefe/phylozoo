@@ -8,6 +8,12 @@ import warnings
 from functools import cached_property
 from typing import Any, Iterator, TypeVar
 
+from ....utils.exceptions import (
+    PhyloZooNetworkStructureError,
+    PhyloZooEmptyNetworkWarning,
+    PhyloZooSingleNodeNetworkWarning,
+)
+
 from ...primitives.m_multigraph.features import (
     has_self_loops,
     is_connected,
@@ -252,7 +258,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkStructureError
             If the network does not satisfy semi-directed network constraints.
         
         Notes
@@ -275,20 +281,20 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             
             # Check if both are leaves (outdegree 0)
             if self._graph.outdegree(u) != 0 or self._graph.outdegree(v) != 0:
-                raise ValueError(
+                raise PhyloZooNetworkStructureError(
                     "Two-node semi-directed network must have two leaves connected by an undirected edge"
                 )
             
             # Check if there's exactly one undirected edge between them
             undirected_count = len(list(self._graph._undirected.edges(u, v, keys=True)))
             if undirected_count != 1:
-                raise ValueError(
+                raise PhyloZooNetworkStructureError(
                     "Two-node semi-directed network must have exactly one undirected edge"
                 )
             
             # Check no directed edges
             if len(list(self._graph._directed.edges(u, v, keys=True))) > 0:
-                raise ValueError(
+                raise PhyloZooNetworkStructureError(
                     "Two-node semi-directed network cannot have directed edges"
                 )
             
@@ -297,12 +303,12 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         # Step 1: find source components (do this before imports to fail fast)
         components = source_components(self._graph)
         if len(components) != 1:
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 f"Semi-directed network must have exactly one source component; found {len(components)}"
             )
         nodes_in_component, _, _ = components[0]
         if not nodes_in_component:
-            raise ValueError("Source component is empty")
+            raise PhyloZooNetworkStructureError("Source component is empty")
         
         # Local imports to avoid circular dependencies
         from ...network.dnetwork.derivations import to_sd_network
@@ -312,7 +318,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         # Step 2: Pick a non-leaf vertex r from the source component
         internal_in_component = [node for node in nodes_in_component if node in self.internal_nodes]
         if not internal_in_component:
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Semi-directed network constraint validation failed: "
                 "source component contains only leaf nodes."
             )
@@ -322,7 +328,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         try:
             oriented_dm = orient_away_from_vertex(self._graph, root)
         except ValueError as e:
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 f"Semi-directed network constraint validation failed: "
                 f"orienting away from root location {root} failed: {e}"
             )
@@ -353,7 +359,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                     nodes=nodes,
                 )
             except ValueError as e:
-                raise ValueError(
+                raise PhyloZooNetworkStructureError(
                     f"Semi-directed network constraint validation failed: "
                     f"oriented network is not a valid DirectedPhyNetwork: {e}"
                 )
@@ -361,7 +367,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             # Step 5: Check if r is the LSA of the DirectedPhyNetwork
             # If not, raise error immediately
             if not is_lsa_network(d_network):
-                raise ValueError(
+                raise PhyloZooNetworkStructureError(
                     "Semi-directed network constraint validation failed: "
                     "the chosen root is not the LSA node of the oriented network."
                 )
@@ -370,14 +376,14 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             try:
                 sd_roundtrip = to_sd_network(d_network)
             except ValueError as e:
-                raise ValueError(
+                raise PhyloZooNetworkStructureError(
                     f"Semi-directed network constraint validation failed: "
                     f"conversion back to semi-directed failed: {e}"
                 )
 
         # Step 7: Compare structure only (nodes, directed edges, undirected edges)
         if set(self._graph.nodes()) != set(sd_roundtrip._graph.nodes()):
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Semi-directed network constraint validation failed: "
                 "nodes do not match after round-trip conversion"
             )
@@ -391,7 +397,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             for u, v, key in sd_roundtrip._graph.directed_edges_iter(keys=True)
         }
         if orig_directed != roundtrip_directed:
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Semi-directed network constraint validation failed: "
                 "directed edges do not match after round-trip conversion"
             )
@@ -405,7 +411,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
         }
         if orig_undirected != roundtrip_undirected:
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Semi-directed network constraint validation failed: "
                 "undirected edges do not match after round-trip conversion"
             )
@@ -421,8 +427,16 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         
         Raises
         ------
-        ValueError
-            If any structural or edge attribute constraints are violated.
+        PhyloZooNetworkStructureError
+            If connectivity, self-loop, or semi-directed network constraints are violated.
+        PhyloZooNetworkDegreeError
+            If degree constraints are violated.
+        PhyloZooNetworkAttributeError
+            If bootstrap or gamma constraints are violated.
+        PhyloZooEmptyNetworkWarning
+            If empty network is detected.
+        PhyloZooSingleNodeNetworkWarning
+            If single-node network is detected.
         
         Notes
         -----
@@ -433,7 +447,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         if self.number_of_nodes() == 0:
             warnings.warn(
                 "Empty network (no nodes) detected. While valid, this may not be useful for phylogenetic analysis.",
-                UserWarning,
+                PhyloZooEmptyNetworkWarning,
                 stacklevel=2
             )
             return
@@ -441,10 +455,10 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
             if has_self_loops(self._graph):
-                raise ValueError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
+                raise PhyloZooNetworkStructureError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
             warnings.warn(
                 "Single-node network detected. While valid, this may not be useful for phylogenetic analysis.",
-                UserWarning,
+                PhyloZooSingleNodeNetworkWarning,
                 stacklevel=2
             )
             return
@@ -469,18 +483,18 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkStructureError
             If connectivity or self-loop constraints are violated.
         """
         # 1. Check that network is connected (weakly connected)
         if not is_connected(self._graph):
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Network is not connected. All nodes must be in a single connected component."
             )
         
         # 2. Disallow self-loops
         if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
+            raise PhyloZooNetworkStructureError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
     
     def copy(self) -> 'SemiDirectedPhyNetwork':
         """

@@ -16,6 +16,10 @@ from ...primitives.m_multigraph.features import (
 )
 from .base import MixedPhyNetwork
 from .sd_phynetwork import SemiDirectedPhyNetwork
+from phylozoo.utils.exceptions import (
+    PhyloZooValueError,
+    PhyloZooNetworkStructureError,
+)
 
 T = TypeVar('T')
 
@@ -51,7 +55,7 @@ def blobs(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If `trivial=False` and `leaves=True` (this combination is not possible
         since leaves are single-node components).
     
@@ -96,7 +100,7 @@ def blobs(
     """
     # Check for invalid parameter combination
     if not trivial and leaves:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Cannot have trivial=False and leaves=True: leaves are single-node "
             "components, so excluding trivial components would exclude all leaves."
         )
@@ -157,7 +161,7 @@ def k_blobs(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If `trivial=False` and `leaves=True` (this combination is not possible
         since leaves are single-node components).
     
@@ -185,7 +189,7 @@ def k_blobs(
     """
     # Check for invalid parameter combination
     if not trivial and leaves:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Cannot have trivial=False and leaves=True: leaves are single-node "
             "components, so excluding trivial components would exclude all leaves."
         )
@@ -327,6 +331,11 @@ def root_locations(
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network.
     
+    Raises
+    ------
+    PhyloZooNetworkStructureError
+        If the network has multiple source components or an empty source component.
+    
     Returns
     -------
     tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]
@@ -351,13 +360,13 @@ def root_locations(
     # Find source components
     components = source_components(network._graph)
     if len(components) != 1:
-        raise ValueError(
+        raise PhyloZooNetworkStructureError(
             f"Semi-directed network must have exactly one source component; found {len(components)}"
         )
     
     nodes_in_component, undirected_edges_in_comp, outgoing_edges = components[0]
     if not nodes_in_component:
-        raise ValueError("Source component is empty")
+        raise PhyloZooNetworkStructureError("Source component is empty")
     
     internal_nodes = network.internal_nodes
     

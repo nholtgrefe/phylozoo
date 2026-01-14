@@ -332,7 +332,7 @@ class PhyloZooSingleNodeNetworkWarning(PhyloZooWarning):
 # Network Generator Domain Exceptions
 ###############################################################################
 
-class PhyloZooGeneratorError(PhyloZooError):
+class PhyloZooGeneratorError(PhyloZooValueError):
     """
     Base exception for network generator-related errors.
     """

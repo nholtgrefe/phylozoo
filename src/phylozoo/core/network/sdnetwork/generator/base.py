@@ -16,6 +16,13 @@ from typing import TYPE_CHECKING, TypeVar
 
 import networkx as nx
 
+from phylozoo.utils.exceptions import (
+    PhyloZooGeneratorStructureError, 
+    PhyloZooGeneratorDegreeError, 
+    PhyloZooValueError,
+    PhyloZooGeneratorError,
+)
+
 from ....primitives.m_multigraph import MixedMultiGraph
 from ....primitives.m_multigraph.features import (
     has_self_loops,
@@ -163,12 +170,12 @@ class SemiDirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorStructureError
             If any validation constraint is violated.
         """
         # 1. Check if empty generator
         if self._graph.number_of_nodes() == 0:
-            raise ValueError("Generator cannot be empty (must have at least one node).")
+            raise PhyloZooGeneratorStructureError("Generator cannot be empty (must have at least one node).")
         
         # 2. Special case: single node with two directed self-loops (level-1 generator)
         if self._graph.number_of_nodes() == 1:
@@ -181,18 +188,18 @@ class SemiDirectedGenerator:
                 if len(self.hybrid_nodes) == 1 and node in self.hybrid_nodes:
                     return  # Valid - skip other validations
                 else:
-                    raise ValueError(
+                    raise PhyloZooGeneratorStructureError(
                         "Single node with two directed self-loops must have exactly one hybrid node"
                     )
             elif self_loop_count > 0:
-                raise ValueError(
+                raise PhyloZooGeneratorStructureError(
                     f"Single node generator has {self_loop_count} self-loops, "
                     "but only 2 directed self-loops are allowed for level-1 generators"
                 )
             # No self-loops - this is a level-0 generator (single node, no edges)
             # But we still need to check if it has any edges
             if self._graph.number_of_edges() > 0:
-                raise ValueError(
+                raise PhyloZooGeneratorStructureError(
                     "Single node generator with edges must have exactly 2 directed self-loops"
                 )
             return  # Valid level-0 generator
@@ -209,27 +216,27 @@ class SemiDirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorStructureError
             If bi-edge connected, self-loop, or acyclicity constraints are violated.
         """
         # 1. Check that generator is bi-edge connected
         bi_edge_comps = list(bi_edge_connected_components(self._graph))
         if len(bi_edge_comps) > 1:
-            raise ValueError(
+            raise PhyloZooGeneratorStructureError(
                 f"Generator graph must be a single bi-edge connected component (blob), "
                 f"but found {len(bi_edge_comps)} bi-edge connected components"
             )
         
         # 2. Disallow self-loops (except the special case handled in validate())
         if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in SemiDirectedGenerator.")
+            raise PhyloZooGeneratorStructureError("Self-loops are not allowed in SemiDirectedGenerator.")
         
         # 3. Check for directed cycles (must be acyclic in directed part)
         # Create a directed subgraph for cycle checking
         if self._graph._directed.number_of_edges() > 0:
             if not nx.is_directed_acyclic_graph(self._graph._directed):
                 cycles = list(nx.simple_cycles(self._graph._directed))
-                raise ValueError(
+                raise PhyloZooGeneratorStructureError(
                     f"Generator contains directed cycles. Found {len(cycles)} cycle(s). "
                     f"First cycle: {cycles[0] if cycles else 'unknown'}"
                 )
@@ -247,18 +254,18 @@ class SemiDirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorStructureError
             If the generator cannot be rooted on an edge to form a valid DirectedGenerator.
         """
         # Step 1: Find source components
         components = source_components(self._graph)
         if len(components) != 1:
-            raise ValueError(
+            raise PhyloZooGeneratorStructureError(
                 f"Semi-directed generator must have exactly one source component; found {len(components)}"
             )
         nodes_in_component, undirected_edges_in_comp, outgoing_edges = components[0]
         if not nodes_in_component:
-            raise ValueError("Source component is empty")
+            raise PhyloZooGeneratorStructureError("Source component is empty")
         
         # Step 2: Find an edge in the source component
         # source_components returns (nodes, undirected_edges, outgoing_edges)
@@ -291,7 +298,7 @@ class SemiDirectedGenerator:
                 edge_type = 'directed'
         
         if edge_to_subdivide is None:
-            raise ValueError(
+            raise PhyloZooGeneratorStructureError(
                 "No edge found in source component to subdivide for rooting"
             )
         
@@ -334,8 +341,8 @@ class SemiDirectedGenerator:
         # Step 4: Orient away from subdivision vertex
         try:
             oriented_dm = orient_away_from_vertex(graph_copy, subdiv_node)
-        except ValueError as e:
-            raise ValueError(
+        except PhyloZooValueError as e:
+            raise PhyloZooGeneratorStructureError(
                 f"Failed to orient generator away from subdivision vertex: {e}"
             )
         
@@ -344,8 +351,8 @@ class SemiDirectedGenerator:
             try:
                 d_gen = DirectedGenerator(oriented_dm)
                 # If we get here, it's valid
-            except ValueError as e:
-                raise ValueError(
+            except PhyloZooGeneratorError as e:
+                raise PhyloZooGeneratorStructureError(
                     f"Semi-directed generator cannot be rooted on edge to form valid "
                     f"DirectedGenerator: {e}"
                 )
@@ -356,7 +363,7 @@ class SemiDirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorDegreeError
             If degree constraints are violated.
         
         Notes
@@ -372,14 +379,14 @@ class SemiDirectedGenerator:
             
             # 1) Check for degree-1 nodes
             if total_degree == 1:
-                raise ValueError(
+                raise PhyloZooGeneratorDegreeError(
                     f"Generator has a degree-1 node: {node}"
                 )
             
             # 2) If degree-2: either in-degree=2 or out-degree=2
             if total_degree == 2:
                 if in_degree != 2 and out_degree != 2:
-                    raise ValueError(
+                    raise PhyloZooGeneratorDegreeError(
                         f"Generator has a degree-2 node {node} that does not have "
                         f"in-degree=2 or out-degree=2 (in-degree={in_degree}, out-degree={out_degree})"
                     )
@@ -387,7 +394,7 @@ class SemiDirectedGenerator:
             # 3) If degree-3: either in-degree=2 and out-degree=1, or in-degree=1 and out-degree=2
             elif total_degree == 3:
                 if not ((in_degree == 2 and out_degree == 1) or (in_degree == 1 and out_degree == 2)):
-                    raise ValueError(
+                    raise PhyloZooGeneratorDegreeError(
                         f"Generator has a degree-3 node {node} that does not have "
                         f"(in-degree=2, out-degree=1) or (in-degree=1, out-degree=2) "
                         f"(in-degree={in_degree}, out-degree={out_degree})"
@@ -395,7 +402,7 @@ class SemiDirectedGenerator:
             
             # 4) If degree > 3: raise error
             elif total_degree > 3:
-                raise ValueError(
+                raise PhyloZooGeneratorDegreeError(
                     f"Generator has a node {node} with degree > 3: {total_degree} "
                     f"(in-degree={in_degree}, out-degree={out_degree})"
                 )

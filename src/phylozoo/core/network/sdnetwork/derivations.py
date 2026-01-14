@@ -34,6 +34,7 @@ from ...primitives.m_multigraph.features import updown_path_vertices
 from ...primitives.m_multigraph import MixedMultiGraph
 from .conversions import sdnetwork_from_graph
 from ....core.distance import DistanceMatrix
+from ....utils.exceptions import PhyloZooValueError, PhyloZooError
 
 
 def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
@@ -151,7 +152,7 @@ def subnetwork(
 
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If any of the provided taxa are not found in the network.
 
     Examples
@@ -182,7 +183,7 @@ def subnetwork(
     for t in taxa:
         node_id = network.get_node_id(t)
         if node_id is None:
-            raise ValueError(f"Taxon label '{t}' not found in network")
+            raise PhyloZooValueError(f"Taxon label '{t}' not found in network")
         leaf_nodes.append(node_id)
     
     # Collect all vertices on up-down paths between any pair of leaves
@@ -258,7 +259,7 @@ def k_taxon_subnetworks(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If k < 0 or k > number of taxa in the network.
     
     Examples
@@ -284,9 +285,9 @@ def k_taxon_subnetworks(
     
     # Validate k
     if k < 0:
-        raise ValueError(f"k must be non-negative, got {k}")
+        raise PhyloZooValueError(f"k must be non-negative, got {k}")
     if k > num_taxa:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"k ({k}) cannot exceed the number of taxa ({num_taxa}) in the network"
         )
     
@@ -539,7 +540,7 @@ def _switching_distance_matrix(
     for taxon in taxa:
         leaf_node = original_network._label_to_node.get(taxon)
         if leaf_node is None:
-            raise ValueError(f"Taxon '{taxon}' not found in network")
+            raise PhyloZooValueError(f"Taxon '{taxon}' not found in network")
         leaf_nodes.append(leaf_node)
     
     # Initialize distance matrix
@@ -607,6 +608,11 @@ def distances(
     DistanceMatrix
         A distance matrix with pairwise distances between all taxa.
     
+    Raises
+    ------
+    PhyloZooValueError
+        If the mode is invalid.
+    
     Examples
     --------
     >>> net = SemiDirectedPhyNetwork(
@@ -639,7 +645,7 @@ def distances(
         weighted_sum = np.zeros((n, n), dtype=np.float64)
         prob_sum = 0.0
     else:
-        raise ValueError(f"Invalid mode: {mode}. Must be 'shortest', 'longest', or 'average'")
+        raise PhyloZooValueError(f"Invalid mode: {mode}. Must be 'shortest', 'longest', or 'average'")
     
     # Iterate through all switchings
     for switching_graph in _switchings(network, probability=(mode == 'average')):
@@ -816,7 +822,7 @@ def split_from_cutedge(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the edge does not exist, if multiple parallel edges exist and key is None,
         or if the edge is not a cut-edge (removal does not disconnect the graph).
     
@@ -839,16 +845,16 @@ def split_from_cutedge(
         # Get all edge keys between u and v
         edge_keys = list(graph_copy._undirected[u][v].keys())
         if len(edge_keys) == 0:
-            raise ValueError(f"Undirected edge ({u}, {v}) does not exist")
+            raise PhyloZooValueError(f"Undirected edge ({u}, {v}) does not exist")
         elif len(edge_keys) > 1 and key is None:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Multiple parallel undirected edges exist between {u} and {v}. "
                 "Must specify 'key' parameter."
             )
         elif key is None:
             key = edge_keys[0]
         elif key not in edge_keys:
-            raise ValueError(f"Edge ({u}, {v}, key={key}) does not exist")
+            raise PhyloZooValueError(f"Edge ({u}, {v}, key={key}) does not exist")
         
         # Remove the edge using public API
         graph_copy.remove_edge(u, v, key=key)
@@ -857,41 +863,41 @@ def split_from_cutedge(
         # Get all edge keys between u and v
         edge_keys = list(graph_copy._directed[u][v].keys())
         if len(edge_keys) == 0:
-            raise ValueError(f"Directed edge ({u}, {v}) does not exist")
+            raise PhyloZooValueError(f"Directed edge ({u}, {v}) does not exist")
         elif len(edge_keys) > 1 and key is None:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Multiple parallel directed edges exist between {u} and {v}. "
                 "Must specify 'key' parameter."
             )
         elif key is None:
             key = edge_keys[0]
         elif key not in edge_keys:
-            raise ValueError(f"Edge ({u}, {v}, key={key}) does not exist")
+            raise PhyloZooValueError(f"Edge ({u}, {v}, key={key}) does not exist")
         # Remove the edge using public API
         graph_copy.remove_edge(u, v, key=key)
     elif graph_copy._directed.has_edge(v, u):
         # Get all edge keys between v and u
         edge_keys = list(graph_copy._directed[v][u].keys())
         if len(edge_keys) == 0:
-            raise ValueError(f"Edge ({u}, {v}) does not exist")
+            raise PhyloZooValueError(f"Edge ({u}, {v}) does not exist")
         elif len(edge_keys) > 1 and key is None:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Multiple parallel directed edges exist between {v} and {u}. "
                 "Must specify 'key' parameter."
             )
         elif key is None:
             key = edge_keys[0]
         elif key not in edge_keys:
-            raise ValueError(f"Edge ({v}, {u}, key={key}) does not exist")
+            raise PhyloZooValueError(f"Edge ({v}, {u}, key={key}) does not exist")
         # Remove the edge using public API (note: direction is v->u)
         graph_copy.remove_edge(v, u, key=key)
     else:
-        raise ValueError(f"Edge ({u}, {v}) does not exist in the network")
+        raise PhyloZooValueError(f"Edge ({u}, {v}) does not exist in the network")
     
     # Check if removal disconnects the graph
     components = list(nx.connected_components(graph_copy._combined))
     if len(components) != 2:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Edge ({u}, {v}, key={key}) is not a cut-edge. "
             f"Removal creates {len(components)} components instead of 2."
         )
@@ -1113,7 +1119,7 @@ def _root_sd_network_at(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the root location is not in the network, or if rooting/orientation fails.
     """
     # Local import to avoid circular dependencies
@@ -1136,7 +1142,7 @@ def _root_sd_network_at(
         # root_location is a node - copy the graph
         graph_copy = network._graph.copy()
         if root_location not in graph_copy.nodes():
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Node {root_location} not found in the network"
             )
         root_vertex = root_location
@@ -1172,16 +1178,16 @@ def _root_sd_network_at(
     # Step 3: Orient the graph away from root vertex
     try:
         oriented_dm = orient_away_from_vertex(graph_copy, root_vertex)
-    except ValueError as e:
-        raise ValueError(
+    except PhyloZooError as e:
+        raise PhyloZooValueError(
             f"Failed to orient network away from root location {root_location}: {e}"
         )
     
     # Step 4: Convert to DirectedPhyNetwork
     try:
         return dnetwork_from_graph(oriented_dm)
-    except ValueError as e:
-        raise ValueError(
+    except PhyloZooError as e:
+        raise PhyloZooValueError(
             f"Failed to convert oriented network to DirectedPhyNetwork: {e}"
         )
 
@@ -1214,7 +1220,7 @@ def to_d_network(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the root location is invalid or not in the network's valid root locations.
     
     Examples
@@ -1235,7 +1241,7 @@ def to_d_network(
             list(node_locs) + list(undir_edge_locs) + list(dir_edge_locs)
         )
         if not all_valid_locations:
-            raise ValueError("No valid root locations found for the network")
+            raise PhyloZooValueError("No valid root locations found for the network")
         root_location = all_valid_locations[0]
     
     # Call the helper function to perform the rooting
@@ -1274,7 +1280,7 @@ def partition_from_blob(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If blob is empty or if blob contains nodes not in the network.
         If blob is not a non-leaf blob (internal blob).
         If removing the blob does not disconnect the network (blob is not a cut-blob).
@@ -1292,13 +1298,13 @@ def partition_from_blob(
     """
     # Validate blob
     if not blob:
-        raise ValueError("Blob cannot be empty")
+        raise PhyloZooValueError("Blob cannot be empty")
     
     # Check all nodes in blob are in network
     network_nodes = set(network._graph.nodes)
     missing_nodes = blob - network_nodes
     if missing_nodes:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Blob contains nodes not in network: {missing_nodes}"
         )
     
@@ -1306,7 +1312,7 @@ def partition_from_blob(
     non_leaf_blobs = blobs(network, trivial=True, leaves=False)
     blob_frozen = frozenset(blob)
     if blob_frozen not in {frozenset(b) for b in non_leaf_blobs}:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Blob {blob} is not a non-leaf blob. "
             "Only non-leaf blobs (internal blobs) can be used for partition_from_blob."
         )
@@ -1321,7 +1327,7 @@ def partition_from_blob(
     
     # Check that removing blob disconnects the network (at least 2 components)
     if len(components) < 2:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Removing blob {blob} does not disconnect the network. "
             f"Result has {len(components)} component(s), expected at least 2."
         )
@@ -1371,7 +1377,7 @@ def partition_from_blob(
                 edge_taxa_list.append((u, v, component_taxa))
             else:
                 # Should not happen if blob is a cut-blob, but handle gracefully
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Could not find edge connecting component with taxa {component_taxa} to blob"
                 )
     

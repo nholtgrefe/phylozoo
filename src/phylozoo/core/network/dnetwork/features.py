@@ -19,7 +19,6 @@ from ...primitives.d_multigraph.features import (
 )
 from .base import DirectedPhyNetwork
 from ....utils.exceptions import PhyloZooValueError, PhyloZooAlgorithmError, PhyloZooWarning
-
 T = TypeVar('T')
 
 

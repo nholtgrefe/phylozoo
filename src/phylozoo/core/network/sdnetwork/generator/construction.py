@@ -15,6 +15,7 @@ from ....primitives.m_multigraph.transformations import suppress_degree2_node
 from ...dnetwork.generator.base import DirectedGenerator
 from ...dnetwork.generator.construction import all_level_k_generators as all_level_k_dgenerators
 from .base import SemiDirectedGenerator
+from phylozoo.utils.exceptions import PhyloZooValueError
 
 
 def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGenerator:
@@ -110,6 +111,11 @@ def all_level_k_generators(k: int) -> set[SemiDirectedGenerator]:
     set[SemiDirectedGenerator]
         Set of all level-k semi-directed generators (up to isomorphism).
     
+    Raises
+    ------
+    PhyloZooValueError
+        If level is negative.
+        
     Notes
     -----
     Validation is deferred during construction for performance optimization.
@@ -128,7 +134,7 @@ def all_level_k_generators(k: int) -> set[SemiDirectedGenerator]:
     True
     """
     if k < 0:
-        raise ValueError("Level must be non-negative")
+        raise PhyloZooValueError("Level must be non-negative")
     
     # Get all level-k directed generators
     d_generators = all_level_k_dgenerators(k)

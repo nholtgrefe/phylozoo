@@ -101,7 +101,7 @@ def from_newick(newick_string: str, **kwargs: Any) -> 'SemiDirectedPhyNetwork':
     
     Raises
     ------
-    ValueError
+    ENewickParseError
         If the eNewick string is malformed or cannot be parsed, or if the resulting
         network structure is invalid for SemiDirectedPhyNetwork.
     

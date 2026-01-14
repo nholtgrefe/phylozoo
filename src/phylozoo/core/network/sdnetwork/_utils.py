@@ -8,6 +8,7 @@ including edge attribute merging and degree-2 node suppression.
 from typing import TYPE_CHECKING, Any
 
 from ...primitives.m_multigraph.transformations import suppress_degree2_node as mm_suppress_degree2_node
+from phylozoo.utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:
     from ...primitives.m_multigraph.base import MixedMultiGraph
@@ -267,7 +268,7 @@ def _split_attrs_for_subdividing_edge(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If subdivision_location is not in [0.0, 1.0].
     
     Notes
@@ -291,7 +292,7 @@ def _split_attrs_for_subdividing_edge(
     {'branch_length': 1.4}
     """
     if not 0.0 <= subdivision_location <= 1.0:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"subdivision_location must be in [0.0, 1.0], got {subdivision_location}"
         )
     
@@ -354,7 +355,7 @@ def _subdivide_edge(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the edge is not found in the network, or if subdivision_location
         is not in [0.0, 1.0].
     
@@ -404,7 +405,7 @@ def _subdivide_edge(
         edge_data = graph_copy._undirected[v][u][key].copy()
     
     if not edge_exists:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Edge ({u}, {v}, key={key}) not found in the network"
         )
     

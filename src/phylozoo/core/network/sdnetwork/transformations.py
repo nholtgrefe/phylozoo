@@ -7,6 +7,8 @@ This module provides functions to transform semi-directed and mixed phylogenetic
 
 from typing import Any, TypeVar
 
+from phylozoo.utils.exceptions import PhyloZooAlgorithmError
+
 from . import SemiDirectedPhyNetwork
 from .base import MixedPhyNetwork
 from .features import k_blobs
@@ -45,6 +47,11 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
     SemiDirectedPhyNetwork
         A new network with all parallel edges identified and all degree-2 nodes suppressed.
     
+    Raises
+    ------
+    PhyloZooAlgorithmError
+        If the algorithm exceeds the maximum number of iterations.
+        
     Notes
     -----
     - Branch lengths are preserved: summed when suppressing degree-2 nodes, kept from
@@ -169,7 +176,7 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
             break
     
     if iteration >= max_iterations:
-        raise RuntimeError(
+        raise PhyloZooAlgorithmError(
             "identify_parallel_edges exceeded maximum iterations. "
             "This may indicate an infinite loop or a bug."
         )
@@ -200,12 +207,7 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     MixedPhyNetwork
         A new network with all 2-blobs suppressed.
         The network is validated before being returned.
-    
-    Raises
-    ------
-    ValueError
-        If the transformation creates an invalid network structure.
-    
+
     Notes
     -----
     - After identifying vertices in a 2-blob, the kept vertex becomes degree-2
