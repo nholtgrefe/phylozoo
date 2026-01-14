@@ -4,7 +4,6 @@ Distance matrix operations module.
 This module provides operations on distance matrices, including TSP (Traveling Salesman Problem)
 solving and other optimization algorithms.
 
-TODO: optimize TSP
 """
 
 from __future__ import annotations

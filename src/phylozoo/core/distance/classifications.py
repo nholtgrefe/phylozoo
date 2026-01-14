@@ -3,7 +3,6 @@ Distance matrix classification module.
 
 This module provides functions for classifying distance matrices (metric, pseudo-metric, Kalmanson, etc.).
 
-TODO: kalmanson should return a circular ordering?
 """
 
 from __future__ import annotations
@@ -13,6 +12,7 @@ from typing import TypeVar
 import numpy as np
 from numba import njit
 
+from ..primitives.circular_ordering import CircularOrdering
 from .base import DistanceMatrix
 
 T = TypeVar('T')
@@ -219,7 +219,7 @@ def is_pseudo_metric(distance_matrix: DistanceMatrix) -> bool:
 
 def is_kalmanson(
     distance_matrix: DistanceMatrix,
-    circular_order: list[T]
+    circular_order: CircularOrdering[T]
 ) -> bool:
     """
     Check if the distance matrix is Kalmanson with respect to a circular order.
@@ -235,8 +235,9 @@ def is_kalmanson(
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to check.
-    circular_order : list[T]
-        A circular ordering of all labels in the distance matrix.
+    circular_order : CircularOrdering[T]
+        A circular ordering of all labels in the distance matrix. Must contain
+        the same elements as the distance matrix labels.
     
     Returns
     -------
@@ -249,13 +250,14 @@ def is_kalmanson(
         If circular_order does not contain all labels, or if the matrix is not
         a pseudo-metric.
     TypeError
-        If circular_order is not a list.
+        If circular_order is not a CircularOrdering.
     
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import is_kalmanson
+    >>> from phylozoo.core.primitives.circular_ordering import CircularOrdering
     >>> 
     >>> # Kalmanson matrix (e.g., from a circular network)
     >>> matrix = np.array([
@@ -266,24 +268,30 @@ def is_kalmanson(
     ...     [1, 2, 2, 1, 0]
     ... ])
     >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C', 'D', 'E'])
-    >>> is_kalmanson(dm, ['A', 'B', 'C', 'D', 'E'])
+    >>> co = CircularOrdering(['A', 'B', 'C', 'D', 'E'])
+    >>> is_kalmanson(dm, co)
     True
     """
     # Input validation
-    if not isinstance(circular_order, list):
-        raise TypeError("circular_order must be a list")
+    if not isinstance(circular_order, CircularOrdering):
+        raise TypeError(
+            f"circular_order must be a CircularOrdering, got {type(circular_order).__name__}"
+        )
     
     if len(circular_order) == 0:
         raise ValueError("circular_order cannot be empty")
     
-    if not set(circular_order) == set(distance_matrix.labels):
+    # Extract order list from CircularOrdering
+    order_list = list(circular_order.order)
+    
+    if not set(order_list) == set(distance_matrix.labels):
         raise ValueError(
             "circular_order must contain all labels of the distance matrix"
         )
     
-    if len(circular_order) != len(distance_matrix.labels):
+    if len(order_list) != len(distance_matrix.labels):
         raise ValueError(
-            f"circular_order has {len(circular_order)} elements, but distance matrix "
+            f"circular_order has {len(order_list)} elements, but distance matrix "
             f"has {len(distance_matrix.labels)} labels"
         )
     
@@ -301,7 +309,7 @@ def is_kalmanson(
     # Get ordered indices
     try:
         ordered_indices = np.array(
-            [distance_matrix.get_index(label) for label in circular_order],
+            [distance_matrix.get_index(label) for label in order_list],
             dtype=np.int64
         )
     except ValueError as e:

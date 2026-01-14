@@ -13,6 +13,7 @@ from phylozoo.core.distance.classifications import (
     has_zero_diagonal,
     is_nonnegative,
 )
+from phylozoo.core.primitives.circular_ordering import CircularOrdering
 
 
 class TestIsMetric:
@@ -124,7 +125,8 @@ class TestIsKalmanson:
             [1, 2, 2, 1, 0]
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C', 'D', 'E'])
-        assert is_kalmanson(dm, ['A', 'B', 'C', 'D', 'E']) is True
+        co = CircularOrdering(['A', 'B', 'C', 'D', 'E'])
+        assert is_kalmanson(dm, co) is True
     
     def test_kalmanson_wrong_order(self) -> None:
         """Test that wrong circular order returns False."""
@@ -137,7 +139,8 @@ class TestIsKalmanson:
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C', 'D', 'E'])
         # Wrong order
-        assert is_kalmanson(dm, ['A', 'C', 'B', 'D', 'E']) is False
+        co = CircularOrdering(['A', 'C', 'B', 'D', 'E'])
+        assert is_kalmanson(dm, co) is False
     
     def test_kalmanson_incomplete_order_raises_error(self) -> None:
         """Test that incomplete circular order raises ValueError."""
@@ -147,8 +150,9 @@ class TestIsKalmanson:
             [2, 1, 0]
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
+        co = CircularOrdering(['A', 'B'])
         with pytest.raises(ValueError, match="must contain all labels"):
-            is_kalmanson(dm, ['A', 'B'])
+            is_kalmanson(dm, co)
     
     def test_kalmanson_non_pseudo_metric_raises_error(self) -> None:
         """Test that non-pseudo-metric matrix raises ValueError."""
@@ -159,8 +163,9 @@ class TestIsKalmanson:
             [5, 1, 0]
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
+        co = CircularOrdering(['A', 'B', 'C'])
         with pytest.raises(ValueError, match="must be pseudo-metric"):
-            is_kalmanson(dm, ['A', 'B', 'C'])
+            is_kalmanson(dm, co)
     
     def test_small_kalmanson_matrix(self) -> None:
         """Test Kalmanson check on small matrix."""
@@ -171,33 +176,37 @@ class TestIsKalmanson:
             [2, 1, 0]
         ])
         dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
-        assert is_kalmanson(dm, ['A', 'B', 'C']) is True
+        co = CircularOrdering(['A', 'B', 'C'])
+        assert is_kalmanson(dm, co) is True
     
     def test_kalmanson_invalid_type(self) -> None:
-        """Test that non-list circular_order raises TypeError."""
+        """Test that non-CircularOrdering circular_order raises TypeError."""
         matrix = np.array([[0, 1], [1, 0]])
         dm = DistanceMatrix(matrix, labels=['A', 'B'])
-        with pytest.raises(TypeError, match="must be a list"):
-            is_kalmanson(dm, ('A', 'B'))  # type: ignore
+        with pytest.raises(TypeError, match="must be a CircularOrdering"):
+            is_kalmanson(dm, ['A', 'B'])  # type: ignore
     
     def test_kalmanson_empty_order(self) -> None:
         """Test that empty circular_order raises ValueError."""
         matrix = np.array([[0, 1], [1, 0]])
         dm = DistanceMatrix(matrix, labels=['A', 'B'])
+        co = CircularOrdering([])
         with pytest.raises(ValueError, match="cannot be empty"):
-            is_kalmanson(dm, [])
+            is_kalmanson(dm, co)
     
     def test_kalmanson_very_small_matrices(self) -> None:
         """Test that matrices with < 4 elements are trivially Kalmanson."""
         # Matrix with 2 elements
         matrix = np.array([[0, 1], [1, 0]])
         dm = DistanceMatrix(matrix, labels=['A', 'B'])
-        assert is_kalmanson(dm, ['A', 'B']) is True
+        co = CircularOrdering(['A', 'B'])
+        assert is_kalmanson(dm, co) is True
         
         # Matrix with 1 element
         matrix = np.array([[0]])
         dm = DistanceMatrix(matrix, labels=['A'])
-        assert is_kalmanson(dm, ['A']) is True
+        co = CircularOrdering(['A'])
+        assert is_kalmanson(dm, co) is True
     
     def test_kalmanson_large_matrix_performance(self) -> None:
         """Test that is_kalmanson is fast on larger matrices with numba."""
@@ -214,7 +223,7 @@ class TestIsKalmanson:
         
         labels = [f'L{i}' for i in range(size)]
         dm = DistanceMatrix(matrix, labels=labels)
-        circular_order = labels.copy()
+        circular_order = CircularOrdering(labels.copy())
         
         # Warmup
         _ = is_kalmanson(dm, circular_order)

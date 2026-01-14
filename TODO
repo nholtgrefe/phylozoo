@@ -22,9 +22,11 @@ First release:
 - bootstrap msa and gene lengths bootstrap
 - Error handling
 - Docs + Tutorials
+- SD generator validation
 
 
 Later releases:
+- improved testing
 - PANDA/MAPPD: handle 2-blobs and parallel edges better
 - Validate MixedPhyNetwork (perhaps remove the second condition from our paper)
 - permute method for dsitances
@@ -33,3 +35,10 @@ Later releases:
 - external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?
 - Split binary resolution into out_resolution and in_resolution methods?
 - add pretty_print function to classes.
+- Distances:
+    - is_kalmanson should return a circular ordering? or add function that does that
+    - 
+
+
+Other  ideas:
+- random generators using dgenerators and sides
