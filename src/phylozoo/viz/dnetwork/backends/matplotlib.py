@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path as MPath
 from matplotlib.patches import Circle
 
+from phylozoo.utils.exceptions import PhyloZooStateError
+
 from ...utils.types import EdgeRoute
 from .base import Backend, register_backend
 
@@ -109,9 +111,14 @@ class MatplotlibBackend(Backend):
         dict[str, Any]
             Dictionary with 'patch', 'arrow', or 'line' keys containing
             matplotlib elements.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If axes have not been created before rendering.
         """
         if self._axes is None:
-            raise ValueError("Axes must be created before rendering")
+            raise PhyloZooStateError("Axes must be created before rendering")
 
         ax = self._axes
         points = route.points
@@ -250,9 +257,14 @@ class MatplotlibBackend(Backend):
         -------
         matplotlib.patches.Circle
             The rendered node circle.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If axes have not been created before rendering.
         """
         if self._axes is None:
-            raise ValueError("Axes must be created before rendering")
+            raise PhyloZooStateError("Axes must be created before rendering")
 
         ax = self._axes
         x, y = position
@@ -306,9 +318,14 @@ class MatplotlibBackend(Backend):
         -------
         matplotlib.text.Text
             The text label.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If axes have not been created before rendering.
         """
         if self._axes is None:
-            raise ValueError("Axes must be created before rendering")
+            raise PhyloZooStateError("Axes must be created before rendering")
 
         ax = self._axes
         x, y = position
@@ -344,9 +361,14 @@ class MatplotlibBackend(Backend):
     def show(self) -> None:
         """
         Display the matplotlib figure.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If figure has not been created before showing.
         """
         if self._figure is None:
-            raise ValueError("Figure must be created before showing")
+            raise PhyloZooStateError("Figure must be created before showing")
         plt.show()
 
     def save(self, path: str, **kwargs: Any) -> None:
@@ -359,9 +381,14 @@ class MatplotlibBackend(Backend):
             File path to save to.
         **kwargs
             Arguments passed to figure.savefig().
+
+        Raises
+        ------
+        PhyloZooStateError
+            If figure has not been created before saving.
         """
         if self._figure is None:
-            raise ValueError("Figure must be created before saving")
+            raise PhyloZooStateError("Figure must be created before saving")
         self._figure.savefig(path, **kwargs)
 
 

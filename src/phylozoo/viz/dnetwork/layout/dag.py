@@ -13,6 +13,12 @@ from typing import TYPE_CHECKING, TypeVar
 import networkx as nx
 import numpy as np
 
+from phylozoo.utils.exceptions import (
+    PhyloZooLayoutError,
+    PhyloZooNetworkStructureError,
+    PhyloZooValueError,
+)
+
 from .base import DAGLayout
 
 if TYPE_CHECKING:
@@ -69,8 +75,12 @@ def compute_dag_layout(
 
     Raises
     ------
-    ValueError
-        If network is empty, not a DAG, or direction is invalid.
+    PhyloZooLayoutError
+        If network is empty or layout computation fails.
+    PhyloZooNetworkStructureError
+        If network is not a DAG or has no root node.
+    PhyloZooValueError
+        If direction is invalid (must be 'TD' or 'LR').
 
     Examples
     --------
@@ -86,10 +96,10 @@ def compute_dag_layout(
     3
     """
     if network.number_of_nodes() == 0:
-        raise ValueError("Cannot compute layout for empty network")
+        raise PhyloZooLayoutError("Cannot compute layout for empty network")
 
     if direction.upper() not in ('TD', 'LR'):
-        raise ValueError(f"direction must be 'TD' or 'LR', got '{direction}'")
+        raise PhyloZooValueError(f"direction must be 'TD' or 'LR', got '{direction}'")
 
     rng = random.Random(seed)
 
@@ -101,12 +111,12 @@ def compute_dag_layout(
         G.add_edge(u, v)
 
     if not nx.is_directed_acyclic_graph(G):
-        raise ValueError("Network must be a DAG")
+        raise PhyloZooNetworkStructureError("Network must be a DAG")
 
     # --- Step 1: Build a tree backbone ---
     roots = [n for n in G.nodes if G.in_degree(n) == 0]
     if not roots:
-        raise ValueError("No root found (no node with in-degree 0).")
+        raise PhyloZooNetworkStructureError("No root found (no node with in-degree 0).")
     root = roots[0]
 
     topo_order = list(nx.topological_sort(G))
@@ -187,7 +197,7 @@ def compute_dag_layout(
             best_pos, best_score = pos, score
 
     if best_pos is None:
-        raise ValueError("Failed to compute layout")
+        raise PhyloZooLayoutError("Failed to compute layout")
 
     pos = best_pos
 

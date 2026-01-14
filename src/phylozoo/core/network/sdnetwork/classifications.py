@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from ...primitives.m_multigraph.features import has_parallel_edges as graph_has_parallel_edges
 from .features import blobs
+from ....utils.exceptions import PhyloZooNotImplementedError
 
 if TYPE_CHECKING:
     from .base import SemiDirectedPhyNetwork
@@ -267,13 +268,11 @@ def is_simple(network: 'SemiDirectedPhyNetwork') -> bool:
 
 def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_galled function."""
-    return False
-
+    raise PhyloZooNotImplementedError("is_galled function is not implemented.")
 
 def is_OLP(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_OLP function."""
-    return False
-
+    raise PhyloZooNotImplementedError("is_OLP function is not implemented.")
 
 @lru_cache(maxsize=128)
 def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
@@ -357,19 +356,16 @@ def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
 
 def is_strongly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_strongly_treechild function."""
-    return False
-
+    raise PhyloZooNotImplementedError("is_strongly_treechild function is not implemented.")
 
 def is_weakly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_weakly_treechild function."""
-    return False
-
+    raise PhyloZooNotImplementedError("is_weakly_treechild function is not implemented.")
 
 def is_strongly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_strongly_treebased function."""
-    return False
-
+    raise PhyloZooNotImplementedError("is_strongly_treebased function is not implemented.")
 
 def is_weakly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
     """Stub for is_weakly_treebased function."""
-    return False
+    raise PhyloZooNotImplementedError("is_weakly_treebased function is not implemented.")

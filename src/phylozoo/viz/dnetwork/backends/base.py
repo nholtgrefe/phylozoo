@@ -10,6 +10,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+from phylozoo.utils.exceptions import PhyloZooBackendError
+
 if TYPE_CHECKING:
     from ...utils.types import EdgeRoute
     from ..layout.base import DAGLayout
@@ -54,7 +56,7 @@ def get_backend(name: str) -> type['Backend']:
 
     Raises
     ------
-    ValueError
+    PhyloZooBackendError
         If backend is not registered.
 
     Examples
@@ -63,7 +65,7 @@ def get_backend(name: str) -> type['Backend']:
     >>> BackendClass = get_backend('matplotlib')
     """
     if name not in _backends:
-        raise ValueError(
+        raise PhyloZooBackendError(
             f"Backend '{name}' is not registered. "
             f"Available backends: {list(_backends.keys())}"
         )

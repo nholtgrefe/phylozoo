@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from ...primitives.d_multigraph.features import has_parallel_edges as graph_has_parallel_edges
 from .features import blobs
+from ....utils.exceptions import PhyloZooNotImplementedError
 
 if TYPE_CHECKING:
     from . import DirectedPhyNetwork
@@ -387,19 +388,19 @@ def is_stackfree(network: 'DirectedPhyNetwork') -> bool:
 
 def is_treechild(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_treechild function."""
-    return False
+    raise PhyloZooNotImplementedError("is_treechild function is not implemented.")
 
 
 def is_treebased(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_treechild function."""
-    return False
+    raise PhyloZooNotImplementedError("is_treebased function is not implemented.")
 
 
 def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_treechild function."""
-    return False
+    raise PhyloZooNotImplementedError("is_strictly_treebased function is not implemented.")
 
 
 def is_ultrametric(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_ultrametric function."""
-    return False
+    raise PhyloZooNotImplementedError("is_ultrametric function is not implemented.")

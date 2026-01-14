@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from phylozoo.utils.exceptions import PhyloZooBackendError, PhyloZooLayoutError
+
 from ..utils.types import EdgeRoute
 
 if TYPE_CHECKING:
@@ -63,8 +65,10 @@ def plot_network(
 
     Raises
     ------
-    ValueError
-        If layout algorithm is not supported or backend is not registered.
+    PhyloZooLayoutError
+        If layout algorithm is not supported.
+    PhyloZooBackendError
+        If backend is not registered.
 
     Examples
     --------
@@ -79,7 +83,7 @@ def plot_network(
     """
     # Validate layout
     if layout != 'dag':
-        raise ValueError(
+        raise PhyloZooLayoutError(
             f"Layout '{layout}' is not supported. "
             "Currently only 'dag' layout is available."
         )

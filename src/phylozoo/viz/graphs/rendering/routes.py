@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar
 
+from phylozoo.utils.exceptions import PhyloZooTypeError
+
 from ...utils.types import EdgeRoute, EdgeType
 
 if TYPE_CHECKING:
@@ -37,6 +39,11 @@ def compute_graph_routes(
     dict[tuple[T, T, int], EdgeRoute]
         Edge routing information mapping (u, v, key) to EdgeRoute.
 
+    Raises
+    ------
+    PhyloZooTypeError
+        If graph type is unsupported.
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
@@ -62,7 +69,7 @@ def compute_graph_routes(
             edges.append((u, v, key, False))  # False = undirected
         is_directed = None  # Mixed
     else:
-        raise ValueError(f"Unsupported graph type: {type(graph)}")
+        raise PhyloZooTypeError(f"Unsupported graph type: {type(graph)}")
 
     # Group edges by (u, v) to detect parallel edges
     edge_groups: dict[tuple[T, T], list[tuple[T, T, int, bool | None]]] = {}

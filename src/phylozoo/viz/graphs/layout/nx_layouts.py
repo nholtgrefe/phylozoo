@@ -12,6 +12,12 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import networkx as nx
 
+from phylozoo.utils.exceptions import (
+    PhyloZooImportError,
+    PhyloZooLayoutError,
+    PhyloZooTypeError,
+)
+
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
     from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -103,8 +109,12 @@ def compute_graph_layout(
 
     Raises
     ------
-    ValueError
-        If layout algorithm is not supported or graph is empty.
+    PhyloZooLayoutError
+        If layout algorithm is not supported, graph is empty, or layout computation fails.
+    PhyloZooTypeError
+        If graph type is unsupported.
+    PhyloZooImportError
+        If Graphviz layout is requested but pygraphviz is not installed.
 
     Examples
     --------
@@ -115,7 +125,7 @@ def compute_graph_layout(
     3
     """
     if graph.number_of_nodes() == 0:
-        raise ValueError("Cannot compute layout for empty graph")
+        raise PhyloZooLayoutError("Cannot compute layout for empty graph")
 
     # Convert graph to NetworkX format for layout
     if hasattr(graph, '_graph'):
@@ -131,7 +141,7 @@ def compute_graph_layout(
         for u, v, key in graph._undirected.edges(keys=True):
             G_nx.add_edge(u, v, key=key)
     else:
-        raise ValueError(f"Unsupported graph type: {type(graph)}")
+        raise PhyloZooTypeError(f"Unsupported graph type: {type(graph)}")
 
     # Compute layout
     pos: dict[T, tuple[float, float]]
@@ -141,12 +151,12 @@ def compute_graph_layout(
         try:
             pos = nx.nx_agraph.graphviz_layout(G_nx, prog=layout, **kwargs)
         except ImportError:
-            raise ImportError(
+            raise PhyloZooImportError(
                 f"Graphviz layout '{layout}' requires pygraphviz. "
                 "Install with: pip install pygraphviz"
             )
         except Exception as e:
-            raise ValueError(
+            raise PhyloZooLayoutError(
                 f"Graphviz layout '{layout}' failed: {e}. "
                 "Falling back to spring layout."
             ) from e
@@ -174,7 +184,7 @@ def compute_graph_layout(
     elif layout == 'bipartite':
         pos = nx.bipartite_layout(G_nx, **kwargs)
     else:
-        raise ValueError(
+        raise PhyloZooLayoutError(
             f"Unsupported layout algorithm: '{layout}'. "
             "Supported: spring, circular, kamada_kawai, planar, random, "
             "shell, spectral, spiral, bipartite, dot, neato, fdp, sfdp, twopi, circo"

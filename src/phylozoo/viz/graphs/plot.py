@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from phylozoo.utils.exceptions import PhyloZooBackendError, PhyloZooLayoutError
+
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
     from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -65,8 +67,10 @@ def plot_directed_multigraph(
 
     Raises
     ------
-    ValueError
-        If layout algorithm is not supported or backend is not registered.
+    PhyloZooLayoutError
+        If layout algorithm is not supported.
+    PhyloZooBackendError
+        If backend is not registered.
 
     Examples
     --------
@@ -122,8 +126,10 @@ def plot_mixed_multigraph(
 
     Raises
     ------
-    ValueError
-        If layout algorithm is not supported or backend is not registered.
+    PhyloZooLayoutError
+        If layout algorithm is not supported.
+    PhyloZooBackendError
+        If backend is not registered.
 
     Examples
     --------

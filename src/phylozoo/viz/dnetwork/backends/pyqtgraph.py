@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from phylozoo.utils.exceptions import PhyloZooStateError
+
 try:
     import pyqtgraph as pg
     from PyQt5.QtWidgets import QApplication  # type: ignore[import-untyped]
@@ -124,9 +126,14 @@ class PyQtGraphBackend(Backend):
         -------
         dict[str, Any]
             Dictionary with 'line' key containing PyQtGraph line item.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If plot has not been created before rendering.
         """
         if self._plot is None:
-            raise ValueError("Plot must be created before rendering")
+            raise PhyloZooStateError("Plot must be created before rendering")
 
         plot = self._plot
         points = route.points
@@ -231,9 +238,14 @@ class PyQtGraphBackend(Backend):
         -------
         dict[str, Any]
             Dictionary with 'point' key containing PyQtGraph scatter plot item.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If plot has not been created before rendering.
         """
         if self._plot is None:
-            raise ValueError("Plot must be created before rendering")
+            raise PhyloZooStateError("Plot must be created before rendering")
 
         plot = self._plot
         x, y = position
@@ -292,9 +304,14 @@ class PyQtGraphBackend(Backend):
         -------
         pg.TextItem
             The created text item.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If plot has not been created before rendering.
         """
         if self._plot is None:
-            raise ValueError("Plot must be created before rendering")
+            raise PhyloZooStateError("Plot must be created before rendering")
 
         plot = self._plot
         x, y = position
@@ -324,9 +341,14 @@ class PyQtGraphBackend(Backend):
         Display the plot window.
 
         This method ensures a QApplication exists and shows the window.
+
+        Raises
+        ------
+        PhyloZooStateError
+            If window has not been created before showing.
         """
         if self._window is None:
-            raise ValueError("Window must be created before showing")
+            raise PhyloZooStateError("Window must be created before showing")
 
         # Ensure QApplication exists
         app = QApplication.instance()
@@ -345,9 +367,14 @@ class PyQtGraphBackend(Backend):
             Output filename.
         **kwargs
             Additional arguments (not used for PyQtGraph).
+
+        Raises
+        ------
+        PhyloZooStateError
+            If window has not been created before saving.
         """
         if self._window is None:
-            raise ValueError("Window must be created before saving")
+            raise PhyloZooStateError("Window must be created before saving")
 
         # PyQtGraph doesn't have a direct save method, so we use export
         exporter = pg.exporters.ImageExporter(self._plot)
