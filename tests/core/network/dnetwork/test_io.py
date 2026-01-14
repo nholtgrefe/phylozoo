@@ -179,7 +179,8 @@ class TestDirectedPhyNetworkENewickIO:
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
         
-        with pytest.raises(ValueError, match="Format 'invalid' not supported"):
+        from phylozoo.utils.exceptions import PhyloZooFormatError
+        with pytest.raises(PhyloZooFormatError, match="Format 'invalid' not supported"):
             net.to_string(format='invalid')
     
     def test_malformed_string(self) -> None:

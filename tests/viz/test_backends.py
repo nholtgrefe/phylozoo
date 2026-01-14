@@ -6,6 +6,7 @@ This test suite covers the backend registry and matplotlib backend.
 
 import pytest
 
+from phylozoo.utils.exceptions import PhyloZooBackendError
 from phylozoo.viz.dnetwork.backends import (
     Backend,
     get_backend,
@@ -49,8 +50,8 @@ class TestBackendRegistry:
         assert BackendClass == DummyBackend
 
     def test_get_nonexistent_backend_raises(self) -> None:
-        """Test that getting nonexistent backend raises ValueError."""
-        with pytest.raises(ValueError, match="not registered"):
+        """Test that getting nonexistent backend raises PhyloZooBackendError."""
+        with pytest.raises(PhyloZooBackendError, match="not registered"):
             get_backend('nonexistent_backend')
 
     def test_matplotlib_backend_registered(self) -> None:

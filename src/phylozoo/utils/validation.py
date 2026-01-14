@@ -86,6 +86,7 @@ import fnmatch
 from functools import wraps
 from typing import Callable, Iterable, Iterator, List, Sequence, Type, TypeVar
 
+from phylozoo.utils.exceptions import PhyloZooValidationError
 
 T = TypeVar("T")
 
@@ -210,7 +211,7 @@ def validation_aware(
 
     Raises
     ------
-    ValueError
+    PhyloZooValidationError
         If a default pattern does not match any allowed pattern.
     """
     allowed_list = list(allowed)
@@ -222,7 +223,7 @@ def validation_aware(
         if not any(fnmatch.fnmatch(pattern, allowed_pattern) for allowed_pattern in allowed_list)
     ]
     if invalid_defaults:
-        raise ValueError(
+        raise PhyloZooValidationError(
             "Default suppression patterns must be a subset of allowed patterns; "
             f"invalid: {invalid_defaults}"
         )

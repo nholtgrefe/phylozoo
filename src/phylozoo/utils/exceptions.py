@@ -539,3 +539,46 @@ class PhyloZooBackendError(PhyloZooVisualizationError):
     ...     )
     """
     pass
+
+
+# ============================================================================
+# Warning Classes
+# ============================================================================
+
+class PhyloZooWarning(UserWarning):
+    """
+    Base warning class for all PhyloZoo warnings.
+    
+    All custom warnings in PhyloZoo inherit from this class, allowing
+    users to filter or catch all PhyloZoo-specific warnings. Inherits from
+    UserWarning for compatibility with Python's warning system.
+    
+    Examples
+    --------
+    >>> import warnings
+    >>> from phylozoo.utils.exceptions import PhyloZooWarning
+    >>> 
+    >>> warnings.filterwarnings('ignore', category=PhyloZooWarning)
+    >>> warnings.warn("This is a PhyloZoo warning", PhyloZooWarning)
+    """
+    pass
+
+
+class PhyloZooIdentifierWarning(PhyloZooWarning):
+    """
+    Warning for identifier-related issues.
+    
+    This warning is used when Python keywords are used as identifiers
+    or when None is used as a value, which may cause unexpected behavior.
+    
+    Examples
+    --------
+    >>> import warnings
+    >>> from phylozoo.utils.exceptions import PhyloZooIdentifierWarning
+    >>> 
+    >>> warnings.warn(
+    ...     "Identifier 'for' is a Python keyword",
+    ...     PhyloZooIdentifierWarning
+    ... )
+    """
+    pass

@@ -13,6 +13,12 @@ from pathlib import Path
 
 import pytest
 
+from phylozoo.utils.exceptions import (
+    PhyloZooFileNotFoundError,
+    PhyloZooFormatError,
+    PhyloZooIOError,
+    PhyloZooValueError,
+)
 from phylozoo.utils.io import (
     FormatRegistry,
     IOMixin,
@@ -38,14 +44,14 @@ class TestUtilityFunctions:
             os.unlink(temp_path)
 
     def test_read_file_safely_file_not_found(self) -> None:
-        """Test that read_file_safely raises FileNotFoundError for missing file."""
-        with pytest.raises(FileNotFoundError, match="File not found"):
+        """Test that read_file_safely raises PhyloZooFileNotFoundError for missing file."""
+        with pytest.raises(PhyloZooFileNotFoundError, match="File not found"):
             read_file_safely("nonexistent_file.txt")
 
     def test_read_file_safely_not_a_file(self) -> None:
-        """Test that read_file_safely raises ValueError for directories."""
+        """Test that read_file_safely raises PhyloZooValueError for directories."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with pytest.raises(ValueError, match="Path is not a file"):
+            with pytest.raises(PhyloZooValueError, match="Path is not a file"):
                 read_file_safely(tmpdir)
 
     def test_write_file_safely(self) -> None:
@@ -146,19 +152,19 @@ class TestFormatRegistry:
         assert FormatRegistry.get_writer(TestClass, 'format2') == writer2
 
     def test_get_writer_not_registered(self) -> None:
-        """Test that get_writer raises ValueError for unregistered format."""
+        """Test that get_writer raises PhyloZooFormatError for unregistered format."""
         class TestClass:
             pass
         
-        with pytest.raises(ValueError, match="No writer registered"):
+        with pytest.raises(PhyloZooFormatError, match="No writer registered"):
             FormatRegistry.get_writer(TestClass, 'nonexistent')
 
     def test_get_reader_not_registered(self) -> None:
-        """Test that get_reader raises ValueError for unregistered format."""
+        """Test that get_reader raises PhyloZooFormatError for unregistered format."""
         class TestClass:
             pass
         
-        with pytest.raises(ValueError, match="No reader registered"):
+        with pytest.raises(PhyloZooFormatError, match="No reader registered"):
             FormatRegistry.get_reader(TestClass, 'nonexistent')
 
     def test_detect_format_from_extension(self) -> None:
@@ -206,7 +212,7 @@ class TestFormatRegistry:
         assert FormatRegistry.detect_format('file.unknown', TestClass) == 'test_format'
 
     def test_detect_format_no_default(self) -> None:
-        """Test that detect_format raises ValueError if no default and unknown extension."""
+        """Test that detect_format raises PhyloZooFormatError if no default and unknown extension."""
         class TestClass:
             pass
         
@@ -224,7 +230,7 @@ class TestFormatRegistry:
             # No default=True
         )
         
-        with pytest.raises(ValueError, match="Could not detect format"):
+        with pytest.raises(PhyloZooFormatError, match="Could not detect format"):
             FormatRegistry.detect_format('file.unknown', TestClass)
 
 
@@ -294,9 +300,9 @@ class TestIOMixin:
         assert result == "FORMAT1:test"
 
     def test_to_string_unsupported_format(self) -> None:
-        """Test that to_string raises ValueError for unsupported format."""
+        """Test that to_string raises PhyloZooFormatError for unsupported format."""
         net = self.TestNetwork("test")
-        with pytest.raises(ValueError, match="not supported"):
+        with pytest.raises(PhyloZooFormatError, match="not supported"):
             net.to_string(format='nonexistent')
 
     def test_to_string_with_kwargs(self) -> None:
@@ -426,8 +432,8 @@ class TestIOMixin:
             os.unlink(temp_path)
 
     def test_load_file_not_found(self) -> None:
-        """Test that load raises FileNotFoundError for missing file."""
-        with pytest.raises(FileNotFoundError, match="File not found"):
+        """Test that load raises PhyloZooFileNotFoundError for missing file."""
+        with pytest.raises(PhyloZooFileNotFoundError, match="File not found"):
             self.TestNetwork.load("nonexistent.fmt1")
 
     def test_from_string_default_format(self) -> None:
@@ -443,8 +449,8 @@ class TestIOMixin:
         assert net.data == "parsed"
 
     def test_from_string_unsupported_format(self) -> None:
-        """Test that from_string raises ValueError for unsupported format."""
-        with pytest.raises(ValueError, match="not supported"):
+        """Test that from_string raises PhyloZooFormatError for unsupported format."""
+        with pytest.raises(PhyloZooFormatError, match="not supported"):
             self.TestNetwork.from_string("test", format='nonexistent')
 
     def test_from_string_with_kwargs(self) -> None:
@@ -549,7 +555,7 @@ class TestIOMixin:
             temp_path = f.name
         
         try:
-            with pytest.raises(FileNotFoundError):
+            with pytest.raises(PhyloZooFileNotFoundError):
                 self.TestNetwork.convert("nonexistent.fmt1", temp_path, overwrite=True)
         finally:
             if os.path.exists(temp_path):

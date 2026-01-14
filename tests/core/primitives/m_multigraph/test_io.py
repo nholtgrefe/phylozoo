@@ -304,7 +304,8 @@ class TestMixedMultiGraphPhyloZooDOTIO:
         G = MixedMultiGraph()
         G.add_directed_edge(1, 2)
         
-        with pytest.raises(ValueError, match="Format 'invalid' not supported"):
+        from phylozoo.utils.exceptions import PhyloZooFormatError
+        with pytest.raises(PhyloZooFormatError, match="Format 'invalid' not supported"):
             G.to_string(format='invalid')
     
     def test_malformed_string(self) -> None:

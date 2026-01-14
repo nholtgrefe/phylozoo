@@ -110,6 +110,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, TypeVar
 
+from phylozoo.utils.exceptions import (
+    PhyloZooFileNotFoundError,
+    PhyloZooFormatError,
+    PhyloZooIOError,
+    PhyloZooValueError,
+)
+
 T = TypeVar('T')
 
 
@@ -131,9 +138,11 @@ def read_file_safely(filepath: str | Path, encoding: str = 'utf-8') -> str:
     
     Raises
     ------
-    FileNotFoundError
+    PhyloZooFileNotFoundError
         If the file does not exist.
-    IOError
+    PhyloZooValueError
+        If the path is not a file.
+    PhyloZooIOError
         If the file cannot be read.
     
     Examples
@@ -145,14 +154,14 @@ def read_file_safely(filepath: str | Path, encoding: str = 'utf-8') -> str:
     """
     path = Path(filepath)
     if not path.exists():
-        raise FileNotFoundError(f"File not found: {filepath}")
+        raise PhyloZooFileNotFoundError(f"File not found: {filepath}")
     if not path.is_file():
-        raise ValueError(f"Path is not a file: {filepath}")
+        raise PhyloZooValueError(f"Path is not a file: {filepath}")
     
     try:
         return path.read_text(encoding=encoding)
     except Exception as e:
-        raise IOError(f"Error reading file {filepath}: {e}") from e
+        raise PhyloZooIOError(f"Error reading file {filepath}: {e}") from e
 
 
 def write_file_safely(filepath: str | Path, content: str, encoding: str = 'utf-8') -> None:
@@ -170,7 +179,7 @@ def write_file_safely(filepath: str | Path, content: str, encoding: str = 'utf-8
     
     Raises
     ------
-    IOError
+    PhyloZooIOError
         If the file cannot be written.
     
     Examples
@@ -182,7 +191,7 @@ def write_file_safely(filepath: str | Path, content: str, encoding: str = 'utf-8
     try:
         path.write_text(content, encoding=encoding)
     except Exception as e:
-        raise IOError(f"Error writing file {filepath}: {e}") from e
+        raise PhyloZooIOError(f"Error writing file {filepath}: {e}") from e
 
 
 def ensure_directory_exists(filepath: str | Path) -> Path:
@@ -318,7 +327,7 @@ class FormatRegistry:
         
         Raises
         ------
-        ValueError
+        PhyloZooFormatError
             If no writer is registered for the type and format.
         
         Examples
@@ -328,7 +337,7 @@ class FormatRegistry:
         """
         key = (obj_type, format)
         if key not in cls._writers:
-            raise ValueError(
+            raise PhyloZooFormatError(
                 f"No writer registered for {obj_type.__name__} format '{format}'. "
                 f"Available formats: {cls._get_available_formats(obj_type)}"
             )
@@ -353,7 +362,7 @@ class FormatRegistry:
         
         Raises
         ------
-        ValueError
+        PhyloZooFormatError
             If no reader is registered for the type and format.
         
         Examples
@@ -363,7 +372,7 @@ class FormatRegistry:
         """
         key = (obj_type, format)
         if key not in cls._readers:
-            raise ValueError(
+            raise PhyloZooFormatError(
                 f"No reader registered for {obj_type.__name__} format '{format}'. "
                 f"Available formats: {cls._get_available_formats(obj_type)}"
             )
@@ -388,7 +397,7 @@ class FormatRegistry:
         
         Raises
         ------
-        ValueError
+        PhyloZooFormatError
             If format cannot be detected and no default is set.
         
         Examples
@@ -413,13 +422,13 @@ class FormatRegistry:
         # If no default, try to find any registered format
         available = cls._get_available_formats(obj_type)
         if available:
-            raise ValueError(
+            raise PhyloZooFormatError(
                 f"Could not detect format from extension '{ext}' for {obj_type.__name__}. "
                 f"Available formats: {available}. "
                 f"Please specify format explicitly."
             )
         else:
-            raise ValueError(
+            raise PhyloZooFormatError(
                 f"No formats registered for {obj_type.__name__}. "
                 f"Please register a format handler first."
             )
@@ -499,7 +508,7 @@ class IOMixin:
         
         Raises
         ------
-        ValueError
+        PhyloZooFormatError
             If format is not registered or not supported.
         
         Examples
@@ -512,7 +521,7 @@ class IOMixin:
         format = format or self._default_format
         
         if format not in self._supported_formats:
-            raise ValueError(
+            raise PhyloZooFormatError(
                 f"Format '{format}' not supported. "
                 f"Supported formats: {self._supported_formats}"
             )
@@ -546,9 +555,9 @@ class IOMixin:
         ------
         FileExistsError
             If file exists and overwrite is False.
-        ValueError
+        PhyloZooFormatError
             If format cannot be detected or is not supported.
-        IOError
+        PhyloZooIOError
             If file cannot be written.
         
         Examples
@@ -597,11 +606,11 @@ class IOMixin:
         
         Raises
         ------
-        FileNotFoundError
+        PhyloZooFileNotFoundError
             If file does not exist.
-        ValueError
+        PhyloZooFormatError
             If format cannot be detected or is not supported.
-        IOError
+        PhyloZooIOError
             If file cannot be read.
         
         Examples
@@ -640,7 +649,7 @@ class IOMixin:
         
         Raises
         ------
-        ValueError
+        PhyloZooFormatError
             If format is not registered or not supported.
         
         Examples
@@ -653,7 +662,7 @@ class IOMixin:
         format = format or cls._default_format
         
         if format not in cls._supported_formats:
-            raise ValueError(
+            raise PhyloZooFormatError(
                 f"Format '{format}' not supported. "
                 f"Supported formats: {cls._supported_formats}"
             )
@@ -699,14 +708,14 @@ class IOMixin:
         
         Raises
         ------
-        FileNotFoundError
+        PhyloZooFileNotFoundError
             If input file does not exist.
         FileExistsError
             If output file exists and overwrite is False.
-        ValueError
+        PhyloZooFormatError
             If format cannot be detected or object doesn't meet format requirements
             (e.g., trying to save a network to a tree-only format).
-        IOError
+        PhyloZooIOError
             If file cannot be read or written.
         
         Examples

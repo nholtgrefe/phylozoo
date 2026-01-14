@@ -9,6 +9,8 @@ import keyword
 import warnings
 from typing import Any
 
+from .exceptions import PhyloZooIdentifierWarning
+
 
 def warn_on_keyword(value: Any, context: str) -> None:
     """
@@ -33,7 +35,7 @@ def warn_on_keyword(value: Any, context: str) -> None:
     if keyword.iskeyword(as_str):
         warnings.warn(
             f"{context} '{value}' is a Python keyword; using it as an identifier may cause unexpected behavior.",
-            UserWarning,
+            PhyloZooIdentifierWarning,
             stacklevel=3,
         )
 
@@ -57,7 +59,7 @@ def warn_on_none_value(value: Any, context: str) -> None:
     if value is None:
         warnings.warn(
             f"{context} has value None (Python keyword); using None as a value may cause unexpected behavior.",
-            UserWarning,
+            PhyloZooIdentifierWarning,
             stacklevel=3,
         )
 

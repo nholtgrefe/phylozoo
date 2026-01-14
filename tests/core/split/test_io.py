@@ -220,16 +220,18 @@ END;"""
         assert 'BEGIN SPLITS' in converted
     
     def test_from_string_invalid_format_raises_error(self) -> None:
-        """Test that invalid format raises ValueError."""
-        with pytest.raises(ValueError, match="not supported"):
+        """Test that invalid format raises PhyloZooFormatError."""
+        from phylozoo.utils.exceptions import PhyloZooFormatError
+        with pytest.raises(PhyloZooFormatError, match="not supported"):
             SplitSystem.from_string("invalid", format='invalid_format')
     
     def test_to_string_invalid_format_raises_error(self) -> None:
-        """Test that invalid format raises ValueError."""
+        """Test that invalid format raises PhyloZooFormatError."""
+        from phylozoo.utils.exceptions import PhyloZooFormatError
         split1 = Split({1, 2}, {3, 4})
         system = SplitSystem([split1])
         
-        with pytest.raises(ValueError, match="not supported"):
+        with pytest.raises(PhyloZooFormatError, match="not supported"):
             system.to_string(format='invalid_format')
     
     def test_from_string_malformed_nexus_raises_error(self) -> None:
