@@ -4,7 +4,6 @@ Quartet joining algorithm module.
 This module implements the adapted quartet joining algorithm for constructing
 phylogenetic trees from quartet profiles.
 
-TODO: omegbar also for non-trivial profiles.
 """
 
 import itertools

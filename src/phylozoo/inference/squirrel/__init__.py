@@ -17,6 +17,7 @@ from .cycle_resolution import (
 )
 from .qsimilarity import sqprofileset_similarity, sqprofileset_from_network
 from .delta_heuristic import delta_heuristic
+from .squirrel import squirrel
 
 __all__ = [
     "SqQuartetProfile",
@@ -34,5 +35,6 @@ __all__ = [
     "sqprofileset_similarity",
     "sqprofileset_from_network",
     "delta_heuristic",
+    "squirrel",
 ]
 

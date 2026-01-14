@@ -4,9 +4,6 @@ Split system algorithms module.
 This module provides algorithms for working with split systems, such as
 converting split systems to trees.
 
-TODO: 
-- Use refinement approach clusters for splitsystem to tree function.
-- circular splitsystem classificaiton
 """
 
 import networkx as nx

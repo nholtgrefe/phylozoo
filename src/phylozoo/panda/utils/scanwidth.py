@@ -2,13 +2,13 @@
 Scanwidth computation module for DAGs.
 
 This module provides classes and functions for computing scanwidth of directed
-acyclic graphs (DAGs), which is used in the MAPPD (Maximum A Posteriori
-Phylogenetic Diversity) algorithm.
+acyclic graphs (DAGs), which is used in the MAPPD algorithm.
 
 Note
 ----
-This module is adapted from external source code. The scanwidth functionality
-will be packaged as a separate dependency in a future version.
+This module is adapted from https://github.com/nholtgrefe/ComputingScanwidth. 
+The scanwidth functionality will be packaged as a separate dependency in a future 
+version.
 
 Classes
 -------

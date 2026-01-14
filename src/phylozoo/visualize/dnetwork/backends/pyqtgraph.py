@@ -10,12 +10,12 @@ from typing import TYPE_CHECKING, Any
 
 try:
     import pyqtgraph as pg
-    from PyQt5.QtWidgets import QApplication
+    from PyQt5.QtWidgets import QApplication  # type: ignore[import-untyped]
     HAS_PYQTGAPH = True
 except ImportError:
     try:
         import pyqtgraph as pg
-        from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtWidgets import QApplication  # type: ignore[import-untyped]
         HAS_PYQTGAPH = True
     except ImportError:
         HAS_PYQTGAPH = False

@@ -4,7 +4,7 @@ Split systems module.
 This module provides classes for working with split systems.
 """
 
-from typing import Iterator, Set, TYPE_CHECKING
+from typing import Iterator, TYPE_CHECKING
 
 from ...utils.io import IOMixin
 from .base import Split

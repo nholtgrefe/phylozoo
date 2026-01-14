@@ -17,6 +17,7 @@ First release:
         - fix/check eNewick parser and writer
         - do the network classes need .edges and.nodes?
         - SD generator validation
+        - update network classifications
     - MSA:
         - bootstrap msa and gene lengths bootstrap
 - Inference:
@@ -24,6 +25,7 @@ First release:
         - CF/gene tree support?
 - Vizualize:
     - add sd-plotting
+    - clean up module, remove pycache files, better plot api that works directly.
 
 Later releases:
 - improved testing
@@ -35,16 +37,28 @@ Later releases:
         - Validate MixedPhyNetwork (perhaps remove the second condition from our paper)
         - add undirected network and make mixed a superclass or child?
         - Split binary resolution into out_resolution and in_resolution methods?
+        - Generator:
+            - add parallelization of generator construction
+            - reuse level (k-1) generators or allow as input?
+            - add IOmixin.
+    - Quartet:
+        - qdistance/nanuq distance, correct weighting and allow other profiles.
+    - MSA:
+        - laze reading for quicker access
+        - logdet distance
+    - Split:
+        - Use refinement approach/clusters for splitsystem-to-tree function.
+        - circular splitsystem classification
     - biopython/phylox conversions
     - add pretty_print function to classes.
 - Inference:
     - Squirrel:
         - Add a constant 'DEFAULT', with default settings into attr's, then we can also add anotehr settings constant etc.
         - squirrel change order of cycle insertion (not necessarily largest first, but the one with clearest hybrid first)
-        - update the qjoining and all other squirrel alg's to take into account nonresolved quartets. 
+        - update the qjoining and all other squirrel alg's to take into account nonresolved quartets. (update, omegabar also for non-trivial profiles.)
         - check which squirrel helper methods should use general qpset or sq qpset
         - squirrel could actually take in any set of input trees?
-    - Add invariant/algebra support
+    - Add invariant/algebra support, or add load_from_invariants function
 - PANDA: 
     - MAPPD:handle 2-blobs and parallel edges better
     - external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?
@@ -52,4 +66,4 @@ Later releases:
     - other layouts
 
 Other  ideas:
-- random generators using dgenerators and sides
+- random networks using dgenerators and sides, also add randomly iterating R1 and R2 rules

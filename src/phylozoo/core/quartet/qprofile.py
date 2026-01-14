@@ -5,7 +5,6 @@ This module provides the QuartetProfile class for representing multiple quartets
 on the same 4-taxon set with weights.
 """
 
-import itertools
 from types import MappingProxyType
 from typing import Iterator, Mapping
 

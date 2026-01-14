@@ -1,5 +1,5 @@
 """
-Type definitions for visualize2 module.
+Type definitions for visualize module.
 
 This module provides backend-agnostic type definitions for edge routing,
 edge types, and other visualization primitives.

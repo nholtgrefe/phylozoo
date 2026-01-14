@@ -4,7 +4,6 @@ Classification functions for directed phylogenetic networks.
 This module provides functions to classify and check properties of
 directed phylogenetic networks (e.g., is_tree, is_binary, level, etc.).
 
-TODO: add is ultrametric
 """
 
 from functools import lru_cache
@@ -398,4 +397,9 @@ def is_treebased(network: 'DirectedPhyNetwork') -> bool:
 
 def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_treechild function."""
+    return False
+
+
+def is_ultrametric(network: 'DirectedPhyNetwork') -> bool:
+    """Stub for is_ultrametric function."""
     return False
