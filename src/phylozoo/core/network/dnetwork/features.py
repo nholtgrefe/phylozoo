@@ -18,6 +18,7 @@ from ...primitives.d_multigraph.features import (
     cut_vertices as graph_cut_vertices,
 )
 from .base import DirectedPhyNetwork
+from ....utils.exceptions import PhyloZooValueError, PhyloZooAlgorithmError, PhyloZooWarning
 
 T = TypeVar('T')
 
@@ -42,8 +43,10 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the network is empty or has no leaves.
+    PhyloZooAlgorithmError
+        If there is no path from root to leaf.
     
     Examples
     --------
@@ -66,7 +69,7 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
     3
     """
     if network.number_of_nodes() == 0:
-        raise ValueError("Cannot find LSA node in empty network")
+        raise PhyloZooValueError("Cannot find LSA node in empty network")
     
     leaves = network.leaves
     
@@ -94,10 +97,10 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
         try:
             all_paths = list(nx.all_simple_paths(dag, root, leaf))
         except nx.NetworkXNoPath:
-            raise ValueError(f"No path from root {root} to leaf {leaf}")
+            raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
         
         if not all_paths:
-            raise ValueError(f"No path from root {root} to leaf {leaf}")
+            raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
         
         # Find nodes that appear on ALL paths to this leaf
         # Start with nodes from the first path
@@ -114,7 +117,7 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
         lsa_candidates &= node_set
     
     if not lsa_candidates:
-        raise ValueError("No node found on all paths from root to all leaves")
+        raise PhyloZooAlgorithmError("No node found on all paths from root to all leaves")
     
     # Find the deepest node (maximum depth from root) among candidates
     # Compute depths using BFS from root (use deque for O(1) popleft)
@@ -161,7 +164,7 @@ def blobs(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If `trivial=False` and `leaves=True` (this combination is not possible
         since leaves are single-node components).
     
@@ -205,7 +208,7 @@ def blobs(
     """
     # Check for invalid parameter combination
     if not trivial and leaves:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Cannot have trivial=False and leaves=True: leaves are single-node "
             "components, so excluding trivial components would exclude all leaves."
         )
@@ -266,7 +269,7 @@ def k_blobs(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If `trivial=False` and `leaves=True` (this combination is not possible
         since leaves are single-node components).
     
@@ -293,7 +296,7 @@ def k_blobs(
     """
     # Check for invalid parameter combination
     if not trivial and leaves:
-        raise ValueError(
+        raise PhyloZooValueError(
             "Cannot have trivial=False and leaves=True: leaves are single-node "
             "components, so excluding trivial components would exclude all leaves."
         )
@@ -414,7 +417,7 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
     
     Warns
     -----
-    UserWarning
+    PhyloZooWarning
         If the network contains parallel edges, as omnians are not defined for
         networks with parallel edges in the original paper. Behavior may be unexpected.
     
@@ -462,7 +465,7 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
             "Network contains parallel edges. Omnians are not defined for networks "
             "with parallel edges in the original paper (Jetten & van Iersel, 2016). "
             "Behavior may be unexpected. Proceed with care.",
-            UserWarning,
+            PhyloZooWarning,
             stacklevel=2
         )
     

@@ -17,6 +17,13 @@ from typing import TYPE_CHECKING, Iterator, TypeVar
 
 import networkx as nx
 
+from phylozoo.utils.exceptions import (
+    PhyloZooGeneratorStructureError, 
+    PhyloZooGeneratorDegreeError, 
+    PhyloZooWarning,
+    PhyloZooNotImplementedError,
+)
+
 from ....primitives.d_multigraph import DirectedMultiGraph
 from ....primitives.d_multigraph.features import (
     has_self_loops,
@@ -165,12 +172,12 @@ class DirectedGenerator:
         """
         # 1. Check if empty generator
         if self._graph.number_of_nodes() == 0:
-            raise ValueError("Generator cannot be empty (must have at least one node).")
+            raise PhyloZooGeneratorStructureError("Generator cannot be empty (must have at least one node).")
         
         # 2. Check if single node generator
         if self._graph.number_of_nodes() == 1:
             if has_self_loops(self._graph):
-                raise ValueError("Self-loops are not allowed in DirectedGenerator.")
+                raise PhyloZooGeneratorStructureError("Self-loops are not allowed in DirectedGenerator.")
             return
         
         # 3. Validate structural constraints
@@ -185,25 +192,25 @@ class DirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorStructureError
             If bi-edge connected, self-loop, or acyclicity constraints are violated.
         """
         # 1. Check that generator is bi-edge connected
         bi_edge_comps = list(bi_edge_connected_components(self._graph))
         if len(bi_edge_comps) > 1:
-            raise ValueError(
+            raise PhyloZooGeneratorStructureError(
                 f"Generator graph must be a single bi-edge connected component (blob), "
                 f"but found {len(bi_edge_comps)} bi-edge connected components"
             )
         
         # 2. Disallow self-loops
         if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in DirectedGenerator.")
+            raise PhyloZooGeneratorStructureError("Self-loops are not allowed in DirectedGenerator.")
         
         # 3. Check for directed cycles (must be acyclic)
         if not nx.is_directed_acyclic_graph(self._graph._graph):
             cycles = list(nx.simple_cycles(self._graph._graph))
-            raise ValueError(
+            raise PhyloZooGeneratorStructureError(
                 f"Generator contains directed cycles. Found {len(cycles)} cycle(s). "
                 f"First cycle: {cycles[0] if cycles else 'unknown'}"
             )
@@ -214,7 +221,7 @@ class DirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorDegreeError
             If degree constraints are violated.
         """
         # 1. Check that there is a single root node
@@ -229,14 +236,14 @@ class DirectedGenerator:
             
             # 1) Check for degree-1 nodes
             if total_degree == 1:
-                raise ValueError(
+                raise PhyloZooGeneratorDegreeError(
                     f"Generator has a degree-1 node: {node}"
                 )
             
             # 2) If degree-2: either in-degree=2 or out-degree=2
             if total_degree == 2:
                 if in_degree != 2 and out_degree != 2:
-                    raise ValueError(
+                    raise PhyloZooGeneratorDegreeError(
                         f"Generator has a degree-2 node {node} that does not have "
                         f"in-degree=2 or out-degree=2 (in-degree={in_degree}, out-degree={out_degree})"
                     )
@@ -244,7 +251,7 @@ class DirectedGenerator:
             # 3) If degree-3: either in-degree=2 and out-degree=1, or in-degree=1 and out-degree=2
             elif total_degree == 3:
                 if not ((in_degree == 2 and out_degree == 1) or (in_degree == 1 and out_degree == 2)):
-                    raise ValueError(
+                    raise PhyloZooGeneratorDegreeError(
                         f"Generator has a degree-3 node {node} that does not have "
                         f"(in-degree=2, out-degree=1) or (in-degree=1, out-degree=2) "
                         f"(in-degree={in_degree}, out-degree={out_degree})"
@@ -252,7 +259,7 @@ class DirectedGenerator:
             
             # 4) If degree > 3: raise error
             elif total_degree > 3:
-                raise ValueError(
+                raise PhyloZooGeneratorDegreeError(
                     f"Generator has a node {node} with degree > 3: {total_degree} "
                     f"(in-degree={in_degree}, out-degree={out_degree})"
                 )
@@ -271,7 +278,7 @@ class DirectedGenerator:
         
         Raises
         ------
-        ValueError
+        PhyloZooGeneratorDegreeError
             If there is no root node or multiple root nodes.
         
         Examples
@@ -284,9 +291,9 @@ class DirectedGenerator:
         """
         roots = [v for v in self._graph.nodes() if self._graph.indegree(v) == 0]
         if len(roots) == 0:
-            raise ValueError("Generator has no root node")
+            raise PhyloZooGeneratorDegreeError("Generator has no root node")
         if len(roots) > 1:
-            raise ValueError(f"Generator has multiple root nodes: {roots}")
+            raise PhyloZooGeneratorDegreeError(f"Generator has multiple root nodes: {roots}")
         return roots[0]
     
     @cached_property
@@ -476,9 +483,11 @@ def generators_from_network(network: 'DirectedPhyNetwork') -> Iterator[DirectedG
     
     Raises
     ------
-    ValueError
+    PhyloZooNotImplementedError
         If the network is not binary.
-    
+    PhyloZooGeneratorWarning
+        If the network has parallel edges.
+
     Examples
     --------
     >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
@@ -501,7 +510,7 @@ def generators_from_network(network: 'DirectedPhyNetwork') -> Iterator[DirectedG
     """
     # Check that network is binary
     if not is_binary(network):
-        raise ValueError("Network must be binary to extract generators")
+        raise PhyloZooNotImplementedError("Network must be binary to extract generators")
     
     # Check that network has no parallel edges
     if has_parallel_edges(network):
@@ -509,7 +518,7 @@ def generators_from_network(network: 'DirectedPhyNetwork') -> Iterator[DirectedG
             "Network has parallel edges. The original paper does not treat networks with "
             "parallel edges. Proceed with care when using this, not everything may work "
             "as expected.",
-            UserWarning,
+            PhyloZooWarning,
             stacklevel=2
         )
     

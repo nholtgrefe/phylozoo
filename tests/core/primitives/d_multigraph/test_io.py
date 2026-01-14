@@ -201,8 +201,9 @@ class TestDirectedMultiGraphDOTIO:
             assert loaded.number_of_edges() == G.number_of_edges()
     
     def test_from_string_malformed_raises_error(self) -> None:
-        """Test that malformed DOT string raises ValueError."""
-        with pytest.raises(ValueError, match="Could not find"):
+        """Test that malformed DOT string raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError, match="Could not find"):
             DirectedMultiGraph.from_string("invalid dot", format='dot')
     
     def test_string_node_ids(self) -> None:
@@ -365,8 +366,9 @@ class TestDirectedMultiGraphEdgeListIO:
         assert G2.number_of_edges() == 0
     
     def test_from_string_invalid_line_raises_error(self) -> None:
-        """Test that invalid edge line raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid edge line"):
+        """Test that invalid edge line raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        with pytest.raises(PhyloZooParseError, match="Invalid edge line"):
             DirectedMultiGraph.from_string("1", format='edgelist')
     
     def test_string_node_ids(self) -> None:

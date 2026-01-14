@@ -590,9 +590,10 @@ class TestDirectedPhyNetworkDOTIO:
     
     def test_malformed_dot_string(self) -> None:
         """Test error handling for malformed DOT string."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         malformed = "not a valid digraph"
         
-        with pytest.raises(ValueError, match="Could not find digraph"):
+        with pytest.raises(PhyloZooParseError, match="Could not find digraph"):
             DirectedPhyNetwork.from_string(malformed, format='dot')
     
     def test_empty_dot_string(self) -> None:

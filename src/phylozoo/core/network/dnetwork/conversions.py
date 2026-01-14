@@ -11,6 +11,7 @@ from typing import Any, TypeVar
 
 import networkx as nx
 
+from ....utils.exceptions import PhyloZooTypeError
 from .base import DirectedPhyNetwork
 from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.d_multigraph.conversions import (
@@ -86,7 +87,9 @@ def dnetwork_from_graph(
     
     Raises
     ------
-    ValueError
+    PhyloZooTypeError
+        If graph is not one of the supported types (nx.DiGraph, nx.MultiDiGraph, or DirectedMultiGraph).
+    PhyloZooValueError
         If the resulting network is invalid according to DirectedPhyNetwork validation
         rules (e.g., not a DAG, invalid node degrees, etc.).
     
@@ -130,7 +133,7 @@ def dnetwork_from_graph(
     elif isinstance(graph, DirectedMultiGraph):
         dmgraph = graph
     else:
-        raise TypeError(
+        raise PhyloZooTypeError(
             f"Expected nx.DiGraph, nx.MultiDiGraph, or DirectedMultiGraph, "
             f"got {type(graph)}"
         )

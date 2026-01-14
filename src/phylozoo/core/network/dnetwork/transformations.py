@@ -19,6 +19,7 @@ from ...primitives.d_multigraph.transformations import (
     identify_parallel_edge as dm_identify_parallel_edge,
     identify_vertices as dm_identify_vertices,
 )
+from ....utils.exceptions import PhyloZooValueError, PhyloZooNetworkError, PhyloZooAlgorithmError
 
 if TYPE_CHECKING:
     from ...primitives.d_multigraph import DirectedMultiGraph
@@ -47,7 +48,7 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the network is empty or has no leaves.
     
     Examples
@@ -69,7 +70,7 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     [1, 2]
     """
     if network.number_of_nodes() == 0:
-        raise ValueError("Cannot create LSA network from empty network")
+        raise PhyloZooValueError("Cannot create LSA network from empty network")
     
     lsa_node = network.LSA_node
     
@@ -139,6 +140,15 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     DirectedPhyNetwork
         A new network with all parallel edges identified and all degree-2 nodes suppressed.
     
+    Raises
+    ------
+    PhyloZooAlgorithmError
+        If the algorithm exceeds the maximum number of iterations.
+    PhyloZooValueError
+        If the network is empty or has no leaves.
+    PhyloZooNetworkError
+        If the network is invalid.
+        
     Notes
     -----
     - Branch lengths are preserved: summed when suppressing degree-2 nodes, kept from
@@ -228,7 +238,7 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             break
     
     if iteration >= max_iterations:
-        raise RuntimeError(
+        raise PhyloZooAlgorithmError(
             "identify_parallel_edges exceeded maximum iterations. "
             "This may indicate an infinite loop or a bug."
         )
@@ -262,7 +272,7 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     Raises
     ------
-    ValueError
+    PhyloZooNetworkError
         If the transformation creates an invalid network structure.
     
     Notes
@@ -678,7 +688,7 @@ def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the network has parallel edges (binary resolution is not defined for
         networks with parallel edges).
     
@@ -717,7 +727,7 @@ def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     # Check for parallel edges
     if has_parallel_edges(network):
-        raise ValueError(
+        raise PhyloZooValueError(
             "binary_resolution cannot be applied to networks with parallel edges"
         )
     

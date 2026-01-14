@@ -67,15 +67,6 @@ class PhyloZooNotImplementedError(PhyloZooError, NotImplementedError):
     This exception is used when a method or feature is declared but not
     yet implemented. Inherits from both PhyloZooError and NotImplementedError
     for backward compatibility.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNotImplementedError
-    >>> 
-    >>> def some_method(self):
-    ...     raise PhyloZooNotImplementedError(
-    ...         "This method is not yet implemented"
-    ...     )
     """
     pass
 
@@ -90,18 +81,6 @@ class PhyloZooValueError(PhyloZooError, ValueError):
     backward compatibility.
     
     Note: For type errors (wrong type), use PhyloZooTypeError instead.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooValueError
-    >>> 
-    >>> # Value out of range
-    >>> if k < 0:
-    ...     raise PhyloZooValueError(f"k must be non-negative, got {k}")
-    >>> 
-    >>> # Invalid value (right type, wrong value)
-    >>> if bootstrap < 0.0 or bootstrap > 1.0:
-    ...     raise PhyloZooValueError(f"bootstrap must be in [0.0, 1.0], got {bootstrap}")
     """
     pass
 
@@ -115,22 +94,6 @@ class PhyloZooTypeError(PhyloZooError, TypeError):
     and TypeError for backward compatibility.
     
     Note: For value errors (right type, wrong value), use PhyloZooValueError instead.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooTypeError
-    >>> 
-    >>> # Wrong type
-    >>> if not isinstance(obj, ExpectedType):
-    ...     raise PhyloZooTypeError(
-    ...         f"Expected {ExpectedType}, got {type(obj)}"
-    ...     )
-    >>> 
-    >>> # Type check (e.g., "must be numeric")
-    >>> if not isinstance(value, (int, float)):
-    ...     raise PhyloZooTypeError(
-    ...         f"Expected numeric type, got {type(value).__name__}"
-    ...     )
     """
     pass
 
@@ -152,18 +115,6 @@ class PhyloZooImportError(PhyloZooError, ImportError):
     This exception is used when a required module or dependency cannot be
     imported. Inherits from both PhyloZooError and ImportError for backward
     compatibility.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooImportError
-    >>> 
-    >>> try:
-    ...     import optional_module
-    ... except ImportError as e:
-    ...     raise PhyloZooImportError(
-    ...         f"Optional module 'optional_module' is required. "
-    ...         "Install with: pip install optional_module"
-    ...     ) from e
     """
     pass
 
@@ -181,21 +132,12 @@ class PhyloZooAttributeError(PhyloZooError, AttributeError):
 # Network Domain Exceptions
 # ============================================================================
 
-class PhyloZooNetworkError(PhyloZooError):
+class PhyloZooNetworkError(PhyloZooValueError):
     """
     Base exception for network-related errors.
     
     All network-specific errors inherit from this class, allowing users
     to catch all network errors with a single except clause.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNetworkError
-    >>> 
-    >>> try:
-    ...     network.validate()
-    ... except PhyloZooNetworkError as e:
-    ...     print(f"Network error: {e}")
     """
     pass
 
@@ -209,15 +151,6 @@ class PhyloZooNetworkStructureError(PhyloZooNetworkError):
     - Disconnected networks
     - Self-loops
     - Invalid connectivity
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNetworkStructureError
-    >>> 
-    >>> if has_cycles(network):
-    ...     raise PhyloZooNetworkStructureError(
-    ...         "Network contains directed cycles"
-    ...     )
     """
     pass
 
@@ -230,15 +163,6 @@ class PhyloZooNetworkDegreeError(PhyloZooNetworkError):
     - Leaf nodes with wrong in-degree or out-degree
     - Internal nodes with invalid degree combinations
     - Root nodes with wrong in-degree
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNetworkDegreeError
-    >>> 
-    >>> if leaf.indegree() != 1:
-    ...     raise PhyloZooNetworkDegreeError(
-    ...         f"Leaf node {leaf} has invalid in-degree"
-    ...     )
     """
     pass
 
@@ -251,15 +175,6 @@ class PhyloZooNetworkAttributeError(PhyloZooNetworkError):
     - Invalid gamma values (not in [0, 1] or don't sum to 1.0)
     - Invalid bootstrap values (not in [0, 1])
     - Invalid branch_length values (inconsistent across parallel edges)
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooNetworkAttributeError
-    >>> 
-    >>> if gamma_sum != 1.0:
-    ...     raise PhyloZooNetworkAttributeError(
-    ...         f"Gamma values must sum to 1.0, got {gamma_sum}"
-    ...     )
     """
     pass
 
@@ -274,15 +189,6 @@ class PhyloZooIOError(PhyloZooError, IOError):
     
     This exception is used for general I/O errors. Inherits from both
     PhyloZooError and IOError for backward compatibility.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooIOError
-    >>> 
-    >>> try:
-    ...     content = file.read()
-    ... except IOError as e:
-    ...     raise PhyloZooIOError(f"Failed to read file: {e}") from e
     """
     pass
 
@@ -295,15 +201,6 @@ class PhyloZooParseError(PhyloZooIOError):
     - eNewick parsing errors
     - Newick parsing errors
     - Other format parsing errors
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooParseError
-    >>> 
-    >>> try:
-    ...     parse_enewick(string)
-    ... except Exception as e:
-    ...     raise PhyloZooParseError(f"Failed to parse eNewick: {e}") from e
     """
     pass
 
@@ -316,15 +213,6 @@ class PhyloZooFormatError(PhyloZooIOError):
     - Unsupported formats
     - Format conversion failures
     - Format detection failures
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooFormatError
-    >>> 
-    >>> if format not in supported_formats:
-    ...     raise PhyloZooFormatError(
-    ...         f"Format '{format}' not supported"
-    ...     )
     """
     pass
 
@@ -339,15 +227,6 @@ class PhyloZooAlgorithmError(PhyloZooError):
     
     All algorithm-specific errors inherit from this class, allowing users
     to catch all algorithm errors with a single except clause.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooAlgorithmError
-    >>> 
-    >>> try:
-    ...     result = algorithm.compute()
-    ... except PhyloZooAlgorithmError as e:
-    ...     print(f"Algorithm error: {e}")
     """
     pass
 
@@ -362,15 +241,6 @@ class PhyloZooVisualizationError(PhyloZooError):
     
     All visualization-specific errors inherit from this class, allowing
     users to catch all visualization errors with a single except clause.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooVisualizationError
-    >>> 
-    >>> try:
-    ...     plot_network(network)
-    ... except PhyloZooVisualizationError as e:
-    ...     print(f"Visualization error: {e}")
     """
     pass
 
@@ -383,15 +253,6 @@ class PhyloZooLayoutError(PhyloZooVisualizationError):
     - Empty network/graph layout errors
     - Invalid layout algorithm
     - Layout computation failures
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooLayoutError
-    >>> 
-    >>> if network.number_of_nodes() == 0:
-    ...     raise PhyloZooLayoutError(
-    ...         "Cannot compute layout for empty network"
-    ...     )
     """
     pass
 
@@ -404,15 +265,6 @@ class PhyloZooBackendError(PhyloZooVisualizationError):
     - Backend not registered
     - Backend initialization failures
     - Backend operation failures
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooBackendError
-    >>> 
-    >>> if backend_name not in registered_backends:
-    ...     raise PhyloZooBackendError(
-    ...         f"Backend '{backend_name}' not registered"
-    ...     )
     """
     pass
 
@@ -424,15 +276,6 @@ class PhyloZooStateError(PhyloZooVisualizationError):
     This exception is used when an operation requires a certain state
     (e.g., plot must be created, figure must be initialized) but that
     state is not met. This is specific to visualization operations.
-    
-    Examples
-    --------
-    >>> from phylozoo.utils.exceptions import PhyloZooStateError
-    >>> 
-    >>> if self._figure is None:
-    ...     raise PhyloZooStateError(
-    ...         "Figure must be created before showing"
-    ...     )
     """
     pass
 
@@ -466,15 +309,43 @@ class PhyloZooIdentifierWarning(PhyloZooWarning):
     
     This warning is used when Python keywords are used as identifiers
     or when None is used as a value, which may cause unexpected behavior.
+    """
+    pass
+
+class PhyloZooEmptyNetworkWarning(PhyloZooWarning):
+    """
+    Warning for empty network operations.
     
-    Examples
-    --------
-    >>> import warnings
-    >>> from phylozoo.utils.exceptions import PhyloZooIdentifierWarning
-    >>> 
-    >>> warnings.warn(
-    ...     "Identifier 'for' is a Python keyword",
-    ...     PhyloZooIdentifierWarning
-    ... )
+    This warning is used when an operation is attempted on an empty network.
+    """
+    pass
+
+class PhyloZooSingleNodeNetworkWarning(PhyloZooWarning):
+    """
+    Warning for single-node network operations.
+    
+    This warning is used when an operation is attempted on a single-node network.
+    """
+    pass
+
+###############################################################################
+# Network Generator Domain Exceptions
+###############################################################################
+
+class PhyloZooGeneratorError(PhyloZooError):
+    """
+    Base exception for network generator-related errors.
+    """
+    pass
+
+class PhyloZooGeneratorStructureError(PhyloZooGeneratorError):
+    """
+    Raised when network generator structure is invalid.
+    """
+    pass
+
+class PhyloZooGeneratorDegreeError(PhyloZooGeneratorError):
+    """
+    Raised when network generator node degree constraints are violated.
     """
     pass

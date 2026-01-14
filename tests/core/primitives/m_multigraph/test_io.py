@@ -310,16 +310,18 @@ class TestMixedMultiGraphPhyloZooDOTIO:
     
     def test_malformed_string(self) -> None:
         """Test error handling for malformed phylozoo-dot string."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         malformed = "not a valid graph"
         
-        with pytest.raises(ValueError, match="Could not find graph declaration"):
+        with pytest.raises(PhyloZooParseError, match="Could not find graph declaration"):
             MixedMultiGraph.from_string(malformed, format='phylozoo-dot')
     
     def test_unmatched_braces(self) -> None:
         """Test error handling for unmatched braces."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
         malformed = "graph { 1 -> 2"  # Missing closing brace
         
-        with pytest.raises(ValueError, match="Unmatched braces"):
+        with pytest.raises(PhyloZooParseError, match="Unmatched braces"):
             MixedMultiGraph.from_string(malformed, format='phylozoo-dot')
     
     def test_convert(self) -> None:

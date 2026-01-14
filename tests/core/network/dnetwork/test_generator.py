@@ -23,6 +23,10 @@ from phylozoo.core.network.dnetwork.generator.construction import (
 )
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.classifications import is_binary, has_parallel_edges
+from phylozoo.utils.exceptions import (
+    PhyloZooGeneratorStructureError,
+    PhyloZooNotImplementedError,
+)
 from tests.fixtures.directed_networks import (
     LEVEL_1_DNETWORK_SINGLE_HYBRID,
     LEVEL_1_DNETWORK_PARALLEL_EDGES,
@@ -159,7 +163,7 @@ class TestDirectedGenerator:
     def test_invalid_generator_empty(self) -> None:
         """Test that empty generator raises error."""
         graph = DirectedMultiGraph()
-        with pytest.raises(ValueError, match="empty"):
+        with pytest.raises(PhyloZooGeneratorStructureError, match="empty"):
             DirectedGenerator(graph)
 
     def test_invalid_generator_degree_1(self) -> None:
@@ -167,20 +171,20 @@ class TestDirectedGenerator:
         # Create a structure that would have degree-1 nodes but fails biconnected check first
         # Actually, a simple edge creates a non-biconnected structure
         graph = DirectedMultiGraph(edges=[(0, 1)])
-        with pytest.raises(ValueError):
+        with pytest.raises(PhyloZooGeneratorStructureError):
             DirectedGenerator(graph)
 
     def test_invalid_generator_self_loop(self) -> None:
         """Test that self-loops are not allowed."""
         graph = DirectedMultiGraph(edges=[(0, 0)])
-        with pytest.raises(ValueError, match="Self-loops"):
+        with pytest.raises(PhyloZooGeneratorStructureError, match="Self-loops"):
             DirectedGenerator(graph)
 
     def test_invalid_generator_cycle(self) -> None:
         """Test that cycles are not allowed."""
         # Create a biconnected cycle structure
         graph = DirectedMultiGraph(edges=[(0, 1), (1, 2), (2, 0)])
-        with pytest.raises(ValueError, match="cycle"):
+        with pytest.raises(PhyloZooGeneratorStructureError, match="cycle"):
             DirectedGenerator(graph)
 
     def test_invalid_generator_multiple_roots(self) -> None:
@@ -226,7 +230,7 @@ class TestGeneratorsFromNetwork:
         assert is_binary(non_binary_network) is False
         
         # Should raise an error when trying to extract generators
-        with pytest.raises(ValueError, match="binary"):
+        with pytest.raises(PhyloZooNotImplementedError, match="binary"):
             list(generators_from_network(non_binary_network))
 
     def test_generators_from_network_no_parallel_edges(self) -> None:

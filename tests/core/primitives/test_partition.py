@@ -394,8 +394,9 @@ class TestPartitionMethods:
 
     def test_is_refinement_not_partition_raises_error(self) -> None:
         """Test that is_refinement raises error for non-Partition."""
+        from phylozoo.utils.exceptions import PhyloZooTypeError
         partition = Partition([{1, 2}, {3, 4}])
-        with pytest.raises(ValueError, match="The argument must be an instance of Partition"):
+        with pytest.raises(PhyloZooTypeError, match="The argument must be an instance of Partition"):
             partition.is_refinement("not a partition")
 
 

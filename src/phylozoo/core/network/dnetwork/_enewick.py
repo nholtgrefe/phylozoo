@@ -138,6 +138,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from ....utils.exceptions import PhyloZooParseError, PhyloZooValueError
+
 
 @dataclass
 class ParsedENewick:
@@ -174,7 +176,7 @@ class ParsedENewick:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-class ENewickParseError(Exception):
+class ENewickParseError(PhyloZooParseError):
     """Exception raised when eNewick parsing fails."""
     pass
 
@@ -750,7 +752,7 @@ def to_enewick(network: 'DirectedPhyNetwork', **kwargs: Any) -> str:
       the same string
     """
     if network.number_of_nodes() == 0:
-        raise ValueError("Cannot convert empty network to eNewick")
+        raise PhyloZooValueError("Cannot convert empty network to eNewick")
     
     # Single node network
     if network.number_of_nodes() == 1:
@@ -1027,7 +1029,7 @@ def from_enewick(enewick_string: str, **kwargs: Any) -> 'DirectedPhyNetwork':
     ------
     ENewickParseError
         If the eNewick string is malformed or cannot be parsed.
-    ValueError
+    PhyloZooValueError
         If the parsed network structure is invalid for DirectedPhyNetwork.
     
     Examples

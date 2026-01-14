@@ -30,6 +30,7 @@ First release:
 
 Later releases:
 - improved testing
+- check raise exceptions in all functions and in docs carefully
 - Core:
     - Distances:
         - is_kalmanson should return a circular ordering? or add function that does that

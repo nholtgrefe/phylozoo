@@ -458,8 +458,9 @@ class TestInvalidInitialization:
                 )
 
     def test_invalid_internal_labels_format(self) -> None:
-        """Test that invalid internal_node_labels format raises ValueError."""
-        with pytest.raises(ValueError, match="must be .*dict"):
+        """Test that invalid internal_node_labels format raises PhyloZooTypeError."""
+        from phylozoo.utils.exceptions import PhyloZooTypeError
+        with pytest.raises(PhyloZooTypeError, match="Node tuple must be"):
             DirectedPhyNetwork(
                 edges=[(1, 2)],
                 nodes=[(2, {"label": "A"}), (3, "invalid")],  # type: ignore

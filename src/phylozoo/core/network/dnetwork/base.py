@@ -11,6 +11,16 @@ from typing import Any, Iterator, TypeVar
 
 import networkx as nx
 
+from ....utils.exceptions import (
+    PhyloZooNetworkDegreeError, 
+    PhyloZooNetworkStructureError, 
+    PhyloZooNetworkAttributeError, 
+    PhyloZooValueError,
+    PhyloZooTypeError,
+    PhyloZooEmptyNetworkWarning,
+    PhyloZooSingleNodeNetworkWarning,
+)
+
 from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.d_multigraph.features import is_connected, has_self_loops
 from ....utils.validation import validation_aware
@@ -242,12 +252,14 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
-            If label is not a string, or if the label is already used by a different node.
+        PhyloZooValueError
+            If the label is already used by a different node.
+        PhyloZooTypeError
+            If the label is not a string.
         """
         # Validate string type
         if not isinstance(label, str):
-            raise ValueError(
+            raise PhyloZooTypeError(
                 f"Node {node_id} has non-string label '{label}' (type: {type(label).__name__}). "
                 f"Labels must be strings. For non-string metadata, store it under a "
                 f"different node attribute instead of 'label'."
@@ -256,7 +268,7 @@ class DirectedPhyNetwork(IOMixin):
         # Check for duplicate labels
         if label in self._label_to_node and self._label_to_node[label] != node_id:
             existing_node = self._label_to_node[label]
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Label '{label}' is already used by node {existing_node}. "
                 f"Each label must be unique."
             )
@@ -283,7 +295,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooTypeError
             If a node tuple does not provide a dict of attributes, or if duplicate labels are found.
         """
         if not nodes:
@@ -293,7 +305,7 @@ class DirectedPhyNetwork(IOMixin):
             if isinstance(node_spec, tuple) and len(node_spec) == 2:
                 node_id, attrs = node_spec
                 if not isinstance(attrs, dict):
-                    raise ValueError(
+                    raise PhyloZooTypeError(
                         f"Node tuple must be (node_id, dict_of_attributes), got {node_spec}"
                     )
                 self._graph.add_node(node_id, **attrs)
@@ -338,7 +350,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkAttributeError
             If any edge has a bootstrap value outside [0.0, 1.0].
         """
         # Quick check: if no bootstrap values are set, skip validation
@@ -354,12 +366,12 @@ class DirectedPhyNetwork(IOMixin):
             if 'bootstrap' in data:
                 bootstrap = data['bootstrap']
                 if not isinstance(bootstrap, (int, float)):
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Bootstrap value on edge ({u}, {v}, key={key}) must be numeric, "
                         f"got {type(bootstrap).__name__}"
                     )
                 if math.isnan(bootstrap) or bootstrap < 0.0 or bootstrap > 1.0:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Bootstrap value on edge ({u}, {v}, key={key}) is {bootstrap}, "
                         f"but must be in [0.0, 1.0]"
                     )
@@ -376,7 +388,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkAttributeError
             If gamma constraints are violated, including gamma set on non-hybrid edges.
         """
         # Quick check: if no gamma values are set, skip validation
@@ -395,7 +407,7 @@ class DirectedPhyNetwork(IOMixin):
             if 'gamma' in data:
                 # Check if this edge is a hybrid edge
                 if (u, v, key) not in hybrid_edges_set:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Gamma value can only be set on hybrid edges (edges pointing into "
                         f"hybrid nodes). Edge ({u}, {v}, key={key}) is not a hybrid edge."
                     )
@@ -414,13 +426,13 @@ class DirectedPhyNetwork(IOMixin):
                     if gamma is not None:
                         # Validate gamma is numeric
                         if not isinstance(gamma, (int, float)):
-                            raise ValueError(
+                            raise PhyloZooNetworkAttributeError(
                                 f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
                                 f"{hybrid_node} must be numeric, got {type(gamma).__name__}"
                             )
                         # Validate gamma is in [0.0, 1.0]
                         if gamma < 0.0 or gamma > 1.0:
-                            raise ValueError(
+                            raise PhyloZooNetworkAttributeError(
                                 f"Gamma value on edge ({u}, {v}, key={key}) entering hybrid node "
                                 f"{hybrid_node} is {gamma}, but must be in [0.0, 1.0]"
                             )
@@ -436,7 +448,7 @@ class DirectedPhyNetwork(IOMixin):
                         missing_edges.append(f"({u}, {v}, key={key})")
                 
                 if missing_edges:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Hybrid node {hybrid_node} has some edges with gamma values "
                         f"but others without. If ANY gamma is specified, ALL incoming edges "
                         f"must have gamma values. Missing gamma on edges: {', '.join(missing_edges)}"
@@ -445,7 +457,7 @@ class DirectedPhyNetwork(IOMixin):
                 # All gammas are present, check they sum to 1.0
                 gamma_sum = sum(gamma_values)
                 if abs(gamma_sum - 1.0) > 1e-10:
-                    raise ValueError(
+                    raise PhyloZooNetworkAttributeError(
                         f"Hybrid node {hybrid_node} has gamma values that sum to {gamma_sum}, "
                         f"but must sum to exactly 1.0"
                     )
@@ -462,7 +474,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkDegreeError
             If any degree constraints are violated.
         """
         # 1. Check for single root node (using cached property)
@@ -474,7 +486,7 @@ class DirectedPhyNetwork(IOMixin):
         for leaf in leaves:
             indeg = self._graph.indegree(leaf)
             if indeg != 1:
-                raise ValueError(
+                raise PhyloZooNetworkDegreeError(
                     f"Leaf node {leaf} has in-degree {indeg}, but must have in-degree 1"
                 )
         
@@ -493,7 +505,7 @@ class DirectedPhyNetwork(IOMixin):
             for node in invalid_nodes:
                 indeg = self._graph.indegree(node)
                 outdeg = self._graph.outdegree(node)
-                raise ValueError(
+                raise PhyloZooNetworkDegreeError(
                     f"Internal node {node} has in-degree {indeg} and out-degree {outdeg}. "
                     f"Internal nodes must have either (in-degree 1 and out-degree >= 2) "
                     f"or (in-degree >= 2 and out-degree 1)."
@@ -540,7 +552,7 @@ class DirectedPhyNetwork(IOMixin):
                     missing_branch_lengths.append(key)
                 else:
                     if not isinstance(bl, (int, float)):
-                        raise ValueError(
+                        raise PhyloZooNetworkAttributeError(
                             f"Edge ({u}, {v}, key={key}) has branch_length of type {type(bl).__name__}, "
                             f"but must be numeric."
                         )
@@ -549,7 +561,7 @@ class DirectedPhyNetwork(IOMixin):
             # Check constraint: if any edge has branch_length, all must have it
             if branch_lengths and missing_branch_lengths:
                 missing_keys_str = ', '.join(str(k) for k in missing_branch_lengths)
-                raise ValueError(
+                raise PhyloZooNetworkAttributeError(
                     f"Parallel edges between {u} and {v} have inconsistent branch_length attributes. "
                     f"Some edges have branch_length (keys: {[k for k, d in edges if d.get('branch_length') is not None]}), "
                     f"but others do not (keys: {missing_keys_str}). "
@@ -562,7 +574,7 @@ class DirectedPhyNetwork(IOMixin):
                 for i, bl in enumerate(branch_lengths[1:], start=1):
                     if abs(bl - first_bl) > 1e-10:
                         keys_with_bl = [k for k, d in edges if d.get('branch_length') is not None]
-                        raise ValueError(
+                        raise PhyloZooNetworkAttributeError(
                             f"Parallel edges between {u} and {v} have different branch_length values. "
                             f"All parallel edges must have the same branch_length. "
                             f"Found values: {branch_lengths} for keys: {keys_with_bl}"
@@ -589,9 +601,16 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
-            If any structural, bootstrap, or gamma constraints are violated.
-        
+        PhyloZooNetworkStructureError
+            If connectivity, self-loop, or acyclicity constraints are violated.
+        PhyloZooNetworkDegreeError
+            If degree constraints are violated.
+        PhyloZooNetworkAttributeError
+            If bootstrap, gamma, or branch length constraints are violated.
+        PhyloZooEmptyNetworkWarning
+            If empty network is detected.
+        PhyloZooSingleNodeNetworkWarning
+            If single-node network is detected.
         Notes
         -----
         This method performs comprehensive validation of the network structure
@@ -604,7 +623,7 @@ class DirectedPhyNetwork(IOMixin):
         if self.number_of_nodes() == 0:
             warnings.warn(
                 "Empty network (no nodes) detected. While valid, this may not be useful for phylogenetic analysis.",
-                UserWarning,
+                PhyloZooEmptyNetworkWarning,
                 stacklevel=2
             )
             return
@@ -612,10 +631,10 @@ class DirectedPhyNetwork(IOMixin):
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
             if has_self_loops(self._graph):
-                raise ValueError("Self-loops are not allowed in DirectedPhyNetwork.")
+                raise PhyloZooNetworkStructureError("Self-loops are not allowed in DirectedPhyNetwork.")
             warnings.warn(
                 "Single-node network detected. While valid, this may not be useful for phylogenetic analysis.",
-                UserWarning,
+                PhyloZooSingleNodeNetworkWarning,
                 stacklevel=2
             )
             return
@@ -640,23 +659,23 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooNetworkStructureError
             If connectivity, self-loop, or acyclicity constraints are violated.
         """
         # 1. Check that network is connected (weakly connected)
         if not is_connected(self._graph):
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 "Network is not connected. All nodes must be in a single weakly connected component."
             )
         
         # 2. Disallow self-loops
         if has_self_loops(self._graph):
-            raise ValueError("Self-loops are not allowed in DirectedPhyNetwork.")
+            raise PhyloZooNetworkStructureError("Self-loops are not allowed in DirectedPhyNetwork.")
         
         # 3. Check for directed cycles (must be acyclic)
         if not nx.is_directed_acyclic_graph(self._graph._graph):
             cycles = list(nx.simple_cycles(self._graph._graph))
-            raise ValueError(
+            raise PhyloZooNetworkStructureError(
                 f"Network contains directed cycles. Found {len(cycles)} cycle(s). "
                 f"First cycle: {cycles[0] if cycles else 'unknown'}"
             )
@@ -709,7 +728,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the node does not exist in the network.
         
         Examples
@@ -732,7 +751,7 @@ class DirectedPhyNetwork(IOMixin):
         {'label': 'root', 'custom': 42}
         """
         if node_id not in self._graph:
-            raise ValueError(f"Node {node_id} does not exist in the network.")
+            raise PhyloZooValueError(f"Node {node_id} does not exist in the network.")
         
         if attr is None:
             return self._graph._graph.nodes[node_id].copy()
@@ -825,7 +844,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the edge does not exist, or if key is None and multiple parallel edges exist.
         
         Examples
@@ -867,12 +886,12 @@ class DirectedPhyNetwork(IOMixin):
         else:
             # Multiple parallel edges - key is required
             if key is None:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Multiple parallel edges exist between {u} and {v}. "
                     f"Must specify 'key' parameter to get attributes from a specific edge."
                 )
             if key not in edges_data:
-                raise ValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
+                raise PhyloZooValueError(f"Edge ({u}, {v}, {key}) does not exist in the network.")
             edge_attrs = edges_data[key]
             if attr is None:
                 return edge_attrs.copy()
@@ -1252,7 +1271,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If there is no root node or multiple root nodes.
         
         Examples
@@ -1263,9 +1282,9 @@ class DirectedPhyNetwork(IOMixin):
         """
         roots = [v for v in self._graph.nodes if self._graph.indegree(v) == 0]
         if len(roots) == 0:
-            raise ValueError("Network has no root node")
+            raise PhyloZooValueError("Network has no root node")
         if len(roots) > 1:
-            raise ValueError(f"Network has multiple root nodes: {roots}")
+            raise PhyloZooValueError(f"Network has multiple root nodes: {roots}")
         return roots[0]
     
     @cached_property
@@ -1307,7 +1326,7 @@ class DirectedPhyNetwork(IOMixin):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If the network is empty.
         
         Examples

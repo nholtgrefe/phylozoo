@@ -18,6 +18,7 @@ from ....primitives.d_multigraph.isomorphism import is_isomorphic, _get_graph_in
 from .....utils.validation import no_validation
 from .base import DirectedGenerator
 from .side import Side, DirEdgeSide, HybridSide
+from phylozoo.utils.exceptions import PhyloZooValueError
 
 
 def _get_node_reachability_matrix(
@@ -384,6 +385,11 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     set[DirectedGenerator]
         Set of all level-k generators (up to isomorphism).
     
+    Raises
+    ------
+    PhyloZooValueError
+        If level is negative.
+        
     Notes
     -----
     Validation is deferred during construction for performance optimization.
@@ -402,7 +408,7 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     True
     """
     if k < 0:
-        raise ValueError("Level must be non-negative")
+        raise PhyloZooValueError("Level must be non-negative")
 
     if k == 0:
         # Level-0 generators are single nodes

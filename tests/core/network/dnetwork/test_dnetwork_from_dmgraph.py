@@ -192,6 +192,7 @@ class TestDnetworkFromGraph:
         assert result.get_label(4) == 'B'
 
     def test_invalid_graph_type_raises_error(self) -> None:
-        """Test that invalid graph type raises TypeError."""
-        with pytest.raises(TypeError):
+        """Test that invalid graph type raises PhyloZooTypeError."""
+        from phylozoo.utils.exceptions import PhyloZooTypeError
+        with pytest.raises(PhyloZooTypeError):
             dnetwork_from_graph("not a graph")  # type: ignore
