@@ -11,6 +11,7 @@ First release:
     - check all stubs (or add Not implemented error)
     - Error handling
     - Docs + Tutorials
+        - Explain editable install
     - parallelrization util module or not?
 - Core:
     - Network:

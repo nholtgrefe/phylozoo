@@ -134,5 +134,7 @@ Thumbs.db
 *.egg-info/
 sandbox/
 
-# Cursor
+# Others
 .cursorrules
+.github/
+.ruff_cache/

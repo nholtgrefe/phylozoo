@@ -1,2 +1,0 @@
-please add to qprofile a property split, which returns the split if the profile has a single resolved quartet, and None otherwise. Also add a property circular_orderings, which returns circular orderings that are congruent with every quartet in the profile (ab|cd is congruent with both abcd and abdc), the star tree is congruent with all three orderings of 4 taxa. It returns None if no cicrular orderings is congruent with all the quartets (e,.g. if all three possible resolved quartets are in the profile).
-
