@@ -6,9 +6,7 @@ Standard considerations:
 
 First release:
 - General:
-    - update doc strings to include Raise.
     - reconsider/standardize imports
-    - Error handling
     - Docs + Tutorials
         - Explain editable install
     - parallelrization util module or not?
@@ -18,14 +16,11 @@ First release:
         - do the network classes need .edges and.nodes?
         - SD generator validation
         - update network classifications
-    - MSA:
-        - bootstrap msa and gene lengths bootstrap
 - Inference:
     - Squirel:
         - CF/gene tree support?
 - Vizualize:
     - add sd-plotting
-    - clean up module, remove pycache files, better plot api that works directly.
 
 Later releases:
 - improved testing
