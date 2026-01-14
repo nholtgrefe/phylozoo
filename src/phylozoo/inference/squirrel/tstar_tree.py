@@ -13,6 +13,7 @@ from ...core.quartet.qprofileset import QuartetProfileSet
 from ...core.split.algorithms import splitsystem_to_tree
 from ...core.split.base import Split
 from ...core.split.splitsystem import SplitSystem
+from ...utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:
     pass
@@ -44,7 +45,7 @@ def bstar(profileset: QuartetProfileSet) -> SplitSystem:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If there are fewer than 4 taxa in the profile set.
     
     Notes
@@ -69,7 +70,7 @@ def bstar(profileset: QuartetProfileSet) -> SplitSystem:
     all_taxa = list(profileset.taxa)
     
     if len(all_taxa) < 4:
-        raise ValueError("B* algorithm requires at least 4 taxa")
+        raise PhyloZooValueError("B* algorithm requires at least 4 taxa")
     
     # Build a dictionary mapping 4-taxon sets to their splits
     # Only include trivial, resolved profiles
@@ -176,7 +177,7 @@ def tstar_tree(profileset: QuartetProfileSet) -> SemiDirectedPhyNetwork:
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If there are fewer than 4 taxa in the profile set, or if the B*-set
         of splits is not compatible with a tree.
     

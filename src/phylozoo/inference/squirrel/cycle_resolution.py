@@ -12,6 +12,7 @@ from ...core.primitives.circular_ordering import CircularSetOrdering
 from ...core.primitives.partition import Partition
 from ...core.quartet.qdistance import quartet_distance_with_partition
 from ...core.network.sdnetwork import SemiDirectedPhyNetwork, MixedPhyNetwork
+from ...utils.exceptions import PhyloZooValueError, PhyloZooAlgorithmError
 
 if TYPE_CHECKING:
     from ...core.quartet.qprofileset import QuartetProfileSet
@@ -53,7 +54,7 @@ def _qprofiles_to_circular_ordering(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If partition size is less than 3 (TSP requires at least 3 nodes).
     
     Examples
@@ -76,7 +77,7 @@ def _qprofiles_to_circular_ordering(
     4
     """
     if len(partition) < 3:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Partition must have at least 3 sets for TSP, got {len(partition)}"
         )
     
@@ -97,7 +98,7 @@ def _qprofiles_to_circular_ordering(
     elif tsp_method == 'christofides':
         tour = approximate_tsp_tour(dist_matrix, method='christofides')
     else:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Invalid tsp_method: {tsp_method}. "
             "Must be one of ['optimal', 'simulated_annealing', 'greedy', 'christofides']"
         )
@@ -272,7 +273,7 @@ def _insert_cycle(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If vertex is not a cut-vertex.
         If circular_setorder does not match the partition induced by vertex.
         If no valid hybrid configuration is found (when reticulation_ranking is provided).
@@ -303,7 +304,7 @@ def _insert_cycle(
     # Validate that vertex is a cut-vertex
     cut_verts = cut_vertices(network)
     if vertex not in cut_verts:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Vertex {vertex} is not a cut-vertex in the network"
         )
     
@@ -316,21 +317,21 @@ def _insert_cycle(
     # each set in the circular set ordering is a set in the partition,
     # and all sets in the partition are in the circular set ordering.
     if len(circular_setorder.parts) != len(induced_partition.parts):
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Circular set ordering does not match partition induced by vertex. "
             f"Ordering has {len(circular_setorder.parts)} sets, but partition has {len(induced_partition.parts)} sets."
         )
     
     for set in circular_setorder.parts:
         if set not in induced_partition.parts:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Circular set ordering does not match partition induced by vertex. "
                 f"Set {set} in ordering is not in partition."
             )
     
     for set in induced_partition.parts:
         if set not in circular_setorder.parts:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"Circular set ordering does not match partition induced by vertex. "
                 f"Set {set} in partition is not in ordering."
             )
@@ -340,7 +341,7 @@ def _insert_cycle(
         for ret_set in reticulation_ranking:
             ret_frozen = frozenset(ret_set) if not isinstance(ret_set, frozenset) else ret_set
             if ret_frozen not in circular_setorder:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Reticulation set {ret_set} in ranking is not part of the circular set ordering"
                 )
     
@@ -384,7 +385,7 @@ def _insert_cycle(
             # Find which cycle node corresponds to taxa_set
             cycle_node = set_to_cycle_node.get(taxa_set)
             if cycle_node is None:
-                raise ValueError(
+                raise PhyloZooAlgorithmError(
                     f"Could not find cycle node for taxa set {taxa_set}"
                 )
             
@@ -495,7 +496,7 @@ def _insert_cycle(
             return sdnetwork_from_graph(hybrid_graph, network_type='semi-directed')
     
     # No valid hybrid configuration found
-    raise ValueError(
+    raise PhyloZooAlgorithmError(
         "No valid hybrid configuration found from reticulation_ranking that "
         "maintains exactly one source component"
     )
@@ -544,7 +545,7 @@ def resolve_cycles(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If tree is not a tree.
         If profileset is not dense.
         If no valid network can be constructed.
@@ -610,7 +611,7 @@ def resolve_cycles(
         
         # Ensure we still have a SemiDirectedPhyNetwork
         if not isinstance(network, SemiDirectedPhyNetwork):
-            raise ValueError(
+            raise PhyloZooAlgorithmError(
                 f"Network became MixedPhyNetwork after inserting cycle at vertex {vertex}"
             )
     

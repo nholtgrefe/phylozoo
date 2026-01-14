@@ -16,6 +16,7 @@ from ...core.network.sdnetwork.derivations import split_from_cutedge
 from ...core.quartet.base import Quartet
 from ...core.quartet.qprofileset import QuartetProfileSet
 from ...core.split.base import Split
+from ...utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:
     pass
@@ -125,7 +126,7 @@ def adapted_quartet_joining(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the starting tree is not a tree, or if its taxa don't match the profile set.
     
     Examples
@@ -154,9 +155,9 @@ def adapted_quartet_joining(
     """
     # Validate starting tree
     if not is_tree(starting_tree):
-        raise ValueError("Starting tree must be a valid tree")
+        raise PhyloZooValueError("Starting tree must be a valid tree")
     if starting_tree.taxa != profileset.taxa:
-        raise ValueError("Starting tree taxa must match profile set taxa")
+        raise PhyloZooValueError("Starting tree taxa must match profile set taxa")
     
     current_tree = starting_tree
     
@@ -279,7 +280,7 @@ def quartet_joining(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If there are fewer than 4 taxa in the profile set.
     
     Examples
@@ -300,7 +301,7 @@ def quartet_joining(
     ['A', 'B', 'C', 'D', 'E']
     """
     if len(profileset.taxa) < 4:
-        raise ValueError("Quartet joining requires at least 4 taxa")
+        raise PhyloZooValueError("Quartet joining requires at least 4 taxa")
     
     # Create a star tree with all taxa connected to a center node
     center = "_center"

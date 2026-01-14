@@ -7,6 +7,8 @@ profile sets and for creating profile sets from networks.
 
 from typing import TYPE_CHECKING, Any, Iterator
 
+from ...utils.exceptions import PhyloZooValueError, PhyloZooAlgorithmError
+
 from ...core.quartet.base import Quartet
 from ...core.network.sdnetwork.derivations import induced_splits, partition_from_blob
 from ...core.network.sdnetwork.classifications import level, is_binary, has_parallel_edges
@@ -16,6 +18,7 @@ from ...core.primitives.circular_ordering import CircularSetOrdering
 
 from .sqprofile import SqQuartetProfile
 from .sqprofileset import SqQuartetProfileSet
+
 
 
 if TYPE_CHECKING:
@@ -46,7 +49,7 @@ def _circular_orders_from_cycles(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the network is not binary.
         If the network has parallel edges.
         If the network is not level-1 or lower (i.e., level > 1).
@@ -76,20 +79,20 @@ def _circular_orders_from_cycles(
     """
     # Check if network is binary
     if not is_binary(network):
-        raise ValueError(
+        raise PhyloZooValueError(
             "Network must be binary for _circular_orders_from_cycles"
         )
     
     # Check if network has parallel edges
     if has_parallel_edges(network):
-        raise ValueError(
+        raise PhyloZooValueError(
             "Network must not have parallel edges for _circular_orders_from_cycles"
         )
     
     # Check if network is level-1 or lower
     net_level = level(network)
     if net_level > 1:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Network must be level-1 or lower for _circular_orders_from_cycles, "
             f"but got level {net_level}"
         )
@@ -134,7 +137,7 @@ def _circular_orders_from_cycles(
             
             if next_node is None:
                 # This should not happen in a valid cycle blob
-                raise ValueError(
+                raise PhyloZooAlgorithmError(
                     f"Could not find a valid next node in blob {blob} from {current}. "
                     "Blob may not form a valid cycle."
                 )
@@ -146,7 +149,7 @@ def _circular_orders_from_cycles(
         
         # After traversing all nodes, the last node must connect back to the start_node
         if start_node not in graph.neighbors(current):
-            raise ValueError(
+            raise PhyloZooAlgorithmError(
                 f"Cycle in blob {blob} is not closed. Last node {current} does not connect to start node {start_node}."
             )
         
@@ -161,7 +164,7 @@ def _circular_orders_from_cycles(
     
     for blob in network_blobs:
         if len(blob) < 3:
-            raise ValueError(
+            raise PhyloZooAlgorithmError(
                 f"Blob {blob} has fewer than 3 nodes. "
                 "Level-1 networks should not have such blobs."
             )
@@ -206,7 +209,7 @@ def _circular_orders_from_cycles(
                     break
             
             if ret_set is None:
-                raise ValueError(
+                raise PhyloZooAlgorithmError(
                     f"Could not find reticulation set for hybrid {hybrid} in cycle {blob}"
                 )
         
@@ -246,7 +249,7 @@ def sqprofileset_similarity(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the two profile sets have different taxa sets.
     
     Examples
@@ -273,7 +276,7 @@ def sqprofileset_similarity(
     """
     # Validate that both sets have the same taxa
     if profileset1.taxa != profileset2.taxa:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Profile sets must have the same taxa. "
             f"Set 1 taxa: {profileset1.taxa}, Set 2 taxa: {profileset2.taxa}"
         )
@@ -352,7 +355,7 @@ def sqprofileset_from_network(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the network is not binary.
         If the network has parallel edges.
         If the network is not level-1 or lower (i.e., level > 1).
@@ -379,20 +382,20 @@ def sqprofileset_from_network(
     
     # Check if network is binary
     if not is_binary(network):
-        raise ValueError(
+        raise PhyloZooValueError(
             "Network must be binary for sqprofileset_from_network"
         )
     
     # Check if network has parallel edges
     if has_parallel_edges(network):
-        raise ValueError(
+        raise PhyloZooValueError(
             "Network must not have parallel edges for sqprofileset_from_network"
         )
     
     # Check if network is level-1 (required for this optimization)
     net_level = level(network)
     if net_level > 1:
-        raise ValueError(
+        raise PhyloZooValueError(
             f"Network must be level-1 or lower for sqprofileset_from_network, "
             f"but got level {net_level}"
         )

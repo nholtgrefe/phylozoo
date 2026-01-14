@@ -14,7 +14,7 @@ from ...core.distance import DistanceMatrix
 from ...core.quartet.base import Quartet
 from ...core.split.base import Split
 from ...core.primitives.circular_ordering import CircularOrdering
-
+from ...utils.exceptions import PhyloZooValueError
 from .sqprofile import SqQuartetProfile
 from .sqprofileset import SqQuartetProfileSet
 
@@ -50,6 +50,11 @@ def delta_heuristic(
     SqQuartetProfileSet
         A set of squirrel quartet profiles inferred from the distance matrix.
     
+    Raises
+    ------
+    PhyloZooValueError
+        If lambda is not in [0, 1].
+    
     Examples
     --------
     >>> import numpy as np
@@ -79,7 +84,7 @@ def delta_heuristic(
     If all distances are equal, delta = 0 (creates a split).
     """
     if lam < 0 or lam > 1:
-        raise ValueError(f"Lambda must be in [0, 1], got {lam}")
+        raise PhyloZooValueError(f"Lambda must be in [0, 1], got {lam}")
     
     taxa_list = list(distance_matrix.labels)
     n = len(taxa_list)

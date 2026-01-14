@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Mapping
 
 from ...core.quartet.qprofile import QuartetProfile
 from ...core.primitives.circular_ordering import CircularOrdering
+from ...utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:
     from ...core.quartet.base import Quartet
@@ -44,7 +45,7 @@ class SqQuartetProfile(QuartetProfile):
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If quartets is empty, if quartets have different taxa, if any
         weight is non-positive, if there are not exactly 1 or 2 resolved quartets,
         if there are unresolved quartets, if reticulation_leaf is provided
@@ -117,13 +118,13 @@ class SqQuartetProfile(QuartetProfile):
         unresolved_quartets = [q for q in self._quartets if not q.is_resolved()]
         
         if len(unresolved_quartets) > 0:
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"SqQuartetProfile cannot contain unresolved quartets, "
                 f"got {len(unresolved_quartets)} unresolved quartets"
             )
         
         if len(resolved_quartets) not in (1, 2):
-            raise ValueError(
+            raise PhyloZooValueError(
                 f"SqQuartetProfile must contain exactly 1 or 2 resolved quartets, "
                 f"got {len(resolved_quartets)}"
             )
@@ -132,7 +133,7 @@ class SqQuartetProfile(QuartetProfile):
         if len(resolved_quartets) == 2:
             circular_orderings = self.circular_orderings
             if circular_orderings is None or len(circular_orderings) == 0:
-                raise ValueError(
+                raise PhyloZooValueError(
                     "SqQuartetProfile with 2 quartets must form a circular ordering. "
                     "The two resolved quartets do not have a common circular ordering."
                 )
@@ -140,14 +141,14 @@ class SqQuartetProfile(QuartetProfile):
             # Validate reticulation_leaf if provided
             if reticulation_leaf is not None:
                 if reticulation_leaf not in self._taxa:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Reticulation leaf '{reticulation_leaf}' must be one of the "
                         f"taxa: {set(self._taxa)}"
                     )
         else:
             # 1 quartet: reticulation_leaf should be None
             if reticulation_leaf is not None:
-                raise ValueError(
+                raise PhyloZooValueError(
                     "reticulation_leaf can only be provided when profile has 2 quartets, "
                     f"got profile with {len(resolved_quartets)} quartet(s)"
                 )

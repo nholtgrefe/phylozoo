@@ -63,7 +63,7 @@ def squirrel(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If profileset is not dense.
         If outgroup is specified but not found in the network.
     

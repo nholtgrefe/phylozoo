@@ -16,6 +16,7 @@ from ...core.network.sdnetwork.derivations import split_from_cutedge
 from ...core.network.sdnetwork.features import cut_edges
 from ...core.quartet.qprofileset import QuartetProfileSet
 from ...core.split.base import Split
+from ...utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:
     pass
@@ -47,7 +48,7 @@ def split_support(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the split is trivial or if its taxa don't match the profile set.
     
     Examples
@@ -64,10 +65,10 @@ def split_support(
     True
     """
     if split.is_trivial():
-        raise ValueError("Split must be non-trivial")
+        raise PhyloZooValueError("Split must be non-trivial")
     
     if split.elements != profileset.taxa:
-        raise ValueError("Split taxa must match profile set taxa")
+        raise PhyloZooValueError("Split taxa must match profile set taxa")
     
     support = 0.0
     total_weight = 0.0
@@ -133,7 +134,7 @@ def unresolve_tree(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the tree is not a valid tree, or if its taxa don't match the profile set.
     
     Examples
@@ -157,10 +158,10 @@ def unresolve_tree(
     ...     break  # Just test first iteration
     """
     if not is_tree(tree):
-        raise ValueError("Tree must be a valid tree")
+        raise PhyloZooValueError("Tree must be a valid tree")
     
     if tree.taxa != profileset.taxa:
-        raise ValueError("Tree taxa must match profile set taxa")
+        raise PhyloZooValueError("Tree taxa must match profile set taxa")
     
     current_tree = tree
     

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Mapping
 
 from ...core.quartet.base import Quartet
 from ...core.quartet.qprofileset import QuartetProfileSet
-
+from ...utils.exceptions import PhyloZooValueError
 from .sqprofile import SqQuartetProfile
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class SqQuartetProfileSet(QuartetProfileSet):
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If any profile would be empty, if any weight is non-positive, or if
         any profile is not a valid SqQuartetProfile (e.g., has unresolved quartets
         or more than 2 quartets).
@@ -95,7 +95,7 @@ class SqQuartetProfileSet(QuartetProfileSet):
         
         Raises
         ------
-        ValueError
+        PhyloZooValueError
             If any profile would be empty, if any weight is non-positive, or if
             any profile is not a valid SqQuartetProfile (e.g., has unresolved quartets
             or more than 2 quartets).
@@ -124,13 +124,13 @@ class SqQuartetProfileSet(QuartetProfileSet):
                     quartet_data[quartet_taxa] = {}
                 # Check for duplicate quartets during iteration
                 if obj in quartet_data[quartet_taxa]:
-                    raise ValueError(
+                    raise PhyloZooValueError(
                         f"Quartet {obj} appears multiple times in the input. "
                         "Each quartet can only appear once per taxa set."
                     )
                 quartet_data[quartet_taxa][obj] = weight
             else:
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"Expected SqQuartetProfile or Quartet, got {type(obj)}"
                 )
         
@@ -143,7 +143,7 @@ class SqQuartetProfileSet(QuartetProfileSet):
         # Process grouped quartets: merge quartets with same taxa into profiles
         for taxa_set, quartets_dict in quartet_data.items():
             if len(quartets_dict) == 0:
-                raise ValueError(f"Cannot have empty profile for taxa {taxa_set}")
+                raise PhyloZooValueError(f"Cannot have empty profile for taxa {taxa_set}")
             
             # Create SqQuartetProfile from all quartets with this taxa
             # This will validate that we have 1-2 resolved quartets
@@ -159,7 +159,7 @@ class SqQuartetProfileSet(QuartetProfileSet):
         # Validate that all profiles are SqQuartetProfile instances
         for profile, _ in self._profiles.values():
             if not isinstance(profile, SqQuartetProfile):
-                raise ValueError(
+                raise PhyloZooValueError(
                     f"All profiles must be SqQuartetProfile instances, "
                     f"got {type(profile)}"
                 )
