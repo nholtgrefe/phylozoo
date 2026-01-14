@@ -24,6 +24,7 @@ from ...primitives.d_multigraph.io import (
     _convert_node_id,
     from_dot as dmgraph_from_dot,
 )
+from ....utils.exceptions import PhyloZooFormatError
 
 # Register eNewick format handlers with FormatRegistry
 FormatRegistry.register(
@@ -186,7 +187,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedPhyNetwork:
     
     Raises
     ------
-    ValueError
+    PhyloZooFormatError
         If the DOT string is malformed or cannot be parsed, or if the resulting
         network is invalid according to DirectedPhyNetwork validation rules.
     

@@ -18,7 +18,7 @@ from ...primitives.m_multigraph.conversions import (
     graph_to_mixedmultigraph,
     multigraph_to_mixedmultigraph,
 )
-
+from ....utils.exceptions import PhyloZooValueError, PhyloZooTypeError
 T = TypeVar('T')
 
 
@@ -116,7 +116,7 @@ def sdnetwork_from_graph(
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If the resulting network is invalid according to SemiDirectedPhyNetwork or
         MixedPhyNetwork validation rules (e.g., invalid node degrees, undirected
         cycles in semi-directed networks, etc.).
@@ -161,7 +161,7 @@ def sdnetwork_from_graph(
     elif isinstance(graph, MixedMultiGraph):
         mmgraph = graph
     else:
-        raise TypeError(
+        raise PhyloZooTypeError(
             f"Expected nx.Graph, nx.MultiGraph, or MixedMultiGraph, "
             f"got {type(graph)}"
         )
