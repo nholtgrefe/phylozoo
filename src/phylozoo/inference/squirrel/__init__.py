@@ -16,6 +16,9 @@ from .qsimilarity import sqprofileset_similarity, sqprofileset_from_network
 from .delta_heuristic import delta_heuristic
 from .squirrel import squirrel
 
+# Import I/O module to register formats
+from . import io  # noqa: F401
+
 __all__ = [
     "SqQuartetProfile",
     "SqQuartetProfileSet",

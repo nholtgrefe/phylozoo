@@ -26,6 +26,7 @@ Later releases:
 - improved testing
 - check raise exceptions in all functions and in docs carefully
 - check where notImplemented errors can be added for better tracking of future work
+- Migration Guide in docs for other tools.
 - Core:
     - Distances:
         - is_kalmanson should return a circular ordering? or add function that does that

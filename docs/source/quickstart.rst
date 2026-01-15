@@ -111,7 +111,7 @@ Quick Links
 * :doc:`Installation Guide <manual/installation>` - Detailed installation instructions
 * :doc:`Introduction <manual/introduction>` - Learn about PhyloZoo's design and features
 * :doc:`Networks (Basic) <manual/core_networks_basic>` - Basic network operations
-* :doc:`Network Analysis Workflow <manual/workflow_network_analysis>` - Complete workflow example
+* :doc:`Network Analysis Workflow <../tutorials/workflow_network_analysis>` - Complete workflow example
 * :doc:`API Reference <library/index>` - Full API documentation
 
 Next Steps

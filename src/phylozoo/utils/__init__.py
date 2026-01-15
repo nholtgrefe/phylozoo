@@ -26,6 +26,7 @@ from .exceptions import (
     PhyloZooIdentifierWarning,
 )
 from .identifier_warnings import warn_on_keyword, warn_on_none_value
+from .parallel import ParallelBackend, ParallelConfig, ParallelExecutor
 from .validation import no_validation, validation_aware
 
 __all__ = [
@@ -50,6 +51,10 @@ __all__ = [
     # Warnings
     "PhyloZooWarning",
     "PhyloZooIdentifierWarning",
+    # Parallel utilities
+    "ParallelBackend",
+    "ParallelConfig",
+    "ParallelExecutor",
     # Other utilities
     "warn_on_keyword",
     "warn_on_none_value",

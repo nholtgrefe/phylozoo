@@ -10,18 +10,28 @@ from typing import TYPE_CHECKING, Mapping
 from ...core.quartet.base import Quartet
 from ...core.quartet.qprofileset import QuartetProfileSet
 from ...utils.exceptions import PhyloZooValueError
+from ...utils.io import IOMixin
 from .sqprofile import SqQuartetProfile
 
 if TYPE_CHECKING:
     pass
 
 
-class SqQuartetProfileSet(QuartetProfileSet):
+class SqQuartetProfileSet(QuartetProfileSet, IOMixin):
     """
     Squirrel quartet profile set.
     
     A SqQuartetProfileSet is a collection of SqQuartetProfile objects,
     which are quartet profiles containing either 1 or 2 resolved quartets.
+    
+    I/O Support
+    -----------
+    This class supports saving/loading to PhyloZoo format (.pz extension):
+    
+    >>> profileset.save('profileset.pz')
+    >>> loaded = SqQuartetProfileSet.load('profileset.pz')
+    >>> string = profileset.to_string(format='pz')
+    >>> loaded = SqQuartetProfileSet.from_string(string, format='pz')
     
     Parameters
     ----------
@@ -219,4 +229,8 @@ class SqQuartetProfileSet(QuartetProfileSet):
         
         profiles_str = ", ".join(profile_items)
         return f"SqQuartetProfileSet(profiles=[{profiles_str}])"
+    
+    # I/O format configuration
+    _default_format: str = 'pz'
+    _supported_formats: list[str] = ['pz']
 

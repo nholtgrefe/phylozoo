@@ -77,25 +77,57 @@ language = 'en'
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# Read the Docs theme (works on both RTD and GitHub Pages)
+# PyData Sphinx Theme (similar to Aesara's documentation style)
 try:
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    # Note: get_html_theme_path() is deprecated in newer versions, but still works
-    # The theme is automatically found if installed
-    try:
-        html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-    except AttributeError:
-        # Newer versions don't need this
-        html_theme_path = []
-except ImportError:
-    html_theme = 'default'
+    import pydata_sphinx_theme
+    html_theme = 'pydata_sphinx_theme'
+    # Modern versions don't need html_theme_path - Sphinx finds it automatically
     html_theme_path = []
+except ImportError:
+    # Fallback to Read the Docs theme if PyData theme not available
+    try:
+        import sphinx_rtd_theme
+        html_theme = 'sphinx_rtd_theme'
+        try:
+            html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+        except AttributeError:
+            html_theme_path = []
+    except ImportError:
+        html_theme = 'default'
+        html_theme_path = []
 
 html_static_path = ['_static']
 
-# Theme options
-if html_theme == 'sphinx_rtd_theme':
+# PyData Sphinx Theme options (similar to Aesara's style)
+if html_theme == 'pydata_sphinx_theme':
+    html_theme_options = {
+        'github_url': 'https://github.com/yourusername/phylozoo',
+        'logo': {
+            'text': 'PhyloZoo',
+        },
+        'use_edit_page_button': True,
+        'show_toc_level': 2,
+        'navbar_align': 'left',
+        'navbar_end': ['theme-switcher', 'navbar-icon-links'],
+        'icon_links': [
+            {
+                'name': 'GitHub',
+                'url': 'https://github.com/yourusername/phylozoo',
+                'icon': 'fa-brands fa-github',
+            },
+        ],
+        'show_nav_level': 2,
+        'navigation_depth': 4,
+        'collapse_navigation': False,
+    }
+    html_context = {
+        'github_user': 'yourusername',
+        'github_repo': 'phylozoo',
+        'github_version': 'main',
+        'doc_path': 'docs/source',
+    }
+elif html_theme == 'sphinx_rtd_theme':
+    # Fallback theme options
     html_theme_options = {
         'collapse_navigation': False,
         'sticky_navigation': True,
@@ -113,14 +145,16 @@ if html_theme == 'sphinx_rtd_theme':
 # Uncomment and update if migrating to GitHub Pages:
 # html_baseurl = 'https://yourusername.github.io/phylozoo/'
 
-# Read the Docs automatically handles this, but good to have for local builds
-html_context = {
-    'display_github': True,  # Enable "Edit on GitHub" link
-    'github_user': 'yourusername',  # Update with your GitHub username
-    'github_repo': 'phylozoo',
-    'github_version': 'main',
-    'conf_py_path': '/docs/source/',
-}
+# GitHub context (used by both themes)
+# Note: PyData theme uses its own html_context above, but we keep this for RTD fallback
+if html_theme != 'pydata_sphinx_theme':
+    html_context = {
+        'display_github': True,  # Enable "Edit on GitHub" link
+        'github_user': 'yourusername',  # Update with your GitHub username
+        'github_repo': 'phylozoo',
+        'github_version': 'main',
+        'conf_py_path': '/docs/source/',
+    }
 
 # Intersphinx mapping
 intersphinx_mapping = {

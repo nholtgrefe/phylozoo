@@ -151,8 +151,11 @@ Here's a simple example to get started:
    
    # Create a simple network
    network = DirectedPhyNetwork(
-       nodes=[("root", "internal"), ("A", "leaf"), ("B", "leaf")],
-       edges=[("root", "A"), ("root", "B")]
+       edges=[("root", "A"), ("root", "B")],
+       nodes=[
+           ("A", {"label": "A"}),
+           ("B", {"label": "B"})
+       ]
    )
    
    print(f"Network has {network.num_nodes} nodes and {network.num_edges} edges")

@@ -271,3 +271,113 @@ class TestSqQuartetProfileSetEdgeCases:
                 taxa=frozenset({1, 2, 3})  # Missing taxon 4
             )
 
+
+class TestSqQuartetProfileSetIO:
+    """Tests for SqQuartetProfileSet I/O operations."""
+    
+    def test_to_string_pz_format(self) -> None:
+        """Test serialization to PhyloZoo format string."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        sq_profile1 = SqQuartetProfile([q1])
+        profileset = SqQuartetProfileSet(profiles=[sq_profile1])
+        
+        pz_string = profileset.to_string(format='pz')
+        
+        assert isinstance(pz_string, str)
+        assert 'profiles' in pz_string
+        assert 'taxa' in pz_string
+        assert '1' in pz_string or '"1"' in pz_string
+    
+    def test_from_string_pz_format(self) -> None:
+        """Test deserialization from PhyloZoo format string."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        sq_profile1 = SqQuartetProfile([q1])
+        original_profileset = SqQuartetProfileSet(profiles=[sq_profile1])
+        
+        # Serialize and deserialize
+        pz_string = original_profileset.to_string(format='pz')
+        reconstructed_profileset = SqQuartetProfileSet.from_string(pz_string, format='pz')
+        
+        assert len(reconstructed_profileset) == len(original_profileset)
+        assert reconstructed_profileset.taxa == original_profileset.taxa
+        assert reconstructed_profileset.has_profile(frozenset({1, 2, 3, 4}))
+    
+    def test_to_string_from_string_roundtrip(self) -> None:
+        """Test roundtrip serialization/deserialization preserves data."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        sq_profile = SqQuartetProfile([q1, q2], reticulation_leaf=1)
+        original_profileset = SqQuartetProfileSet(profiles=[sq_profile])
+        
+        # Roundtrip
+        pz_string = original_profileset.to_string(format='pz')
+        reconstructed_profileset = SqQuartetProfileSet.from_string(pz_string, format='pz')
+        
+        # Check profiles match
+        assert len(reconstructed_profileset) == len(original_profileset)
+        original_profile = original_profileset.get_profile(frozenset({1, 2, 3, 4}))
+        reconstructed_profile = reconstructed_profileset.get_profile(frozenset({1, 2, 3, 4}))
+        
+        assert original_profile is not None
+        assert reconstructed_profile is not None
+        assert len(original_profile) == len(reconstructed_profile)
+        assert original_profile.reticulation_leaf == reconstructed_profile.reticulation_leaf
+        
+        # Check quartet weights
+        for q in original_profile:
+            assert q in reconstructed_profile
+            assert original_profile.get_weight(q) == reconstructed_profile.get_weight(q)
+    
+    def test_to_string_from_string_with_weights(self) -> None:
+        """Test roundtrip with explicit profile weights."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({5, 6}, {7, 8}))
+        sq_profile1 = SqQuartetProfile([q1])
+        sq_profile2 = SqQuartetProfile([q2])
+        original_profileset = SqQuartetProfileSet(
+            profiles=[(sq_profile1, 2.0), (sq_profile2, 1.5)]
+        )
+        
+        # Roundtrip
+        pz_string = original_profileset.to_string(format='pz')
+        reconstructed_profileset = SqQuartetProfileSet.from_string(pz_string, format='pz')
+        
+        assert len(reconstructed_profileset) == 2
+        assert reconstructed_profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 2.0
+        assert reconstructed_profileset.get_profile_weight(frozenset({5, 6, 7, 8})) == 1.5
+    
+    def test_from_string_invalid_json(self) -> None:
+        """Test that invalid JSON raises PhyloZooParseError."""
+        from phylozoo.utils.exceptions import PhyloZooParseError
+        
+        invalid_json = "not valid json {"
+        with pytest.raises(PhyloZooParseError):
+            SqQuartetProfileSet.from_string(invalid_json, format='pz')
+    
+    def test_from_string_missing_keys(self) -> None:
+        """Test that missing required keys raises PhyloZooFormatError."""
+        from phylozoo.utils.exceptions import PhyloZooFormatError
+        
+        invalid_data = '{"profiles": []}'  # Missing 'taxa' key
+        with pytest.raises(PhyloZooFormatError):
+            SqQuartetProfileSet.from_string(invalid_data, format='pz')
+    
+    def test_from_string_invalid_quartet_type(self) -> None:
+        """Test that invalid quartet type raises PhyloZooFormatError."""
+        from phylozoo.utils.exceptions import PhyloZooFormatError
+        
+        invalid_data = '''{
+            "taxa": [1, 2, 3, 4],
+            "profiles": [{
+                "taxa": [1, 2, 3, 4],
+                "quartets": [{
+                    "quartet": {"type": "invalid"},
+                    "weight": 1.0
+                }],
+                "reticulation_leaf": null,
+                "profile_weight": 1.0
+            }]
+        }'''
+        with pytest.raises(PhyloZooFormatError):
+            SqQuartetProfileSet.from_string(invalid_data, format='pz')
+

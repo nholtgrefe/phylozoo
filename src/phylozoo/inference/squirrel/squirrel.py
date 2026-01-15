@@ -9,11 +9,13 @@ from typing import TYPE_CHECKING, Any
 
 from ...core.network.dnetwork import DirectedPhyNetwork
 from ...core.network.sdnetwork import SemiDirectedPhyNetwork
+from ...utils.parallel import ParallelConfig, ParallelBackend
 
 from ..utils.rooting import root_at_outgroup
 from .cycle_resolution import resolve_cycles
 from .qjoining import adapted_quartet_joining
 from .qsimilarity import sqprofileset_from_network, sqprofileset_similarity
+from .sqprofile import SqQuartetProfile
 from .sqprofileset import SqQuartetProfileSet
 from .tstar_tree import tstar_tree
 from .unresolve_tree import unresolve_tree
@@ -22,9 +24,89 @@ if TYPE_CHECKING:
     from ...core.network.dnetwork import DirectedPhyNetwork
 
 
+def _process_contracted_tree(
+    args: tuple[SemiDirectedPhyNetwork | str, SqQuartetProfileSet | str, str | None, dict[str, Any]],
+) -> tuple[SemiDirectedPhyNetwork | str, float]:
+    """
+    Process a single contracted tree: resolve cycles and compute similarity.
+    
+    This is a helper function for parallelization. It can handle both:
+    - Direct objects (for threading/sequential): (tree, profileset, outgroup, kwargs)
+    - Serialized inputs (for multiprocessing): (tree_pzdot, profileset_pz, outgroup, kwargs)
+    
+    Parameters
+    ----------
+    args : tuple
+        For threading/sequential:
+        - contracted_tree: SemiDirectedPhyNetwork
+        - profileset: SqQuartetProfileSet
+        - outgroup: str | None
+        - kwargs: dict[str, Any] for resolve_cycles
+        
+        For multiprocessing:
+        - tree_pzdot: str (PhyloZoo-DOT string representation of contracted tree)
+        - profileset_pz: str (PhyloZoo format string of SqQuartetProfileSet)
+        - outgroup: str | None
+        - kwargs: dict[str, Any] for resolve_cycles
+    
+    Returns
+    -------
+    tuple[SemiDirectedPhyNetwork | str, float]
+        The network (or PhyloZoo-DOT string for multiprocessing) and its similarity score.
+    """
+    tree_input, profileset_input, outgroup, kwargs = args
+    
+    # Check if inputs are serialized (multiprocessing) or direct (threading/sequential)
+    is_serialized = isinstance(tree_input, str)
+    
+    if is_serialized:
+        # Multiprocessing: deserialize inputs
+        # Import io module to ensure format is registered in worker process
+        from ...core.network.sdnetwork import io as sdnetwork_io  # noqa: F401
+        from ...core.network.sdnetwork import SemiDirectedPhyNetwork
+        
+        tree_pzdot = tree_input
+        profileset_pz = profileset_input  # type: ignore
+        
+        # Reconstruct tree from PhyloZoo-DOT string using IOMixin
+        contracted_tree = SemiDirectedPhyNetwork.from_string(tree_pzdot, format='phylozoo-dot')
+        
+        # Reconstruct profileset from PhyloZoo format string
+        # Import here to ensure it's available in worker process
+        # Also import io module to ensure format is registered
+        from . import io  # noqa: F401
+        from .sqprofileset import SqQuartetProfileSet
+        profileset = SqQuartetProfileSet.from_string(profileset_pz, format='pz')
+    else:
+        # Threading/sequential: use objects directly
+        contracted_tree = tree_input  # type: ignore
+        profileset = profileset_input  # type: ignore
+    
+    # Reconstruct network from the contracted tree
+    net_new = resolve_cycles(
+        profileset,
+        contracted_tree,
+        outgroup=outgroup,
+        **kwargs,
+    )
+    
+    # Compute similarity score
+    quarnets_new = sqprofileset_from_network(net_new)
+    score_new = sqprofileset_similarity(profileset, quarnets_new)
+    
+    if is_serialized:
+        # Multiprocessing: serialize network to PhyloZoo-DOT string using IOMixin
+        net_pzdot = net_new.to_string(format='phylozoo-dot')
+        return (net_pzdot, score_new)
+    else:
+        # Threading/sequential: return network object directly
+        return (net_new, score_new)
+
+
 def squirrel(
     profileset: SqQuartetProfileSet,
     outgroup: str | None = None,
+    parallel: ParallelConfig | None = None,
     **kwargs: Any,
 ) -> SemiDirectedPhyNetwork | DirectedPhyNetwork:
     """
@@ -44,6 +126,9 @@ def squirrel(
     outgroup : str | None, optional
         Optional outgroup taxon. If specified, the function returns a DirectedPhyNetwork
         rooted at the edge leading to the outgroup. By default None.
+    parallel : ParallelConfig | None, optional
+        Parallelization configuration. If None, uses sequential execution.
+        By default None.
     **kwargs : Any
         Additional keyword arguments passed to `resolve_cycles`:
         - rho : tuple[float, float, float, float], optional
@@ -73,14 +158,26 @@ def squirrel(
     >>> from phylozoo.inference.squirrel.sqprofileset import SqQuartetProfileSet
     >>> from phylozoo.core.quartet.base import Quartet
     >>> from phylozoo.core.split.base import Split
+    >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend
     >>> 
     >>> # Create a simple profile set
     >>> q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
     >>> profile1 = SqQuartetProfile([q1])
     >>> profileset = SqQuartetProfileSet(profiles=[profile1])
     >>> 
-    >>> # Reconstruct network
+    >>> # Reconstruct network (sequential)
     >>> network = squirrel(profileset)
+    >>> isinstance(network, SemiDirectedPhyNetwork)
+    True
+    >>> 
+    >>> # Reconstruct network with parallelization
+    >>> network = squirrel(
+    ...     profileset,
+    ...     parallel=ParallelConfig(
+    ...         backend=ParallelBackend.MULTIPROCESSING,
+    ...         n_jobs=4
+    ...     )
+    ... )
     >>> isinstance(network, SemiDirectedPhyNetwork)
     True
     """
@@ -90,33 +187,64 @@ def squirrel(
     # Step 2: Get quartet joining tree
     qj_tree = adapted_quartet_joining(profileset, starting_tree=tstar)
     
-    # Step 3: Use unresolve_tree to get contraction sequence
-    # This already handles split support computation and sorting
-    networks: list[SemiDirectedPhyNetwork] = []
-    scores: list[float] = []
+    # Step 3: Collect all contracted trees from unresolve_tree
+    contracted_trees = list(unresolve_tree(qj_tree, profileset))
     
-    # Process each tree in the contraction sequence
-    for contracted_tree in unresolve_tree(qj_tree, profileset):
-        # Reconstruct network from the contracted tree
-        net_new = resolve_cycles(
-            profileset,
-            contracted_tree,
-            outgroup=outgroup,
-            **kwargs,
-        )
-        
-        # Compute similarity score
-        quarnets_new = sqprofileset_from_network(net_new)
-        score_new = sqprofileset_similarity(profileset, quarnets_new)
-        
-        networks.append(net_new)
-        scores.append(score_new)
+    # Step 4: Set up parallelization
+    if parallel is None:
+        parallel = ParallelConfig(backend=ParallelBackend.SEQUENTIAL)
     
-    # Step 4: Find best network (highest similarity score)
+    executor = parallel.get_executor()
+    
+    # Step 5: Process each tree (potentially in parallel)
+    # Serialize inputs for multiprocessing (pickling compatibility)
+    if parallel.backend == ParallelBackend.MULTIPROCESSING:
+        # Serialize profileset to PhyloZoo format (JSON string, picklable)
+        profileset_pz = profileset.to_string(format='pz')
+        
+        # Serialize trees to PhyloZoo-DOT strings using IOMixin
+        process_args = [
+            (tree.to_string(format='phylozoo-dot'), profileset_pz, outgroup, kwargs)
+            for tree in contracted_trees
+        ]
+        
+        # Process all trees using the executor
+        try:
+            results = list(executor.map(_process_contracted_tree, process_args))
+        finally:
+            # Clean up multiprocessing pool if needed
+            if hasattr(executor, '_pool') and executor._pool is not None:
+                executor._pool.close()
+                executor._pool.join()
+        
+        # Deserialize networks from PhyloZoo-DOT strings using IOMixin
+        networks: list[SemiDirectedPhyNetwork] = [
+            SemiDirectedPhyNetwork.from_string(net_pzdot, format='phylozoo-dot')
+            for net_pzdot, _ in results
+        ]
+        scores: list[float] = [score for _, score in results]
+    else:
+        # For threading/sequential: no serialization needed
+        process_args = [
+            (tree, profileset, outgroup, kwargs) for tree in contracted_trees
+        ]
+        
+        try:
+            results = list(executor.map(_process_contracted_tree, process_args))
+        finally:
+            # Clean up multiprocessing pool if needed (shouldn't happen here, but safe)
+            if hasattr(executor, '_pool') and executor._pool is not None:
+                executor._pool.close()
+                executor._pool.join()
+        
+        networks: list[SemiDirectedPhyNetwork] = [net for net, _ in results]
+        scores: list[float] = [score for _, score in results]
+    
+    # Step 6: Find best network (highest similarity score)
     best_network_index = scores.index(max(scores))
     best_network = networks[best_network_index]
     
-    # Step 5: Convert to directed network if outgroup is specified
+    # Step 7: Convert to directed network if outgroup is specified
     if outgroup is not None:
         best_network = root_at_outgroup(best_network, outgroup)
     
