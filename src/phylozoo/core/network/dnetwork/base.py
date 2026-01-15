@@ -47,7 +47,7 @@ class DirectedPhyNetwork(IOMixin):
     -----
     The class uses composition with ``DirectedMultiGraph`` and is immutable after initialization; 
     construct via ``nodes``/``edges``, from a prebuilt ``DirectedMultiGraph``, or load from a file/eNewick 
-    string.
+    string :cite:`Cardona2008`.
 
     Parameters
     ----------

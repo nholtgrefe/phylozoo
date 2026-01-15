@@ -28,6 +28,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',  # For mathematical notation
     'sphinx.ext.githubpages',  # Adds .nojekyll for GitHub Pages compatibility
+    'sphinxcontrib.bibtex',  # BibTeX citations
 ]
 
 # Optional extensions
@@ -36,6 +37,11 @@ try:
     extensions.append('sphinx_copybutton')  # Copy button for code blocks
 except ImportError:
     pass  # Optional extension, skip if not available
+
+# BibTeX configuration
+bibtex_bibfiles = ['bibliography.bib']  # Relative to source directory
+bibtex_default_style = 'unsrt'
+bibtex_reference_style = 'author_year'
 
 # Napoleon settings for NumPy-style docstrings
 napoleon_google_docstring = False

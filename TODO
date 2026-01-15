@@ -8,6 +8,7 @@ First release:
 - General:
     - Docs + Tutorials
         - Explain editable install
+        - toggle for output.
     - parallelization util module or not?
 - Core:
     - Network:
