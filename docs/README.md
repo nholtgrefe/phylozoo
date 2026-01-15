@@ -2,13 +2,25 @@
 
 This directory contains the Sphinx documentation for phylozoo.
 
-## Building Documentation
+## Building Documentation Locally
 
-### Automatic Rebuild (Recommended)
+### Quick Build
+
+To build the documentation:
+
+```bash
+cd docs
+make html
+```
+
+Then open `build/html/index.html` in your browser.
+
+### Automatic Rebuild (Recommended for Development)
 
 To automatically rebuild documentation when files change:
 
 ```bash
+cd docs
 sphinx-autobuild source build/html --open-browser
 ```
 
@@ -22,6 +34,7 @@ This will:
 To build documentation manually:
 
 ```bash
+cd docs
 sphinx-build -b html source build/html
 ```
 
@@ -30,7 +43,13 @@ Then open `build/html/index.html` in your browser.
 ## Structure
 
 - `source/` - Source RST files
+  - `manual/` - User manual (installation, introduction, etc.)
+  - `tutorials/` - Extended tutorials
+  - `examples/` - Code examples
+  - `library/` - API reference
+  - `guides/` - Developer guides
+  - `reference/` - Reference material (glossary, bibliography, changelog)
 - `build/` - Built HTML output
 - `source/conf.py` - Sphinx configuration
-- `source/api/` - API documentation
+- `requirements.txt` - Documentation dependencies
 
