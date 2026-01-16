@@ -187,18 +187,21 @@ def squirrel(
     # Step 2: Get quartet joining tree
     qj_tree = adapted_quartet_joining(profileset, starting_tree=tstar)
     
-    # Step 3: Collect all contracted trees from unresolve_tree
-    contracted_trees = list(unresolve_tree(qj_tree, profileset))
-    
-    # Step 4: Set up parallelization
-    if parallel is None:
-        parallel = ParallelConfig(backend=ParallelBackend.SEQUENTIAL)
-    
-    executor = parallel.get_executor()
-    
-    # Step 5: Process each tree (potentially in parallel)
-    # Serialize inputs for multiprocessing (pickling compatibility)
-    if parallel.backend == ParallelBackend.MULTIPROCESSING:
+    # Step 3: Process each contracted tree (potentially in parallel)
+    if parallel is None or parallel.backend == ParallelBackend.SEQUENTIAL:
+        # Sequential: process trees directly as they're yielded
+        networks: list[SemiDirectedPhyNetwork] = []
+        scores: list[float] = []
+        for contracted_tree in unresolve_tree(qj_tree, profileset):
+            net_new, score_new = _process_contracted_tree(
+                (contracted_tree, profileset, outgroup, kwargs)
+            )
+            networks.append(net_new)
+            scores.append(score_new)
+    elif parallel.backend == ParallelBackend.MULTIPROCESSING:
+        # Multiprocessing: collect trees first, serialize, then process in parallel
+        contracted_trees = list(unresolve_tree(qj_tree, profileset))
+        
         # Serialize profileset to PhyloZoo format (JSON string, picklable)
         profileset_pz = profileset.to_string(format='pz')
         
@@ -209,6 +212,7 @@ def squirrel(
         ]
         
         # Process all trees using the executor
+        executor = parallel.get_executor()
         try:
             results = list(executor.map(_process_contracted_tree, process_args))
         finally:
@@ -218,27 +222,29 @@ def squirrel(
                 executor._pool.join()
         
         # Deserialize networks from PhyloZoo-DOT strings using IOMixin
-        networks: list[SemiDirectedPhyNetwork] = [
+        networks = [
             SemiDirectedPhyNetwork.from_string(net_pzdot, format='phylozoo-dot')
             for net_pzdot, _ in results
         ]
-        scores: list[float] = [score for _, score in results]
-    else:
-        # For threading/sequential: no serialization needed
+        scores = [score for _, score in results]
+    else:  # THREADING
+        # Threading: collect trees first, then process in parallel
+        contracted_trees = list(unresolve_tree(qj_tree, profileset))
+        
         process_args = [
             (tree, profileset, outgroup, kwargs) for tree in contracted_trees
         ]
         
+        executor = parallel.get_executor()
         try:
             results = list(executor.map(_process_contracted_tree, process_args))
         finally:
-            # Clean up multiprocessing pool if needed (shouldn't happen here, but safe)
-            if hasattr(executor, '_pool') and executor._pool is not None:
-                executor._pool.close()
-                executor._pool.join()
+            # Clean up thread pool if needed
+            if hasattr(executor, '_executor'):
+                executor._executor.shutdown(wait=True)
         
-        networks: list[SemiDirectedPhyNetwork] = [net for net, _ in results]
-        scores: list[float] = [score for _, score in results]
+        networks = [net for net, _ in results]
+        scores = [score for _, score in results]
     
     # Step 6: Find best network (highest similarity score)
     best_network_index = scores.index(max(scores))
