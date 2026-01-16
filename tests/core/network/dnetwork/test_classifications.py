@@ -19,6 +19,7 @@ from phylozoo.core.network.dnetwork.classifications import (
     is_simple,
     is_stackfree,
     is_tree,
+    is_treechild,
     level,
     reticulation_number,
     vertex_level,
@@ -473,4 +474,149 @@ class TestIsStackfreeNotStackfree:
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}), (13, {'label': 'D'}), (15, {'label': 'E'}), (19, {'label': 'F'})]
         )
         assert not is_stackfree(net)  # Has at least one stack
+
+
+class TestIsTreechild:
+    """Test cases for is_treechild() function."""
+    
+    def test_is_treechild_empty_network(self) -> None:
+        """Test is_treechild in empty network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(edges=[])
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_single_node(self) -> None:
+        """Test is_treechild in single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(edges=[], nodes=[(1, {'label': 'A'})])
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_tree(self) -> None:
+        """Test is_treechild in tree (all trees are tree-child)."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_large_tree(self) -> None:
+        """Test is_treechild in large binary tree."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),
+                (5, 3), (5, 4),
+                (6, 1), (6, 2)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (4, {'label': 'D'})
+            ]
+        )
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_hybrid_with_tree_child(self) -> None:
+        """Test is_treechild with hybrid that has tree node child."""
+        # Network: root -> tree nodes -> hybrid -> tree node -> leaves
+        # Hybrid 4 has tree node 8 as child, so it's tree-child
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),  # Root to tree nodes
+                (5, 4), (5, 9), (6, 4), (6, 10),  # Tree nodes lead to hybrid 4 and other nodes
+                (4, 8),  # Hybrid to tree node
+                (8, 1), (8, 2), (9, 3), (9, 11), (10, 12), (10, 13)  # Tree node to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'})]
+        )
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_hybrid_with_leaf_child(self) -> None:
+        """Test is_treechild with hybrid that has leaf child."""
+        # Network: root -> tree nodes -> hybrid -> leaf
+        # Hybrid 4 has leaf 1 as child (leaf is not hybrid), so it's tree-child
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),  # Root to tree nodes
+                (5, 4), (5, 1),  # Tree node 5 to hybrid 4 and leaf 1
+                (6, 4), (6, 2),  # Tree node 6 to hybrid 4 and leaf 2
+                (4, 3)  # Hybrid to leaf
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_tree_node_with_hybrid_and_tree_children(self) -> None:
+        """Test is_treechild with tree node that has both hybrid and tree children."""
+        # Network: root -> tree node -> (hybrid, tree node) -> leaves
+        # Tree node 5 has hybrid 4 and tree node 8 as children, so it's tree-child
+        net = DirectedPhyNetwork(
+            edges=[
+                (9, 5), (9, 6),  # Root to tree nodes
+                (5, 4), (5, 8),  # Tree node 5 to hybrid 4 and tree node 8
+                (6, 4), (6, 2),  # Tree node 6 to hybrid 4 and leaf 2
+                (4, 1), (8, 3), (8, 10)  # Hybrid and tree node to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (10, {'label': 'D'})]
+        )
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_not_treechild_all_hybrid_children(self) -> None:
+        """Test is_treechild with internal node that has only hybrid children."""
+        # Network: root -> tree node -> (hybrid, hybrid) -> leaves
+        # Tree node 5 has only hybrid children (4 and 7), so it's NOT tree-child
+        net = DirectedPhyNetwork(
+            edges=[
+                (9, 5), (9, 6),  # Root to tree nodes
+                (5, 4), (5, 7),  # Tree node 5 to hybrids 4 and 7
+                (6, 4), (6, 7),  # Tree node 6 to hybrids 4 and 7
+                (4, 1), (7, 2)  # Hybrids to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_treechild(net) is False
+    
+    def test_is_treechild_not_treechild_root_all_hybrid_children(self) -> None:
+        """Test is_treechild with root that has only hybrid children."""
+        # Network: root -> (hybrid, hybrid) -> leaves
+        # Root 9 has only hybrid children (4 and 7), so it's NOT tree-child
+        net = DirectedPhyNetwork(
+            edges=[
+                (9, 4), (9, 7),  # Root to hybrids
+                (9, 10), (10, 4), (10, 7),  # Root also to tree node 10, which leads to hybrids
+                (4, 1), (7, 2)  # Hybrids to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        # Root 9 has only hybrid children (4 and 7), so it's NOT tree-child
+        assert is_treechild(net) is False
+    
+    def test_is_treechild_nested_hybrids_treechild(self) -> None:
+        """Test is_treechild with nested hybrids that are tree-child."""
+        # Network: root -> tree nodes -> hybrid -> tree node -> hybrid -> leaf
+        # Each hybrid has a tree node child, so it's tree-child
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 7), (10, 18),  # Root to tree nodes
+                (7, 5), (7, 11), (18, 5), (18, 20), (18, 21),  # Both lead to hybrid 5 and other nodes
+                (5, 6),  # Hybrid 5 to tree node 6
+                (6, 4), (6, 12), (10, 14), (14, 4), (14, 23),  # Tree node 6 and tree node 14 lead to hybrid 4
+                (4, 1), (11, 2), (11, 15), (11, 16), (12, 3), (12, 17), (20, 19), (20, 22)  # Hybrid and tree nodes to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (15, {'label': 'D'}), (16, {'label': 'E'}), (17, {'label': 'F'}), (19, {'label': 'G'}), (22, {'label': 'H'}), (23, {'label': 'I'})]
+        )
+        assert is_treechild(net) is True
+    
+    def test_is_treechild_with_fixtures(self) -> None:
+        """Test is_treechild using example networks from fixtures."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Trees are tree-child
+        assert is_treechild(dn.DTREE_EMPTY) is True
+        assert is_treechild(dn.DTREE_SINGLE_NODE) is True
+        assert is_treechild(dn.DTREE_SMALL_BINARY) is True
+        
+        # Single hybrid networks with tree/leaf children are tree-child
+        assert is_treechild(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID) is True
+        assert is_treechild(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID_BINARY) is True
 

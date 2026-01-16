@@ -386,9 +386,91 @@ def is_stackfree(network: 'DirectedPhyNetwork') -> bool:
     return True
 
 
+@lru_cache(maxsize=128)
 def is_treechild(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_treechild function."""
-    raise PhyloZooNotImplementedError("is_treechild function is not implemented.")
+    """
+    Check if the network is tree-child.
+    
+    A phylogenetic network N is tree-child if every internal vertex has at least
+    one child that is not a hybrid node.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is tree-child, False otherwise.
+    
+    Notes
+    -----
+    For empty networks or single-node networks, this function returns True.
+    All trees are tree-child networks.
+    
+    Examples
+    --------
+    >>> # Tree (tree-child)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_treechild(net)
+    True
+    
+    >>> # Network with hybrid that has tree node child (tree-child)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (7, 5), (7, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 8),  # Hybrid to tree node
+    ...         (8, 1), (8, 2)  # Tree node to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_treechild(net)
+    True
+    
+    >>> # Network where internal node has only hybrid children (not tree-child)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (9, 5), (9, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (5, 7), (6, 7),  # Both lead to hybrid 7
+    ...         (4, 1), (7, 2)  # Hybrids to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_treechild(net)
+    False
+    """
+    if network.number_of_nodes() == 0:
+        return True
+    
+    hybrid_nodes = network.hybrid_nodes
+    leaves = network.leaves
+    
+    # Check all non-leaf vertices (root + internal nodes)
+    # Each must have at least one child that is not a hybrid node
+    for node in network._graph.nodes:
+        # Skip leaves (they have no children)
+        if node in leaves:
+            continue
+        
+        children_list = list(network.children(node))
+        
+        # If node has no children, skip (shouldn't happen, but be safe)
+        if not children_list:
+            continue
+        
+        # Check if all children are hybrid nodes
+        all_children_are_hybrids = all(child in hybrid_nodes for child in children_list)
+        
+        if all_children_are_hybrids:
+            return False
+    
+    return True
 
 
 def is_treebased(network: 'DirectedPhyNetwork') -> bool:

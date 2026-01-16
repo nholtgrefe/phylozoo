@@ -9,7 +9,6 @@ First release:
     - Docs + Tutorials
         - Explain editable install
         - toggle for output.
-    - parallelization util module or not?
 - Core:
     - Network:
         - fix/check eNewick parser and writer
