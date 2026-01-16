@@ -251,6 +251,7 @@ def is_simple(network: 'SemiDirectedPhyNetwork') -> bool:
     Notes
     -----
     For empty networks, this function returns True.
+    Some authors call a simple network a "bloblet (network)".
     
     Examples
     --------

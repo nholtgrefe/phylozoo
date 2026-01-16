@@ -391,7 +391,7 @@ def is_treechild(network: 'DirectedPhyNetwork') -> bool:
     """
     Check if the network is tree-child.
     
-    A phylogenetic network N is tree-child if every internal vertex has at least
+    A phylogenetic network is tree-child if every internal vertex has at least
     one child that is not a hybrid node.
     
     Parameters
@@ -486,3 +486,102 @@ def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:
 def is_ultrametric(network: 'DirectedPhyNetwork') -> bool:
     """Stub for is_ultrametric function."""
     raise PhyloZooNotImplementedError("is_ultrametric function is not implemented.")
+
+
+@lru_cache(maxsize=128)
+def is_normal(network: 'DirectedPhyNetwork') -> bool:
+    """
+    Check if the network is normal.
+    
+    A reticulation arc (u, v) is a shortcut if there is a directed path from u to v
+    that does not traverse (u, v). A normal network is a tree-child network without shortcuts.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is normal, False otherwise.
+    
+    Notes
+    -----
+    For empty networks or single-node networks, this function returns True.
+    All trees are normal networks.
+    Networks with parallel edges are never normal (parallel edges are shortcuts).
+    
+    Examples
+    --------
+    >>> # Tree (normal)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_normal(net)
+    True
+    
+    >>> # Tree-child network without shortcuts (normal)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (7, 5), (7, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 8),  # Hybrid to tree node
+    ...         (8, 1), (8, 2)  # Tree node to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_normal(net)
+    True
+    
+    >>> # Network with shortcut (not normal)
+    >>> # Edge (5, 4) is a shortcut because path 5 -> 9 -> 4 exists
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (10, 5), (10, 6),  # Root to tree nodes
+    ...         (5, 4), (5, 9), (6, 4),  # Tree nodes lead to hybrid 4
+    ...         (9, 4),  # This creates a shortcut: path 5 -> 9 -> 4 bypasses edge (5, 4)
+    ...         (4, 1)  # Hybrid to leaf
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
+    >>> is_normal(net)
+    False
+    """
+    import networkx as nx
+    
+    if network.number_of_nodes() == 0:
+        return True
+    
+    # Step 1: Check if tree-child (normal networks must be tree-child)
+    if not is_treechild(network):
+        return False
+    
+    # Step 2: Check for parallel edges (they are always shortcuts)
+    if has_parallel_edges(network):
+        return False
+    
+    # Step 3: Check each hybrid edge for shortcuts
+    # A hybrid edge (u, v) is a shortcut if there's a directed path from u to v
+    # that doesn't use the edge (u, v)
+    hybrid_edges = network.hybrid_edges
+    
+    # If no hybrid edges, network is a tree (normal)
+    if not hybrid_edges:
+        return True
+    
+    # Get the underlying NetworkX graph
+    nx_graph = network._graph._graph
+    
+    # For each hybrid edge, check if there's an alternative path
+    for u, v, key in hybrid_edges:
+        # Create a copy of the graph without this specific edge
+        graph_without_edge = nx_graph.copy()
+        graph_without_edge.remove_edge(u, v, key)
+        
+        # Check if there's still a path from u to v
+        if nx.has_path(graph_without_edge, u, v):
+            return False
+    
+    return True

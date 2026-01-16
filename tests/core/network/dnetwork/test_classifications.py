@@ -16,6 +16,7 @@ import pytest
 from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.classifications import (
     is_binary,
+    is_normal,
     is_simple,
     is_stackfree,
     is_tree,
@@ -619,4 +620,147 @@ class TestIsTreechild:
         # Single hybrid networks with tree/leaf children are tree-child
         assert is_treechild(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID) is True
         assert is_treechild(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID_BINARY) is True
+
+
+class TestIsNormal:
+    """Test cases for is_normal() function."""
+    
+    def test_is_normal_empty_network(self) -> None:
+        """Test is_normal in empty network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(edges=[])
+        assert is_normal(net) is True
+    
+    def test_is_normal_single_node(self) -> None:
+        """Test is_normal in single-node network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = DirectedPhyNetwork(edges=[], nodes=[(1, {'label': 'A'})])
+        assert is_normal(net) is True
+    
+    def test_is_normal_tree(self) -> None:
+        """Test is_normal in tree (all trees are normal)."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_normal(net) is True
+    
+    def test_is_normal_large_tree(self) -> None:
+        """Test is_normal in large binary tree."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),
+                (5, 3), (5, 4),
+                (6, 1), (6, 2)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (4, {'label': 'D'})
+            ]
+        )
+        assert is_normal(net) is True
+    
+    def test_is_normal_treechild_without_shortcuts(self) -> None:
+        """Test is_normal with tree-child network without shortcuts."""
+        # Network: root -> tree nodes -> hybrid -> tree node -> leaves
+        # No shortcuts, so it's normal
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),  # Root to tree nodes
+                (5, 4), (5, 9), (6, 4), (6, 10), (10, 11),  # Tree nodes lead to hybrid 4 and other nodes
+                (4, 8),  # Hybrid to tree node
+                (8, 1), (8, 2), (9, 3), (9, 12), (10, 13)  # Tree node to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'})]
+        )
+        assert is_normal(net) is True
+    
+    def test_is_normal_with_shortcut(self) -> None:
+        """Test is_normal with network containing a shortcut."""
+        # Network: root -> tree nodes -> hybrid
+        # Edge (5, 4) is a shortcut because path 5 -> 9 -> 4 exists
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 5), (10, 6),  # Root to tree nodes
+                (5, 4), (5, 9), (6, 4), (6, 7), (7, 8), (7, 15),  # Tree nodes lead to hybrid 4
+                (9, 4), (9, 11), (11, 12), (11, 13),  # This creates a shortcut: path 5 -> 9 -> 4 bypasses edge (5, 4)
+                (4, 14)  # Hybrid to leaf
+            ],
+            nodes=[(8, {'label': 'A'}), (12, {'label': 'B'}), (13, {'label': 'C'}), (14, {'label': 'D'}), (15, {'label': 'E'})]
+        )
+        assert is_normal(net) is False
+    
+    def test_is_normal_with_shortcut_longer_path(self) -> None:
+        """Test is_normal with network containing a shortcut via longer path."""
+        # Network: root -> tree nodes -> hybrid
+        # Edge (5, 4) is a shortcut because path 5 -> 9 -> 10 -> 4 exists
+        net = DirectedPhyNetwork(
+            edges=[
+                (11, 5), (11, 6),  # Root to tree nodes
+                (5, 4), (5, 9), (6, 4), (6, 7), (7, 8), (7, 19),  # Tree nodes lead to hybrid 4
+                (9, 10), (10, 4), (9, 12), (12, 13), (12, 14), (10, 15), (15, 16), (15, 18),  # This creates a shortcut: path 5 -> 9 -> 10 -> 4 bypasses edge (5, 4)
+                (4, 17)  # Hybrid to leaf
+            ],
+            nodes=[(8, {'label': 'A'}), (13, {'label': 'B'}), (14, {'label': 'C'}), (16, {'label': 'D'}), (17, {'label': 'E'}), (18, {'label': 'F'}), (19, {'label': 'G'})]
+        )
+        assert is_normal(net) is False
+    
+    def test_is_normal_not_treechild(self) -> None:
+        """Test is_normal with network that is not tree-child (not normal)."""
+        # Network where internal node has only hybrid children (not tree-child)
+        net = DirectedPhyNetwork(
+            edges=[
+                (9, 5), (9, 6),  # Root to tree nodes
+                (5, 4), (5, 7),  # Tree node 5 to hybrids 4 and 7
+                (6, 4), (6, 7),  # Tree node 6 to hybrids 4 and 7
+                (4, 1), (7, 2)  # Hybrids to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_normal(net) is False
+    
+    def test_is_normal_with_parallel_edges(self) -> None:
+        """Test is_normal with network containing parallel edges (not normal)."""
+        # Network with parallel edges (they are shortcuts)
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),  # Root to tree nodes
+                (5, 4), (5, 4, 1), (6, 4), (6, 8), (8, 9), (8, 10),  # Parallel edges from 5 to 4
+                (4, 11), (11, 12), (11, 13)  # Hybrid to leaf
+            ],
+            nodes=[(9, {'label': 'A'}), (10, {'label': 'B'}), (12, {'label': 'C'}), (13, {'label': 'D'})]
+        )
+        assert is_normal(net) is False
+    
+    def test_is_normal_multiple_hybrids_no_shortcuts(self) -> None:
+        """Test is_normal with multiple hybrids but no shortcuts."""
+        # Network: root -> tree nodes -> hybrids -> leaves
+        # No shortcuts, so it's normal
+        net = DirectedPhyNetwork(
+            edges=[
+                (10, 7), (10, 18),  # Root to tree nodes
+                (7, 5), (7, 11), (18, 5), (18, 20), (20, 21),  # Both lead to hybrid 5 and other nodes
+                (5, 6),  # Hybrid 5 to tree node 6
+                (6, 4), (6, 12), (10, 14), (14, 4),  # Tree node 6 and tree node 14 lead to hybrid 4
+                (4, 1), (11, 2), (11, 15), (12, 3), (12, 17), (14, 23), (20, 24)  # Hybrid and tree nodes to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (15, {'label': 'D'}), (17, {'label': 'E'}), (21, {'label': 'F'}), (23, {'label': 'G'}), (24, {'label': 'H'})]
+        )
+        assert is_normal(net) is True
+    
+    def test_is_normal_with_fixtures(self) -> None:
+        """Test is_normal using example networks from fixtures."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Trees are normal
+        assert is_normal(dn.DTREE_EMPTY) is True
+        assert is_normal(dn.DTREE_SINGLE_NODE) is True
+        assert is_normal(dn.DTREE_SMALL_BINARY) is True
+        
+        # Single hybrid networks without shortcuts are normal
+        # (assuming they don't have shortcuts in the fixtures)
+        assert is_normal(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID) is True
+        assert is_normal(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID_BINARY) is True
 
