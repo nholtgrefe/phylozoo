@@ -281,7 +281,10 @@ class MatplotlibBackend(Backend):
             size = style.node_size
 
         # Convert size to radius (approximate conversion)
-        radius = (size / 1000.0) ** 0.5 * 0.1
+        # Scale factor: smaller nodes for better visibility
+        # Original formula: (size / 1000.0) ** 0.5 * 0.1
+        # Reduced to 0.03 for better visibility in all layouts
+        radius = (size / 1000.0) ** 0.5 * 0.03
 
         circle = Circle(
             (x, y),
