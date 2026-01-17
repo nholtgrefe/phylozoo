@@ -16,11 +16,13 @@ import pytest
 from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.classifications import (
     is_binary,
+    is_galled,
     is_normal,
     is_simple,
     is_stackfree,
     is_tree,
     is_treechild,
+    is_ultrametric,
     level,
     reticulation_number,
     vertex_level,
@@ -763,4 +765,100 @@ class TestIsNormal:
         # (assuming they don't have shortcuts in the fixtures)
         assert is_normal(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID) is True
         assert is_normal(dn.LEVEL_1_DNETWORK_SINGLE_HYBRID_BINARY) is True
+
+
+class TestIsGalled:
+    """Test cases for is_galled function."""
+    
+    def test_is_galled_empty_network(self) -> None:
+        """Test is_galled with empty network."""
+        net = DirectedPhyNetwork()
+        assert is_galled(net) is True
+    
+    def test_is_galled_tree(self) -> None:
+        """Test is_galled with tree (galled)."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_galled(net) is True
+    
+    def test_is_galled_single_hybrid(self) -> None:
+        """Test is_galled with single hybrid in its own blob (galled)."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 5), (7, 6),  # Root to tree nodes
+                (5, 4), (5, 9), (6, 4), (6, 10),  # Both lead to hybrid 4 and other nodes
+                (4, 8),  # Hybrid to tree node
+                (8, 1), (8, 2), (9, 3), (9, 11), (10, 12), (10, 13)  # Tree nodes to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'})]
+        )
+        assert is_galled(net) is True
+    
+    def test_is_galled_stacked_hybrids(self) -> None:
+        """Test is_galled with stacked hybrids (not galled)."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (9, 5), (9, 6), (9, 8),  # Root to tree nodes
+                (5, 4), (5, 10), (6, 4), (6, 11),  # Both lead to hybrid 4 and other nodes
+                (4, 7), (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
+                (7, 1), (10, 2), (10, 12), (11, 3), (11, 13), (8, 14), (8, 15)  # Hybrid 7 and tree nodes to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'}), (15, {'label': 'G'})]
+        )
+        assert is_galled(net) is False
+
+
+class TestIsUltrametric:
+    """Test cases for is_ultrametric function."""
+    
+    def test_is_ultrametric_empty_network(self) -> None:
+        """Test is_ultrametric with empty network."""
+        net = DirectedPhyNetwork()
+        assert is_ultrametric(net) is True
+    
+    def test_is_ultrametric_tree_equal_distances(self) -> None:
+        """Test is_ultrametric with tree having equal distances."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 3, 'v': 1, 'branch_length': 1.0},
+                {'u': 3, 'v': 2, 'branch_length': 1.0}
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_ultrametric(net) is True
+    
+    def test_is_ultrametric_tree_different_distances(self) -> None:
+        """Test is_ultrametric with tree having different distances."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 3, 'v': 1, 'branch_length': 1.0},
+                {'u': 3, 'v': 2, 'branch_length': 2.0}
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_ultrametric(net) is False
+    
+    def test_is_ultrametric_network_equal_distances(self) -> None:
+        """Test is_ultrametric with network having equal root-to-leaf distances."""
+        # Simple tree with equal distances
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 3, 'v': 1, 'branch_length': 1.0},
+                {'u': 3, 'v': 2, 'branch_length': 1.0}  # Root to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        assert is_ultrametric(net) is True
+    
+    def test_is_ultrametric_with_fixtures(self) -> None:
+        """Test is_ultrametric using example networks from fixtures."""
+        from tests.fixtures import directed_networks as dn
+        
+        # Trees with default branch lengths (all 1.0) are ultrametric
+        assert is_ultrametric(dn.DTREE_EMPTY) is True
+        assert is_ultrametric(dn.DTREE_SINGLE_NODE) is True
+        # Note: DTREE_SMALL_BINARY may not be ultrametric if paths have different lengths
+        # This test is just to verify the function works with fixtures
 

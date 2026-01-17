@@ -34,6 +34,7 @@ Later releases:
         - Validate MixedPhyNetwork (perhaps remove the second condition from our paper)
         - add undirected network and make mixed a superclass or child?
         - Split binary resolution into out_resolution and in_resolution methods?
+        - is_OLP function
         - Generator:
             - add parallelization of generator construction
             - reuse level (k-1) generators or allow as input?

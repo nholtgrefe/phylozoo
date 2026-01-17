@@ -16,6 +16,7 @@ import pytest
 from phylozoo.core.network import SemiDirectedPhyNetwork
 from phylozoo.core.network.sdnetwork.classifications import (
     is_binary,
+    is_galled,
     is_simple,
     is_stackfree,
     is_tree,
@@ -436,57 +437,55 @@ class TestIsStackfreeNotStackfree:
         assert not is_stackfree(net)
 
 
-class TestIsStackfreeWithFixtures:
-    """Test cases for is_stackfree() function using fixture networks."""
+class TestIsGalled:
+    """Test cases for is_galled function."""
     
-    def test_is_stackfree_tree_fixtures(self) -> None:
-        """Test is_stackfree on tree fixtures (should all be stack-free)."""
-        from tests.fixtures import sd_networks as sdn
-        
-        # Trees have no hybrids, so they are stack-free
-        assert is_stackfree(sdn.SDTREE_EMPTY)
-        assert is_stackfree(sdn.SDTREE_SINGLE_NODE)
-        assert is_stackfree(sdn.SDTREE_SMALL_BINARY)
-        assert is_stackfree(sdn.SDTREE_NON_BINARY_SMALL)
+    def test_is_galled_empty_network(self) -> None:
+        """Test is_galled with empty network."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
+        assert is_galled(net) is True
     
-    def test_is_stackfree_single_hybrid_fixtures(self) -> None:
-        """Test is_stackfree on networks with single hybrid (should be stack-free)."""
-        from tests.fixtures import sd_networks as sdn
-        
-        # Single hybrid networks have no stacked hybrids
-        assert is_stackfree(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID)
-        assert is_stackfree(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY)
+    def test_is_galled_tree(self) -> None:
+        """Test is_galled with tree (galled)."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        assert is_galled(net) is True
     
-    def test_is_stackfree_multiple_hybrids_separate_fixtures(self) -> None:
-        """Test is_stackfree on networks with multiple hybrids in separate blobs."""
-        from tests.fixtures import sd_networks as sdn
-        
-        # Hybrids in separate blobs don't stack
-        assert is_stackfree(sdn.LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE)
-
-
-class TestIsStackfreeNotStackfree:
-    """Test cases for is_stackfree() function on networks with stacked hybrids."""
+    def test_is_galled_single_hybrid(self) -> None:
+        """Test is_galled with single hybrid in its own blob (galled)."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[
+                (5, 4), (6, 4)  # Both lead to hybrid 4
+            ],
+            undirected_edges=[
+                (7, 5), (7, 6), (7, 9),  # Root to tree nodes
+                (4, 8),  # Hybrid to tree node
+                (5, 10), (5, 11),  # Tree node 5 has additional edges
+                (6, 12), (6, 13),  # Tree node 6 has additional edges
+                (8, 1), (8, 2), (9, 14), (9, 15)  # Tree nodes to leaves
+            ],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (10, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'}), (14, {'label': 'G'}), (15, {'label': 'H'})]
+        )
+        assert is_galled(net) is True
     
-    def test_is_stackfree_stacked_hybrids_simple(self) -> None:
-        """Test is_stackfree on network with simple stacked hybrids."""
-        # Network: hybrid 4 -> hybrid 7 -> leaf
-        # Hybrid 4: in-degree 2 (from 5, 6), out-degree 1 (to 7), total degree 3
-        # Hybrid 7: in-degree 2 (from 4, 8), out-degree 1 (to 1), total degree 3
-        # Need to ensure single source component and all internal nodes have degree >= 3
+    def test_is_galled_stacked_hybrids(self) -> None:
+        """Test is_galled with stacked hybrids (not galled)."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
                 (5, 4), (6, 4),  # Both lead to hybrid 4
                 (4, 7), (8, 7)  # Hybrid 4 and tree node 8 lead to hybrid 7
             ],
             undirected_edges=[
-                (9, 5), (9, 6), (9, 8),  # Root to tree nodes (node 9 has degree 3, connects to 5, 6, 8)
-                (5, 10), (5, 11),  # Tree node 5 has additional edges (degree 3)
-                (6, 12), (6, 13),  # Tree node 6 has additional edges (degree 3)
-                (7, 1),  # Hybrid 7 to leaf (hybrid 7 has degree 3: in-degree 2, out-degree 1)
-                (8, 14), (8, 15)  # Tree node 8 to leaves (node 8 has degree 3)
+                (9, 5), (9, 6), (9, 8),  # Root to tree nodes
+                (5, 10), (5, 11),  # Tree node 5 has additional edges
+                (6, 12), (6, 13),  # Tree node 6 has additional edges
+                (7, 1),  # Hybrid 7 to leaf
+                (8, 14), (8, 15)  # Tree node 8 to leaves
             ],
             nodes=[(1, {'label': 'A'}), (10, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'}), (15, {'label': 'G'})]
         )
-        assert not is_stackfree(net)
-
+        assert is_galled(net) is False

@@ -7,11 +7,12 @@ directed phylogenetic networks (e.g., is_tree, is_binary, level, etc.).
 """
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ...primitives.d_multigraph.features import has_parallel_edges as graph_has_parallel_edges
 from .features import blobs
-from ....utils.exceptions import PhyloZooNotImplementedError
+from ....utils.exceptions import PhyloZooNotImplementedError, PhyloZooValueError, PhyloZooAlgorithmError
+
 
 if TYPE_CHECKING:
     from . import DirectedPhyNetwork
@@ -303,15 +304,99 @@ def is_simple(network: 'DirectedPhyNetwork') -> bool:
     return len(non_leaf_blobs) <= 1
 
 
+@lru_cache(maxsize=128)
 def is_galled(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_galled function."""
-    return False
-
-
-def is_OLP(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_OLP function."""
-    return False
-
+    """
+    Check if the network is galled.
+    
+    A network is galled if no hybrid node is ancestral to another hybrid node in the same blob.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is galled, False otherwise.
+    
+    Notes
+    -----
+    For empty networks or networks with no hybrid nodes, this function returns True.
+    All trees are galled networks.
+    
+    Examples
+    --------
+    >>> # Network with no hybrid nodes (galled)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_galled(net)
+    True
+    
+    >>> # Network with single hybrid in its own blob (galled)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (7, 5), (7, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 8),  # Hybrid to tree node
+    ...         (8, 1), (8, 2)  # Tree node to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_galled(net)
+    True
+    
+    >>> # Network with hybrid ancestral to another hybrid in same blob (not galled)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         (9, 5), (9, 6),  # Root to tree nodes
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 7), (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
+    ...         (7, 1)  # Hybrid 7 to leaf
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
+    >>> is_galled(net)
+    False
+    """
+    import networkx as nx
+    
+    if network.number_of_nodes() == 0:
+        return True
+    
+    hybrid_nodes = network.hybrid_nodes
+    
+    # If no hybrid nodes, network is galled (it's a tree)
+    if not hybrid_nodes:
+        return True
+    
+    # Get all blobs
+    blob_list = blobs(network, trivial=False, leaves=False)
+    
+    # Get the underlying NetworkX graph for path checking
+    nx_graph = network._graph._graph
+    
+    # Check each blob
+    for blob_set in blob_list:
+        # Get hybrid nodes in this blob
+        hybrids_in_blob = [h for h in hybrid_nodes if h in blob_set]
+        
+        # If there's only one hybrid in the blob, it can't be ancestral to another
+        if len(hybrids_in_blob) <= 1:
+            continue
+        
+        # Check if any hybrid in this blob is ancestral to another hybrid in the same blob
+        for h1 in hybrids_in_blob:
+            for h2 in hybrids_in_blob:
+                if h1 != h2:
+                    # Check if h1 is ancestral to h2 (there's a directed path from h1 to h2)
+                    if nx.has_path(nx_graph, h1, h2):
+                        return False
+    
+    return True
 
 @lru_cache(maxsize=128)
 def is_stackfree(network: 'DirectedPhyNetwork') -> bool:
@@ -483,10 +568,133 @@ def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:
     raise PhyloZooNotImplementedError("is_strictly_treebased function is not implemented.")
 
 
+@lru_cache(maxsize=128)
 def is_ultrametric(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_ultrametric function."""
-    raise PhyloZooNotImplementedError("is_ultrametric function is not implemented.")
+    """
+    Check if the network is ultrametric.
 
+    A network is ultrametric if all root-to-leaf distances are equal.
+    All paths from root to each leaf must have the same distance.
+    
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is ultrametric, False otherwise.
+    
+    Raises
+    ------
+    PhyloZooValueError
+        If any edge lacks a branch length.
+    PhyloZooAlgorithmError
+        If no path exists from root to a leaf.
+    
+    Notes
+    -----
+    For empty networks or single-node networks, this function returns True.
+    Every edge must have a branch length specified.
+    If parallel edges have different branch lengths, the network is not ultrametric (returns False).
+    The distance from root to a leaf is the sum of branch lengths along a directed path.
+    
+    Examples
+    --------
+    >>> # Tree with equal distances (ultrametric)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         {'u': 3, 'v': 1, 'branch_length': 1.0},
+    ...         {'u': 3, 'v': 2, 'branch_length': 1.0}
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_ultrametric(net)
+    True
+    
+    >>> # Tree with different distances (not ultrametric)
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[
+    ...         {'u': 3, 'v': 1, 'branch_length': 1.0},
+    ...         {'u': 3, 'v': 2, 'branch_length': 2.0}
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_ultrametric(net)
+    False
+    """
+    import networkx as nx
+    
+    if network.number_of_nodes() == 0:
+        return True
+    
+    leaves = network.leaves
+    if not leaves:
+        return True
+    
+    root = network.root_node
+    nx_graph = network._graph._graph
+    
+    # Step 1: Check that all edges have branch lengths
+    for u, v, key, data in network._graph.edges(keys=True, data=True):
+        bl = data.get('branch_length')
+        if bl is None:
+            raise PhyloZooValueError(
+                f"Edge ({u}, {v}, {key}) lacks a branch_length. "
+                "All edges must have branch_length for is_ultrametric."
+            )
+    
+    # Step 2: Check that all parallel edges have the same branch length
+    # If parallel edges have different branch lengths, the network is not ultrametric
+    # Group edges by (u, v) pair
+    edge_groups: dict[tuple[Any, Any], list[float]] = {}
+    for u, v, key, data in network._graph.edges(keys=True, data=True):
+        edge_key = (u, v)
+        bl = data.get('branch_length')
+        if edge_key not in edge_groups:
+            edge_groups[edge_key] = []
+        edge_groups[edge_key].append(bl)
+    
+    # Check parallel edges have same branch length
+    for (u, v), branch_lengths in edge_groups.items():
+        if len(branch_lengths) > 1:  # Parallel edges
+            first_bl = branch_lengths[0]
+            if not all(abs(bl - first_bl) < 1e-10 for bl in branch_lengths):
+                return False  # Not ultrametric if parallel edges have different branch lengths
+    
+    # Step 3: Compute distances for all paths from root to each leaf
+    distances: list[float] = []
+    
+    for leaf in leaves:
+        # Find all paths from root to leaf
+        paths = list(nx.all_simple_paths(nx_graph, root, leaf))
+        if not paths:
+            raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
+        
+        for path in paths:
+            # Sum branch lengths along the path
+            total_distance = 0.0
+            for i in range(len(path) - 1):
+                u, v = path[i], path[i + 1]
+                # Get branch length (if parallel edges exist, they all have the same length)
+                # Use the first edge's branch length
+                edges_data = nx_graph[u].get(v, {})
+                if not edges_data:
+                    raise PhyloZooAlgorithmError(f"Edge ({u}, {v}) not found in graph")
+                first_key = next(iter(edges_data))
+                bl = edges_data[first_key].get('branch_length')
+                if bl is None:
+                    raise PhyloZooValueError(f"Edge ({u}, {v}) lacks a branch_length")
+                total_distance += bl
+            distances.append(total_distance)
+    
+    # Check if all distances are equal
+    if not distances:
+        return True
+    
+    first_distance = distances[0]
+    return all(abs(d - first_distance) < 1e-10 for d in distances)
 
 @lru_cache(maxsize=128)
 def is_normal(network: 'DirectedPhyNetwork') -> bool:

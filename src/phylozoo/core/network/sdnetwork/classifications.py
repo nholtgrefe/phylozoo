@@ -267,13 +267,104 @@ def is_simple(network: 'SemiDirectedPhyNetwork') -> bool:
     return len(non_leaf_blobs) <= 1
 
 
+@lru_cache(maxsize=128)
 def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
-    """Stub for is_galled function."""
-    raise PhyloZooNotImplementedError("is_galled function is not implemented.")
-
-def is_OLP(network: 'SemiDirectedPhyNetwork') -> bool:
-    """Stub for is_OLP function."""
-    raise PhyloZooNotImplementedError("is_OLP function is not implemented.")
+    """
+    Check if the network is galled.
+    
+    A network is galled if no hybrid node is ancestral to another hybrid node in the same blob.
+    A hybrid node is ancestral to another one if there exists an up-down path from one to the other.
+    
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is galled, False otherwise.
+    
+    Notes
+    -----
+    For empty networks or networks with no hybrid nodes, this function returns True.
+    All trees are galled networks.
+    
+    Examples
+    --------
+    >>> # Network with no hybrid nodes (galled)
+    >>> net = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_galled(net)
+    True
+    
+    >>> # Network with single hybrid in its own blob (galled)
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[
+    ...         (5, 4), (6, 4)  # Both lead to hybrid 4
+    ...     ],
+    ...     undirected_edges=[
+    ...         (7, 5), (7, 6),  # Root to tree nodes
+    ...         (4, 8),  # Hybrid to tree node
+    ...         (8, 1), (8, 2)  # Tree node to leaves
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> is_galled(net)
+    True
+    
+    >>> # Network with hybrid ancestral to another hybrid in same blob (not galled)
+    >>> net = SemiDirectedPhyNetwork(
+    ...     directed_edges=[
+    ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (4, 7), (8, 7)  # Hybrid 4 and tree node 8 lead to hybrid 7
+    ...     ],
+    ...     undirected_edges=[
+    ...         (9, 5), (9, 6),  # Root to tree nodes
+    ...         (7, 1)  # Hybrid 7 to leaf
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
+    >>> is_galled(net)
+    False
+    """
+    from ...primitives.m_multigraph.features import updown_path_vertices
+    
+    if network.number_of_nodes() == 0:
+        return True
+    
+    hybrid_nodes = network.hybrid_nodes
+    
+    # If no hybrid nodes, network is galled (it's a tree)
+    if not hybrid_nodes:
+        return True
+    
+    # Get all blobs
+    blob_list = blobs(network, trivial=False, leaves=False)
+    
+    # Check each blob
+    for blob_set in blob_list:
+        # Get hybrid nodes in this blob
+        hybrids_in_blob = [h for h in hybrid_nodes if h in blob_set]
+        
+        # If there's only one hybrid in the blob, it can't be ancestral to another
+        if len(hybrids_in_blob) <= 1:
+            continue
+        
+        # Check if any hybrid in this blob is ancestral to another hybrid in the same blob
+        # (i.e., there exists an up-down path from one to the other)
+        for h1 in hybrids_in_blob:
+            for h2 in hybrids_in_blob:
+                if h1 != h2:
+                    # Check if there's an up-down path from h1 to h2
+                    # If h2 is in the vertices on up-down paths from h1, then h1 is ancestral to h2
+                    path_vertices = updown_path_vertices(network._graph, h1, h2)
+                    if h2 in path_vertices:
+                        return False
+    
+    return True
 
 @lru_cache(maxsize=128)
 def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
