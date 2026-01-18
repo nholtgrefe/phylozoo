@@ -14,7 +14,7 @@ For the latest development version, clone the repository and install in editable
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/phylozoo.git
+   git clone https://github.com/nholtgrefe/phylozoo.git
    cd phylozoo
    pip install -e ".[dev]"
 
@@ -36,12 +36,6 @@ Optional Dependencies
 * **Development**: mypy >= 1.0.0, black >= 23.0.0, ruff >= 0.1.0
 * **Documentation**: Sphinx >= 7.0.0, sphinx-autobuild, sphinx-rtd-theme, sphinxcontrib-napoleon
 
-Platform Notes
---------------
-
-* **Linux/macOS**: Full support for all features.
-* **Windows**: Supported, but Numba JIT compilation may have issues on some configurations. If you encounter compilation errors, try installing from conda-forge or use the no-numba fallback (not recommended for performance).
-
 Verifying Installation
 ----------------------
 
@@ -54,24 +48,12 @@ To verify that PhyloZoo is installed correctly:
    0.1.0
 
    >>> from phylozoo import DirectedPhyNetwork
-   >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3)], nodes=[(3, {'label': 'A'})])
+   >>> net = DirectedPhyNetwork(edges=[(1, 2), (1, 3)], nodes=[(2, {'label': 'A'}), (3, {'label': 'B'})])
    >>> print(net.leaves)
-   [3]
+   [2, 3]
 
 Troubleshooting
 ---------------
-
-**Numba compilation errors**: If you see errors related to Numba JIT compilation, try:
-
-.. code-block:: bash
-
-   pip install --upgrade numba llvmlite
-
-Or disable JIT compilation by setting the environment variable:
-
-.. code-block:: bash
-
-   export NUMBA_DISABLE_JIT=1
 
 **Import errors**: Ensure you're using Python >= 3.10. Check that all dependencies are installed:
 

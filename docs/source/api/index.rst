@@ -1,21 +1,13 @@
 API Reference
 ==============
 
-This section contains the API reference for all modules and classes in phylozoo.
-
-Structures Module
------------------
+Complete API reference for all public functions, classes, and modules.
 
 .. toctree::
-   :maxdepth: 2
-
-   structures
-
-Network Modules
----------------
-
-.. toctree::
-   :maxdepth: 2
-
-   networks
-
+   :maxdepth: 3
+   
+   core/index
+   inference
+   panda
+   viz
+   utils

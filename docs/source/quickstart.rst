@@ -112,7 +112,7 @@ Quick Links
 * :doc:`Introduction <manual/introduction>` - Learn about PhyloZoo's design and features
 * :doc:`Networks (Basic) <manual/core/networks/basic>` - Basic network operations
 * :doc:`Network Analysis Workflow <../tutorials/workflow_network_analysis>` - Complete workflow example
-* :doc:`API Reference <library/index>` - Full API documentation
+* :doc:`API Reference <api/index>` - Full API documentation
 
 Next Steps
 ----------
@@ -121,6 +121,6 @@ Ready to dive deeper? Check out:
 
 1. The :doc:`Manual <manual/index>` for comprehensive guides
 2. :doc:`Tutorials <tutorials/index>` for extended examples
-3. The :doc:`Library <library/index>` for complete API reference
+3. The :doc:`API Reference <api/index>` for complete API reference
 
 For help and support, see the :doc:`Guides <guides/index>` section.

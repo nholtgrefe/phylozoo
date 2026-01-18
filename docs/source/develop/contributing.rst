@@ -4,7 +4,7 @@ Contributing
 Thank you for your interest in contributing to PhyloZoo!
 
 If you are interested in contributing to PhyloZoo, please note that the contribution process 
-is not fully set up yet. For now, please send an email expressing your interest and we will 
+is not fully set up yet. For now, please send an email to n.a.l.holtgrefe@tudelft.nl expressing your interest and we will 
 get back to you with more information.
 
 We welcome contributions in various forms:
@@ -24,4 +24,4 @@ guidelines on:
 * Pull request process
 * Documentation standards
 
-For now, please reach out via email to discuss your contribution ideas.
+For now, please reach out via email to n.a.l.holtgrefe@tudelft.nl to discuss your contribution ideas.

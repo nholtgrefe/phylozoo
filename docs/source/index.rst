@@ -33,7 +33,7 @@ between representations.
    :maxdepth: 3
    :caption: Library (API Reference)
    
-   library/index
+   api/index
 
 .. toctree::
    :maxdepth: 2

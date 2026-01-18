@@ -11,3 +11,4 @@ Core data structures and classes for phylogenetic networks and related structure
    quartets
    splits
    distance
+   primitives

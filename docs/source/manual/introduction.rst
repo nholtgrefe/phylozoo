@@ -207,4 +207,4 @@ instructions and basic examples. For detailed documentation on specific modules,
 * :doc:`Diversity Module <diversity/index>`: Phylogenetic diversity calculations
 * :doc:`Visualization Module <visualization/index>`: Network plotting and visualization
 
-For complete API reference, see the :doc:`Library <../library/index>` section.
+For complete API reference, see the :doc:`API Reference <../api/index>` section.

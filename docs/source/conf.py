@@ -62,10 +62,17 @@ napoleon_attr_annotations = True
 # Autodoc settings
 autodoc_default_options = {
     'members': True,
-    'undoc-members': True,
+    'undoc-members': True,  # Show all members, even if undocumented
     'show-inheritance': True,
     'inherited-members': False,
 }
+
+# Suppress common autodoc warnings
+# This suppresses warnings about undocumented members, missing imports, etc.
+suppress_warnings = [
+    'autodoc.import_object',  # Suppress import warnings
+    'autodoc',  # Suppress other autodoc warnings
+]
 
 autodoc_mock_imports = []
 
@@ -101,7 +108,7 @@ html_static_path = ['_static']
 # PyData Sphinx Theme options (similar to Aesara's style)
 if html_theme == 'pydata_sphinx_theme':
     html_theme_options = {
-        'github_url': 'https://github.com/yourusername/phylozoo',
+        'github_url': 'https://github.com/nholtgrefe/phylozoo',
         'logo': {
             'text': 'PhyloZoo',
         },
@@ -112,7 +119,7 @@ if html_theme == 'pydata_sphinx_theme':
         'icon_links': [
             {
                 'name': 'GitHub',
-                'url': 'https://github.com/yourusername/phylozoo',
+                'url': 'https://github.com/nholtgrefe/phylozoo',
                 'icon': 'fa-brands fa-github',
             },
         ],
@@ -121,7 +128,7 @@ if html_theme == 'pydata_sphinx_theme':
         'collapse_navigation': False,
     }
     html_context = {
-        'github_user': 'yourusername',
+        'github_user': 'nholtgrefe',
         'github_repo': 'phylozoo',
         'github_version': 'main',
         'doc_path': 'docs/source',
@@ -150,7 +157,7 @@ elif html_theme == 'sphinx_rtd_theme':
 if html_theme != 'pydata_sphinx_theme':
     html_context = {
         'display_github': True,  # Enable "Edit on GitHub" link
-        'github_user': 'yourusername',  # Update with your GitHub username
+        'github_user': 'nholtgrefe',  # Update with your GitHub username
         'github_repo': 'phylozoo',
         'github_version': 'main',
         'conf_py_path': '/docs/source/',
