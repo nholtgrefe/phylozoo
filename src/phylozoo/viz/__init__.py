@@ -2,29 +2,21 @@
 Visualization module for PhyloZoo (viz).
 
 This module provides a modular visualization system for phylogenetic networks
-and graphs with clear separation between layout computation, edge rendering, and styling.
+and graphs with clear separation between layout computation and rendering.
 """
 
-from .dnetwork import (
-    NetworkStyle,
-    compute_dag_layout,
-    default_style,
-    get_backend,
-    plot_network,
-    plot_tree,
-    register_backend,
-)
-from .graphs import plot_directed_multigraph, plot_mixed_multigraph
+from .dnetwork import plot_dnetwork
+from .graphs import plot_dmgraph, plot_mmgraph
+from .sdnetwork import plot_sdnetwork
+
+# Export styles for convenience (backward compatibility)
+from .dnetwork import DNetStyle as NetworkStyle, default_style
 
 __all__ = [
-    'plot_network',
-    'plot_tree',
-    'compute_dag_layout',
-    'plot_directed_multigraph',
-    'plot_mixed_multigraph',
-    'NetworkStyle',
-    'default_style',
-    'get_backend',
-    'register_backend',
+    'plot_dnetwork',
+    'plot_sdnetwork',
+    'plot_dmgraph',
+    'plot_mmgraph',
+    'NetworkStyle',  # Alias for backward compatibility
+    'default_style',  # Default for dnetwork (backward compatibility)
 ]
-

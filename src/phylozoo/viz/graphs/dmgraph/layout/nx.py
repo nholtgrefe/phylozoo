@@ -1,13 +1,12 @@
 """
-NetworkX and Graphviz layout computation for graphs.
+NetworkX and Graphviz layout dispatcher for DirectedMultiGraph.
 
 This module provides layout computation using standard NetworkX and Graphviz
-algorithms for DirectedMultiGraph and MixedMultiGraph.
+algorithms for DirectedMultiGraph.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import networkx as nx
@@ -15,83 +14,28 @@ import networkx as nx
 from phylozoo.utils.exceptions import (
     PhyloZooImportError,
     PhyloZooLayoutError,
-    PhyloZooTypeError,
 )
+
+from .base import DMGraphLayout
+from .routes import compute_dmgraph_routes
 
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-    from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 
 T = TypeVar('T')
 
 
-@dataclass(frozen=True)
-class GraphLayout:
-    """
-    Simple layout for graphs.
-
-    This layout class stores computed positions for graph nodes using
-    standard NetworkX or Graphviz layouts.
-
-    Attributes
-    ----------
-    graph : DirectedMultiGraph | MixedMultiGraph
-        The graph this layout is for.
-    positions : dict[T, tuple[float, float]]
-        Node positions mapping node ID to (x, y) coordinates.
-    algorithm : str
-        Name of the layout algorithm used.
-    parameters : dict[str, Any]
-        Parameters used to generate this layout.
-
-    Examples
-    --------
-    >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-    >>> from phylozoo.viz.graphs.layout import compute_graph_layout
-    >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
-    >>> layout = compute_graph_layout(G, layout='spring')
-    >>> len(layout.positions)
-    3
-    """
-
-    graph: 'DirectedMultiGraph[T] | MixedMultiGraph[T]'
-    positions: dict[T, tuple[float, float]]
-    algorithm: str
-    parameters: dict[str, Any]
-
-    def get_position(self, node: T) -> tuple[float, float]:
-        """
-        Get position of a node.
-
-        Parameters
-        ----------
-        node : T
-            Node ID.
-
-        Returns
-        -------
-        tuple[float, float]
-            (x, y) position.
-
-        Raises
-        ------
-        KeyError
-            If node is not in the layout.
-        """
-        return self.positions[node]
-
-
-def compute_graph_layout(
-    graph: 'DirectedMultiGraph[T] | MixedMultiGraph[T]',
+def compute_nx_layout(
+    graph: 'DirectedMultiGraph[T]',
     layout: str = 'spring',
     **kwargs: Any,
-) -> GraphLayout:
+) -> DMGraphLayout[T]:
     """
-    Compute layout for a graph using NetworkX or Graphviz.
+    Compute layout for DirectedMultiGraph using NetworkX or Graphviz.
 
     Parameters
     ----------
-    graph : DirectedMultiGraph | MixedMultiGraph
+    graph : DirectedMultiGraph
         The graph to layout.
     layout : str, optional
         Layout algorithm name. Supported values:
@@ -104,48 +48,35 @@ def compute_graph_layout(
 
     Returns
     -------
-    GraphLayout
+    DMGraphLayout
         The computed layout.
 
     Raises
     ------
     PhyloZooLayoutError
         If layout algorithm is not supported, graph is empty, or layout computation fails.
-    PhyloZooTypeError
-        If graph type is unsupported.
     PhyloZooImportError
         If Graphviz layout is requested but pygraphviz is not installed.
 
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+    >>> from phylozoo.viz.graphs.dmgraph.layout.nx import compute_nx_layout
+    >>>
     >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
-    >>> layout = compute_graph_layout(G, layout='circular')
+    >>> layout = compute_nx_layout(G, layout='circular')
     >>> len(layout.positions)
     3
     """
     if graph.number_of_nodes() == 0:
         raise PhyloZooLayoutError("Cannot compute layout for empty graph")
 
-    # Convert graph to NetworkX format for layout
-    if hasattr(graph, '_graph'):
-        # DirectedMultiGraph
-        G_nx = graph._graph
-    elif hasattr(graph, '_directed') and hasattr(graph, '_undirected'):
-        # MixedMultiGraph - combine both for layout
-        G_nx = nx.MultiGraph()
-        for node in graph.nodes():
-            G_nx.add_node(node)
-        for u, v, key in graph._directed.edges(keys=True):
-            G_nx.add_edge(u, v, key=key)
-        for u, v, key in graph._undirected.edges(keys=True):
-            G_nx.add_edge(u, v, key=key)
-    else:
-        raise PhyloZooTypeError(f"Unsupported graph type: {type(graph)}")
+    # Convert graph to NetworkX DiGraph for layout
+    G_nx = graph._graph
 
     # Compute layout
     pos: dict[T, tuple[float, float]]
-    
+
     # Graphviz layouts
     if layout in ('dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'):
         try:
@@ -157,13 +88,9 @@ def compute_graph_layout(
             )
         except Exception as e:
             raise PhyloZooLayoutError(
-                f"Graphviz layout '{layout}' failed: {e}. "
-                "Falling back to spring layout."
+                f"Graphviz layout '{layout}' failed: {e}"
             ) from e
-            # Fallback to spring
-            pos = nx.spring_layout(G_nx, **kwargs)
-            layout = 'spring'
-    
+
     # NetworkX layouts
     elif layout == 'spring':
         pos = nx.spring_layout(G_nx, **kwargs)
@@ -190,10 +117,36 @@ def compute_graph_layout(
             "shell, spectral, spiral, bipartite, dot, neato, fdp, sfdp, twopi, circo"
         )
 
-    return GraphLayout(
-        graph=graph,
+    # Normalize positions to center at origin and scale appropriately
+    if pos:
+        xs = [x for x, _ in pos.values()]
+        ys = [y for _, y in pos.values()]
+        if xs and ys:
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
+            width = max_x - min_x if max_x != min_x else 1.0
+            height = max_y - min_y if max_y != min_y else 1.0
+
+            # Center and normalize
+            center_x = (min_x + max_x) / 2
+            center_y = (min_y + max_y) / 2
+            scale = 1.0 / max(width, height) if max(width, height) > 0 else 1.0
+
+            normalized_pos: dict[T, tuple[float, float]] = {}
+            for node, (x, y) in pos.items():
+                normalized_pos[node] = (
+                    (x - center_x) * scale,
+                    (y - center_y) * scale,
+                )
+            pos = normalized_pos
+
+    # Compute edge routes
+    edge_routes = compute_dmgraph_routes(graph, pos)
+
+    return DMGraphLayout(
+        network=graph,
         positions=pos,
+        edge_routes=edge_routes,
         algorithm=layout,
         parameters=kwargs,
     )
-

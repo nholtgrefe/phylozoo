@@ -1,21 +1,23 @@
 """
-Styling classes for DirectedPhyNetwork plots.
+Styling for SemiDirectedPhyNetwork plots.
 
-This module provides styling configuration for network visualizations.
+This module provides styling configuration for SemiDirectedPhyNetwork visualizations.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
+from ..graphs.mmgraph.style import MGraphStyle
 
 
 @dataclass
-class NetworkStyle:
+class SDNetStyle(MGraphStyle):
     """
-    Styling configuration for network plots.
+    Styling configuration for SemiDirectedPhyNetwork plots.
 
-    This class encapsulates all visual styling options for network plots,
-    including colors, sizes, labels, and other visual properties.
+    This class extends MGraphStyle with SemiDirectedPhyNetwork-specific options,
+    including support for leaves, hybrid nodes, and hybrid edges.
 
     Attributes
     ----------
@@ -46,41 +48,33 @@ class NetworkStyle:
 
     Examples
     --------
-    >>> style = NetworkStyle(node_color='blue', leaf_color='green')
+    >>> style = SDNetStyle(node_color='blue', leaf_color='green')
     >>> style.node_color
     'blue'
     """
 
-    node_color: str = 'lightblue'
     leaf_color: str = 'lightgreen'
     hybrid_color: str = 'salmon'
-    node_size: float = 500.0
     leaf_size: float = 600.0
-    edge_color: str = 'gray'
     hybrid_edge_color: str = 'red'
-    edge_width: float = 2.0
-    with_labels: bool = True
-    label_offset: float = 0.1
-    label_font_size: float = 10.0
-    label_color: str = 'black'
 
-    def copy(self) -> 'NetworkStyle':
+    def copy(self) -> 'SDNetStyle':
         """
         Create a copy of this style.
 
         Returns
         -------
-        NetworkStyle
-            A new NetworkStyle instance with the same values.
+        SDNetStyle
+            A new SDNetStyle instance with the same values.
 
         Examples
         --------
-        >>> style = NetworkStyle(node_color='blue')
+        >>> style = SDNetStyle(node_color='blue')
         >>> style2 = style.copy()
         >>> style2.node_color
         'blue'
         """
-        return NetworkStyle(
+        return SDNetStyle(
             node_color=self.node_color,
             leaf_color=self.leaf_color,
             hybrid_color=self.hybrid_color,
@@ -95,3 +89,20 @@ class NetworkStyle:
             label_color=self.label_color,
         )
 
+
+def default_style() -> SDNetStyle:
+    """
+    Get the default style configuration for SemiDirectedPhyNetwork.
+
+    Returns
+    -------
+    SDNetStyle
+        Default style configuration.
+
+    Examples
+    --------
+    >>> style = default_style()
+    >>> style.node_color
+    'lightblue'
+    """
+    return SDNetStyle()

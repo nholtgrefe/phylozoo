@@ -20,8 +20,8 @@ from phylozoo.utils.exceptions import (
     PhyloZooValueError,
 )
 
-from .base import RadialLayout
-from ..rendering.routes import compute_radial_routes
+from .base import SDNetLayout
+from .routes import compute_radial_routes
 
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -29,14 +29,16 @@ if TYPE_CHECKING:
 T = TypeVar('T')
 
 
-def compute_radial_layout(
+def compute_pz_radial_layout(
     network: 'SemiDirectedPhyNetwork',
     radius: float = 1.0,
     start_angle: float = 0.0,
     angle_direction: str = 'clockwise',
-) -> RadialLayout:
+) -> SDNetLayout:
     """
     Compute a radial (circular) layout for a SemiDirectedPhyNetwork tree.
+    
+    This is a custom PhyloZoo layout algorithm (pz-radial).
 
     This function positions nodes in a circular arrangement:
     - Root at the center (radius 0)
@@ -57,7 +59,7 @@ def compute_radial_layout(
 
     Returns
     -------
-    RadialLayout
+    SDNetLayout
         The computed radial layout.
 
     Raises
@@ -70,13 +72,13 @@ def compute_radial_layout(
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> from phylozoo.viz.sdnetwork.layout import compute_radial_layout
+    >>> from phylozoo.viz.sdnetwork.layout import compute_pz_radial_layout
     >>>
     >>> net = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> layout = compute_radial_layout(net)
+    >>> layout = compute_pz_radial_layout(net)
     >>> len(layout.positions)
     3
     """
@@ -137,11 +139,11 @@ def compute_radial_layout(
         # Single node network
         positions: dict[T, tuple[float, float]] = {root: (0.0, 0.0)}
         edge_routes: dict[tuple[T, T, int], 'EdgeRoute'] = {}
-        return RadialLayout(
+        return SDNetLayout(
             network=network,
             positions=positions,
             edge_routes=edge_routes,
-            algorithm='radial',
+            algorithm='pz-radial',
             parameters={
                 'radius': radius,
                 'start_angle': start_angle,
@@ -231,11 +233,11 @@ def compute_radial_layout(
     # Compute edge routes (using filtered positions)
     edge_routes = compute_radial_routes(network, filtered_positions)
 
-    return RadialLayout(
+    return SDNetLayout(
         network=network,
         positions=filtered_positions,
         edge_routes=edge_routes,
-        algorithm='radial',
+        algorithm='pz-radial',
         parameters={
             'radius': radius,
             'start_angle': start_angle,

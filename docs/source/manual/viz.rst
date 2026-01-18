@@ -2,63 +2,70 @@ Visualization Module
 ====================
 
 The visualization module (`phylozoo.viz`) provides a flexible plotting system for 
-phylogenetic networks and graphs with support for multiple backends and customizable 
-styling :cite:`PhyloZoo2024`.
+phylogenetic networks and graphs with support for multiple layout algorithms and 
+customizable styling :cite:`PhyloZoo2024`.
 
 Basic Plotting
 --------------
 
-The simplest way to plot a network is using the ``plot_network()`` function:
+The simplest way to plot a network is using the plotting functions:
 
 .. code-block:: python
 
-   from phylozoo.viz.dnetwork import plot_network
-   from phylozoo import DirectedPhyNetwork
+   from phylozoo.viz import plot_dnetwork, plot_sdnetwork
+   from phylozoo import DirectedPhyNetwork, SemiDirectedPhyNetwork
    
-   # Load and plot network
-   network = DirectedPhyNetwork.load("network.enewick")
-   plot_network(network, show=True)
+   # Plot directed network (default layout: 'pz-dag')
+   dnet = DirectedPhyNetwork.load("network.enewick")
+   plot_dnetwork(dnet, show=True)
+   
+   # Plot semi-directed network (default layout: 'twopi')
+   sdnet = SemiDirectedPhyNetwork.load("network.enewick")
+   plot_sdnetwork(sdnet, show=True)
 
 The ``show=True`` parameter displays the plot immediately. Set ``show=False`` to 
 return a figure object for further customization or saving.
 
-Plotting Trees
---------------
-
-For tree networks, you can use the specialized ``plot_tree()`` function:
-
-.. code-block:: python
-
-   from phylozoo.viz.dnetwork import plot_tree
-   
-   # Plot tree (optimized for tree structures)
-   plot_tree(network, show=True)
-
 Layout Algorithms
 -----------------
 
-PhyloZoo provides layout algorithms for positioning nodes:
+PhyloZoo provides multiple layout algorithms for positioning nodes:
+
+**For DirectedPhyNetwork (default: 'pz-dag'):**
 
 .. code-block:: python
 
-   from phylozoo.viz.dnetwork import compute_dag_layout, plot_network
+   from phylozoo.viz import plot_dnetwork
    
-   # Compute custom layout
-   layout = compute_dag_layout(
-       network,
-       node_gap=1.0,
-       layer_gap=1.5
-   )
+   # Use default pz-dag layout
+   plot_dnetwork(network, show=True)
    
-   # Plot with custom layout
-   plot_network(network, layout=layout, show=True)
+   # Use NetworkX or Graphviz layouts
+   plot_dnetwork(network, layout='spring', show=True)
+   plot_dnetwork(network, layout='dot', show=True)
 
-Layout parameters can be passed directly to ``plot_network()``:
+**For SemiDirectedPhyNetwork (default: 'twopi'):**
+
+.. code-block:: python
+
+   from phylozoo.viz import plot_sdnetwork
+   
+   # Use default twopi layout
+   plot_sdnetwork(network, show=True)
+   
+   # Use custom PhyloZoo layouts
+   plot_sdnetwork(network, layout='pz-radial', show=True)
+   plot_sdnetwork(network, layout='pz-planar', show=True)
+   
+   # Use NetworkX layouts
+   plot_sdnetwork(network, layout='spring', show=True)
+
+Layout parameters can be passed directly to the plotting functions:
 
 .. code-block:: python
 
    # Pass layout parameters directly
-   plot_network(
+   plot_dnetwork(
        network,
        node_gap=1.0,
        layer_gap=1.5,
@@ -68,11 +75,11 @@ Layout parameters can be passed directly to ``plot_network()``:
 Styling
 -------
 
-Networks can be styled using the ``NetworkStyle`` class:
+Networks can be styled using style classes:
 
 .. code-block:: python
 
-   from phylozoo.viz.dnetwork import NetworkStyle, plot_network, default_style
+   from phylozoo.viz import plot_dnetwork, plot_sdnetwork, DNetStyle, SDNetStyle, default_style
    
    # Get default style
    style = default_style()
@@ -83,39 +90,40 @@ Networks can be styled using the ``NetworkStyle`` class:
    style.node_size = 100
    
    # Plot with custom style
-   plot_network(network, style=style, show=True)
+   plot_dnetwork(network, style=style, show=True)
 
 Or create a new style:
 
 .. code-block:: python
 
-   # Create custom style
-   style = NetworkStyle(
+   # Create custom style for directed networks
+   style = DNetStyle(
        node_color="blue",
        edge_color="gray",
        node_size=100,
        edge_width=2.0
    )
    
-   plot_network(network, style=style, show=True)
-
-Backends
---------
-
-PhyloZoo supports multiple plotting backends:
-
-* **Matplotlib**: Default backend, produces static images (always available)
-* **PyQtGraph**: Optional backend for interactive plots (requires installation)
-
-The backend is automatically selected based on availability. Specify backend explicitly:
-
-.. code-block:: python
-
-   # Use matplotlib backend (default)
-   plot_network(network, backend="matplotlib", show=True)
+   plot_dnetwork(network, style=style, show=True)
    
-   # Use PyQtGraph backend (if available)
-   plot_network(network, backend="pyqtgraph", show=True)
+   # Create custom style for semi-directed networks
+   sd_style = SDNetStyle(
+       node_color="green",
+       edge_color="darkgray",
+       hybrid_edge_color="red",
+       node_size=100
+   )
+   
+   plot_sdnetwork(sdnet, style=sd_style, show=True)
+
+Edge Rendering
+--------------
+
+PhyloZoo automatically handles edge directionality:
+
+* **DirectedPhyNetwork**: All edges are directed and displayed with arrows
+* **SemiDirectedPhyNetwork**: Only hybrid edges (directed edges) are displayed with arrows; 
+  undirected tree edges are displayed without arrows
 
 Graph Plotting
 --------------
@@ -125,12 +133,12 @@ structures:
 
 .. code-block:: python
 
-   from phylozoo.viz.graphs import plot_directed_multigraph, plot_mixed_multigraph
+   from phylozoo.viz.graphs import plot_dmgraph, plot_mmgraph
    from phylozoo.core.primitives.dmultigraph import DirectedMultiGraph
    
    # Plot directed multigraph
    dmg = DirectedMultiGraph(edges=[(1, 2), (1, 3)])
-   plot_directed_multigraph(dmg, show=True)
+   plot_dmgraph(dmg, show=True)
 
 Saving Figures
 -------------
@@ -154,24 +162,27 @@ Here's a complete example with custom styling and layout:
 
 .. code-block:: python
 
-   from phylozoo import DirectedPhyNetwork
-   from phylozoo.viz.dnetwork import plot_network, NetworkStyle
+   from phylozoo import DirectedPhyNetwork, SemiDirectedPhyNetwork
+   from phylozoo.viz import plot_dnetwork, plot_sdnetwork, DNetStyle, SDNetStyle
+   import matplotlib.pyplot as plt
    
-   # Load network
-   network = DirectedPhyNetwork.load("network.enewick")
+   # Plot directed network
+   dnet = DirectedPhyNetwork.load("network.enewick")
    
    # Create custom style
-   style = NetworkStyle(
+   style = DNetStyle(
        node_color="steelblue",
        edge_color="darkgray",
+       hybrid_edge_color="red",
        node_size=150,
        edge_width=2.0,
        label_fontsize=10
    )
    
    # Plot with custom layout and style
-   fig = plot_network(
-       network,
+   ax = plot_dnetwork(
+       dnet,
+       layout='pz-dag',
        style=style,
        node_gap=1.2,
        layer_gap=1.5,
@@ -179,63 +190,90 @@ Here's a complete example with custom styling and layout:
    )
    
    # Save
-   fig.savefig("network.png", dpi=300, bbox_inches="tight")
+   ax.figure.savefig("dnetwork.png", dpi=300, bbox_inches="tight")
+   plt.close(ax.figure)
+   
+   # Plot semi-directed network
+   sdnet = SemiDirectedPhyNetwork.load("network.enewick")
+   
+   # Create custom style
+   sd_style = SDNetStyle(
+       node_color="green",
+       edge_color="darkgray",
+       hybrid_edge_color="orange",
+       node_size=150,
+       edge_width=2.0
+   )
+   
+   # Plot with twopi layout (default)
+   ax2 = plot_sdnetwork(sdnet, style=sd_style, show=False)
+   ax2.figure.savefig("sdnetwork.png", dpi=300, bbox_inches="tight")
+   plt.close(ax2.figure)
 
 Available Functions
 -------------------
 
 **Network Plotting:**
 
-* **plot_network(network, layout='dag', style=None, backend='matplotlib', ax=None, show=False, **layout_kwargs)** - 
-  Plot a DirectedPhyNetwork. Main plotting function with customizable layout, styling, 
-  and backend. Returns backend-specific figure/axes object. See 
-  :func:`phylozoo.viz.dnetwork.plot_network`.
+* **plot_dnetwork(network, layout='pz-dag', style=None, ax=None, show=False, **layout_kwargs)** - 
+  Plot a DirectedPhyNetwork. Main plotting function with customizable layout and styling. 
+  Default layout is 'pz-dag'. All edges are displayed with arrows. Returns matplotlib axes object. 
+  See :func:`phylozoo.viz.dnetwork.plot_dnetwork`.
 
-* **plot_tree(network, layout='dag', style=None, backend='matplotlib', ax=None, show=False, **layout_kwargs)** - 
-  Plot a tree network. Optimized for tree structures. Same parameters as plot_network. 
-  See :func:`phylozoo.viz.dnetwork.plot_tree`.
+* **plot_sdnetwork(network, layout='twopi', style=None, ax=None, show=False, **layout_kwargs)** - 
+  Plot a SemiDirectedPhyNetwork. Main plotting function with customizable layout and styling. 
+  Default layout is 'twopi'. Only hybrid edges (directed edges) are displayed with arrows; 
+  undirected tree edges are displayed without arrows. Returns matplotlib axes object. 
+  See :func:`phylozoo.viz.sdnetwork.plot_sdnetwork`.
 
-**Layout:**
+**Layout Algorithms:**
 
-* **compute_dag_layout(network, node_gap=1.0, layer_gap=1.0, iterations=50, curve_strength=0.5)** - 
-  Compute DAG layout for network. Positions nodes in layers with automatic spacing. 
-  Returns layout object. See :func:`phylozoo.viz.dnetwork.compute_dag_layout`.
+* **Custom PhyloZoo layouts for DirectedPhyNetwork:**
+  - 'pz-dag': DAG-based layout (default)
+
+* **Custom PhyloZoo layouts for SemiDirectedPhyNetwork:**
+  - 'pz-radial': Radial layout for trees
+  - 'pz-planar': Planar circular layout for planar networks
+
+* **NetworkX layouts:** 'spring', 'circular', 'kamada_kawai', 'planar', 'random', etc.
+
+* **Graphviz layouts:** 'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo' (requires pygraphviz)
 
 **Styling:**
 
-* **NetworkStyle** - Style configuration class. Attributes include node_color, edge_color, 
-  node_size, edge_width, label_fontsize, etc. See :class:`phylozoo.viz.dnetwork.NetworkStyle`.
+* **DNetStyle** - Style configuration class for DirectedPhyNetwork. Attributes include 
+  node_color, edge_color, hybrid_edge_color, node_size, edge_width, label_fontsize, etc. 
+  See :class:`phylozoo.viz.dnetwork.DNetStyle`.
 
-* **default_style()** - Get default network style. Returns NetworkStyle instance with 
+* **SDNetStyle** - Style configuration class for SemiDirectedPhyNetwork. Attributes include 
+  node_color, edge_color, hybrid_edge_color, node_size, edge_width, label_fontsize, etc. 
+  See :class:`phylozoo.viz.sdnetwork.SDNetStyle`.
+
+* **default_style()** - Get default network style. Returns DNetStyle instance with 
   default values. See :func:`phylozoo.viz.dnetwork.default_style`.
-
-**Backends:**
-
-* **get_backend(name)** - Get backend class by name. Returns backend class. See 
-  :func:`phylozoo.viz.dnetwork.get_backend`.
-
-* **register_backend(name, backend_class)** - Register custom backend. Allows extending 
-  visualization with custom backends. See :func:`phylozoo.viz.dnetwork.register_backend`.
 
 **Graph Plotting:**
 
-* **plot_directed_multigraph(graph, show=False)** - Plot DirectedMultiGraph. Returns 
-  matplotlib figure. See :func:`phylozoo.viz.graphs.plot_directed_multigraph`.
+* **plot_dmgraph(graph, layout='spring', style=None, ax=None, show=False, **layout_kwargs)** - 
+  Plot DirectedMultiGraph. Returns matplotlib axes object. 
+  See :func:`phylozoo.viz.graphs.dmgraph.plot_dmgraph`.
 
-* **plot_mixed_multigraph(graph, show=False)** - Plot MixedMultiGraph. Returns matplotlib 
-  figure. See :func:`phylozoo.viz.graphs.plot_mixed_multigraph`.
+* **plot_mmgraph(graph, layout='spring', style=None, ax=None, show=False, **layout_kwargs)** - 
+  Plot MixedMultiGraph. Returns matplotlib axes object. 
+  See :func:`phylozoo.viz.graphs.mmgraph.plot_mmgraph`.
 
 .. note::
    The visualization module uses a modular architecture with separate layout, styling, 
    and rendering components. This allows for easy customization and extension.
 
 .. tip::
-   Use ``show=False`` to get the figure object for further customization before displaying 
-   or saving.
+   Use ``show=False`` to get the axes object for further customization before displaying 
+   or saving. The default layouts ('pz-dag' for DirectedPhyNetwork and 'twopi' for 
+   SemiDirectedPhyNetwork) are optimized for phylogenetic network visualization.
 
 .. warning::
-   PyQtGraph backend requires additional installation. If not available, matplotlib will 
-   be used automatically.
+   Graphviz layouts require pygraphviz installation. If not available, NetworkX layouts 
+   will be used instead.
 
 .. seealso::
    For network analysis workflows that include visualization, see 

@@ -1,10 +1,13 @@
 """Graph plotting module for viz.
 
 This module provides plotting functions for DirectedMultiGraph and MixedMultiGraph
-using standard NetworkX and Graphviz layouts.
+through the dmgraph and mmgraph submodules.
 """
 
-from .plot import plot_directed_multigraph, plot_mixed_multigraph
+from .dmgraph import plot_dmgraph
+from .mmgraph import plot_mmgraph
 
-__all__ = ['plot_directed_multigraph', 'plot_mixed_multigraph']
-
+__all__ = [
+    'plot_dmgraph',
+    'plot_mmgraph',
+]

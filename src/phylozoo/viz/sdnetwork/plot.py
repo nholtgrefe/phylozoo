@@ -6,175 +6,127 @@ This module provides the main plotting function for users.
 
 from __future__ import annotations
 
-import math
 from typing import TYPE_CHECKING, Any
 
-from phylozoo.core.network.sdnetwork.classifications import is_tree
-from phylozoo.utils.exceptions import PhyloZooBackendError, PhyloZooLayoutError
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+from matplotlib.path import Path as MPath
+from matplotlib.patches import Circle
 
-from ..dnetwork.backends import get_backend
-from ..dnetwork.styling import NetworkStyle, default_style
-from ..utils.types import EdgeRoute
-from .layout import compute_radial_layout
+from phylozoo.utils.exceptions import PhyloZooLayoutError
+
+from .style import SDNetStyle, default_style
+from phylozoo.viz._types import EdgeRoute
+from .layout import compute_nx_layout, compute_pz_radial_layout
 
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
 
-def plot_network(
+def plot_sdnetwork(
     network: 'SemiDirectedPhyNetwork',
-    layout: str = 'radial',
-    style: NetworkStyle | None = None,
-    backend: str = 'matplotlib',
+    layout: str = 'twopi',
+    style: SDNetStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
     **layout_kwargs: Any,
 ) -> Any:
     """
-    Plot a SemiDirectedPhyNetwork tree using radial layout.
+    Plot a SemiDirectedPhyNetwork.
 
-    This function plots semi-directed phylogenetic networks that are trees
-    using a circular/radial layout. The root is positioned at the center
-    and leaves are arranged on the outer circle.
+    This is the main public API function for plotting semi-directed networks.
+    It handles layout computation, styling, and rendering using matplotlib.
 
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
-        The network to plot. Must be a tree (use is_tree() to check).
+        The network to plot.
     layout : str, optional
-        Layout algorithm. Currently only 'radial' is available.
-        By default 'radial'.
+        Layout algorithm. Custom PhyloZoo layouts: 'pz-radial', 'pz-planar'.
+        NetworkX layouts: 'spring', 'circular', 'kamada_kawai', etc.
+        Graphviz layouts: 'dot', 'neato', 'twopi', etc.
+        By default 'twopi'.
     style : NetworkStyle, optional
         Styling configuration. If None, uses default style.
         By default None.
-    backend : str, optional
-        Backend to use ('matplotlib' or 'pyqtgraph').
-        By default 'matplotlib'.
-    ax : Any, optional
-        Existing axes/figure to plot on (backend-specific).
+    ax : matplotlib.axes.Axes, optional
+        Existing axes to plot on. If None, creates new figure and axes.
         By default None.
     show : bool, optional
-        If True, automatically display the plot using the backend's show() method.
+        If True, automatically display the plot using plt.show().
         By default False.
     **layout_kwargs
-        Additional parameters for layout computation (e.g., radius,
-        start_angle, angle_direction).
+        Additional parameters for layout computation.
 
     Returns
     -------
-    Any
-        Backend-specific return type (e.g., matplotlib Axes).
+    matplotlib.axes.Axes
+        The axes object containing the plot.
 
     Raises
     ------
     PhyloZooLayoutError
-        If layout algorithm is not supported or network is not a tree.
-    PhyloZooBackendError
-        If backend is not registered.
+        If layout algorithm is not supported.
 
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> from phylozoo.viz.sdnetwork import plot_network
+    >>> from phylozoo.viz import plot_sdnetwork
     >>>
     >>> net = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> ax = plot_network(net)
+    >>> ax = plot_sdnetwork(net)
     """
-    # Validate layout
-    if layout != 'radial':
-        raise PhyloZooLayoutError(
-            f"Layout '{layout}' is not supported. "
-            "Currently only 'radial' layout is available for SemiDirectedPhyNetwork."
-        )
-
-    # Check if network is a tree
-    if not is_tree(network):
-        raise PhyloZooLayoutError(
-            "Radial layout is only supported for trees. "
-            "Use is_tree() to check if the network is a tree."
-        )
-
-    # Get backend class (reuse from dnetwork)
-    BackendClass = get_backend(backend)
-
-    # Create backend instance
-    backend_instance = BackendClass()
-
-    # Create or use existing axes
-    if ax is not None:
-        backend_instance._axes = ax
-        backend_instance._figure = ax.figure
-    else:
-        backend_instance.create_figure()
-        backend_instance.create_axes()
-
     # Get or create style
     if style is None:
         style = default_style()
 
+    # Create or use existing axes
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.figure
+
     # Compute layout
-    computed_layout = compute_radial_layout(network, **layout_kwargs)
+    if layout == 'pz-radial':
+        computed_layout = compute_pz_radial_layout(network, **layout_kwargs)
+    elif layout.startswith('pz-'):
+        raise PhyloZooLayoutError(
+            f"Unknown PhyloZoo layout: '{layout}'. "
+            "Supported PhyloZoo layouts: 'pz-radial'"
+        )
+    else:
+        # NetworkX or Graphviz layout
+        computed_layout = compute_nx_layout(network, layout=layout, **layout_kwargs)
 
     # Render edges
     network_obj = computed_layout.network
     positions = computed_layout.positions
 
-    # Group parallel edges for offset calculation
-    base_parallel_offset = 0.15
-    parallel_offset_step = 0.1
-    parallel_groups: dict[tuple[Any, Any], list[int]] = {}
-    for (u, v, key), route in computed_layout.edge_routes.items():
-        if route.edge_type.is_parallel:
-            if (u, v) not in parallel_groups:
-                parallel_groups[(u, v)] = []
-            parallel_groups[(u, v)].append(key)
-
     # Render all edges
     for (u, v, key), route in computed_layout.edge_routes.items():
-        # Calculate parallel edge offset if needed
-        parallel_offset = 0.0
-        if route.edge_type.is_parallel and (u, v) in parallel_groups:
-            parallel_keys = sorted(parallel_groups[(u, v)])
-            key_index = parallel_keys.index(key)
-            direction = 1 if key_index % 2 == 0 else -1
-            magnitude = base_parallel_offset + (key_index // 2) * parallel_offset_step
-            parallel_offset = direction * magnitude
+        _draw_edge(ax, route, style, computed_layout)
 
-        # Backend expects DAGLayout but RadialLayout has same interface (network, positions)
-        # The backend only uses layout.network and layout.positions, so RadialLayout works
-        backend_instance.render_edge(route, style, computed_layout, parallel_offset)  # type: ignore[arg-type]
-
-    # Render nodes
-    # Convert to directed network to get node types
-    # Suppress warnings from intermediate networks during conversion
+    # Determine node types by converting to directed network temporarily
     import warnings
+    from phylozoo.core.network.sdnetwork.derivations import to_d_network
     from phylozoo.utils.exceptions import (
         PhyloZooEmptyNetworkWarning,
         PhyloZooSingleNodeNetworkWarning,
     )
-    from phylozoo.core.network.sdnetwork.derivations import to_d_network
-    
-    # Only render nodes that are in the original network
-    # (to_d_network may create subdivision nodes that we don't want to render)
-    original_nodes = set(network._graph.nodes)
-    
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=PhyloZooEmptyNetworkWarning)
         warnings.filterwarnings('ignore', category=PhyloZooSingleNodeNetworkWarning)
         d_network = to_d_network(network)
+    
     leaves = d_network.leaves
     hybrid_nodes = d_network.hybrid_nodes
     root = d_network.root_node
 
-    # Only render nodes that exist in the original network
+    # Render nodes
     for node, position in positions.items():
-        # Skip nodes that aren't in the original network (e.g., subdivision nodes)
-        if node not in original_nodes:
-            continue
-            
         if node == root:
             node_type = 'root'
         elif node in leaves:
@@ -184,36 +136,185 @@ def plot_network(
         else:
             node_type = 'tree'
 
-        backend_instance.render_node(node, position, node_type, style)
+        _draw_node(ax, node, position, node_type, style)
 
         # Add labels if enabled
         if style.with_labels:
-            label = network.get_label(node)
+            label = network_obj.get_label(node)
             if label:
-                # For radial layout, position labels radially outward from center
-                x, y = position
-                if node_type == 'leaf':
-                    # Leaves: position label further out from center
-                    angle = math.atan2(y, x)
-                    label_x = x + style.label_offset * 1.5 * math.cos(angle)
-                    label_y = y + style.label_offset * 1.5 * math.sin(angle)
-                    # Use backend's add_label but with adjusted position
-                    backend_instance.add_label((label_x, label_y), label, style, node_type)
+                # For radial layout, position labels radially outward for leaves
+                if layout == 'pz-radial' and node_type == 'leaf':
+                    _draw_label_radial(ax, position, label, style)
                 else:
-                    # Internal nodes: use default positioning
-                    backend_instance.add_label(position, label, style, node_type)
+                    _draw_label(ax, position, label, style, node_type)
 
-    # Set axis properties (matplotlib-specific)
-    if hasattr(backend_instance._axes, 'set_aspect'):
-        backend_instance._axes.set_aspect('equal')
-        backend_instance._axes.axis('off')
+    # Set axis properties
+    ax.set_aspect('equal')
+    ax.axis('off')
 
     # Show plot if requested
     if show:
-        backend_instance.show()
+        plt.show()
 
-    # Return appropriate object based on backend
-    if backend == 'pyqtgraph':
-        return backend_instance._window
+    return ax
+
+
+def _draw_edge(
+    ax: Any,
+    route: EdgeRoute,
+    style: SDNetStyle,
+    layout: Any,
+) -> None:
+    """Draw a single edge."""
+    points = route.points
+    if not points:
+        return
+
+    # Determine edge color
+    edge_color = (
+        style.hybrid_edge_color
+        if route.edge_type.is_hybrid
+        else style.edge_color
+    )
+
+    # Draw edge
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    ax.plot(
+        xs,
+        ys,
+        color=edge_color,
+        linewidth=style.edge_width,
+        zorder=1,
+    )
+
+    # Add arrow for directed edges only
+    if route.edge_type.is_directed and len(points) >= 2:
+        ax.annotate(
+            '',
+            xy=(xs[-1], ys[-1]),
+            xytext=(xs[-2], ys[-2]),
+            arrowprops=dict(
+                arrowstyle='->',
+                color=edge_color,
+                lw=style.edge_width,
+            ),
+            zorder=2,
+        )
+
+
+def _draw_node(
+    ax: Any,
+    node: Any,
+    position: tuple[float, float],
+    node_type: str,
+    style: SDNetStyle,
+) -> Circle:
+    """Draw a single node."""
+    x, y = position
+
+    # Determine node color and size
+    if node_type == 'leaf':
+        color = style.leaf_color
+        size = style.leaf_size
+    elif node_type == 'hybrid':
+        color = style.hybrid_color
+        size = style.node_size
     else:
-        return backend_instance._axes
+        color = style.node_color
+        size = style.node_size
+
+    # Convert size to radius
+    radius = (size / 1000.0) ** 0.5 * 0.03
+
+    circle = Circle(
+        (x, y),
+        radius=radius,
+        color=color,
+        zorder=3,
+    )
+    ax.add_patch(circle)
+    return circle
+
+
+def _draw_label(
+    ax: Any,
+    position: tuple[float, float],
+    text: str,
+    style: SDNetStyle,
+    node_type: str = 'leaf',
+) -> Any:
+    """Add a text label."""
+    x, y = position
+
+    # Position labels based on node type
+    if node_type == 'leaf':
+        # Leaves: place below (negative y offset)
+        offset_x = 0.0
+        offset_y = -style.label_offset
+        ha = 'center'
+        va = 'top'
+    else:
+        # Internal nodes: place to the right
+        offset_x = style.label_offset
+        offset_y = 0.0
+        ha = 'left'
+        va = 'center'
+
+    return ax.text(
+        x + offset_x,
+        y + offset_y,
+        text,
+        fontsize=style.label_font_size,
+        color=style.label_color,
+        ha=ha,
+        va=va,
+        zorder=4,
+    )
+
+
+def _draw_label_radial(
+    ax: Any,
+    position: tuple[float, float],
+    text: str,
+    style: SDNetStyle,
+) -> Any:
+    """Add a text label positioned radially outward (for radial layout)."""
+    import math
+    x, y = position
+    
+    # Calculate angle and radius
+    angle = math.atan2(y, x)
+    radius = math.sqrt(x * x + y * y)
+    
+    # Position label radially outward
+    label_radius = radius + style.label_offset
+    label_x = label_radius * math.cos(angle)
+    label_y = label_radius * math.sin(angle)
+    
+    # Determine horizontal alignment based on angle
+    if abs(angle) < math.pi / 6 or abs(angle) > 5 * math.pi / 6:
+        ha = 'center'
+    elif angle > 0:
+        ha = 'left'
+    else:
+        ha = 'right'
+    
+    # Vertical alignment
+    if abs(angle - math.pi / 2) < math.pi / 6:
+        va = 'bottom'
+    elif abs(angle + math.pi / 2) < math.pi / 6:
+        va = 'top'
+    else:
+        va = 'center'
+
+    return ax.text(
+        label_x,
+        label_y,
+        text,
+        fontsize=style.label_font_size,
+        color=style.label_color,
+        ha=ha,
+        va=va,
+        zorder=4,
+    )

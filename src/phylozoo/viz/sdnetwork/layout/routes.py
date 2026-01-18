@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar
 
-from ...utils.types import EdgeRoute, EdgeType
+from phylozoo.viz._types import EdgeRoute, EdgeType
 
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork

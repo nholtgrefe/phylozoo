@@ -4,7 +4,7 @@ Tests for styling in viz.
 This test suite covers the NetworkStyle class and default styles.
 """
 
-from phylozoo.viz.dnetwork.styling import NetworkStyle, default_style
+from phylozoo.viz import NetworkStyle, default_style
 
 
 class TestNetworkStyle:

@@ -19,7 +19,8 @@ from phylozoo.utils.exceptions import (
     PhyloZooValueError,
 )
 
-from .base import DAGLayout
+from .base import DNetLayout
+from .routes import compute_backbone_routes, compute_hybrid_routes
 
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 T = TypeVar('T')
 
 
-def compute_dag_layout(
+def compute_pz_dag_layout(
     network: 'DirectedPhyNetwork',
     layer_gap: float = 1.5,
     leaf_gap: float = 1.0,
@@ -36,9 +37,11 @@ def compute_dag_layout(
     direction: str = 'TD',  # "TD" = top-down, "LR" = left-right
     x_scale: float = 1.5,
     y_scale: float = 1.0,
-) -> DAGLayout:
+) -> DNetLayout:
     """
     Layout a phylogenetic network (DAG) using a tree-backbone heuristic.
+    
+    This is a custom PhyloZoo layout algorithm (pz-dag).
 
     This function implements a tree-backbone layout algorithm:
     1. Builds a tree backbone (one parent per node)
@@ -70,7 +73,7 @@ def compute_dag_layout(
 
     Returns
     -------
-    DAGLayout
+    DNetLayout
         The computed layout.
 
     Raises
@@ -227,8 +230,6 @@ def compute_dag_layout(
             final_positions[n] = (x * x_scale, y * y_scale)
 
     # --- Step 7: Compute edge routes ---
-    from ..rendering.routes import compute_backbone_routes, compute_hybrid_routes
-
     # Identify tree edges and hybrid edges
     tree_edge_set: set[tuple[T, T, int]] = set()
     hybrid_edge_set: set[tuple[T, T, int]] = set()
@@ -252,13 +253,13 @@ def compute_dag_layout(
     all_routes = {**backbone_routes, **hybrid_routes}
 
     # --- Step 8: Create layout object ---
-    return DAGLayout(
+    return DNetLayout(
         network=network,
         positions=final_positions,
         edge_routes=all_routes,
         backbone_edges=tree_edge_set,
         reticulate_edges=hybrid_edge_set,
-        algorithm='dag',
+        algorithm='pz-dag',
         parameters={
             'layer_gap': layer_gap,
             'leaf_gap': leaf_gap,
