@@ -4,8 +4,8 @@ Manual
 This manual provides comprehensive guides for using PhyloZoo.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Manual
+   :maxdepth: 3
+   :caption: Contents:
    
    installation
    introduction
@@ -13,6 +13,4 @@ This manual provides comprehensive guides for using PhyloZoo.
    inference/index
    diversity/index
    visualization/index
-   io
-   exceptions
-   advanced/index
+   utils/index

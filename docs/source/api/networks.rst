@@ -20,9 +20,6 @@ Semi-Directed Network
 Mixed Graph
 -----------
 
-# MixedMultiGraph is now in structures module
-# .. automodule:: phylozoo.core.primitives.mm_graph
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. note::
+   MixedMultiGraph documentation has been moved. See the manual for details.
 

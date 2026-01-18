@@ -1,58 +1,33 @@
-Networks (Basic)
-================
+Directed Networks (Basic)
+==========================
 
-This page covers basic operations for working with phylogenetic networks. For advanced 
+This page covers basic operations for working with **DirectedPhyNetwork**. For advanced 
 features like network analysis, transformations, and classifications, see 
-:doc:`Networks (Advanced) <advanced>`.
+:doc:`Directed Networks (Advanced) <advanced>`.
 
-Network Types
--------------
+DirectedPhyNetwork
+------------------
 
-PhyloZoo provides two main network classes:
+**DirectedPhyNetwork** represents fully directed phylogenetic networks with a single root 
+node. All edges are directed, explicitly representing the direction of evolutionary time. 
+Hybrid nodes have in-degree >= 2 and out-degree 1.
 
-**DirectedPhyNetwork**
-   Fully directed phylogenetic networks with a single root node. All edges are directed, 
-   explicitly representing the direction of evolutionary time. Hybrid nodes have 
-   in-degree >= 2 and out-degree 1.
+**I/O Formats**: eNewick (default, extensions: ``.enewick``, ``.eNewick``, ``.enwk``, ``.nwk``, ``.newick``), 
+DOT (extensions: ``.dot``, ``.gv``). See :doc:`I/O <../../../../io>` for details.
+
+.. figure:: ../../../../_static/images/example_tree_directed.png
+   :alt: Example directed tree
+   :width: 400px
+   :align: center
    
-   **I/O Formats**: eNewick (default, extensions: ``.enewick``, ``.eNewick``, ``.enwk``, ``.nwk``, ``.newick``), 
-   DOT (extensions: ``.dot``, ``.gv``). See :doc:`I/O <../../io>` for details.
+   Example of a simple directed tree.
 
-   .. figure:: ../../../_static/images/example_tree_directed.png
-      :alt: Example directed tree
-      :width: 400px
-      :align: center
-      
-      Example of a simple directed tree.
-
-   .. figure:: ../../../_static/images/example_hybrid_directed.png
-      :alt: Example directed network with hybrid
-      :width: 400px
-      :align: center
-      
-      Example of a directed network with a hybrid node.
-
-**SemiDirectedPhyNetwork**
-   Networks with directed hybrid edges and undirected tree edges. These allow for more 
-   flexible representation and are useful for unrooted analyses. Semi-directed networks 
-   cannot have undirected cycles.
+.. figure:: ../../../../_static/images/example_hybrid_directed.png
+   :alt: Example directed network with hybrid
+   :width: 400px
+   :align: center
    
-   **I/O Formats**: Newick (default, extensions: ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``), 
-   PhyloZoo-DOT (extension: ``.pzdot``). See :doc:`I/O <../../io>` for details.
-
-   .. figure:: ../../../_static/images/example_tree_semidirected.png
-      :alt: Example semi-directed tree
-      :width: 400px
-      :align: center
-      
-      Example of a simple semi-directed tree.
-
-   .. figure:: ../../../_static/images/example_hybrid_semidirected.png
-      :alt: Example semi-directed network with hybrid
-      :width: 400px
-      :align: center
-      
-      Example of a semi-directed network with a hybrid node.
+   Example of a directed network with a hybrid node.
 
 Creating Networks
 -----------------
@@ -101,10 +76,10 @@ Networks can be loaded from and saved to files:
    # Load network
    network = DirectedPhyNetwork.load("network.enewick")
 
-See the :doc:`I/O <io>` page for supported formats and detailed I/O operations.
+See the :doc:`I/O <../../../../io>` page for supported formats and detailed I/O operations.
 
 Basic Properties
-----------------
+-----------------
 
 Access basic network properties:
 
@@ -156,24 +131,14 @@ Basic network transformations:
    # Suppress degree-2 nodes (simplify network)
    simplified = suppress_2_blobs(network)
 
-For more advanced transformations, see :doc:`Networks (Advanced) <advanced>`.
+For more advanced transformations, see :doc:`Directed Networks (Advanced) <advanced>`.
 
-Available Functions
-------------------
+API Reference
+-------------
 
-**Classes:**
+**Class**: :class:`phylozoo.core.network.dnetwork.DirectedPhyNetwork`
 
-* **DirectedPhyNetwork** - Directed phylogenetic network class. Main class for 
-  representing rooted phylogenetic networks with explicit time direction. Supports 
-  hybrid nodes, edge attributes (branch lengths, bootstrap, gamma), and comprehensive 
-  validation. See :class:`phylozoo.core.network.dnetwork.DirectedPhyNetwork` for full API.
-
-* **SemiDirectedPhyNetwork** - Semi-directed phylogenetic network class. Networks with 
-  directed hybrid edges and undirected tree edges. Useful for unrooted analyses and 
-  flexible network representation. See :class:`phylozoo.core.network.sdnetwork.SemiDirectedPhyNetwork` 
-  for full API.
-
-**Basic Methods (DirectedPhyNetwork):**
+**Basic Properties:**
 
 * **num_nodes** - Number of nodes in the network
 * **num_edges** - Number of edges in the network
@@ -183,6 +148,9 @@ Available Functions
 * **internal_nodes** - Set of internal node IDs
 * **hybrid_nodes** - Set of hybrid node IDs
 * **tree_nodes** - Set of tree node IDs
+
+**Basic Methods:**
+
 * **is_tree()** - Check if network is a tree
 * **get_branch_length(u, v)** - Get branch length for edge
 * **get_bootstrap(u, v)** - Get bootstrap value for edge
@@ -198,8 +166,12 @@ Available Functions
 
 .. note::
    For advanced network features like LSA nodes, blobs, network classifications, 
-   binary resolution, and isomorphism checking, see :doc:`Networks (Advanced) <advanced>`.
+   binary resolution, and isomorphism checking, see :doc:`Directed Networks (Advanced) <advanced>`.
 
 .. tip::
    All networks are immutable. To modify a network, create a new instance with the 
-   desired changes. See :doc:`Advanced Topics <advanced>` for details on immutability.
+   desired changes.
+
+.. seealso::
+   For semi-directed networks, see :doc:`Semi-Directed Networks <../semi_directed/overview>`. 
+   For I/O operations, see :doc:`I/O <../../../../io>`.

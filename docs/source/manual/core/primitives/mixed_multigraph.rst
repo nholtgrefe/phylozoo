@@ -330,5 +330,5 @@ Here's a complete example:
    G.save('example.pzdot')
 
 .. seealso::
-   For network classes that use MixedMultiGraph, see :doc:`Networks (Basic) <../../networks/basic>`.
+   For network classes that use MixedMultiGraph, see :doc:`Networks (Basic) <../networks/basic>`.
    For directed-only graphs, see :doc:`Directed Multi-Graph <directed_multigraph>`.

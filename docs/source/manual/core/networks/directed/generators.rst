@@ -1,11 +1,11 @@
-Generators
-==========
+Directed Network Generators
+===========================
 
 Generators are minimal biconnected components that represent the core structure of 
-level-k phylogenetic networks :cite:`PhyloZoo2024`. They are used to characterize 
+level-k directed phylogenetic networks :cite:`PhyloZoo2024`. They are used to characterize 
 and construct networks based on their level.
 
-Directed Generators
+Creating Generators
 -------------------
 
 Directed generators represent the structure of directed level-k networks:
@@ -24,6 +24,9 @@ Directed generators represent the structure of directed level-k networks:
    hybrid_nodes = generator.hybrid_nodes  # {4}
    sides = generator.sides  # List of attachment points
 
+Extracting Generators from Networks
+------------------------------------
+
 Extract generators from networks:
 
 .. code-block:: python
@@ -38,6 +41,9 @@ Extract generators from networks:
    for gen in generators:
        print(f"Level: {gen.level}, Hybrid nodes: {gen.hybrid_nodes}")
 
+Generating All Level-k Generators
+---------------------------------
+
 Generate all level-k generators:
 
 .. code-block:: python
@@ -45,26 +51,6 @@ Generate all level-k generators:
    # Get all level-2 generators
    level_2_generators = all_level_k_generators(2)
    print(f"Number of level-2 generators: {len(level_2_generators)}")
-
-Semi-Directed Generators
-------------------------
-
-Semi-directed generators represent the structure of semi-directed level-k networks:
-
-.. code-block:: python
-
-   from phylozoo.core.sdnetwork.generator import (
-       SemiDirectedGenerator, 
-       all_level_k_generators,
-       dgenerator_to_sdgenerator
-   )
-   
-   # Convert directed generator to semi-directed
-   d_gen = DirectedGenerator(...)
-   sd_gen = dgenerator_to_sdgenerator(d_gen)
-   
-   # Get all level-k semi-directed generators
-   level_2_sd_generators = all_level_k_generators(2)
 
 Generator Sides
 ---------------
@@ -86,14 +72,16 @@ Generators have "sides" which are attachment points where networks can be connec
        elif isinstance(side, DirEdgeSide):
            print(f"Edge side: {side.edge}")
 
-Available Classes and Functions
--------------------------------
+API Reference
+-------------
 
-**Directed Generators:**
+**Classes:**
 
 * **DirectedGenerator** - Level-k generator for directed phylogenetic networks. 
   Represents minimal biconnected components. See 
   :class:`phylozoo.core.network.dnetwork.generator.DirectedGenerator` for full API.
+
+**Functions:**
 
 * **generators_from_network(network)** - Extract generators from a directed network. 
   Network must be binary. Returns iterator of DirectedGenerator objects. See 
@@ -102,19 +90,6 @@ Available Classes and Functions
 * **all_level_k_generators(k)** - Generate all level-k directed generators. Returns 
   set of DirectedGenerator objects. See 
   :func:`phylozoo.core.network.dnetwork.generator.all_level_k_generators`.
-
-**Semi-Directed Generators:**
-
-* **SemiDirectedGenerator** - Level-k generator for semi-directed phylogenetic networks. 
-  See :class:`phylozoo.core.network.sdnetwork.generator.SemiDirectedGenerator` for full API.
-
-* **dgenerator_to_sdgenerator(d_generator)** - Convert directed generator to semi-directed. 
-  Returns SemiDirectedGenerator. See 
-  :func:`phylozoo.core.network.sdnetwork.generator.dgenerator_to_sdgenerator`.
-
-* **all_level_k_generators(k)** - Generate all level-k semi-directed generators. Returns 
-  set of SemiDirectedGenerator objects. See 
-  :func:`phylozoo.core.network.sdnetwork.generator.all_level_k_generators`.
 
 **Generator Sides:**
 
@@ -125,9 +100,6 @@ Available Classes and Functions
 
 * **DirEdgeSide** - Side representing attachment along a directed edge. See 
   :class:`phylozoo.core.network.dnetwork.generator.DirEdgeSide`.
-
-* **UndirEdgeSide** - Side representing attachment along an undirected edge (semi-directed 
-  only). See :class:`phylozoo.core.network.sdnetwork.generator.UndirEdgeSide`.
 
 **Generator Properties:**
 
@@ -150,5 +122,5 @@ Available Classes and Functions
    with parallel edges may produce unexpected results.
 
 .. seealso::
-   For network level classification, see :doc:`Networks (Advanced) <networks/advanced>`. 
-   For network construction, see the generator construction functions.
+   For network level classification, see :doc:`Directed Networks (Advanced) <advanced>`. 
+   For semi-directed generators, see :doc:`Semi-Directed Network Generators <../semi_directed/generators>`.

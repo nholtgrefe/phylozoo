@@ -7,6 +7,7 @@ through the dmgraph and mmgraph submodules.
 from .dmgraph import plot_dmgraph
 from .mmgraph import plot_mmgraph
 
+
 __all__ = [
     'plot_dmgraph',
     'plot_mmgraph',

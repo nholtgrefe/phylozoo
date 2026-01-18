@@ -37,9 +37,9 @@ between representations.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: Development
    
-   guides/index
+   develop/index
 
 .. toctree::
    :maxdepth: 2

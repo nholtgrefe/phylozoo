@@ -1,8 +1,8 @@
-Networks (Advanced)
-===================
+Directed Networks (Advanced)
+=============================
 
-This page covers advanced network features, transformations, and analysis capabilities. 
-For basic network operations, see :doc:`Networks (Basic) <basic>`.
+This page covers advanced features, transformations, and analysis capabilities for 
+**DirectedPhyNetwork**. For basic network operations, see :doc:`Directed Networks (Basic) <basic>`.
 
 Network Features
 ----------------
@@ -29,20 +29,8 @@ Extract advanced network features:
    cut_edges = features.cut_edges(network)
    cut_vertices = features.cut_vertices(network)
 
-For semi-directed networks:
-
-.. code-block:: python
-
-   from phylozoo.core.sdnetwork import features as sd_features
-   
-   # Get blobs
-   blobs = sd_features.blobs(sd_network)
-   
-   # Get root locations (where network can be rooted)
-   root_locs = sd_features.root_locations(sd_network)
-
 Network Classifications
------------------------
+------------------------
 
 Classify network properties:
 
@@ -60,6 +48,7 @@ Classify network properties:
    is_galled = classifications.is_galled(network)
    is_treechild = classifications.is_treechild(network)
    is_treebased = classifications.is_treebased(network)
+   is_normal = classifications.is_normal(network)
    
    # Check for parallel edges
    has_parallel = classifications.has_parallel_edges(network)
@@ -137,8 +126,8 @@ Check if two networks have the same structure:
        edge_attrs=["branch_length"]
    )
 
-Available Functions
--------------------
+API Reference
+-------------
 
 **Network Features** (``phylozoo.core.dnetwork.features``):
 
@@ -183,6 +172,9 @@ Available Functions
 
 * **is_treebased(network)** - Check if network is tree-based (can be obtained from a 
   tree by adding edges). Returns boolean.
+
+* **is_normal(network)** - Check if network is normal (tree-child without shortcuts). 
+  Returns boolean.
 
 * **is_ultrametric(network)** - Check if network is ultrametric (all root-to-leaf 
   distances equal). Returns boolean.
@@ -234,17 +226,9 @@ Available Functions
   Check if two networks are isomorphic. Labels are always checked. Additional 
   attributes can be specified. Returns boolean.
 
-**Semi-Directed Network Features** (``phylozoo.core.sdnetwork.features``):
-
-* **blobs(network, trivial=True, leaves=True)** - Get blobs in semi-directed network. 
-  Returns list of sets of node IDs.
-
-* **root_locations(network)** - Find all possible root locations (nodes or edges). 
-  Returns list of root locations.
-
 .. note::
    All transformation and derivation functions return new network instances. Networks 
-   are immutable - see :doc:`Advanced Topics <advanced>` for details.
+   are immutable.
 
 .. tip::
    Use network classifications to determine which algorithms can be applied to your 
@@ -254,3 +238,7 @@ Available Functions
 .. warning::
    Some advanced operations (like binary resolution) can significantly increase network 
    size. Use with caution on large networks.
+
+.. seealso::
+   For basic operations, see :doc:`Directed Networks (Basic) <basic>`. 
+   For semi-directed networks, see :doc:`Semi-Directed Networks <../semi_directed/overview>`.

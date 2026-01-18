@@ -8,7 +8,7 @@ utilizing multiple CPU cores.
 Basic Usage
 -----------
 
-The parallelization system uses a function parameter pattern (Pattern A). Functions that support 
+The parallelization system uses a function parameter pattern. Functions that support 
 parallelization accept an optional ``parallel`` parameter:
 
 .. code-block:: python

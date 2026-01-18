@@ -200,13 +200,5 @@ Available Functions
    The coded array uses DEFAULT_NUCLEOTIDE_ENCODING: A/C/G/T = 0/1/2/3, gaps/unknown = -1.
 
 .. tip::
-   Use bootstrapping to assess confidence in your analyses. Generate multiple 
-   bootstrap replicates and analyze each one to see how robust your results are.
-
-.. tip::
    Use ``from_coded_array`` when you're doing many bootstrap operations or custom 
    array manipulations. It's much faster than creating MSAs from strings.
-
-.. warning::
-   When using ``from_coded_array``, ensure the coded array uses the correct encoding. 
-   The method validates the array but assumes DEFAULT_NUCLEOTIDE_ENCODING.

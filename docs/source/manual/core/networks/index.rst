@@ -1,11 +1,9 @@
 Networks
 ========
 
-This section covers working with phylogenetic networks in PhyloZoo.
-
 .. toctree::
    :maxdepth: 1
-   :hidden:
    
-   basic
-   advanced
+   overview
+   directed/index
+   semi_directed/index
