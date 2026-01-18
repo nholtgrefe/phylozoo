@@ -40,28 +40,24 @@ The `phylozoo.core` module is organized into several submodules, each focusing o
 specific data type or functionality:
 
 **Networks:**
-*   :doc:`Networks (Basic) <core_networks_basic>`: Creating networks, basic properties, 
+*   :doc:`Networks (Basic) <networks/basic>`: Creating networks, basic properties, 
     loading/saving
-*   :doc:`Networks (Advanced) <core_networks_advanced>`: Network features, transformations, 
+*   :doc:`Networks (Advanced) <networks/advanced>`: Network features, transformations, 
     classifications, isomorphism
 
 **Sequences:**
-*   :doc:`Sequences (Basic) <core_sequences_basic>`: Creating MSAs, basic operations, 
-    bootstrapping
-*   :doc:`Sequences (Advanced) <core_sequences_advanced>`: Per-gene bootstrapping, 
-    efficient array operations
+*   :doc:`Sequences <sequences>`: Creating MSAs, basic operations, bootstrapping, 
+    per-gene bootstrapping, efficient array operations
 
 **Distance Matrices:**
-*   :doc:`Distance (Basic) <core_distance_basic>`: Creating distance matrices, basic 
-    classifications
-*   :doc:`Distance (Advanced) <core_distance_advanced>`: Advanced classifications, TSP 
-    operations
+*   :doc:`Distance Matrices <distance>`: Creating distance matrices, basic and advanced 
+    classifications, TSP operations
 
 **Other Components:**
-*   :doc:`Quartets <core_quartets>`: Four-taxon unrooted trees and profiles
-*   :doc:`Splits <core_splits>`: Bipartitions of taxa and split systems
-*   :doc:`Primitives <core_primitives>`: Fundamental data structures (Partition, CircularOrdering, etc.)
-*   :doc:`Generators <core_generators>`: Level-k network generators
+*   :doc:`Quartets <quartets>`: Four-taxon unrooted trees and profiles
+*   :doc:`Splits <splits>`: Bipartitions of taxa and split systems
+*   :doc:`Primitives <primitives/index>`: Fundamental data structures (Partition, CircularOrdering, etc.)
+*   :doc:`Generators <generators>`: Level-k network generators
 
 These components are designed to be interoperable, allowing for seamless transitions 
 between different data representations.
@@ -70,7 +66,7 @@ I/O Support
 -----------
 
 All core classes support reading and writing to various file formats. See the 
-:doc:`I/O <io>` page for details on supported formats and usage. Common formats include:
+:doc:`I/O <../reference/io>` page for details on supported formats and usage. Common formats include:
 
 * **eNewick**: Extended Newick format for networks (see :cite:`Cardona2008`)
 * **FASTA/NEXUS**: For sequence alignments
@@ -90,3 +86,15 @@ support.
 phylogenetic structures.
 
 For more detailed information on specific components, see the subpages above.
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   
+   networks/index
+   sequences
+   distance
+   quartets
+   splits
+   primitives/index
+   generators

@@ -236,7 +236,7 @@ Here's the complete workflow in one script:
 
 .. note::
    This workflow demonstrates basic to intermediate operations. For advanced features, 
-   see :doc:`Networks (Advanced) <../manual/core_networks_advanced>`.
+   see :doc:`Networks (Advanced) <../manual/core/networks/advanced>`.
 
 .. tip::
    Use network classifications to determine which algorithms can be applied. For 
@@ -244,5 +244,5 @@ Here's the complete workflow in one script:
 
 .. seealso::
    For network inference workflows, see :doc:`Inference Workflow <workflow_inference>`. 
-   For detailed function documentation, see :doc:`Networks (Basic) <../manual/core_networks_basic>` 
-   and :doc:`Networks (Advanced) <../manual/core_networks_advanced>`.
+   For detailed function documentation, see :doc:`Networks (Basic) <../manual/core/networks/basic>` 
+   and :doc:`Networks (Advanced) <../manual/core/networks/advanced>`.

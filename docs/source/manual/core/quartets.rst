@@ -200,4 +200,4 @@ Available Functions
 
 .. seealso::
    For network inference using quartets, see :doc:`Inference <inference>`. For 
-   extracting quartets from networks, see :doc:`Networks (Advanced) <core_networks_advanced>`.
+   extracting quartets from networks, see :doc:`Networks (Advanced) <networks/advanced>`.

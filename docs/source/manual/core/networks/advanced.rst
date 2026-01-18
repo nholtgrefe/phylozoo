@@ -2,7 +2,7 @@ Networks (Advanced)
 ===================
 
 This page covers advanced network features, transformations, and analysis capabilities. 
-For basic network operations, see :doc:`Networks (Basic) <core_networks_basic>`.
+For basic network operations, see :doc:`Networks (Basic) <basic>`.
 
 Network Features
 ----------------

@@ -6,6 +6,8 @@ phylogenetic networks from data :cite:`PhyloZoo2024`. The main algorithm is SQua
 (SQuirrel quartet-based REconstruction), which infers semi-directed networks from 
 quartet profiles.
 
+For detailed information on the SQuaRE algorithm, see :doc:`SQuaRE Algorithm <squirrel>`.
+
 SQuaRE Algorithm Overview
 --------------------------
 
@@ -66,7 +68,7 @@ For more control, use the components separately:
 Complete Workflow Example
 -------------------------
 
-See :doc:`Inference Workflow <workflow_inference>` for a complete example showing 
+See :doc:`Inference Workflow <../../tutorials/workflow_inference>` for a complete example showing 
 the full inference pipeline from sequences to networks.
 
 Available Functions
@@ -158,6 +160,13 @@ Available Functions
    The delta heuristic requires a dense distance matrix (distances for all pairs). Missing 
    values will cause errors.
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   
+   squirrel
+
 .. seealso::
-   For a complete inference workflow example, see :doc:`Inference Workflow <workflow_inference>`. 
-   For network analysis workflows, see :doc:`Network Analysis Workflow <workflow_network_analysis>`.
+   For detailed algorithm information, see :doc:`SQuaRE Algorithm <squirrel>`.
+   For a complete inference workflow example, see :doc:`Inference Workflow <../../tutorials/workflow_inference>`. 
+   For network analysis workflows, see :doc:`Network Analysis Workflow <../../tutorials/workflow_network_analysis>`.

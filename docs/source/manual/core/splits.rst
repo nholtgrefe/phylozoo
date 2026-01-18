@@ -195,7 +195,7 @@ Available Functions
 
 .. note::
    Split systems can be extracted from networks using derivation functions. See 
-   :doc:`Networks (Advanced) <core_networks_advanced>` for details.
+   :doc:`Networks (Advanced) <networks/advanced>` for details.
 
 .. tip::
    Use split compatibility to check if a collection of splits can be represented as a 
@@ -203,5 +203,5 @@ Available Functions
    ``splitsystem_to_tree``.
 
 .. seealso::
-   For extracting splits from networks, see :doc:`Networks (Advanced) <core_networks_advanced>`. 
+   For extracting splits from networks, see :doc:`Networks (Advanced) <networks/advanced>`. 
    For I/O operations, see :doc:`I/O <io>`.

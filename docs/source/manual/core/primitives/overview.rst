@@ -59,20 +59,32 @@ Graph Primitives
 
 PhyloZoo provides graph primitives for working with network structures:
 
+* **DirectedMultiGraph**: Directed multigraph supporting parallel edges. Used as 
+  the base for ``DirectedPhyNetwork``. See :doc:`Directed Multi-Graph <directed_multigraph>` 
+  for detailed documentation.
+
+* **MixedMultiGraph**: Mixed multigraph supporting both directed and undirected 
+  edges. Used as the base for ``SemiDirectedPhyNetwork``. See :doc:`Mixed Multi-Graph <mixed_multigraph>` 
+  for detailed documentation.
+
+These graph primitives are used internally by network classes but can also be 
+used directly for graph operations.
+
+Quick Example:
+
 .. code-block:: python
 
-   from phylozoo.core.primitives import DirectedMultiGraph, MixedMultiGraph
+   from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+   from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
    
    # Create directed multigraph (supports parallel edges)
    dmg = DirectedMultiGraph(edges=[(1, 2), (1, 2)])  # Parallel edges
    
    # Create mixed multigraph (directed and undirected edges)
    mmg = MixedMultiGraph(
-       edges=[(1, 2, "directed"), (2, 3, "undirected")]
+       directed_edges=[(1, 2)],
+       undirected_edges=[(2, 3)]
    )
-
-These graph primitives are used internally by network classes but can also be 
-used directly for graph operations.
 
 Available Classes
 -----------------
@@ -96,12 +108,12 @@ Available Classes
 **Graph Primitives:**
 
 * **DirectedMultiGraph** - Directed multigraph supporting parallel edges. Used as 
-  the base for DirectedPhyNetwork. See :class:`phylozoo.core.primitives.dmultigraph.DirectedMultiGraph` 
-  for full API.
+  the base for DirectedPhyNetwork. See :doc:`Directed Multi-Graph <directed_multigraph>` 
+  for comprehensive documentation.
 
 * **MixedMultiGraph** - Mixed multigraph supporting both directed and undirected 
   edges. Used as the base for SemiDirectedPhyNetwork. See 
-  :class:`phylozoo.core.primitives.mmultigraph.MixedMultiGraph` for full API.
+  :doc:`Mixed Multi-Graph <mixed_multigraph>` for comprehensive documentation.
 
 **Key Methods:**
 
@@ -123,5 +135,5 @@ Available Classes
    matrix classifications (e.g., Kalmanson matrices).
 
 .. seealso::
-   For network classes that use these primitives, see :doc:`Networks (Basic) <core_networks_basic>`. 
-   For split systems (which use Partition), see :doc:`Splits <core_splits>`.
+   For network classes that use these primitives, see :doc:`Networks (Basic) <../networks/basic>`. 
+   For split systems (which use Partition), see :doc:`Splits <../splits>`.

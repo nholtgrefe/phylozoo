@@ -5,6 +5,8 @@ The diversity module (`phylozoo.panda`) provides a flexible framework for calcul
 phylogenetic diversity and finding optimal sets of taxa that maximize diversity 
 :cite:`PhyloZoo2024`.
 
+For detailed information on the all-paths diversity measure, see :doc:`All-Paths Diversity <all_paths_diversity>`.
+
 Diversity Measures
 ------------------
 
@@ -15,7 +17,8 @@ implement.
 Currently implemented measures:
 
 * **All-Paths Diversity**: Measures diversity based on all paths between taxa in the 
-  network. Considers all paths from root to each taxon, weighted by edge probabilities.
+  network. Considers all paths from root to each taxon, weighted by edge probabilities. 
+  See :doc:`All-Paths Diversity <all_paths_diversity>` for details.
 
 Creating a Diversity Measure
 -----------------------------
@@ -197,6 +200,13 @@ Different diversity measures have different requirements:
    exact solution is not available. Always handle this exception or use greedy 
    maximization as a fallback.
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   
+   all_paths_diversity
+
 .. seealso::
-   For network analysis workflows, see :doc:`Network Analysis Workflow <workflow_network_analysis>`. 
-   For I/O operations, see :doc:`I/O <io>`.
+   For detailed measure information, see :doc:`All-Paths Diversity <all_paths_diversity>`.
+   For network analysis workflows, see :doc:`Network Analysis Workflow <../../tutorials/workflow_network_analysis>`. 
+   For I/O operations, see :doc:`I/O <../io>`.

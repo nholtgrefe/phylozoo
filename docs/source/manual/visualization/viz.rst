@@ -277,5 +277,5 @@ Available Functions
 
 .. seealso::
    For network analysis workflows that include visualization, see 
-   :doc:`Network Analysis Workflow <workflow_network_analysis>`. For I/O operations, 
+   :doc:`Network Analysis Workflow <../../tutorials/workflow_network_analysis>`. For I/O operations, 
    see :doc:`I/O <io>`.

@@ -3,7 +3,7 @@ Networks (Basic)
 
 This page covers basic operations for working with phylogenetic networks. For advanced 
 features like network analysis, transformations, and classifications, see 
-:doc:`Networks (Advanced) <core_networks_advanced>`.
+:doc:`Networks (Advanced) <advanced>`.
 
 Network Types
 -------------
@@ -14,11 +14,45 @@ PhyloZoo provides two main network classes:
    Fully directed phylogenetic networks with a single root node. All edges are directed, 
    explicitly representing the direction of evolutionary time. Hybrid nodes have 
    in-degree >= 2 and out-degree 1.
+   
+   **I/O Formats**: eNewick (default, extensions: ``.enewick``, ``.eNewick``, ``.enwk``, ``.nwk``, ``.newick``), 
+   DOT (extensions: ``.dot``, ``.gv``). See :doc:`I/O <../../io>` for details.
+
+   .. figure:: ../../../_static/images/example_tree_directed.png
+      :alt: Example directed tree
+      :width: 400px
+      :align: center
+      
+      Example of a simple directed tree.
+
+   .. figure:: ../../../_static/images/example_hybrid_directed.png
+      :alt: Example directed network with hybrid
+      :width: 400px
+      :align: center
+      
+      Example of a directed network with a hybrid node.
 
 **SemiDirectedPhyNetwork**
    Networks with directed hybrid edges and undirected tree edges. These allow for more 
    flexible representation and are useful for unrooted analyses. Semi-directed networks 
    cannot have undirected cycles.
+   
+   **I/O Formats**: Newick (default, extensions: ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``), 
+   PhyloZoo-DOT (extension: ``.pzdot``). See :doc:`I/O <../../io>` for details.
+
+   .. figure:: ../../../_static/images/example_tree_semidirected.png
+      :alt: Example semi-directed tree
+      :width: 400px
+      :align: center
+      
+      Example of a simple semi-directed tree.
+
+   .. figure:: ../../../_static/images/example_hybrid_semidirected.png
+      :alt: Example semi-directed network with hybrid
+      :width: 400px
+      :align: center
+      
+      Example of a semi-directed network with a hybrid node.
 
 Creating Networks
 -----------------
@@ -122,7 +156,7 @@ Basic network transformations:
    # Suppress degree-2 nodes (simplify network)
    simplified = suppress_2_blobs(network)
 
-For more advanced transformations, see :doc:`Networks (Advanced) <core_networks_advanced>`.
+For more advanced transformations, see :doc:`Networks (Advanced) <advanced>`.
 
 Available Functions
 ------------------
@@ -164,7 +198,7 @@ Available Functions
 
 .. note::
    For advanced network features like LSA nodes, blobs, network classifications, 
-   binary resolution, and isomorphism checking, see :doc:`Networks (Advanced) <core_networks_advanced>`.
+   binary resolution, and isomorphism checking, see :doc:`Networks (Advanced) <advanced>`.
 
 .. tip::
    All networks are immutable. To modify a network, create a new instance with the 

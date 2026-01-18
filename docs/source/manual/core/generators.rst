@@ -150,5 +150,5 @@ Available Classes and Functions
    with parallel edges may produce unexpected results.
 
 .. seealso::
-   For network level classification, see :doc:`Networks (Advanced) <core_networks_advanced>`. 
+   For network level classification, see :doc:`Networks (Advanced) <networks/advanced>`. 
    For network construction, see the generator construction functions.
