@@ -109,27 +109,14 @@ def plot_sdnetwork(
     for (u, v, key), route in computed_layout.edge_routes.items():
         _draw_edge(ax, route, style, computed_layout)
 
-    # Determine node types by converting to directed network temporarily
-    import warnings
-    from phylozoo.core.network.sdnetwork.derivations import to_d_network
-    from phylozoo.utils.exceptions import (
-        PhyloZooEmptyNetworkWarning,
-        PhyloZooSingleNodeNetworkWarning,
-    )
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=PhyloZooEmptyNetworkWarning)
-        warnings.filterwarnings('ignore', category=PhyloZooSingleNodeNetworkWarning)
-        d_network = to_d_network(network)
-    
-    leaves = d_network.leaves
-    hybrid_nodes = d_network.hybrid_nodes
-    root = d_network.root_node
+    # Determine node types
+
+    leaves = network.leaves
+    hybrid_nodes = network.hybrid_nodes
 
     # Render nodes
     for node, position in positions.items():
-        if node == root:
-            node_type = 'root'
-        elif node in leaves:
+        if node in leaves:
             node_type = 'leaf'
         elif node in hybrid_nodes:
             node_type = 'hybrid'

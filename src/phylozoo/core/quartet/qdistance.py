@@ -39,9 +39,9 @@ def quartet_distance(
     rho : tuple[float, float, float, float]
         Rho vector (rho_c, rho_s, rho_a, rho_o) specifying distance contributions
         for different quartet topologies:
-        - rho_c: contribution when two leaves are on different sides of a split
+        - rho_c: contribution when two leaves are on the same side of a split
           (used for profiles with 1 quartet)
-        - rho_s: contribution when two leaves are on the same side of a split
+        - rho_s: contribution when two leaves are on different sides of a split
           (used for profiles with 1 quartet)
         - rho_a: contribution when two leaves are adjacent in a circular ordering
           (used for profiles with 2 quartets, which induce a circular ordering)
@@ -209,9 +209,9 @@ def _rho_distance(
         )
         
         if same_side:
-            return float(rho_s)
-        else:
             return float(rho_c)
+        else:
+            return float(rho_s)
     
     elif num_quartets == 2:
         # Two quartets: use circular ordering logic
