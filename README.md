@@ -36,8 +36,6 @@ After installation, you can import the package:
 import phylozoo
 ```
 
-See the `examples/` directory for usage examples.
-
 ## Testing
 
 This project uses pytest for testing.
@@ -76,31 +74,6 @@ pytest -v
 
 See `tests/README.md` for more testing information.
 
-## Project Structure
-
-```
-phylozoo/
-├── src/
-│   └── phylozoo/          # Main package
-│       ├── __init__.py
-│       ├── dnetwork.py
-│       ├── invariant_eval.py
-│       ├── load_data.py
-│       ├── msa.py
-│       ├── quarnet.py
-│       ├── quarnetset.py
-│       ├── sdnetwork.py
-│       ├── splits.py
-│       ├── trinet.py
-│       ├── trinetset.py
-│       ├── invariants/     # Data files
-│       └── utils/          # Utility modules
-├── tests/                  # Test suite
-├── examples/               # Example scripts
-├── scripts/                # Utility scripts
-├── pyproject.toml          # Package configuration
-└── README.md               # This file
-```
 
 ## Development
 

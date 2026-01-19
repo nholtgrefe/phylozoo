@@ -9,6 +9,7 @@ First release:
     - Docs + Tutorials
         - Explain editable install
         - toggle for output.
+        - Add folder structurein ascii
 - Core:
     - Network:
         - fix/check eNewick parser and writer
