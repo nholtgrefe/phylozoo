@@ -38,6 +38,12 @@ try:
 except ImportError:
     pass  # Optional extension, skip if not available
 
+try:
+    import sphinx_togglebutton
+    extensions.append('sphinx_togglebutton')  # Toggle button for collapsible content
+except ImportError:
+    pass  # Optional extension, skip if not available
+
 # BibTeX configuration
 bibtex_bibfiles = ['bibliography.bib']  # Relative to source directory
 bibtex_default_style = 'unsrt'

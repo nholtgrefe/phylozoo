@@ -1,204 +1,163 @@
-Sequences
-=========
+Sequence Alignments
+===================
 
-This page covers working with multiple sequence alignments (MSAs) in PhyloZoo, including 
-basic operations, bootstrapping, and advanced array operations.
+The sequence module provides immutable, array-backed containers for multiple sequence
+alignments (MSAs), together with utilities for distance computation and bootstrap
+resampling commonly used in phylogenetic analyses.
 
-**I/O Formats**: FASTA (default, extensions: ``.fasta``, ``.fa``, ``.fas``), NEXUS (extensions: ``.nexus``, ``.nex``, ``.nxs``). 
-See :doc:`I/O <../io>` for details.
-
-Creating MSAs
--------------
-
-Create MSAs from dictionaries of sequences:
+All classes and functions on this page can be imported from the core sequence module:
 
 .. code-block:: python
 
-   from phylozoo import MSA
-   
+   from phylozoo.core import sequence
+   # or directly
+   from phylozoo.core.sequence import MSA
+
+Working with MSAs
+-----------------
+
+The :class:`phylozoo.core.sequence.MSA` class is the canonical, immutable container for
+aligned sequences in PhyloZoo. It stores sequences in a canonical order and uses an
+internal coded NumPy array representation for efficient processing.
+
+.. note::
+   :class: dropdown
+
+   **Implementation details**
+
+   - Sequences are stored internally as a NumPy ``int8`` array (`_coded_array`) of shape
+     ``(num_taxa, sequence_length)``.
+   - The default nucleotide encoding maps A/C/G/T to 0/1/2/3, with gaps/unknown as -1.
+   - Taxa are stored in canonical sorted order and exposed via ``taxa_order`` and
+     ``taxa`` properties.
+   - I/O uses the :class:`~phylozoo.utils.io.IOMixin` common interface; supported
+     formats include FASTA (default) and NEXUS. See
+     :mod:`src/phylozoo/core/sequence/base.py` for details.
+
+Creating an MSA
+^^^^^^^^^^^^^^^
+
+Create a :class:`phylozoo.core.sequence.MSA` from a dictionary mapping taxon names to
+sequence strings. All sequences must have the same length.
+
+.. code-block:: python
+
+   from phylozoo.core.sequence import MSA
+
    sequences = {
        "taxon1": "ACGTACGT",
        "taxon2": "ACGTACGT",
        "taxon3": "ACGTTTAA"
    }
-   
-   msa = MSA(sequences)
-   print(f"Number of taxa: {msa.num_taxa}")
-   print(f"Sequence length: {msa.sequence_length}")
 
-All sequences must have the same length. The MSA class validates this automatically.
+   msa = MSA(sequences)  # taxa_order becomes a tuple
 
-Loading and Saving
-------------------
+The constructor validates sequence lengths and types, and will raise
+:class:`phylozoo.utils.exceptions.PhyloZooValueError` or
+:class:`phylozoo.utils.exceptions.PhyloZooTypeError` for invalid inputs.
 
-MSAs can be loaded from and saved to files:
+File Input/Output
+^^^^^^^^^^^^^^^^^
+
+Use the I/O helpers to read and write MSAs in common formats.
 
 .. code-block:: python
 
-   # Save MSA
-   msa.save("alignment.fasta")
-   
-   # Load MSA
+   # Load (auto-detect by extension)
    msa = MSA.load("alignment.fasta")
+
+   # Load with explicit format
    msa = MSA.load("alignment.nexus", format="nexus")
 
-See the :doc:`I/O <../reference/io>` page for supported formats and detailed I/O operations.
+   # Save
+   msa.save("out.fasta")
 
-Accessing Sequences
--------------------
+The I/O system delegates to the project's format registry and readers via
+:class:`~phylozoo.utils.io.IOMixin`. For details about supported formats and
+additional parameters see the global I/O docs.
 
-Access sequences by taxon name:
+Class methods / Accessing sequences
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: python
-
-   # Get sequence for a taxon
-   sequence = msa.get_sequence("taxon1")
-   
-   # Check if taxon exists
-   if "taxon1" in msa:
-       print("Taxon found")
-   
-   # Iterate over all taxa
-   for taxon in msa.taxa:
-       seq = msa.get_sequence(taxon)
-       print(f"{taxon}: {seq}")
-
-Basic Bootstrapping
--------------------
-
-Generate bootstrap replicates:
+Common accessors and conveniences:
 
 .. code-block:: python
 
-   from phylozoo.core.sequence import bootstrap
-   
-   # Generate 100 bootstrap replicates
-   for bootstrapped_msa in bootstrap(msa, n_bootstrap=100, seed=42):
-       # Process each bootstrap replicate
-       distances = hamming_distances(bootstrapped_msa)
-       # ... use distances for analysis
+   msa.get_sequence("taxon1")   # -> str or None
+   "taxon1" in msa              # -> bool
+   msa.taxa                      # -> frozenset of taxon names
+   msa.taxa_order                # -> tuple with canonical order
+   msa.sequence_length           # -> int
+   msa.num_taxa                  # -> int
+   msa.coded_array               # -> numpy array (num_taxa, sequence_length)
 
-Distance Calculations
-----------------------
+Important class methods:
 
-Compute distance matrices from MSAs:
+- ``MSA.from_coded_array(coded_array, taxa_order)`` — Create an MSA directly from a
+  coded NumPy array (dtype ``int8``). Efficient for operations like bootstrapping and
+  avoids repeated encoding/decoding.
 
-.. code-block:: python
+Operations
+----------
 
-   from phylozoo.core.sequence import hamming_distances
-   
-   # Compute normalized Hamming distances
-   distance_matrix = hamming_distances(msa)
-   
-   # Access distances
-   dist = distance_matrix.get_distance("taxon1", "taxon2")
+The :mod:`phylozoo.core.sequence` module provides utilities for bootstrap resampling
+and distance computation from MSAs. These operations are commonly used to prepare
+inputs for downstream inference algorithms.
 
-The ``hamming_distances`` function computes normalized Hamming distances, excluding 
-positions with gaps or unknown characters.
+Bootstrap resampling
+^^^^^^^^^^^^^^^^^^^^
 
-Per-Gene Bootstrapping
------------------------
+- ``bootstrap(msa, n_bootstrap, length=None, seed=None)`` — Generate bootstrap
+  replicates by sampling columns with replacement. ``length`` sets the number of
+  columns sampled (defaults to alignment length), and ``seed`` ensures reproducibility.
 
-When working with multi-gene alignments, you may want to bootstrap within gene 
-boundaries:
+- ``bootstrap_per_gene(msa, gene_lengths, n_bootstrap, seed=None)`` — For multi-gene
+  alignments, resample columns within each gene separately (``gene_lengths`` must sum
+  to the total sequence length).
 
-.. code-block:: python
-
-   from phylozoo.core.sequence import bootstrap_per_gene
-   
-   # Define gene boundaries
-   gene_lengths = [100, 150, 200]  # Lengths of each gene
-   
-   # Bootstrap per gene
-   for bootstrapped_msa in bootstrap_per_gene(
-       msa, 
-       gene_lengths, 
-       n_bootstrap=100, 
-       seed=42
-   ):
-       # Process each bootstrap replicate
-       # Columns are resampled within each gene separately
-       pass
-
-This ensures that bootstrap replicates maintain gene structure, which is important 
-for multi-gene phylogenetic analyses.
-
-Efficient Array Operations
---------------------------
-
-MSAs store sequences internally as NumPy arrays for efficient computation. You can 
-work directly with the coded array representation:
+Example:
 
 .. code-block:: python
 
-   # Access the internal NumPy array
-   coded_array = msa.coded_array  # Shape: (num_taxa, sequence_length), dtype: int8
-   
-   # Create MSA from coded array (efficient, avoids encoding/decoding)
-   from phylozoo import MSA
-   new_msa = MSA.from_coded_array(coded_array, msa.taxa_order)
+   from phylozoo.core.sequence import bootstrap, hamming_distances
 
-This is particularly useful for custom operations that work directly with the 
-numerical representation.
+   for rep in bootstrap(msa, n_bootstrap=100, seed=42):
+       dm = hamming_distances(rep)
+       # use dm in analysis
 
-Available Functions
--------------------
+Distance computation
+^^^^^^^^^^^^^^^^^^^^
 
-**Classes:**
+- ``hamming_distances(msa)`` — Compute normalized Hamming distances between all pairs
+  of taxa. Positions where either sequence contains a gap/unknown (encoded as ``-1``)
+  are excluded from pairwise comparisons. Returns a
+  :class:`phylozoo.core.distance.DistanceMatrix` suitable for classification and
+  inference.
 
-* **MSA** - Multiple Sequence Alignment class. Immutable class for working with 
-  aligned sequences. Sequences are stored efficiently as NumPy arrays. Supports 
-  bootstrapping and distance calculations. See :class:`phylozoo.core.sequence.MSA` 
-  for full API.
+  The normalization excludes positions where either sequence has a gap (-) or unknown
+  character (N). Only positions where both sequences have valid nucleotides (A, C, G, T)
+  are considered. The implementation uses vectorized NumPy operations for efficiency.
 
-**Basic Functions:**
+Performance and testing notes
+----------------------------
 
-* **bootstrap(msa, n_bootstrap, length=None, seed=None)** - Generate bootstrap 
-  replicates by resampling columns with replacement. Returns iterator of MSA objects. 
-  The length parameter allows resampling a specific number of columns. See 
-  :func:`phylozoo.core.sequence.bootstrap` for details.
+- ``MSA.coded_array`` is the canonical internal representation. For performance-sensitive
+  code, operate directly on the coded array and then re-create MSAs using
+  ``MSA.from_coded_array`` to avoid repeated encoding/decoding overhead.
+- When adding algorithms that manipulate the coded array, benchmark and document
+  speedups (use ``sandbox/findings.txt``). Prefer vectorized NumPy or Numba-accelerated
+  implementations for heavy computations.
+- For reproducible tests involving randomness (bootstrapping), pin the seed and assert
+  deterministic properties (e.g., that replicates are identical for the same seed).
+- Record micro-benchmarks and experimental findings in ``sandbox/findings.txt``.
 
-* **hamming_distances(msa)** - Compute normalized Hamming distances between all pairs 
-  of taxa. Excludes positions with gaps or unknown characters. Uses vectorized NumPy 
-  operations for efficiency. Returns DistanceMatrix. See 
-  :func:`phylozoo.core.sequence.hamming_distances` for details.
+Notes and tips
+-------------
 
-**Advanced Functions:**
-
-* **bootstrap_per_gene(msa, gene_lengths, n_bootstrap, seed=None)** - Generate 
-  bootstrap replicates with per-gene resampling. Columns are resampled separately 
-  within each gene boundary. Gene lengths must sum to the total sequence length. 
-  Returns iterator of MSA objects. See :func:`phylozoo.core.sequence.bootstrap_per_gene` 
-  for details.
-
-**Basic MSA Methods:**
-
-* **num_taxa** - Number of taxa in the alignment
-* **sequence_length** - Length of sequences (all sequences have same length)
-* **taxa** - Frozen set of all taxon names
-* **taxa_order** - Tuple of taxon names in canonical order
-* **get_sequence(taxon)** - Get sequence string for a taxon
-* **save(filename)** - Save MSA to file
-* **load(filename)** - Load MSA from file (class method)
-
-**Advanced MSA Methods:**
-
-* **coded_array** - Access the internal NumPy array representation. Shape is 
-  (num_taxa, sequence_length) with dtype int8. Each element is an encoded character 
-  value. Read-only property.
-
-* **from_coded_array(coded_array, taxa_order)** - Create MSA directly from coded 
-  NumPy array. Efficient method that avoids encoding/decoding overhead. Useful for 
-  operations that work directly with arrays. Class method. See 
-  :meth:`phylozoo.core.sequence.MSA.from_coded_array` for details.
-
-.. note::
-   MSAs are immutable. To modify an MSA, create a new instance with the desired 
-   changes.
-
-.. note::
-   The coded array uses DEFAULT_NUCLEOTIDE_ENCODING: A/C/G/T = 0/1/2/3, gaps/unknown = -1.
-
-.. tip::
-   Use ``from_coded_array`` when you're doing many bootstrap operations or custom 
-   array manipulations. It's much faster than creating MSAs from strings.
+- MSAs are immutable by design; to change values create a new :class:`MSA` instance
+  to avoid shared-state bugs.
+- Prefer ``from_coded_array`` for heavy array workloads to avoid repeated encoding.
+- Validate MSAs early (sequence lengths, valid characters) to produce clearer error
+  messages and stable downstream behavior.
+- When adding examples to docstrings, mirror them in tests under ``tests/`` as per
+  project conventions.
