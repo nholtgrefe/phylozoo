@@ -628,6 +628,7 @@ def distances(
     """
     # Get all taxa
     all_taxa = list(network.taxa)
+    all_taxa.sort()
     n = len(all_taxa)
     
     # Handle edge cases
