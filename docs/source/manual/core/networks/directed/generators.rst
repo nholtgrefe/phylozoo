@@ -1,14 +1,33 @@
 Directed Network Generators
-===========================
+============================
 
-Generators are minimal biconnected components that represent the core structure of 
-level-k directed phylogenetic networks :cite:`PhyloZoo2024`. They are used to characterize 
-and construct networks based on their level.
+The :mod:`phylozoo.core.network.dnetwork.generator` module provides the :class:`DirectedGenerator`
+class and related functions for working with level-k network generators. Generators are minimal
+biconnected components that represent the core structure of level-k directed phylogenetic networks
+:cite:`PhyloZoo2024`. They are used to characterize and construct networks based on their level.
+
+All classes and functions on this page can be imported from the core network generator module:
+
+.. code-block:: python
+
+   from phylozoo.core.dnetwork.generator import DirectedGenerator, all_level_k_generators, generators_from_network
+   # or directly
+   from phylozoo.core.dnetwork.generator import DirectedGenerator
+
+Working with Directed Generators
+---------------------------------
+
+Directed generators represent the fundamental building blocks of level-k directed phylogenetic
+networks. Each generator is a minimal biconnected component that can be combined with other
+generators to construct networks of a specific level.
 
 Creating Generators
--------------------
+^^^^^^^^^^^^^^^^^^^
 
-Directed generators represent the structure of directed level-k networks:
+Directed generators are minimal biconnected components that represent the core structure
+of level-k directed phylogenetic networks. They are created from DirectedMultiGraph objects
+that represent the generator topology. Each generator has a level (k), hybrid nodes, and
+sides (attachment points) where networks can be connected.
 
 .. code-block:: python
 
@@ -24,10 +43,28 @@ Directed generators represent the structure of directed level-k networks:
    hybrid_nodes = generator.hybrid_nodes  # {4}
    sides = generator.sides  # List of attachment points
 
-Extracting Generators from Networks
-------------------------------------
+Accessing Generator Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Extract generators from networks:
+Generators provide properties to access their structure and components:
+
+.. code-block:: python
+
+   # Access generator properties
+   level = generator.level           # The level (k) of the generator
+   hybrid_nodes = generator.hybrid_nodes  # Set of hybrid nodes
+   sides = generator.sides           # List of sides (attachment points)
+
+Generator Operations
+--------------------
+
+Extracting Generators from Networks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :func:`phylozoo.core.dnetwork.generator.generators_from_network` function extracts
+all generators from a binary directed network. This function decomposes the network
+into its biconnected components and identifies the generator structures. The network
+must be binary (no parallel edges or high-degree nodes) for accurate generator extraction.
 
 .. code-block:: python
 
@@ -42,9 +79,12 @@ Extract generators from networks:
        print(f"Level: {gen.level}, Hybrid nodes: {gen.hybrid_nodes}")
 
 Generating All Level-k Generators
----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Generate all level-k generators:
+The :func:`phylozoo.core.dnetwork.generator.all_level_k_generators` function generates
+all possible level-k directed generators. This is useful for network classification,
+as any level-k network can be constructed by combining these generators. The function
+returns a set of all distinct generator structures for the specified level.
 
 .. code-block:: python
 
@@ -53,9 +93,22 @@ Generate all level-k generators:
    print(f"Number of level-2 generators: {len(level_2_generators)}")
 
 Generator Sides
----------------
+^^^^^^^^^^^^^^^
 
-Generators have "sides" which are attachment points where networks can be connected:
+Generators have "sides" which are attachment points where networks can be connected
+to form larger networks. There are two types of sides: HybridSide (attachment at a
+hybrid node) and DirEdgeSide (attachment along a directed edge). Sides define how
+generators can be combined to construct level-k networks.
+
+**HybridSide**
+
+The :class:`phylozoo.core.dnetwork.generator.HybridSide` class represents attachment
+at a hybrid node.
+
+**DirEdgeSide**
+
+The :class:`phylozoo.core.dnetwork.generator.DirEdgeSide` class represents attachment
+along a directed edge.
 
 .. code-block:: python
 
@@ -72,43 +125,6 @@ Generators have "sides" which are attachment points where networks can be connec
        elif isinstance(side, DirEdgeSide):
            print(f"Edge side: {side.edge}")
 
-API Reference
--------------
-
-**Classes:**
-
-* **DirectedGenerator** - Level-k generator for directed phylogenetic networks. 
-  Represents minimal biconnected components. See 
-  :class:`phylozoo.core.network.dnetwork.generator.DirectedGenerator` for full API.
-
-**Functions:**
-
-* **generators_from_network(network)** - Extract generators from a directed network. 
-  Network must be binary. Returns iterator of DirectedGenerator objects. See 
-  :func:`phylozoo.core.network.dnetwork.generator.generators_from_network`.
-
-* **all_level_k_generators(k)** - Generate all level-k directed generators. Returns 
-  set of DirectedGenerator objects. See 
-  :func:`phylozoo.core.network.dnetwork.generator.all_level_k_generators`.
-
-**Generator Sides:**
-
-* **Side** - Base class for generator sides (attachment points). Abstract base class.
-
-* **HybridSide** - Side representing attachment at a hybrid node. See 
-  :class:`phylozoo.core.network.dnetwork.generator.HybridSide`.
-
-* **DirEdgeSide** - Side representing attachment along a directed edge. See 
-  :class:`phylozoo.core.network.dnetwork.generator.DirEdgeSide`.
-
-**Generator Properties:**
-
-* **level** - The level (k) of the generator. Returns integer.
-
-* **hybrid_nodes** - Set of hybrid nodes in the generator. Returns set of node IDs.
-
-* **sides** - List of sides (attachment points). Returns list of Side objects.
-
 .. note::
    Generators are used internally for network classification and construction. They 
    are particularly useful for understanding the structure of level-k networks.
@@ -121,6 +137,8 @@ API Reference
    Extracting generators from networks requires the network to be binary. Networks 
    with parallel edges may produce unexpected results.
 
-.. seealso::
-   For network level classification, see :doc:`Directed Networks (Advanced) <advanced>`. 
-   For semi-directed generators, see :doc:`Semi-Directed Network Generators <../semi_directed/generators>`.
+See Also
+--------
+
+- :doc:`Directed Networks (Advanced) <advanced>` - Network level classification
+- :doc:`Semi-Directed Network Generators <../semi_directed/generators>` - Semi-directed generators

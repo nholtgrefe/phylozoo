@@ -1,47 +1,27 @@
-Overview
-========
+Splits
+======
 
-Splits represent bipartitions of taxa and are a fundamental way to encode phylogenetic 
-relationships :cite:`PhyloZoo2024`. The split module provides classes for working with 
-splits and split systems.
+The :mod:`phylozoo.core.split` module provides data structures for working with
+splits, which represent bipartitions of taxa sets and form the mathematical foundation
+for phylogenetic tree and network representations.
 
-Overview
---------
-
-A split represents a bipartition of a set of elements. Splits are used to encode 
-phylogenetic relationships and can be extracted from networks or used to construct trees.
-
-The split module provides two main classes:
-
-* **Split**: Represents a single bipartition
-* **SplitSystem**: A collection of splits covering a complete set of elements
-
-Basic Usage
------------
+All classes and functions on this page can be imported from the core split module:
 
 .. code-block:: python
 
-   from phylozoo import Split, SplitSystem
-   
-   # Create a split
-   split = Split({"A", "B"}, {"C", "D"})
-   
-   # Check compatibility
-   other_split = Split({"A"}, {"B", "C", "D"})
-   are_compatible = split.is_compatible(other_split)
-   
-   # Create split system
-   splits = [
-       Split({"A", "B"}, {"C", "D"}),
-       Split({"A"}, {"B", "C", "D"}),
-   ]
-   split_system = SplitSystem(splits)
+   from phylozoo.core.split import *
+   # or directly
+   from phylozoo.core.split import Split, SplitSystem
 
-For detailed information on each class, see:
+Classes
+-------
 
-* :doc:`Split <split>`: Single split operations
-* :doc:`SplitSystem <split_system>`: Split system operations
+- :doc:`Split <split>` - Individual bipartitions
+- :doc:`Split System <split_system>` - Collections of splits for phylogenetic analysis
 
-.. seealso::
-   For extracting splits from networks, see :doc:`Networks (Advanced) <../networks/directed/advanced>`. 
-   For I/O operations, see :doc:`I/O <../../io>`.
+See Also
+--------
+
+- :doc:`API Reference <../../../api/core/split>` - Complete function signatures and detailed examples
+- :doc:`Quartets <../quartets/overview>` - Quartet-based phylogenetic representations
+- :doc:`Networks (Basic) <../networks/basic>` - Network classes using splits

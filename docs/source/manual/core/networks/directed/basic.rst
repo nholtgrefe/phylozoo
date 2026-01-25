@@ -1,19 +1,42 @@
 Directed Networks (Basic)
 ==========================
 
-This page covers basic operations for working with **DirectedPhyNetwork**. For advanced 
-features like network analysis, transformations, and classifications, see 
-:doc:`Directed Networks (Advanced) <advanced>`.
+The :mod:`phylozoo.core.network.dnetwork` module provides the :class:`DirectedPhyNetwork` class,
+which represents fully directed phylogenetic networks with a single root node. DirectedPhyNetwork
+is fundamental to phylogenetic analysis, explicitly representing the direction of evolutionary
+time through fully directed edges. All edges are directed, and hybrid nodes have in-degree >= 2
+and out-degree 1. For advanced features like network analysis, transformations, and classifications,
+see :doc:`Directed Networks (Advanced) <advanced>`.
 
-DirectedPhyNetwork
-------------------
+All classes and functions on this page can be imported from the core network module:
 
-**DirectedPhyNetwork** represents fully directed phylogenetic networks with a single root 
-node. All edges are directed, explicitly representing the direction of evolutionary time. 
-Hybrid nodes have in-degree >= 2 and out-degree 1.
+.. code-block:: python
 
-**I/O Formats**: eNewick (default, extensions: ``.enewick``, ``.eNewick``, ``.enwk``, ``.nwk``, ``.newick``), 
-DOT (extensions: ``.dot``, ``.gv``). See :doc:`I/O <../../../../io>` for details.
+   from phylozoo import DirectedPhyNetwork
+   # or directly
+   from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+
+Working with DirectedPhyNetwork
+--------------------------------
+
+The :class:`phylozoo.core.network.dnetwork.DirectedPhyNetwork` class is the canonical container
+for fully directed phylogenetic networks in PhyloZoo. It provides an immutable representation
+that ensures data integrity throughout your analysis pipeline.
+
+.. note::
+   :class: dropdown
+
+   **Implementation details**
+
+   DirectedPhyNetwork is designed for immutability and performance:
+
+   - Networks are immutable after construction
+   - All edges are directed, explicitly representing time flow
+   - Hybrid nodes are validated to have in-degree >= 2 and out-degree 1
+   - Edge attributes (branch lengths, bootstrap, gamma) are stored efficiently
+   - The network structure is validated at construction time
+
+   For implementation details, see :mod:`src/phylozoo/core/network/dnetwork/base.py`.
 
 .. figure:: ../../../../_static/images/example_tree_directed.png
    :alt: Example directed tree
@@ -29,10 +52,12 @@ DOT (extensions: ``.dot``, ``.gv``). See :doc:`I/O <../../../../io>` for details
    
    Example of a directed network with a hybrid node.
 
-Creating Networks
------------------
+Creating a DirectedPhyNetwork
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Create networks from edges and nodes:
+DirectedPhyNetwork objects can be created from edge and node specifications. The constructor
+accepts a list of edges (as tuples) and optional node attributes. Each edge can have
+attributes like branch lengths, bootstrap values, and gamma probabilities for hybrid edges.
 
 .. code-block:: python
 
@@ -48,7 +73,8 @@ Create networks from edges and nodes:
        ]
    )
 
-Create networks with hybrid nodes:
+Networks with hybrid nodes require multiple incoming edges to the hybrid node, each with
+a gamma probability. The gamma values for all edges entering a hybrid node must sum to 1.0.
 
 .. code-block:: python
 
@@ -63,25 +89,11 @@ Create networks with hybrid nodes:
        nodes=[("leaf1", {"label": "A"})]
    )
 
-Loading and Saving
-------------------
+Accessing Network Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Networks can be loaded from and saved to files:
-
-.. code-block:: python
-
-   # Save network
-   network.save("network.enewick")
-   
-   # Load network
-   network = DirectedPhyNetwork.load("network.enewick")
-
-See the :doc:`I/O <../../../../io>` page for supported formats and detailed I/O operations.
-
-Basic Properties
------------------
-
-Access basic network properties:
+DirectedPhyNetwork provides properties to access fundamental network structure information,
+including node and edge counts, root and leaf identification, and node type classification.
 
 .. code-block:: python
 
@@ -103,10 +115,12 @@ Access basic network properties:
    is_tree = network.is_tree()
 
 Accessing Edge Attributes
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Networks support edge attributes like branch lengths, bootstrap values, and gamma 
-probabilities:
+Edge attributes such as branch lengths, bootstrap support values, and gamma probabilities
+can be accessed using dedicated methods. Branch lengths represent evolutionary distances,
+bootstrap values indicate statistical support, and gamma probabilities specify the
+contribution of each parent edge to a hybrid node.
 
 .. code-block:: python
 
@@ -119,50 +133,53 @@ probabilities:
    # Get gamma (for hybrid edges)
    gamma = network.get_gamma("u1", "h")
 
-Simple Transformations
-----------------------
+File Input/Output
+^^^^^^^^^^^^^^^^^
 
-Basic network transformations:
+DirectedPhyNetwork supports loading from and saving to files in multiple formats. The
+default format is eNewick, which extends the standard Newick format to support hybrid
+nodes and edge attributes.
+
+**Supported Formats:**
+
+- **eNewick** (default): Extended Newick format. Extensions: ``.enewick``, ``.eNewick``, ``.enwk``, ``.nwk``, ``.newick``
+- **DOT**: Graphviz format. Extensions: ``.dot``, ``.gv``
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.transformations import suppress_2_blobs
+   # Save network
+   network.save("network.enewick")
+   
+   # Load network
+   network = DirectedPhyNetwork.load("network.enewick")
+
+.. seealso::
+   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
+   consistent file handling across PhyloZoo classes. For details on the I/O system,
+   see the :doc:`I/O documentation <../../../../io>`. For specific information about
+   supported file formats and parameter options for networks, see the
+   :mod:`API reference <phylozoo.core.network.dnetwork.io>`.
+
+Basic Transformations
+---------------------
+
+Basic transformation functions allow you to simplify network structures while preserving
+topological information.
+
+**Suppressing 2-Blobs**
+
+The :func:`phylozoo.core.dnetwork.transformations.suppress_2_blobs` function removes
+degree-2 nodes within 2-blobs (biconnected components with 2 incident edges), simplifying
+the network without changing its essential structure.
+
+.. code-block:: python
+
+   from phylozoo.core.dnetwork import transformations
    
    # Suppress degree-2 nodes (simplify network)
-   simplified = suppress_2_blobs(network)
+   simplified = transformations.suppress_2_blobs(network)
 
 For more advanced transformations, see :doc:`Directed Networks (Advanced) <advanced>`.
-
-API Reference
--------------
-
-**Class**: :class:`phylozoo.core.network.dnetwork.DirectedPhyNetwork`
-
-**Basic Properties:**
-
-* **num_nodes** - Number of nodes in the network
-* **num_edges** - Number of edges in the network
-* **root_node** - The root node identifier
-* **leaves** - Set of leaf node IDs
-* **taxa** - Set of taxon labels (strings)
-* **internal_nodes** - Set of internal node IDs
-* **hybrid_nodes** - Set of hybrid node IDs
-* **tree_nodes** - Set of tree node IDs
-
-**Basic Methods:**
-
-* **is_tree()** - Check if network is a tree
-* **get_branch_length(u, v)** - Get branch length for edge
-* **get_bootstrap(u, v)** - Get bootstrap value for edge
-* **get_gamma(u, v)** - Get gamma probability for hybrid edge
-* **save(filename)** - Save network to file
-* **load(filename)** - Load network from file (class method)
-
-**Basic Transformations:**
-
-* **suppress_2_blobs(network)** - Suppress degree-2 nodes in 2-blobs. Simplifies network 
-  structure by removing unnecessary degree-2 nodes while preserving topology. See 
-  :func:`phylozoo.core.network.dnetwork.transformations.suppress_2_blobs` for details.
 
 .. note::
    For advanced network features like LSA nodes, blobs, network classifications, 
@@ -172,6 +189,9 @@ API Reference
    All networks are immutable. To modify a network, create a new instance with the 
    desired changes.
 
-.. seealso::
-   For semi-directed networks, see :doc:`Semi-Directed Networks <../semi_directed/overview>`. 
-   For I/O operations, see :doc:`I/O <../../../../io>`.
+See Also
+--------
+
+- :doc:`Directed Networks (Advanced) <advanced>` - Advanced features, transformations, and classifications
+- :doc:`Semi-Directed Networks <../semi_directed/overview>` - Semi-directed network representations
+- :doc:`I/O <../../../../io>` - File I/O operations and formats

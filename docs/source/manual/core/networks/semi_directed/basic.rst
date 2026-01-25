@@ -1,19 +1,43 @@
 Semi-Directed Networks (Basic)
 ================================
 
-This page covers basic operations for working with **SemiDirectedPhyNetwork**. For advanced 
-features like network analysis, transformations, and classifications, see 
+The :mod:`phylozoo.core.network.sdnetwork` module provides the :class:`SemiDirectedPhyNetwork` class,
+which represents networks with directed hybrid edges and undirected tree edges. SemiDirectedPhyNetwork
+allows for more flexible representation of phylogenetic networks without requiring a fixed root,
+making it useful for unrooted analyses. Semi-directed networks cannot have undirected cycles.
+For advanced features like network analysis, transformations, and classifications, see
 :doc:`Semi-Directed Networks (Advanced) <advanced>`.
 
-SemiDirectedPhyNetwork
------------------------
+All classes and functions on this page can be imported from the core network module:
 
-**SemiDirectedPhyNetwork** represents networks with directed hybrid edges and undirected 
-tree edges. These allow for more flexible representation and are useful for unrooted 
-analyses. Semi-directed networks cannot have undirected cycles.
+.. code-block:: python
 
-**I/O Formats**: Newick (default, extensions: ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``), 
-PhyloZoo-DOT (extension: ``.pzdot``). See :doc:`I/O <../../../../io>` for details.
+   from phylozoo import SemiDirectedPhyNetwork
+   # or directly
+   from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+
+Working with SemiDirectedPhyNetwork
+-------------------------------------
+
+The :class:`phylozoo.core.network.sdnetwork.SemiDirectedPhyNetwork` class is the canonical container
+for semi-directed phylogenetic networks in PhyloZoo. It provides an immutable representation
+that ensures data integrity throughout your analysis pipeline.
+
+.. note::
+   :class: dropdown
+
+   **Implementation details**
+
+   SemiDirectedPhyNetwork is designed for immutability and flexibility:
+
+   - Networks are immutable after construction
+   - Supports both directed (hybrid) and undirected (tree) edges
+   - No fixed root allows for flexible rooting analysis
+   - Hybrid nodes are validated to have proper in-degree
+   - Edge attributes (branch lengths, bootstrap, gamma) are stored efficiently
+   - The network structure is validated at construction time
+
+   For implementation details, see :mod:`src/phylozoo/core/network/sdnetwork/base.py`.
 
 .. figure:: ../../../../_static/images/example_tree_semidirected.png
    :alt: Example semi-directed tree
@@ -29,10 +53,13 @@ PhyloZoo-DOT (extension: ``.pzdot``). See :doc:`I/O <../../../../io>` for detail
    
    Example of a semi-directed network with a hybrid node.
 
-Creating Networks
------------------
+Creating a SemiDirectedPhyNetwork
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Create networks from directed and undirected edges:
+SemiDirectedPhyNetwork objects can be created from both directed and undirected edges.
+Directed edges represent hybrid relationships (reticulations), while undirected edges
+represent tree-like relationships. This mixed structure allows for flexible representation
+of phylogenetic networks without requiring a fixed root.
 
 .. code-block:: python
 
@@ -48,7 +75,10 @@ Create networks from directed and undirected edges:
        ]
    )
 
-Create networks with hybrid nodes:
+Networks with hybrid nodes use directed edges to represent the reticulation events.
+Each hybrid node must have at least two incoming directed edges, each with a gamma
+probability that sums to 1.0. The undirected edges represent the tree structure below
+and around the hybrid nodes.
 
 .. code-block:: python
 
@@ -66,25 +96,13 @@ Create networks with hybrid nodes:
        ]
    )
 
-Loading and Saving
-------------------
+Accessing Network Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Networks can be loaded from and saved to files:
-
-.. code-block:: python
-
-   # Save network
-   network.save("network.newick")
-   
-   # Load network
-   network = SemiDirectedPhyNetwork.load("network.newick")
-
-See the :doc:`I/O <../../../../io>` page for supported formats and detailed I/O operations.
-
-Basic Properties
-----------------
-
-Access basic network properties:
+SemiDirectedPhyNetwork provides properties to access fundamental network structure information,
+including node and edge counts, leaf and taxon identification, and node type classification.
+Unlike directed networks, semi-directed networks do not have a fixed root, but root locations
+can be identified.
 
 .. code-block:: python
 
@@ -109,10 +127,12 @@ Access basic network properties:
    root_locs = features.root_locations(network)
 
 Accessing Edge Attributes
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Networks support edge attributes like branch lengths, bootstrap values, and gamma 
-probabilities (for hybrid edges only):
+Edge attributes such as branch lengths, bootstrap support values, and gamma probabilities
+can be accessed using dedicated methods. Branch lengths and bootstrap values work for both
+directed and undirected edges, while gamma probabilities are only applicable to directed
+hybrid edges.
 
 .. code-block:: python
 
@@ -125,49 +145,53 @@ probabilities (for hybrid edges only):
    # Get gamma (for hybrid edges only)
    gamma = network.get_gamma(5, 4)
 
-Simple Transformations
-----------------------
+File Input/Output
+^^^^^^^^^^^^^^^^^
 
-Basic network transformations:
+SemiDirectedPhyNetwork supports loading from and saving to files in multiple formats. The
+default format is Newick, which can represent semi-directed networks. The PhyloZoo-DOT
+format provides additional flexibility for complex network structures.
+
+**Supported Formats:**
+
+- **Newick** (default): Standard Newick format. Extensions: ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``
+- **PhyloZoo-DOT**: Custom DOT format. Extension: ``.pzdot``
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork.transformations import suppress_2_blobs
+   # Save network
+   network.save("network.newick")
+   
+   # Load network
+   network = SemiDirectedPhyNetwork.load("network.newick")
+
+.. seealso::
+   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
+   consistent file handling across PhyloZoo classes. For details on the I/O system,
+   see the :doc:`I/O documentation <../../../../io>`. For specific information about
+   supported file formats and parameter options for networks, see the
+   :mod:`API reference <phylozoo.core.network.sdnetwork.io>`.
+
+Basic Transformations
+---------------------
+
+Basic transformation functions allow you to simplify network structures while preserving
+topological information.
+
+**Suppressing 2-Blobs**
+
+The :func:`phylozoo.core.sdnetwork.transformations.suppress_2_blobs` function removes
+degree-2 nodes within 2-blobs (biconnected components with 2 incident edges), simplifying
+the network without changing its essential structure.
+
+.. code-block:: python
+
+   from phylozoo.core.sdnetwork import transformations
    
    # Suppress degree-2 nodes (simplify network)
-   simplified = suppress_2_blobs(network)
+   simplified = transformations.suppress_2_blobs(network)
 
 For more advanced transformations, see :doc:`Semi-Directed Networks (Advanced) <advanced>`.
-
-API Reference
--------------
-
-**Class**: :class:`phylozoo.core.network.sdnetwork.SemiDirectedPhyNetwork`
-
-**Basic Properties:**
-
-* **num_nodes** - Number of nodes in the network
-* **num_edges** - Number of edges in the network
-* **leaves** - Set of leaf node IDs
-* **taxa** - Set of taxon labels (strings)
-* **internal_nodes** - Set of internal node IDs
-* **hybrid_nodes** - Set of hybrid node IDs
-* **tree_nodes** - Set of tree node IDs
-
-**Basic Methods:**
-
-* **is_tree()** - Check if network is a tree
-* **get_branch_length(u, v, key=None)** - Get branch length for edge
-* **get_bootstrap(u, v, key=None)** - Get bootstrap value for edge
-* **get_gamma(u, v, key=None)** - Get gamma probability for hybrid edge
-* **save(filename)** - Save network to file
-* **load(filename)** - Load network from file (class method)
-
-**Basic Transformations:**
-
-* **suppress_2_blobs(network)** - Suppress degree-2 nodes in 2-blobs. Simplifies network 
-  structure by removing unnecessary degree-2 nodes while preserving topology. See 
-  :func:`phylozoo.core.network.sdnetwork.transformations.suppress_2_blobs` for details.
 
 .. note::
    For advanced network features like blobs, network classifications, and root locations, 
@@ -177,6 +201,9 @@ API Reference
    All networks are immutable. To modify a network, create a new instance with the 
    desired changes.
 
-.. seealso::
-   For directed networks, see :doc:`Directed Networks <../directed/overview>`. 
-   For I/O operations, see :doc:`I/O <../../../../io>`.
+See Also
+--------
+
+- :doc:`Semi-Directed Networks (Advanced) <advanced>` - Advanced features, transformations, and classifications
+- :doc:`Directed Networks <../directed/overview>` - Fully directed network representations
+- :doc:`I/O <../../../../io>` - File I/O operations and formats

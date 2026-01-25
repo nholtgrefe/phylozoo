@@ -6,9 +6,12 @@ Core data structures and classes for phylogenetic networks and related structure
 .. toctree::
    :maxdepth: 2
    
-   networks
+   dnetwork
+   sdnetwork
    sequences
    quartets
    splits
    distance
    primitives
+   d_multigraph
+   m_multigraph

@@ -3,9 +3,13 @@ Inference
 
 Network inference algorithms and utilities.
 
-.. automodule:: phylozoo.inference.squirrel
-   :members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 2
+   
+   inference/squirrel
+
+Utilities
+---------
 
 .. automodule:: phylozoo.inference.utils
    :members:

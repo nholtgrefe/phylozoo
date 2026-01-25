@@ -1,7 +1,7 @@
 Pairwise Distances
 ==================
 
-The distance module provides immutable, well-typed containers for pairwise distances
+The :mod:`phylozoo.core.distance` module provides immutable, well-typed containers for pairwise distances
 between taxa, along with comprehensive tools for classification and optimization.
 Distance matrices are fundamental to many phylogenetic inference algorithms, serving
 as the standard input format for quartet profile generation, network reconstruction
@@ -12,7 +12,7 @@ All classes and functions on this page can be imported from the core distance mo
 
 .. code-block:: python
 
-   from phylozoo.core import distance
+   from phylozoo.core.distance import *
    # or directly
    from phylozoo.core.distance import DistanceMatrix
 
