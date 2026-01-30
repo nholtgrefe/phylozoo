@@ -67,9 +67,7 @@ I/O
    :members:
    :show-inheritance:
 
-Generators
-----------
-
-.. automodule:: phylozoo.core.network.sdnetwork.generator
-   :members:
-   :show-inheritance:
+.. toctree::
+   :maxdepth: 1
+   
+   generator
