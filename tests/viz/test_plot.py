@@ -8,7 +8,8 @@ import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 from phylozoo.utils.exceptions import PhyloZooLayoutError
-from phylozoo.viz import NetworkStyle, plot_dnetwork
+from phylozoo.viz import plot_dnetwork
+from phylozoo.viz.dnetwork import DNetStyle
 from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
 
 
@@ -33,7 +34,7 @@ class TestPlotNetwork:
             nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         )
 
-        style = NetworkStyle(node_color='blue', leaf_color='green')
+        style = DNetStyle(node_color='blue', leaf_color='green')
         ax = plot_dnetwork(net, layout='pz-dag', style=style, trials=100)
 
         assert ax is not None

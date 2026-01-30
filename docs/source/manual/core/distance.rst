@@ -1,11 +1,10 @@
 Pairwise Distances
 ==================
 
-The :mod:`phylozoo.core.distance` module provides immutable, well-typed containers for pairwise distances
+The :mod:`phylozoo.core.distance` module provides immutable containers for pairwise distances
 between taxa, along with comprehensive tools for classification and optimization.
 Distance matrices are fundamental to many phylogenetic inference algorithms, serving
-as the standard input format for quartet profile generation, network reconstruction
-algorithms such as Squirrel, and other downstream analyses.
+as the standard input format for e.g. Squirrel.
 
 
 All classes and functions on this page can be imported from the core distance module:
@@ -105,8 +104,12 @@ Distance matrices support reading and writing in multiple phylogenetic formats:
 
 .. seealso::
    The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. For details on the I/O system,
-   see the :doc:`I/O documentation <../utils/io>`. For specific information about
+   consistent file handling across PhyloZoo classes. 
+   
+   For details on the I/O system,
+   see the :doc:`I/O documentation <../utils/io>`. 
+   
+   For specific information about
    supported file formats and parameter options for distance matrices, see the
    :mod:`API reference <phylozoo.core.distance.io>`.
 
@@ -178,11 +181,10 @@ downstream algorithms require a proper metric and you want a single boolean chec
 A pseudo-metric is like a metric but allows distinct items to have zero distance.
 The :func:`phylozoo.core.distance.classifications.is_pseudo_metric` function
 checks non-negativity and triangle inequality, but does not require a zero diagonal.
-This is useful when dealing with distance matrices that may have identical items.
 
 **Kalmanson Conditions**
 
-The Kalmanson condition is a pair of inequalities that must hold for every ordered
+The Kalmanson condition :cite:`Kalmanson` is a pair of inequalities that must hold for every ordered
 quadruple :math:`(i < j < k < l)` in a circular ordering:
 
 .. math::
@@ -197,16 +199,14 @@ these conditions with respect to a given circular ordering. This function requir
 - The provided :class:`phylozoo.core.primitives.CircularOrdering` to contain
   exactly the same labels as the distance matrix
 
-The check is implemented using Numba-accelerated loops and will raise
-:class:`phylozoo.utils.exceptions.PhyloZooValueError` for invalid inputs.
+The check is implemented using Numba-accelerated loops.
 
 Traveling Salesman Problem (TSP)
 ---------------------------------
 
 The distance module provides functions for solving the Traveling Salesman Problem,
 which finds the optimal tour visiting all taxa exactly once and returning to the
-starting point. TSP solutions are useful for generating circular orderings and
-optimizing distance-based analyses.
+starting point. TSP solutions are useful for generating circular orderings.
 
 Exact Solution
 ^^^^^^^^^^^^^^
@@ -225,8 +225,6 @@ Example:
 
    tour = optimal_tsp_tour(dm)
    print(f"Optimal tour: {tour.order}")
-
-Use this function when exact optimality is required and the problem size is manageable.
 
 .. note::
    :class: dropdown
@@ -251,16 +249,16 @@ For larger instances where exact solutions are infeasible, the
 :func:`phylozoo.core.distance.operations.approximate_tsp_tour` function provides
 heuristic solvers. Supported methods include:
 
-- **``simulated_annealing``** (default): Simulated annealing with greedy initialization.
+- **simulated_annealing** (default): Simulated annealing with greedy initialization.
   Often produces good-quality tours at moderate runtime.
 
-- **``greedy``**: Nearest-neighbor heuristic. Very fast but can produce poor results
+- **greedy**: Nearest-neighbor heuristic. Very fast but can produce poor results
   in adversarial cases.
 
-- **``christofides``**: Christofides algorithm providing a :math:`3/2`-approximation
-  when the distance matrix is metric. Implemented using NetworkX utilities.
+- **christofides**: Christofides algorithm :cite:`Christofides` providing a :math:`3/2`-approximation
+  when the distance matrix is metric.
 
-The function uses NetworkX's traveling salesman utilities and returns a
+The function uses :mod:`NetworkX <networkx>`'s traveling salesman utilities and returns a
 :class:`phylozoo.core.primitives.CircularOrdering`. It is suitable for larger
 matrices where exact solutions are computationally prohibitive.
 
@@ -269,3 +267,4 @@ See Also
 
 - :doc:`API Reference <../../api/core/distance>` - Complete function signatures and detailed examples
 - :mod:`phylozoo.core.distance.io` - Distance matrix I/O format details and parameter options
+- :doc:`Circular Orderings <../primitives/circular_ordering>` - Working with circular orderings

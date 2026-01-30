@@ -1,11 +1,10 @@
 Multiple Sequence Alignments
 ============================
 
-The :mod:`phylozoo.core.sequence` module provides immutable, array-backed containers for multiple sequence
+The :mod:`phylozoo.core.sequence` module provides immutable containers for multiple sequence
 alignments (MSAs), along with comprehensive tools for distance computation, bootstrap
 resampling, and other operations essential for phylogenetic analysis. MSAs serve as
-the standard input format for many downstream algorithms, including quartet profile
-generation and network reconstruction.
+the standard input format for empirical algorithms.
 
 All classes and functions on this page can be imported from the core sequence module:
 
@@ -119,8 +118,12 @@ MSAs support reading and writing in multiple phylogenetic formats:
 
 .. seealso::
    The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. For details on the I/O system,
-   see the :doc:`I/O documentation <../utils/io>`. For specific information about
+   consistent file handling across PhyloZoo classes. 
+   
+   For details on the I/O system,
+   see the :doc:`I/O documentation <../utils/io>`. 
+   
+   For specific information about
    supported file formats and parameter options for MSAs, see the
    :mod:`API reference <phylozoo.core.sequence.io>`.
 

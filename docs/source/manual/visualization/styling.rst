@@ -56,7 +56,7 @@ Using Styles
 
 .. code-block:: python
 
-   from phylozoo.viz import default_style
+   from phylozoo.viz.dnetwork import default_style
    
    style = default_style()
    style.node_color = "blue"
@@ -66,7 +66,8 @@ Using Styles
 
 .. code-block:: python
 
-   from phylozoo.viz import DNetStyle, SDNetStyle
+   from phylozoo.viz.dnetwork import DNetStyle
+   from phylozoo.viz.sdnetwork import SDNetStyle
    
    # For directed networks
    d_style = DNetStyle(
@@ -93,7 +94,7 @@ Using Styles
 
 .. code-block:: python
 
-   from phylozoo.viz import default_style
+   from phylozoo.viz.dnetwork import default_style
    
    style = default_style()
    style.node_color = "blue"

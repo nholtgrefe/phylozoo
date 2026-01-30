@@ -1,10 +1,8 @@
 Split Systems
 ============
 
-The :mod:`phylozoo.core.split` module provides the :class:`SplitSystem` class, which
-represents a collection of splits covering a complete set of taxa. Split systems are
-fundamental to phylogenetic analysis, encoding complete evolutionary relationships that
-can represent trees, networks, or partial phylogenetic information.
+The :mod:`phylozoo.core.split` module provides the :class:`SplitSystem`  and :class:`WeightedSplitSystem` classes, 
+which represent collections of splits covering a complete set of elements.
 
 All classes and functions on this page can be imported from the core split module:
 

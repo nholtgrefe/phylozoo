@@ -1,39 +1,16 @@
 Splits
 ======
 
-The :mod:`phylozoo.core.split` module provides the :class:`Split` class, which represents
-a bipartition of a set of taxa into two complementary subsets. Splits are fundamental
-to phylogenetic analysis, providing the mathematical foundation for representing
-evolutionary relationships in trees and networks.
-
-All classes and functions on this page can be imported from the core split module:
-
-.. code-block:: python
-
-   from phylozoo.core.split import *
-   # or directly
-   from phylozoo.core.split import Split
-
 Working with Splits
 --------------------
 
-Splits represent the fundamental phylogenetic concept of dividing taxa into two
-complementary groups. They form the mathematical basis for phylogenetic trees and
-networks, where each internal edge corresponds to a split of the taxa.
+The :mod:`phylozoo.core.split` module provides the :class:`Split` class, which represents
+a bipartition of a set of elements into two complementary subsets. Splits are fundamental
+to phylogenetic analysis, providing the mathematical foundation for representing
+evolutionary relationships in trees and networks. The split class inherits from 
+the :class:`phylozoo.core.primitives.Partition` class, which provides additional 
+mathematical operations.
 
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   Split representation is optimized for phylogenetic operations:
-
-   - Canonical ordering ensures consistent equality and hashing
-   - Efficient compatibility checking algorithms
-   - Immutable design ensuring mathematical consistency
-   - Inheritance from Partition provides additional set operations
-
-   For implementation details, see :mod:`src/phylozoo/core/split/split.py`.
 
 Creating Splits
 ^^^^^^^^^^^^^^^^
@@ -56,7 +33,7 @@ is properly formed.
 Accessing Split Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Splits provide access to their mathematical components:
+Splits provide access to their components:
 
 .. code-block:: python
 
@@ -68,15 +45,26 @@ Splits provide access to their mathematical components:
    part1, part2 = split.parts # (frozenset({"A", "B"}), frozenset({"C", "D"}))
 
 Split Operations
-^^^^^^^^^^^^^^^^
+--------------------
 
 Splits support fundamental phylogenetic operations.
+
+**Equality Checking**
+
+The :meth:`==` operator checks whether two splits are equal. 
+Two splits are equal if they have the same parts, regardless of the order of the parts.
+
+.. code-block:: python
+
+   # Check if two splits are equal
+   split1 = Split({"A", "B"}, {"C", "D"})
+   split2 = Split({"C", "D"}, {"A", "B"})
+   are_equal = split1 == split2  # True
 
 **Triviality Checking**
 
 The :meth:`is_trivial` method checks whether a split is trivial, meaning one side
-contains only a single element. Trivial splits correspond to external edges in
-phylogenetic trees.
+contains only a single element.
 
 .. code-block:: python
 
@@ -86,6 +74,24 @@ phylogenetic trees.
 
    normal_split = Split({"A", "B"}, {"C", "D"})
    is_trivial = normal_split.is_trivial()  # False
+
+**Subsplit Relationships**
+
+The :func:`phylozoo.core.split.is_subsplit` function checks whether one split is a
+subsplit of another. A split :math:`S_1` is a subsplit of :math:`S_2` if one of its 
+sides is a subset of one side of the other split, and the other side of this split 
+is a subset of the other side of the other split. For example, :math:`12|56` is a 
+subsplit of :math:`123|456` because :math:`12 \subseteq 123` and :math:`56 \subseteq 456`.
+
+.. code-block:: python
+
+   from phylozoo.core.split import is_subsplit
+
+   # Check subsplit relationships
+   split = Split({"1", "2", "6"}, {"3", "4", "5"})
+   subsplit = Split({"1", "2"}, {"4", "5"})
+
+   is_subsplit = is_subsplit(subsplit, split)  # True
 
 **Compatibility Analysis**
 
@@ -104,52 +110,6 @@ compatible if one side of each split is a subset of one side of the other split.
 
    split3 = Split({"A", "C"}, {"B", "D"})
    compatible = is_compatible(split1, split3)  # False (incompatible)
-
-**Refinement Relationships**
-
-The :meth:`is_refinement` method checks whether one split is a refinement of another,
-meaning it represents a finer division of the taxa. A split S1 is a refinement of
-S2 if one side of S1 is a proper subset of one side of S2.
-
-.. code-block:: python
-
-   # Check refinement relationships
-   coarse = Split({"A", "B"}, {"C", "D", "E"})
-   fine = Split({"A"}, {"B", "C", "D", "E"})
-
-   is_refinement = fine.is_refinement(coarse)  # True
-   is_refinement = coarse.is_refinement(fine)  # False
-
-**Subsplit Relationships**
-
-The :func:`phylozoo.core.split.is_subsplit` function checks whether one split is a
-subsplit of another. A split S1 is a subsplit of S2 if one side of S1 is a subset
-of one side of S2. This relationship is used in hierarchical phylogenetic analysis.
-
-.. code-block:: python
-
-   from phylozoo.core.split import is_subsplit
-
-   # Check subsplit relationships
-   split = Split({"A", "B"}, {"C", "D"})
-   subsplit = Split({"A"}, {"B", "C", "D"})
-
-   is_subsplit = is_subsplit(subsplit, split)  # True
-
-**Mathematical Properties**
-
-Splits are immutable and hashable, making them suitable for use in sets and
-dictionaries. Splits with the same topology are considered equal.
-
-.. code-block:: python
-
-   # Splits are immutable and hashable
-   split_copy = Split({"A", "B"}, {"C", "D"})
-   are_equal = split == split_copy  # True
-
-   # Can be used as dictionary keys or set elements
-   split_dict = {split: "data"}
-   split_set = {split, split_copy}  # Contains one element
 
 See Also
 --------

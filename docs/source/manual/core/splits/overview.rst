@@ -1,4 +1,4 @@
-Splits
+Overview
 ======
 
 The :mod:`phylozoo.core.split` module provides data structures for working with
@@ -11,17 +11,15 @@ All classes and functions on this page can be imported from the core split modul
 
    from phylozoo.core.split import *
    # or directly
-   from phylozoo.core.split import Split, SplitSystem
+   from phylozoo.core.split import Split, SplitSystem, WeightedSplitSystem
 
 Classes
 -------
 
 - :doc:`Split <split>` - Individual bipartitions
-- :doc:`Split System <split_system>` - Collections of splits for phylogenetic analysis
+- :doc:`Split System and Weighted Split System<split_system>` - (Weighted) Collections of splits for phylogenetic analysis
 
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/split>` - Complete function signatures and detailed examples
-- :doc:`Quartets <../quartets/overview>` - Quartet-based phylogenetic representations
-- :doc:`Networks (Basic) <../networks/basic>` - Network classes using splits
+- :doc:`API Reference <../../../api/core/split>` - Complete function signatures

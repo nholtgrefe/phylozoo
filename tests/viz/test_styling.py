@@ -1,18 +1,18 @@
 """
 Tests for styling in viz.
 
-This test suite covers the NetworkStyle class and default styles.
+This test suite covers the DNetStyle class and default styles.
 """
 
-from phylozoo.viz import NetworkStyle, default_style
+from phylozoo.viz.dnetwork import DNetStyle, default_style
 
 
-class TestNetworkStyle:
-    """Test NetworkStyle class."""
+class TestDNetStyle:
+    """Test DNetStyle class."""
 
     def test_default_values(self) -> None:
         """Test default style values."""
-        style = NetworkStyle()
+        style = DNetStyle()
 
         assert style.node_color == 'lightblue'
         assert style.leaf_color == 'lightgreen'
@@ -23,7 +23,7 @@ class TestNetworkStyle:
 
     def test_custom_values(self) -> None:
         """Test custom style values."""
-        style = NetworkStyle(
+        style = DNetStyle(
             node_color='blue',
             leaf_color='green',
             edge_width=3.0,
@@ -35,7 +35,7 @@ class TestNetworkStyle:
 
     def test_copy(self) -> None:
         """Test style copying."""
-        style1 = NetworkStyle(node_color='blue')
+        style1 = DNetStyle(node_color='blue')
         style2 = style1.copy()
 
         assert style2.node_color == 'blue'
@@ -49,5 +49,5 @@ class TestDefaultStyles:
         """Test default_style function."""
         style = default_style()
 
-        assert isinstance(style, NetworkStyle)
+        assert isinstance(style, DNetStyle)
         assert style.node_color == 'lightblue'

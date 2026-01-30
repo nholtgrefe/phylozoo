@@ -79,7 +79,9 @@ Networks can be styled using style classes:
 
 .. code-block:: python
 
-   from phylozoo.viz import plot_dnetwork, plot_sdnetwork, DNetStyle, SDNetStyle, default_style
+   from phylozoo.viz import plot_dnetwork, plot_sdnetwork
+   from phylozoo.viz.dnetwork import DNetStyle, default_style
+   from phylozoo.viz.sdnetwork import SDNetStyle
    
    # Get default style
    style = default_style()
