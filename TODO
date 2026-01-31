@@ -14,6 +14,8 @@ First release:
         - do the network classes need .edges and.nodes?
         - SD generator validation
         - update network classifications
+    - Quartet:
+        - quartet weights within a profilein [0,1]?
 - Inference:
     - Squirel:
         - CF/gene tree support?

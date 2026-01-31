@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     pass
 
 
-def splitsystem_to_tree(
+def tree_from_splitsystem(
     system: SplitSystem,
     check_compatibility: bool = True,
 ) -> SemiDirectedPhyNetwork:
@@ -75,7 +75,7 @@ def splitsystem_to_tree(
     >>> split4 = Split({3}, {1, 2, 4})
     >>> split5 = Split({4}, {1, 2, 3})
     >>> system = SplitSystem([split1, split2, split3, split4, split5])
-    >>> tree = splitsystem_to_tree(system)
+    >>> tree = tree_from_splitsystem(system)
     >>> is_tree(tree)
     True
     """

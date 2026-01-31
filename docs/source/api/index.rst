@@ -3,43 +3,15 @@ API Reference
 
 Complete API reference for all public functions, classes, and modules.
 
-Core Module
------------
+Core
+----
 
 Core data structures and classes for phylogenetic networks and related structures.
 
-Networks
-^^^^^^^^
-
 .. toctree::
    :maxdepth: 3
    
-   core/dnetwork/index
-   core/dnetwork/generator
-   core/sdnetwork/index
-   core/sdnetwork/generator
-
-Primitives
-^^^^^^^^^^
-
-.. toctree::
-   :maxdepth: 3
-   
-   core/primitives/index
-   core/primitives/primitives
-   core/primitives/d_multigraph
-   core/primitives/m_multigraph
-
-Data Structures
-^^^^^^^^^^^^^^^
-
-.. toctree::
-   :maxdepth: 3
-   
-   core/distance
-   core/sequences
-   core/quartets
-   core/splits
+   core/index
 
 Inference
 ---------
@@ -50,10 +22,9 @@ Network inference algorithms and utilities.
    :maxdepth: 3
    
    inference
-   inference/squirrel
 
-Diversity (Panda)
------------------
+Panda
+-----
 
 Phylogenetic diversity calculations and optimization.
 
@@ -80,4 +51,4 @@ Utility functions and classes used throughout PhyloZoo.
 .. toctree::
    :maxdepth: 3
    
-   utils
+   utils/index

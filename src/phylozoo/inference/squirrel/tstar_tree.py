@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from ...core.network.sdnetwork import SemiDirectedPhyNetwork
 from ...core.quartet.qprofileset import QuartetProfileSet
-from ...core.split.algorithms import splitsystem_to_tree
+from ...core.split.algorithms import tree_from_splitsystem
 from ...core.split.base import Split
 from ...core.split.splitsystem import SplitSystem
 from ...utils.exceptions import PhyloZooValueError
@@ -163,7 +163,7 @@ def tstar_tree(profileset: QuartetProfileSet) -> SemiDirectedPhyNetwork:
     
     The T* tree is constructed by:
     1. Computing the B*-set of splits using the bstar algorithm
-    2. Converting the split system to a tree using splitsystem_to_tree
+    2. Converting the split system to a tree using tree_from_splitsystem
     
     Parameters
     ----------
@@ -198,5 +198,5 @@ def tstar_tree(profileset: QuartetProfileSet) -> SemiDirectedPhyNetwork:
     bstar_splits = bstar(profileset)
     
     # Convert split system to tree
-    return splitsystem_to_tree(bstar_splits, check_compatibility=True)
+    return tree_from_splitsystem(bstar_splits, check_compatibility=True)
 

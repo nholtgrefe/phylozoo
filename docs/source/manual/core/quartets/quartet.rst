@@ -1,40 +1,13 @@
 Quartets
 ========
 
+Working with Quartets
+----------------------
+
 The :mod:`phylozoo.core.quartet` module provides the :class:`Quartet` class, which
 represents an unrooted tree topology on four taxa. Quartets are the fundamental units
 of phylogenetic relationships in quartet-based methods, with three possible resolved
 topologies or an unresolved star quartet.
-
-All classes and functions on this page can be imported from the core quartet module:
-
-.. code-block:: python
-
-   from phylozoo.core.quartet import *
-   # or directly
-   from phylozoo.core.quartet import Quartet
-
-Working with Quartets
-----------------------
-
-Quartets represent the smallest phylogenetic relationships that can exist between
-four taxa. Each quartet encodes either a resolved tree topology (one of three possible
-bipartitions) or an unresolved star relationship where all four taxa are equally
-related.
-
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   Quartet representation is optimized for phylogenetic operations:
-
-   - Resolved quartets store their topology as a split for efficient compatibility checking
-   - Star quartets use a frozenset representation for the four taxa
-   - Equality and hashing are based on canonical representations
-   - Immutable design ensures data integrity in analysis pipelines
-
-   For implementation details, see :mod:`src/phylozoo/core/quartet/base.py`.
 
 Creating Quartets
 ^^^^^^^^^^^^^^^^^
@@ -45,7 +18,7 @@ Quartets can be created from splits (for resolved topologies) or directly from t
 .. code-block:: python
 
    from phylozoo.core.quartet import Quartet
-   from phylozoo.core.primitives import Split
+   from phylozoo.core.split import Split
 
    # Create resolved quartets using splits
    q1 = Quartet(Split({"A", "B"}, {"C", "D"}))  # AB|CD topology
@@ -56,7 +29,8 @@ Quartets can be created from splits (for resolved topologies) or directly from t
    star = Quartet({"A", "B", "C", "D"})
 
 The constructor automatically determines whether the quartet is resolved or star
-based on the input type.
+based on the input type. For resolved quartets, the split must be a 2|2 split (non-trivial)
+on exactly 4 taxa.
 
 Accessing Quartet Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,16 +47,16 @@ Quartets provide methods to query their structure and relationships:
    taxa = q1.taxa                    # frozenset({"A", "B", "C", "D"})
 
    # Access underlying split (for resolved quartets)
-   split = q1.split                  # Split object
+   split = q1.split                  # Split object or None
 
    # Get circular orderings (for resolved quartets)
-   orderings = q1.circular_orderings  # frozenset of CircularOrdering objects
+   orderings = q1.circular_orderings  # frozenset of :class:`phylozoo.core.primitives.CircularOrdering` objects
 
    # Create a copy
    quartet_copy = q1.copy()
 
 Quartet Operations
-^^^^^^^^^^^^^^^^^^
+------------------
 
 Quartets support various operations essential for phylogenetic analysis.
 
@@ -122,14 +96,28 @@ Resolved quartets can be converted to phylogenetic networks:
 .. code-block:: python
 
    # Convert resolved quartet to network representation
-   network = q1.to_network()       # Returns SemiDirectedPhyNetwork
+   network = q1.to_network()       # Returns :class:`phylozoo.core.network.sdnetwork.SemiDirectedPhyNetwork`
 
-This operation creates a small phylogenetic network containing just the quartet topology, useful for visualization and further analysis. Star quartets cannot be converted to networks as they represent unresolved relationships.
+This operation creates a small phylogenetic network containing just the quartet topology, useful for visualization and further analysis.
+
+**Circular Orderings**
+
+Quartets can be queried for circular orderings that are congruent with their topology:
+
+.. code-block:: python
+
+   # Get circular orderings for a resolved quartet
+   orderings = q1.circular_orderings  # Returns 2 orderings for resolved quartets
+
+   # Get circular orderings for a star quartet
+   star_orderings = star.circular_orderings  # Returns all 3 orderings for star quartets
+
+For a resolved quartet with split {a,b}|{c,d}, returns the two circular orderings where a and b are neighbors and c and d are neighbors. For a star tree, returns all three circular orderings.
 
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/quartet>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../api/core/quartets>` - Complete function signatures and detailed examples
 - :doc:`Quartet Profiles <quartet_profile>` - Probability distributions over quartet topologies
 - :doc:`Quartet Profile Sets <quartet_profile_set>` - Collections of quartet profiles
 - :doc:`Splits <../splits/overview>` - Split-based representations

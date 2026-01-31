@@ -414,17 +414,17 @@ class TestSplitClassifications:
         assert split2 in splits_list
 
 
-class TestSplitsystemToTree:
-    """Test cases for the splitsystem_to_tree function."""
+class TestTreeFromSplitsystem:
+    """Test cases for the tree_from_splitsystem function."""
     
     def test_empty_system(self) -> None:
-        """Test splitsystem_to_tree with empty system."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem with empty system."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         
         system = SplitSystem([])
-        tree = splitsystem_to_tree(system)
+        tree = tree_from_splitsystem(system)
         
         assert isinstance(tree, SemiDirectedPhyNetwork)
         assert is_tree(tree)
@@ -432,8 +432,8 @@ class TestSplitsystemToTree:
         assert tree.number_of_edges() == 0
     
     def test_three_element_system(self) -> None:
-        """Test splitsystem_to_tree with three elements (minimal non-trivial case)."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem with three elements (minimal non-trivial case)."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         
         # Three elements: need trivial splits for all three
@@ -441,7 +441,7 @@ class TestSplitsystemToTree:
         split2 = Split({2}, {1, 3})
         split3 = Split({3}, {1, 2})
         system = SplitSystem([split1, split2, split3])
-        tree = splitsystem_to_tree(system)
+        tree = tree_from_splitsystem(system)
         
         assert is_tree(tree)
         # Should have at least 3 leaves
@@ -449,8 +449,8 @@ class TestSplitsystemToTree:
         assert tree.number_of_edges() >= 2
     
     def test_simple_tree_compatible_system(self) -> None:
-        """Test splitsystem_to_tree with simple compatible system."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem with simple compatible system."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         
@@ -462,7 +462,7 @@ class TestSplitsystemToTree:
         split5 = Split({4}, {1, 2, 3})
         system = SplitSystem([split1, split2, split3, split4, split5])
         
-        tree = splitsystem_to_tree(system)
+        tree = tree_from_splitsystem(system)
         
         assert is_tree(tree)
         assert tree.number_of_nodes() >= 4  # At least 4 leaves
@@ -477,8 +477,8 @@ class TestSplitsystemToTree:
         assert original_str_splits.issubset(tree_splits.splits)
     
     def test_incompatible_system_raises_error(self) -> None:
-        """Test splitsystem_to_tree raises error for incompatible system."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem raises error for incompatible system."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         
         # Create incompatible splits
         split1 = Split({1, 2}, {3, 4})
@@ -490,11 +490,11 @@ class TestSplitsystemToTree:
         system = SplitSystem([split1, split2, split3, split4, split5, split6])
         
         with pytest.raises(ValueError, match="not compatible with a tree"):
-            splitsystem_to_tree(system)
+            tree_from_splitsystem(system)
     
     def test_missing_trivial_splits_raises_error(self) -> None:
-        """Test splitsystem_to_tree raises error when trivial splits missing."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem raises error when trivial splits missing."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         
         # Missing some trivial splits
         split1 = Split({1, 2}, {3, 4})
@@ -503,11 +503,11 @@ class TestSplitsystemToTree:
         system = SplitSystem([split1, split2])
         
         with pytest.raises(ValueError, match="not compatible with a tree"):
-            splitsystem_to_tree(system)
+            tree_from_splitsystem(system)
     
     def test_check_compatibility_false(self) -> None:
-        """Test splitsystem_to_tree with check_compatibility=False."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem with check_compatibility=False."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
         
         # System that would fail compatibility check
@@ -516,12 +516,12 @@ class TestSplitsystemToTree:
         system = SplitSystem([split1, split2])
         
         # Should not raise error but may produce invalid tree
-        tree = splitsystem_to_tree(system, check_compatibility=False)
+        tree = tree_from_splitsystem(system, check_compatibility=False)
         assert isinstance(tree, SemiDirectedPhyNetwork)
     
     def test_small_binary_tree_roundtrip(self) -> None:
         """Test roundtrip: tree -> splits -> tree -> splits."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         from phylozoo.core.split import SplitSystem
@@ -535,7 +535,7 @@ class TestSplitsystemToTree:
         split_system = SplitSystem(original_splits.splits)
         
         # Convert splits back to tree
-        reconstructed_tree = splitsystem_to_tree(split_system)
+        reconstructed_tree = tree_from_splitsystem(split_system)
         
         # Check that reconstructed tree is valid
         assert is_tree(reconstructed_tree)
@@ -552,7 +552,7 @@ class TestSplitsystemToTree:
     
     def test_medium_binary_tree_roundtrip(self) -> None:
         """Test roundtrip with medium binary tree."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         from phylozoo.core.split import SplitSystem
@@ -566,7 +566,7 @@ class TestSplitsystemToTree:
         split_system = SplitSystem(original_splits.splits)
         
         # Convert splits back to tree
-        reconstructed_tree = splitsystem_to_tree(split_system)
+        reconstructed_tree = tree_from_splitsystem(split_system)
         
         # Check that reconstructed tree is valid
         assert is_tree(reconstructed_tree)
@@ -583,7 +583,7 @@ class TestSplitsystemToTree:
     
     def test_large_binary_tree_roundtrip(self) -> None:
         """Test roundtrip with large binary tree."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         from phylozoo.core.split import SplitSystem
@@ -597,7 +597,7 @@ class TestSplitsystemToTree:
         split_system = SplitSystem(original_splits.splits)
         
         # Convert splits back to tree
-        reconstructed_tree = splitsystem_to_tree(split_system)
+        reconstructed_tree = tree_from_splitsystem(split_system)
         
         # Check that reconstructed tree is valid
         assert is_tree(reconstructed_tree)
@@ -614,7 +614,7 @@ class TestSplitsystemToTree:
     
     def test_non_binary_tree_roundtrip(self) -> None:
         """Test roundtrip with non-binary tree."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         from phylozoo.core.split import SplitSystem
@@ -628,7 +628,7 @@ class TestSplitsystemToTree:
         split_system = SplitSystem(original_splits.splits)
         
         # Convert splits back to tree
-        reconstructed_tree = splitsystem_to_tree(split_system)
+        reconstructed_tree = tree_from_splitsystem(split_system)
         
         # Check that reconstructed tree is valid
         assert is_tree(reconstructed_tree)
@@ -645,7 +645,7 @@ class TestSplitsystemToTree:
     
     def test_directed_tree_roundtrip(self) -> None:
         """Test roundtrip with directed tree (converted to semi-directed)."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         from phylozoo.core.network.dnetwork.derivations import to_sd_network
@@ -662,7 +662,7 @@ class TestSplitsystemToTree:
         split_system = SplitSystem(original_splits.splits)
         
         # Convert splits back to tree
-        reconstructed_tree = splitsystem_to_tree(split_system)
+        reconstructed_tree = tree_from_splitsystem(split_system)
         
         # Check that reconstructed tree is valid
         assert is_tree(reconstructed_tree)
@@ -679,7 +679,7 @@ class TestSplitsystemToTree:
     
     def test_balanced_tree_roundtrip(self) -> None:
         """Test roundtrip with balanced tree."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         from phylozoo.core.split import SplitSystem
@@ -693,7 +693,7 @@ class TestSplitsystemToTree:
         split_system = SplitSystem(original_splits.splits)
         
         # Convert splits back to tree
-        reconstructed_tree = splitsystem_to_tree(split_system)
+        reconstructed_tree = tree_from_splitsystem(split_system)
         
         # Check that reconstructed tree is valid
         assert is_tree(reconstructed_tree)
@@ -709,8 +709,8 @@ class TestSplitsystemToTree:
         assert original_splits.splits == reconstructed_splits.splits
     
     def test_star_tree(self) -> None:
-        """Test splitsystem_to_tree with star tree (only trivial splits)."""
-        from phylozoo.core.split.algorithms import splitsystem_to_tree
+        """Test tree_from_splitsystem with star tree (only trivial splits)."""
+        from phylozoo.core.split.algorithms import tree_from_splitsystem
         from phylozoo.core.network.sdnetwork.classifications import is_tree
         from phylozoo.core.network.sdnetwork.derivations import induced_splits
         
@@ -721,7 +721,7 @@ class TestSplitsystemToTree:
         split4 = Split({4}, {1, 2, 3})
         system = SplitSystem([split1, split2, split3, split4])
         
-        tree = splitsystem_to_tree(system)
+        tree = tree_from_splitsystem(system)
         
         assert is_tree(tree)
         # Star tree should have 5 nodes (center + 4 leaves)

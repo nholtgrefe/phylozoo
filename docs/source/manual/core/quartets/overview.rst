@@ -3,7 +3,7 @@ Overview
 
 The :mod:`phylozoo.core.quartet` module provides data structures for working with
 quartets, which are four-taxon unrooted trees that serve as building blocks for
-phylogenetic network inference algorithms.
+many concepts in phylogenetic analysis.
 
 All classes and functions on this page can be imported from the core quartet module:
 
@@ -17,7 +17,7 @@ Classes
 -------
 
 - :doc:`Quartet <quartet>` - Single quartet topologies
-- :doc:`Quartet Profile <quartet_profile>` - Probability distributions over quartet topologies
+- :doc:`Quartet Profile <quartet_profile>` - Set of quartets on the same 4-taxon set with weights
 - :doc:`Quartet Profile Set <quartet_profile_set>` - Collections of quartet profiles
 
 See Also

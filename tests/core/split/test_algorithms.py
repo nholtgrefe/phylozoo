@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from phylozoo.core.distance import DistanceMatrix
-from phylozoo.core.split.algorithms import distances_from_splitsystem, quartets_from_splitsystem, splitsystem_to_tree
+from phylozoo.core.split.algorithms import distances_from_splitsystem, quartets_from_splitsystem, tree_from_splitsystem
 from phylozoo.core.split.base import Split
 from phylozoo.core.split.splitsystem import SplitSystem
 from phylozoo.core.split.weighted_splitsystem import WeightedSplitSystem
