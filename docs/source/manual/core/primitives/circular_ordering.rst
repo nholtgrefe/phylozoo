@@ -1,42 +1,17 @@
 Circular Orderings
 ==================
 
-The :mod:`phylozoo.core.primitives` module provides circular ordering classes that
-represent elements arranged in a circle, fundamental to quartet-based phylogenetic
-methods and distance matrix classifications. PhyloZoo offers two classes:
-:class:`CircularOrdering` for individual elements and :class:`CircularSetOrdering`
-for grouped elements, both stored in canonical form for efficient mathematical operations.
-
-All classes and functions on this page can be imported from the core primitives module:
-
-.. code-block:: python
-
-   from phylozoo.core.primitives import *
-   # or directly
-   from phylozoo.core.primitives import CircularOrdering, CircularSetOrdering
-
 Working with Circular Orderings
 -------------------------------
 
 Circular orderings represent mathematical arrangements where elements are placed
-in a circle, with the first and last elements considered adjacent. This circular
-topology is essential for analyzing quartet relationships and distance matrix
-properties in phylogenetic analysis.
+in a circle, with the first and last elements considered adjacent. PhyloZoo offers two classes:
+:class:`CircularOrdering` for individual elements and :class:`CircularSetOrdering`
+for grouped elements, both stored in canonical form for efficient mathematical operations.
 
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   Circular orderings are optimized for mathematical precision and performance:
-
-   - Stored in canonical form (smallest lexicographic representation) for efficient equality
-   - Support cyclic permutations and reversals as equivalent representations
-   - Immutable design ensures mathematical consistency
-   - Efficient neighbor checking using modular arithmetic
-   - Memory-efficient storage with tuple-based internal representation
-
-   For implementation details, see :mod:`src/phylozoo/core/primitives/circular_ordering.py`.
+:class:`CircularSetOrdering` inherits from :class:`Partition`, representing a partition
+with an additional circular ordering structure. :class:`CircularOrdering` is a special
+case of :class:`CircularSetOrdering` where each element is in its own singleton set.
 
 Creating Circular Orderings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -81,27 +56,6 @@ Circular orderings provide properties to access their structure and elements:
    num_elements = len(co)  # 4
    num_sets = len(cso)     # 3
 
-Circular Ordering Operations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The primary operation on circular orderings is neighbor checking, which determines
-whether two elements or sets are adjacent in the circular arrangement:
-
-.. code-block:: python
-
-   # Check element neighbors (CircularOrdering)
-   adjacent = co.are_neighbors(1, 2)    # True (consecutive)
-   wrapped = co.are_neighbors(1, 4)     # True (wraps around)
-   not_adjacent = co.are_neighbors(1, 3) # False (not neighbors)
-
-   # Check set neighbors (CircularSetOrdering)
-   set_adjacent = cso.are_neighbors({1, 2}, {3})        # True
-   set_wrapped = cso.are_neighbors({1, 2}, {4, 5})      # True (wraps around)
-   set_not_adjacent = cso.are_neighbors({1, 2}, {4, 5}) # False in this case
-
-Neighbor relationships are symmetric and consider the circular topology where
-the first and last elements are adjacent.
-
 Canonical Representations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -127,10 +81,30 @@ regardless of starting position or direction:
 This canonical form enables efficient mathematical operations and eliminates
 duplicates in collections of circular orderings.
 
+Circular Ordering Operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The primary operation on circular orderings is neighbor checking, which determines
+whether two elements or sets are adjacent in the circular arrangement:
+
+.. code-block:: python
+
+   # Check element neighbors (CircularOrdering)
+   adjacent = co.are_neighbors(1, 2)    # True (consecutive)
+   wrapped = co.are_neighbors(1, 4)     # True (wraps around)
+   not_adjacent = co.are_neighbors(1, 3) # False (not neighbors)
+
+   # Check set neighbors (CircularSetOrdering)
+   set_adjacent = cso.are_neighbors({1, 2}, {3})        # True
+   set_wrapped = cso.are_neighbors({1, 2}, {4, 5})      # True (wraps around)
+   set_not_adjacent = cso.are_neighbors({1, 2}, {4, 5}) # False in this case
+
+Neighbor relationships are symmetric and consider the circular topology where
+the first and last elements are adjacent.
+
+
 See Also
 --------
 
 - :doc:`API Reference <../../../api/core/primitives>` - Complete function signatures and detailed examples
-- :doc:`Quartets <../quartets/overview>` - Quartet systems using circular orderings
-- :doc:`Distance Matrices <../distance>` - Distance classifications using circular orderings
 - :doc:`Partition <partition>` - Set partitions for hierarchical analysis

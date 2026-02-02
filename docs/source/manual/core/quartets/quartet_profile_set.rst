@@ -201,12 +201,14 @@ computes distances between sets of taxa by averaging contributions across all po
 Given a partition :math:`\mathcal{P} = \{X_1, X_2, \ldots, X_n\}`, the distance formula computes pairwise distances between partition sets :math:`X_i` and :math:`X_j` as:
 
 1. **For each 4-subpartition** :math:`S` containing both :math:`X_i` and :math:`X_j`:
+
    - Consider all representative 4-taxon sets :math:`R` (one leaf from each of the 4 sets in :math:`S`)
-   - For each representative set :math:`R`, compute rho-distance contribution :math:`2 \cdot \rho_{\text{dist}}(Q_R, x, y, \rho)` 
-     where :math:`x \in X_i` and :math:`y \in X_j`
+
+   - For each representative set :math:`R`, compute rho-distance contribution :math:`2 \cdot \rho_{\text{dist}}(Q_R, x, y, \rho)` for all pairs :math:`\{x,y\}` where :math:`x \in X_i` and :math:`y \in X_j`
+
    - Average all these contributions across all representative sets, giving a single distance for the 4-subpartition
 
-2. **Average** the contributions across all 4-subpartitions containing :math:`X_i` and :math:`X_j`
+2. **Sum** the averaged contributions across all 4-subpartitions containing :math:`X_i` and :math:`X_j`
 
 3. **Add constant** :math:`2n - 4` (same as in the standard quartet distance)
 

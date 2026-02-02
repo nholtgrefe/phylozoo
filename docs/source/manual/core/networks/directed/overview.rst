@@ -1,34 +1,24 @@
 Overview
 ========
 
-**DirectedPhyNetwork** represents fully directed phylogenetic networks with a single root 
-node. All edges are directed, explicitly representing the direction of evolutionary time. 
-Hybrid nodes have in-degree >= 2 and out-degree 1.
+The :mod:`phylozoo.core.network.dnetwork` module provides classes and functions for working with
+directed phylogenetic networks. Directed networks are networks where all edges are directed,
+representing the direction of evolutionary time. Hybrid nodes have in-degree >= 2 and out-degree 1.
 
-Key Features
-------------
+All classes and functions on this page can be imported from the core network module:
 
-* **Single Root**: Every network has exactly one root node
-* **Fully Directed**: All edges are directed, representing time flow
-* **Hybrid Nodes**: Support for reticulation events (in-degree >= 2, out-degree 1)
-* **Edge Attributes**: Branch lengths, bootstrap values, gamma probabilities
-* **I/O Formats**: eNewick (default), DOT
+.. code-block:: python
 
-I/O Formats
------------
-
-* **eNewick** (default): Extended Newick format. Extensions: ``.enewick``, ``.eNewick``, ``.enwk``, ``.nwk``, ``.newick``
-* **DOT**: Graphviz format. Extensions: ``.dot``, ``.gv``
-
-See :doc:`I/O <../../../../io>` for details.
+   from phylozoo.core.network.dnetwork import *
+   # or directly
+   from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 
 Documentation
 -------------
 
-* :doc:`Basic Operations <basic>`: Creating networks, basic properties, loading/saving
-* :doc:`Advanced Features <advanced>`: Network features, transformations, classifications, isomorphism
-* :doc:`Generators <generators>`: Level-k network generators
+* :doc:`Directed Network (Class) <directed_network_class>`: The DirectedPhyNetwork class and its properties
+* :doc:`Directed Network (Advanced Features) <directed_network_algorithms>`: Network features, transformations, classifications, isomorphism
+* :doc:`Directed Generators <directed_generator>`: Level-k network generators
 
 .. seealso::
    For semi-directed networks, see :doc:`Semi-Directed Networks <../semi_directed/overview>`. 
-   For I/O operations, see :doc:`I/O <../../../../io>`.

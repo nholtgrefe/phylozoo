@@ -1,131 +1,248 @@
-Semi-Directed Network Generators
-==================================
+Semi-Directed Generator
+========================
 
 The :mod:`phylozoo.core.network.sdnetwork.generator` module provides the :class:`SemiDirectedGenerator`
-class and related functions for working with level-k semi-directed network generators. Generators
-are minimal biconnected components that represent the core structure of level-k semi-directed
-phylogenetic networks :cite:`PhyloZoo2024`. They are used to characterize and construct networks
-based on their level.
+class and related functions for working with level-k network generators. Generators are minimal
+biconnected components that represent the core structure of level-k semi-directed phylogenetic networks
+:cite:`Gambette2009`. They are used to characterize and construct networks based on their level.
 
 All classes and functions on this page can be imported from the core network generator module:
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork.generator import SemiDirectedGenerator, all_level_k_generators, generators_from_network, dgenerator_to_sdgenerator
-   # or directly
-   from phylozoo.core.sdnetwork.generator import SemiDirectedGenerator
+   from phylozoo.core.sdnetwork.generator import (
+       SemiDirectedGenerator,
+       all_level_k_generators,
+       dgenerator_to_sdgenerator,
+       Side,
+       HybridSide,
+       DirEdgeSide,
+       UndirEdgeSide,
+   )
 
-Working with Semi-Directed Generators
----------------------------------------
+SemiDirectedGenerator Class
+----------------------------
 
-Semi-directed generators represent the fundamental building blocks of level-k semi-directed
-phylogenetic networks. Each generator is a minimal biconnected component that can be combined
-with other generators to construct networks of a specific level.
+The :class:`phylozoo.core.network.sdnetwork.generator.SemiDirectedGenerator` class represents a level-k generator
+for semi-directed phylogenetic networks. A generator is a biconnected component that represents the
+core structure of a level-k network. Generators use MixedMultiGraph directly and have their
+own validation rules. These are not networks themselves, but simplified structures used to build networks.
 
 Creating Generators
 ^^^^^^^^^^^^^^^^^^^
 
-Semi-directed generators are minimal biconnected components that represent the core
-structure of level-k semi-directed phylogenetic networks. They can be created by
-converting directed generators using :func:`dgenerator_to_sdgenerator`, or extracted
-directly from semi-directed networks. Each generator has a level (k), hybrid nodes,
-and sides (attachment points) where networks can be connected.
+Generators are created from :class:`phylozoo.core.primitives.m_multigraph.MixedMultiGraph` objects
+that represent the generator topology. Each generator has a level (k), hybrid nodes, and
+sides (attachment points) where networks can be connected. Semi-directed generators can also be
+created by converting directed generators using :func:`dgenerator_to_sdgenerator`.
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork.generator import (
-       SemiDirectedGenerator, 
-       all_level_k_generators,
-       dgenerator_to_sdgenerator
-   )
+   from phylozoo.core.sdnetwork.generator import SemiDirectedGenerator, dgenerator_to_sdgenerator
+   from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
    from phylozoo.core.dnetwork.generator import DirectedGenerator
+   from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
    
-   # Convert directed generator to semi-directed
-   d_gen = DirectedGenerator(...)
+   # Create a level-1 generator (parallel directed edges from root to hybrid node)
+   gen_graph = MixedMultiGraph(
+       directed_edges=[(8, 4), (8, 4)],  # Parallel directed edges
+       undirected_edges=[]
+   )
+   generator = SemiDirectedGenerator(gen_graph)
+   
+   # Or convert from a directed generator
+   d_gen_graph = DirectedMultiGraph(edges=[(8, 4), (8, 4)])
+   d_gen = DirectedGenerator(d_gen_graph)
    sd_gen = dgenerator_to_sdgenerator(d_gen)
-   
-   # Access properties
-   level = sd_gen.level
-   hybrid_nodes = sd_gen.hybrid_nodes
-   sides = sd_gen.sides  # List of attachment points
 
 Accessing Generator Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Generators provide properties to access their structure and components:
+The :class:`SemiDirectedGenerator` class provides read-only access to fundamental structural properties:
+
+**Basic Properties**
 
 .. code-block:: python
 
-   # Access generator properties
-   level = generator.level           # The level (k) of the generator
-   hybrid_nodes = generator.hybrid_nodes  # Set of hybrid nodes
-   sides = generator.sides           # List of sides (attachment points)
+   # Get the underlying graph structure
+   graph = generator.graph  # Returns MixedMultiGraph
 
-Generator Operations
---------------------
-
-Extracting Generators from Networks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The :func:`phylozoo.core.sdnetwork.generator.generators_from_network` function extracts
-all generators from a binary semi-directed network. This function decomposes the network
-into its biconnected components and identifies the generator structures. The network
-must be binary (no parallel edges or high-degree nodes) for accurate generator extraction.
+**Level and Hybrid Nodes**
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork.generator import generators_from_network
-   from phylozoo import SemiDirectedPhyNetwork
+   # Get the level (number of hybrid nodes)
+   level = generator.level  # Returns int, e.g., 1
    
-   # Extract generators from a network
-   network = SemiDirectedPhyNetwork.load("network.newick")
-   generators = list(generators_from_network(network))
-   
-   for gen in generators:
-       print(f"Level: {gen.level}, Hybrid nodes: {gen.hybrid_nodes}")
+   # Get all hybrid nodes (nodes with in-degree >= 2 from directed edges)
+   hybrid_nodes = generator.hybrid_nodes  # Returns set of node IDs
 
-Generating All Level-k Generators
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Generator Sides**
+
+Sides are attachment points where networks can be connected to form larger networks. There are three
+types of sides: :class:`HybridSide` (attachment at a hybrid node), :class:`DirEdgeSide`
+(attachment along a directed edge), and :class:`UndirEdgeSide` (attachment along an undirected edge).
+
+.. code-block:: python
+
+   # Get all sides (both edge sides and hybrid sides)
+   all_sides = generator.sides  # Returns list[Side]
+   
+   # Get only hybrid sides (hybrid nodes with out-degree 0)
+   hybrid_sides = generator.hybrid_sides  # Returns list[HybridSide]
+   
+   # Get all directed edge sides (all directed edges as DirEdgeSide objects)
+   directed_edge_sides = generator.directed_edge_sides  # Returns list[DirEdgeSide]
+   
+   # Get all undirected edge sides
+   undirected_edge_sides = generator.undirected_edge_sides  # Returns list[UndirEdgeSide]
+   
+   # Get all edge sides (both directed and undirected)
+   edge_sides = generator.edge_sides  # Returns list[DirEdgeSide | UndirEdgeSide]
+   
+   # Get parallel directed edge sides (groups of parallel directed edges)
+   parallel_directed_sides = generator.parallel_directed_edge_sides  # Returns list[tuple[DirEdgeSide, ...]]
+   
+   # Get non-parallel directed edge sides
+   non_parallel_directed_sides = generator.non_parallel_directed_edge_sides  # Returns list[DirEdgeSide]
+
+**Validation**
+
+Generators are validated at construction time. The :meth:`validate` method can be called
+explicitly to check the generator structure:
+
+.. code-block:: python
+
+   # Validate generator structure
+   generator.validate()  # Raises exception if generator is invalid
+
+Generator Functions
+-------------------
+
+The generator module provides functions to convert directed generators to semi-directed generators
+and generate all possible level-k semi-directed generators.
+
+**Converting Directed Generators**
+
+The :func:`phylozoo.core.sdnetwork.generator.dgenerator_to_sdgenerator` function converts
+a directed generator to a semi-directed generator by undirecting all non-hybrid edges and
+suppressing the degree-2 root node.
+
+.. code-block:: python
+
+   from phylozoo.core.sdnetwork.generator import dgenerator_to_sdgenerator
+   from phylozoo.core.dnetwork.generator import DirectedGenerator
+   from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+   
+   # Create a directed generator
+   d_gen_graph = DirectedMultiGraph(edges=[(8, 4), (8, 4)])
+   d_gen = DirectedGenerator(d_gen_graph)
+   
+   # Convert to semi-directed generator
+   sd_gen = dgenerator_to_sdgenerator(d_gen)
+
+**Generating All Level-k Generators**
 
 The :func:`phylozoo.core.sdnetwork.generator.all_level_k_generators` function generates
 all possible level-k semi-directed generators. This is useful for network classification,
 as any level-k network can be constructed by combining these generators. The function
 returns a set of all distinct generator structures for the specified level.
 
+The function constructs generators by first getting all level-k directed generators and
+then converting them to semi-directed generators using `dgenerator_to_sdgenerator`.
+
 .. code-block:: python
 
-   # Get all level-2 semi-directed generators
+   from phylozoo.core.sdnetwork.generator import all_level_k_generators
+   
+   # Get all level-0 generators (single node)
+   level_0_generators = all_level_k_generators(0)
+   print(f"Number of level-0 generators: {len(level_0_generators)}")
+   
+   # Get all level-1 generators
+   level_1_generators = all_level_k_generators(1)
+   print(f"Number of level-1 generators: {len(level_1_generators)}")
+   
+   # Get all level-2 generators
    level_2_generators = all_level_k_generators(2)
    print(f"Number of level-2 generators: {len(level_2_generators)}")
 
 Generator Sides
-^^^^^^^^^^^^^^^
+---------------
 
-Generators have "sides" which are attachment points where networks can be connected
-to form larger networks. There are two types of sides: HybridSide (attachment at a
-hybrid node) and UndirEdgeSide (attachment along an undirected edge). Sides define
-how generators can be combined to construct level-k networks.
+Generator sides represent attachment points where additional structure (leaves, trees) can be
+attached when building generators from lower-level generators. The module provides classes
+for representing sides, including the base :class:`Side` class and specific side types.
+
+**Side Base Class**
+
+The :class:`phylozoo.core.dnetwork.generator.Side` class is the base class for all sides.
+It serves as a general wrapper class. Use :class:`HybridSide` for node sides,
+:class:`DirEdgeSide` for directed edge sides, and :class:`UndirEdgeSide` for undirected edge sides.
 
 **HybridSide**
 
-The :class:`phylozoo.core.sdnetwork.generator.HybridSide` class represents attachment
-at a hybrid node.
-
-**UndirEdgeSide**
-
-The :class:`phylozoo.core.sdnetwork.generator.UndirEdgeSide` class represents attachment
-along an undirected edge.
+The :class:`phylozoo.core.dnetwork.generator.HybridSide` class represents a hybrid side of a generator.
+A hybrid side is a node with in-degree 2 and out-degree 0, representing a hybrid node that serves
+as an attachment point.
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork.generator import Side, HybridSide, UndirEdgeSide
+   from phylozoo.core.dnetwork.generator import HybridSide
+   
+   # Create a hybrid side
+   hybrid_side = HybridSide(node=3)
+   print(hybrid_side.node)  # 3
+
+**DirEdgeSide**
+
+The :class:`phylozoo.core.dnetwork.generator.DirEdgeSide` class represents a directed edge side of a generator.
+A directed edge side represents a directed edge (possibly parallel) that serves as an attachment point.
+The edge is identified by its endpoints and key.
+
+.. code-block:: python
+
+   from phylozoo.core.dnetwork.generator import DirEdgeSide
+   
+   # Create a directed edge side
+   edge_side = DirEdgeSide(u=8, v=4, key=0)
+   print(edge_side.u)    # 8
+   print(edge_side.v)    # 4
+   print(edge_side.key)  # 0
+
+**UndirEdgeSide**
+
+The :class:`phylozoo.core.sdnetwork.generator.UndirEdgeSide` class represents an undirected edge side of a generator.
+An undirected edge side represents an undirected edge that serves as an attachment point.
+The edge is identified by its endpoints and key.
+
+.. code-block:: python
+
+   from phylozoo.core.sdnetwork.generator import UndirEdgeSide
+   
+   # Create an undirected edge side
+   undir_edge_side = UndirEdgeSide(u=1, v=2, key=0)
+   print(undir_edge_side.u)    # 1
+   print(undir_edge_side.v)    # 2
+   print(undir_edge_side.key)  # 0
+
+**Working with Sides**
+
+You can iterate over generator sides and check their types:
+
+.. code-block:: python
+
+   from phylozoo.core.dnetwork.generator import HybridSide, DirEdgeSide
+   from phylozoo.core.sdnetwork.generator import UndirEdgeSide
    
    generator = SemiDirectedGenerator(...)
    for side in generator.sides:
        if isinstance(side, HybridSide):
            print(f"Hybrid side at node: {side.node}")
+       elif isinstance(side, DirEdgeSide):
+           print(f"Directed edge side: ({side.u}, {side.v}, key={side.key})")
        elif isinstance(side, UndirEdgeSide):
-           print(f"Undirected edge side: {side.edge}")
+           print(f"Undirected edge side: ({side.u}, {side.v}, key={side.key})")
 
 .. note::
    Generators are used internally for network classification and construction. They 
@@ -135,12 +252,10 @@ along an undirected edge.
    Use ``all_level_k_generators(k)`` to enumerate all possible level-k generator 
    structures. This is useful for network classification and generation.
 
-.. warning::
-   Extracting generators from networks requires the network to be binary. Networks 
-   with parallel edges may produce unexpected results.
-
 See Also
 --------
 
-- :doc:`Semi-Directed Networks (Advanced) <advanced>` - Network level classification
-- :doc:`Directed Network Generators <../directed/generators>` - Directed generators
+- :doc:`Semi-Directed Network Algorithms <semi_directed_network_algorithms>` - Network level classification
+- :doc:`Semi-Directed Network Class <semi_directed_network_class>` - The SemiDirectedPhyNetwork class
+- :doc:`Directed Generator <../directed/directed_generator>` - Directed generators
+- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples

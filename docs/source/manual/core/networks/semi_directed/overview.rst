@@ -1,34 +1,25 @@
 Overview
 ========
 
-**SemiDirectedPhyNetwork** represents networks with directed hybrid edges and undirected 
-tree edges. These allow for more flexible representation and are useful for unrooted 
-analyses. Semi-directed networks cannot have undirected cycles.
+The :mod:`phylozoo.core.network.sdnetwork` module provides classes and functions for working with
+semi-directed phylogenetic networks. Semi-directed networks are networks with directed hybrid edges
+and undirected tree edges, allowing for flexible representation without requiring a fixed root.
+Hybrid nodes have in-degree >= 2 and total degree = in-degree + 1. Semi-directed networks cannot have undirected cycles.
 
-Key Features
-------------
+All classes and functions on this page can be imported from the core network module:
 
-* **Flexible Rooting**: No fixed root; can be rooted at various locations
-* **Mixed Edges**: Directed hybrid edges and undirected tree edges
-* **Hybrid Nodes**: Support for reticulation events
-* **Edge Attributes**: Branch lengths and other attributes
-* **I/O Formats**: Newick (default), PhyloZoo-DOT
+.. code-block:: python
 
-I/O Formats
------------
-
-* **Newick** (default): Standard Newick format. Extensions: ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``
-* **PhyloZoo-DOT**: Custom DOT format. Extension: ``.pzdot``
-
-See :doc:`I/O <../../../../io>` for details.
+   from phylozoo.core.network.sdnetwork import *
+   # or directly
+   from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
 Documentation
 -------------
 
-* :doc:`Basic Operations <basic>`: Creating networks, basic properties, loading/saving
-* :doc:`Advanced Features <advanced>`: Network features, transformations, classifications
-* :doc:`Generators <generators>`: Level-k network generators
+* :doc:`Semi-Directed Network (Class) <semi_directed_network_class>`: The SemiDirectedPhyNetwork class and its properties
+* :doc:`Semi-Directed Network (Advanced Features) <semi_directed_network_algorithms>`: Network features, transformations, classifications, isomorphism
+* :doc:`Semi-Directed Generators <generators>`: Level-k network generators
 
 .. seealso::
-   For directed networks, see :doc:`Directed Networks <../directed/overview>`. 
-   For I/O operations, see :doc:`I/O <../../../../io>`.
+   For directed networks, see :doc:`Directed Networks <../directed/overview>`.

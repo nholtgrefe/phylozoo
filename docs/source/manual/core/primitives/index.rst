@@ -5,7 +5,7 @@ Primitives
    :maxdepth: 1
    
    overview
-   mixed_multigraph
-   directed_multigraph
    partition
    circular_ordering
+   directed_multigraph
+   mixed_multigraph

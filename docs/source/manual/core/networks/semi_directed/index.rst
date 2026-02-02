@@ -5,6 +5,6 @@ Semi-Directed Networks
    :maxdepth: 1
    
    overview
-   basic
-   advanced
+   semi_directed_network_class
+   semi_directed_network_algorithms
    generators

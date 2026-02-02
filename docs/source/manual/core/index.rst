@@ -7,8 +7,8 @@ Core Module
    overview
    sequences
    distance
-   networks/index
-   quartets/index
    splits/index
+   quartets/index
+   networks/index
    primitives/index
 

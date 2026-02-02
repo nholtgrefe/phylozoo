@@ -5,6 +5,6 @@ Directed Networks
    :maxdepth: 1
    
    overview
-   basic
-   advanced
-   generators
+   directed_network_class
+   directed_network_algorithms
+   directed_generator

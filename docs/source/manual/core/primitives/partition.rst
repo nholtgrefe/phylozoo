@@ -1,40 +1,12 @@
 Partitions
 ==========
 
-The :mod:`phylozoo.core.primitives` module provides the :class:`Partition` class, which
-represents a mathematical partition of a set into disjoint subsets. Partitions are
-fundamental to phylogenetic analysis, serving as the foundation for other classes
-in PhyloZoo.
-
-The class can be imported from the core primitives module:
-
-.. code-block:: python
-
-   from phylozoo.core.primitives import *
-   # or directly
-   from phylozoo.core.primitives import Partition
-
 Working with Partitions
 -----------------------
 
 The :class:`phylozoo.core.primitives.Partition` class represents a partition of a set
 into disjoint, non-empty subsets that cover the entire set. Partitions are immutable
 and provide methods for mathematical operations essential to phylogenetic analysis.
-
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   Partitions are designed for mathematical rigor and performance:
-
-   - Internal representation uses frozensets for immutability
-   - Elements are automatically sorted for consistent ordering and equality
-   - Validation ensures mathematical partition properties (disjoint, covering)
-   - Efficient equality and hashing based on canonical representation
-   - Memory-efficient storage suitable for large phylogenetic datasets
-
-   For implementation details, see :mod:`src/phylozoo/core/primitives/partition.py`.
 
 Creating Partitions
 ^^^^^^^^^^^^^^^^^^^
@@ -60,7 +32,7 @@ All subsets must be disjoint and their union must equal the universal set.
 Accessing Partition Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Partitions provide several properties for accessing their mathematical components:
+Partitions provide several properties for accessing their components:
 
 .. code-block:: python
 
@@ -69,34 +41,6 @@ Partitions provide several properties for accessing their mathematical component
 
    # Get all elements in the partition
    elements = partition.elements  # frozenset({1, 2, 3, 4, 5})
-
-   # Get the number of parts
-   num_parts = len(partition)  # 3
-
-
-Partition Operations
-^^^^^^^^^^^^^^^^^^^^
-
-Partitions support fundamental mathematical operations used in phylogenetic analysis:
-
-**Refinement Checking**
-
-The refinement relationship is essential for analyzing hierarchical structures:
-
-.. code-block:: python
-
-   # Create a finer partition (more parts)
-   finer = Partition([{1}, {2}, {3, 4}, {5}])
-
-   # Check if finer is a refinement of partition
-   is_refinement = partition.is_refinement(finer)  # False
-   is_refinement = finer.is_refinement(partition)  # True
-
-A partition P is a refinement of partition Q if every part of P is contained within
-some part of Q. Refinement relationships define the hierarchical structure of
-phylogenetic trees and networks.
-
-**Mathematical Properties**
 
 Partitions are immutable and hashable, making them suitable for use in sets and
 dictionaries. Partitions with the same parts are considered equal regardless of
@@ -127,10 +71,10 @@ you can check if a set is one of the partition parts using the `in` operator.
    is_part = {1, 2} in partition  # True
    is_part = {1, 3} in partition  # False
 
-**Size and Counting**
+**Size and Length**
 
 The :meth:`size` method returns the total number of elements across all parts,
-while `len()` returns the number of parts in the partition.
+while :meth:`len` returns the number of parts in the partition.
 
 .. code-block:: python
 
@@ -140,19 +84,29 @@ while `len()` returns the number of parts in the partition.
    # Total number of elements across all parts
    total_elements = partition.size()  # 5
 
-**Iteration and Traversal**
 
-Partitions support iteration over all parts, allowing you to process each part
-in the partition.
+
+Partition Operations
+^^^^^^^^^^^^^^^^^^^^
+
+Partitions support fundamental mathematical operations used in phylogenetic analysis:
+
+**Refinement Checking**
+
+The refinement relationship is essential for analyzing hierarchical structures:
 
 .. code-block:: python
 
-   # Iterate over all parts
-   for part in partition:
-       print(f"Part: {part}")
+   # Create a finer partition (more parts)
+   finer = Partition([{1}, {2}, {3, 4}, {5}])
 
-   # Convert to list of parts
-   parts_list = list(partition)
+   # Check if finer is a refinement of partition
+   is_refinement = partition.is_refinement(finer)  # False
+   is_refinement = finer.is_refinement(partition)  # True
+
+A partition :math:`P` is a refinement of partition :math:`Q` if every part of :math:`P` is contained within
+some part of :math:`Q`. Refinement relationships define the hierarchical structure of
+phylogenetic trees and networks.
 
 See Also
 --------
@@ -160,4 +114,3 @@ See Also
 - :doc:`API Reference <../../../api/core/primitives>` - Complete function signatures and detailed examples
 - :doc:`Splits <../splits/overview>` - Split systems based on partitions
 - :doc:`Circular Ordering <circular_ordering>` - Circular arrangements for quartet analysis
-- :doc:`Networks (Basic) <../networks/basic>` - Network classes using partitions
