@@ -71,7 +71,7 @@ Semi-directed networks can also be constructed from existing graph objects using
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork.conversions import sdnetwork_from_graph
+   from phylozoo.core.network.sdnetwork.conversions import sdnetwork_from_graph
    import networkx as nx
 
    G = nx.Graph()

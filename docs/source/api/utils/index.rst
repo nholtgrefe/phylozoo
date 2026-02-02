@@ -1,5 +1,5 @@
-Utilities
-=========
+utils
+=====
 
 Utility functions and classes used throughout PhyloZoo.
 

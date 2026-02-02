@@ -1,5 +1,5 @@
-Generators
-==========
+sdnetwork.generator
+===================
 
 Level-k generators for semi-directed phylogenetic networks. Generators are minimal biconnected
 components that represent the core structure of level-k semi-directed phylogenetic networks.

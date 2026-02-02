@@ -1,5 +1,5 @@
-Panda (Phylogenetic Diversity)
-================================
+panda
+=====
 
 Phylogenetic diversity calculations and optimization.
 

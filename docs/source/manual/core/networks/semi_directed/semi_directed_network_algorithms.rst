@@ -16,13 +16,13 @@ network topology.
 
 **Blobs**
 
-The :func:`phylozoo.core.sdnetwork.features.blobs` function extracts all blobs (maximal
+The :func:`phylozoo.core.network.sdnetwork.features.blobs` function extracts all blobs (maximal
 biconnected components) in the network, represented by sets of nodes. Blobs represent the reticulate structure of
 the network, where cycles and hybrid nodes create biconnected regions. The function can optionally exclude trivial (single-node) blobs and/or blobs that contain only leaves.
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork import features
+   from phylozoo.core.network.sdnetwork import features
    
    # Get all blobs (including trivial and leaf blobs)
    all_blobs = features.blobs(network)
@@ -35,7 +35,7 @@ the network, where cycles and hybrid nodes create biconnected regions. The funct
 
 **k-Blobs**
 
-The :func:`phylozoo.core.sdnetwork.features.k_blobs` function gets blobs with exactly
+The :func:`phylozoo.core.network.sdnetwork.features.k_blobs` function gets blobs with exactly
 :math:`k` incident edges, represented by sets of nodes. An incident edge is any edge that
 connects a node inside the blob to a node outside the blob.
 
@@ -46,7 +46,7 @@ connects a node inside the blob to a node outside the blob.
 
 **Root Locations**
 
-The :func:`phylozoo.core.sdnetwork.features.root_locations` function finds all possible
+The :func:`phylozoo.core.network.sdnetwork.features.root_locations` function finds all possible
 root locations (nodes or edges) where the network can be rooted. Unlike directed networks,
 semi-directed networks do not have a fixed root, but can be rooted at various locations.
 
@@ -57,7 +57,7 @@ semi-directed networks do not have a fixed root, but can be rooted at various lo
 
 **Omnians**
 
-The :func:`phylozoo.core.sdnetwork.features.omnians` function finds omnian nodes,
+The :func:`phylozoo.core.network.sdnetwork.features.omnians` function finds omnian nodes,
 which are nodes with every child being a hybrid node :cite:`jetten2016nonbinary`.
 
 .. code-block:: python
@@ -67,7 +67,7 @@ which are nodes with every child being a hybrid node :cite:`jetten2016nonbinary`
 
 **Cut Edges and Vertices**
 
-The :func:`phylozoo.core.sdnetwork.features.cut_edges` and :func:`phylozoo.core.sdnetwork.features.cut_vertices`
+The :func:`phylozoo.core.network.sdnetwork.features.cut_edges` and :func:`phylozoo.core.network.sdnetwork.features.cut_vertices`
 functions identify edges and vertices whose removal disconnects the network. These
 are important for understanding network connectivity and decomposition.
 
@@ -90,19 +90,19 @@ Basic Network Properties
 
 **Phylogenetic Trees**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_tree` function checks if the network
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_tree` function checks if the network
 is a phylogenetic tree (no hybrid nodes).
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork import classifications
+   from phylozoo.core.network.sdnetwork import classifications
    
    # Check if network is a tree
    is_tree = classifications.is_tree(network)
 
 **Binary Networks**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_binary` function checks if the network
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_binary` function checks if the network
 is binary (all internal nodes have degree 3, except for the root node which must have degree 2).
 
 .. code-block:: python
@@ -112,7 +112,7 @@ is binary (all internal nodes have degree 3, except for the root node which must
 
 **Simple Networks**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_simple` function checks if the network
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_simple` function checks if the network
 is simple: containing exactly one non-leaf blob.
 
 .. code-block:: python
@@ -122,7 +122,7 @@ is simple: containing exactly one non-leaf blob.
 
 **Parallel Edges**
 
-The :func:`phylozoo.core.sdnetwork.classifications.has_parallel_edges` function checks if
+The :func:`phylozoo.core.network.sdnetwork.classifications.has_parallel_edges` function checks if
 the network contains parallel edges (multiple edges between the same pair of nodes).
 
 .. code-block:: python
@@ -135,7 +135,7 @@ Network Classes
 
 **Reticulation Number**
 
-The :func:`phylozoo.core.sdnetwork.classifications.reticulation_number` function calculates
+The :func:`phylozoo.core.network.sdnetwork.classifications.reticulation_number` function calculates
 the reticulation number, which is the total number of hybrid edges minus the total number
 of hybrid nodes.
 
@@ -146,7 +146,7 @@ of hybrid nodes.
 
 **Level and Vertex Level**
 
-The :func:`phylozoo.core.sdnetwork.classifications.level` and :func:`phylozoo.core.sdnetwork.classifications.vertex_level` functions calculate the level and vertex level of the network, respectively.
+The :func:`phylozoo.core.network.sdnetwork.classifications.level` and :func:`phylozoo.core.network.sdnetwork.classifications.vertex_level` functions calculate the level and vertex level of the network, respectively.
 
 The level is the maximum over all blobs of (number of hybrid edges minus number of hybrid nodes) in that blob.
 The vertex level is the maximum over all blobs of the number of hybrid nodes in that blob.
@@ -160,7 +160,7 @@ Note that the vertex level is always less than or equal to the level and they co
 
 **Stack-Free Networks**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_stackfree` function checks if the network
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_stackfree` function checks if the network
 is stack-free, meaning no two hybrid nodes share a common parent.
 
 .. code-block:: python
@@ -170,9 +170,9 @@ is stack-free, meaning no two hybrid nodes share a common parent.
 
 **Tree-Child Networks**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_strongly_treechild` function checks if the
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_strongly_treechild` function checks if the
 network is strongly tree-child, meaning each internal node has at least one tree child. The
-:func:`phylozoo.core.sdnetwork.classifications.is_weakly_treechild` function checks if the
+:func:`phylozoo.core.network.sdnetwork.classifications.is_weakly_treechild` function checks if the
 network is weakly tree-child.
 
 .. code-block:: python
@@ -183,7 +183,7 @@ network is weakly tree-child.
 
 **Tree-Based Networks**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_strongly_treebased` and :func:`phylozoo.core.sdnetwork.classifications.is_weakly_treebased` functions check if the
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_strongly_treebased` and :func:`phylozoo.core.network.sdnetwork.classifications.is_weakly_treebased` functions check if the
 network is strongly tree-based and weakly tree-based, respectively.
 
 .. code-block:: python
@@ -194,7 +194,7 @@ network is strongly tree-based and weakly tree-based, respectively.
 
 **Galled Networks**
 
-The :func:`phylozoo.core.sdnetwork.classifications.is_galled` function checks if the network
+The :func:`phylozoo.core.network.sdnetwork.classifications.is_galled` function checks if the network
 is galled, meaning each reticulation is in its own cycle. Galled networks have special
 properties that make them easier to analyze.
 
@@ -211,19 +211,19 @@ identifying parallel edges and suppressing 2-blobs.
 
 **Parallel Edge Identification**
 
-The :func:`phylozoo.core.sdnetwork.transformations.identify_parallel_edges` function
+The :func:`phylozoo.core.network.sdnetwork.transformations.identify_parallel_edges` function
 identifies parallel edges by replacing all parallel edges between the same pair of nodes with a single edge, and suppressing all resulting degree-2 nodes.
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork import transformations
+   from phylozoo.core.network.sdnetwork import transformations
    
    # Identify parallel edges
    identified_net = transformations.identify_parallel_edges(network)
 
 **Suppressing 2-Blobs**
 
-The :func:`phylozoo.core.sdnetwork.transformations.suppress_2_blobs` function suppresses
+The :func:`phylozoo.core.network.sdnetwork.transformations.suppress_2_blobs` function suppresses
 all 2-blobs and the resulting degree-2 nodes.
 
 .. code-block:: python
@@ -243,20 +243,20 @@ Phylogenetic Trees
 
 **Tree-of-Blobs**
 
-The :func:`phylozoo.core.sdnetwork.derivations.tree_of_blobs` function extracts the
+The :func:`phylozoo.core.network.sdnetwork.derivations.tree_of_blobs` function extracts the
 tree structure of blobs, representing the high-level topology of the network. This
 simplifies the network by collapsing each blob into a single node.
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork import derivations
+   from phylozoo.core.network.sdnetwork import derivations
    
    # Extract tree of blobs
    tob = derivations.tree_of_blobs(network)
 
 **Displayed Trees**
 
-The :func:`phylozoo.core.sdnetwork.derivations.displayed_trees` function generates all
+The :func:`phylozoo.core.network.sdnetwork.derivations.displayed_trees` function generates all
 displayed trees (trees embedded in the network). Optionally the function can return the probability of each displayed tree, calculated as the product of the gamma values of the hybrid edges contributing to the displayed tree.
 
 .. code-block:: python
@@ -271,7 +271,7 @@ Phylogenetic Networks
 
 **Subnetworks**
 
-The :func:`phylozoo.core.sdnetwork.derivations.subnetwork` function extracts a subnetwork
+The :func:`phylozoo.core.network.sdnetwork.derivations.subnetwork` function extracts a subnetwork
 induced by a specific set of taxa. The subnetwork is defined as the union of all paths
 from the requested leaves. The induced subgraph is taken, then degree-2 internal nodes are suppressed.
 
@@ -284,7 +284,7 @@ The function has three post-processing options: it can suppress 2-blobs, identif
 
 **k-Taxon Subnetworks**
 
-The :func:`phylozoo.core.sdnetwork.derivations.k_taxon_subnetworks` function generates all
+The :func:`phylozoo.core.network.sdnetwork.derivations.k_taxon_subnetworks` function generates all
 subnetworks induced by exactly k taxa. For each combination of k taxa, the corresponding
 subnetwork is computed using the `subnetwork` function.
 
@@ -295,7 +295,7 @@ subnetwork is computed using the `subnetwork` function.
 
 **Conversion to Directed Network**
 
-The :func:`phylozoo.core.sdnetwork.derivations.to_d_network` function converts a
+The :func:`phylozoo.core.network.sdnetwork.derivations.to_d_network` function converts a
 semi-directed network to a directed network by orienting all undirected edges away from a root.
 
 .. code-block:: python
@@ -306,14 +306,14 @@ semi-directed network to a directed network by orienting all undirected edges aw
 Pairwise Distances
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.sdnetwork.derivations.distances` function computes pairwise distances
+The :func:`phylozoo.core.network.sdnetwork.derivations.distances` function computes pairwise distances
 between taxa. The function can compute shortest, longest, or
 probability-weighted average distances across all displayed trees of the network.
 
 .. code-block:: python
 
    # Compute distance matrix with average distances
-   from phylozoo.core.sdnetwork.derivations import distances
+   from phylozoo.core.network.sdnetwork.derivations import distances
    distance_matrix = distances(network, mode='average')  # or 'shortest', 'longest'
 
 Partitions and Splits
@@ -321,31 +321,31 @@ Partitions and Splits
 
 **Partition from Blob**
 
-The :func:`phylozoo.core.sdnetwork.derivations.partition_from_blob` function extracts the partition
+The :func:`phylozoo.core.network.sdnetwork.derivations.partition_from_blob` function extracts the partition
 of taxa induced by removing a specific blob from the network. 
 
 .. code-block:: python
 
    # Extract partition from specific blob
-   from phylozoo.core.sdnetwork.features import blobs
+   from phylozoo.core.network.sdnetwork.features import blobs
    blob = list(blobs(network))[0]
    partition = derivations.partition_from_blob(network, blob)
 
 **Split from Cut-Edge**
 
-The :func:`phylozoo.core.sdnetwork.derivations.split_from_cutedge` function extracts the split
+The :func:`phylozoo.core.network.sdnetwork.derivations.split_from_cutedge` function extracts the split
 induced by a specific cut edge. The split is the 2-partition of taxa obtained when removing the edge from the network.
 
 .. code-block:: python
 
    # Extract split from specific cut edge
-   from phylozoo.core.sdnetwork.features import cut_edges
+   from phylozoo.core.network.sdnetwork.features import cut_edges
    cut_edge = list(cut_edges(network))[0]
    split = derivations.split_from_cutedge(network, cut_edge)
 
 **Induced Splits**
 
-The :func:`phylozoo.core.sdnetwork.derivations.induced_splits` function extracts all splits
+The :func:`phylozoo.core.network.sdnetwork.derivations.induced_splits` function extracts all splits
 induced by cut-edges of the network. This returns a :class:`phylozoo.core.split.SplitSystem` object.
 
 .. code-block:: python
@@ -355,7 +355,7 @@ induced by cut-edges of the network. This returns a :class:`phylozoo.core.split.
 
 **Displayed Splits**
 
-The :func:`phylozoo.core.sdnetwork.derivations.displayed_splits` function extracts all splits
+The :func:`phylozoo.core.network.sdnetwork.derivations.displayed_splits` function extracts all splits
 induced by all displayed trees, weighted by their probabilities. This returns a :class:`phylozoo.core.split.WeightedSplitSystem` object.
 
 .. code-block:: python
@@ -366,7 +366,7 @@ induced by all displayed trees, weighted by their probabilities. This returns a 
 Quartets
 ^^^^^^^^
 
-The :func:`phylozoo.core.sdnetwork.derivations.displayed_quartets` function extracts quartet
+The :func:`phylozoo.core.network.sdnetwork.derivations.displayed_quartets` function extracts quartet
 profiles from displayed trees. This returns a :class:`phylozoo.core.quartet.QuartetProfileSet` object.
 
 .. code-block:: python
@@ -381,13 +381,13 @@ Isomorphism Checking
 The isomorphism module provides functions to check if two networks have the same
 topological structure. 
 
-The :func:`phylozoo.core.sdnetwork.isomorphism.is_isomorphic` function checks if two
+The :func:`phylozoo.core.network.sdnetwork.isomorphism.is_isomorphic` function checks if two
 networks are isomorphic. Labels are always checked, and additional attributes can
 be specified for comparison.
 
 .. code-block:: python
 
-   from phylozoo.core.sdnetwork import isomorphism
+   from phylozoo.core.network.sdnetwork import isomorphism
    
    # Check isomorphism (labels are always checked)
    are_isomorphic = isomorphism.is_isomorphic(net1, net2)

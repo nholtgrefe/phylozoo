@@ -1,5 +1,5 @@
-Splits
-======
+split
+=====
 
 The split module provides classes for working with phylogenetic splits and split systems.
 A split is a bipartition of a set of taxa, representing a division of the taxa into two

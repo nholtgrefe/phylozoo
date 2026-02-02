@@ -1,12 +1,12 @@
-Visualization
-=============
+viz
+===
 
 Network visualization and plotting. The visualization module provides a flexible plotting
 system for phylogenetic networks and graphs with support for multiple layout algorithms
 and customizable styling.
 
-Directed Networks
------------------
+viz.dnetwork
+------------
 
 Plotting and styling for directed phylogenetic networks.
 
@@ -31,8 +31,8 @@ Layout
    :members:
    :show-inheritance:
 
-Semi-Directed Networks
-----------------------
+viz.sdnetwork
+-------------
 
 Plotting and styling for semi-directed phylogenetic networks.
 
@@ -57,13 +57,13 @@ Layout
    :members:
    :show-inheritance:
 
-Graphs
-------
+viz.graphs
+----------
 
 Plotting and styling for underlying graph structures (DirectedMultiGraph and MixedMultiGraph).
 
-Directed Multi-Graph
-^^^^^^^^^^^^^^^^^^^^
+viz.graphs.dmgraph
+^^^^^^^^^^^^^^^^^^^
 
 Plotting
 """"""""
@@ -86,8 +86,8 @@ Layout
    :members:
    :show-inheritance:
 
-Mixed Multi-Graph
-^^^^^^^^^^^^^^^^^
+viz.graphs.mmgraph
+^^^^^^^^^^^^^^^^^^
 
 Plotting
 """"""""

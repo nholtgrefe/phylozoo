@@ -1,5 +1,5 @@
-Mixed Multi-Graph
-=================
+primitives.m_multigraph
+=======================
 
 The :mod:`phylozoo.core.primitives.m_multigraph` module provides the :class:`MixedMultiGraph`
 class and related functions for working with mixed multi-graphs. A mixed multi-graph contains

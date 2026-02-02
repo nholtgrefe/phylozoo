@@ -1,5 +1,5 @@
-Sequences
-=========
+sequence
+========
 
 The sequence module provides classes and functions for working with biological sequences
 and multiple sequence alignments (MSAs). Sequences are stored internally as NumPy arrays

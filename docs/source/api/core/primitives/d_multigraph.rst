@@ -1,5 +1,5 @@
-Directed Multi-Graph
-====================
+primitives.d_multigraph
+=======================
 
 The :mod:`phylozoo.core.primitives.d_multigraph` module provides the :class:`DirectedMultiGraph`
 class and related functions for working with directed multi-graphs. A directed multi-graph

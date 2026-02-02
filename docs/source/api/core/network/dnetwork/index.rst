@@ -1,5 +1,5 @@
-Directed Networks
-=================
+dnetwork
+========
 
 The :mod:`phylozoo.core.network.dnetwork` module provides the :class:`DirectedPhyNetwork` class
 and related functions for working with directed phylogenetic networks. Directed phylogenetic

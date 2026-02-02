@@ -1,49 +1,24 @@
 Overview
 ========
 
-This section covers working with phylogenetic networks in PhyloZoo. PhyloZoo provides 
-two main network classes for representing evolutionary relationships.
+The :mod:`phylozoo.core.network` module provides classes for working with phylogenetic networks,
+which represent evolutionary relationships including reticulate events such as hybridization,
+recombination, and horizontal gene transfer.
 
-Network Types
--------------
+PhyloZoo provides two main network types: **DirectedPhyNetwork** for rooted networks with all
+edges directed, and **SemiDirectedPhyNetwork** for networks with directed hybrid edges and
+undirected tree edges, allowing flexible representation without requiring a fixed root.
 
-**DirectedPhyNetwork**
-   Fully directed phylogenetic networks with a single root node. All edges are directed, 
-   explicitly representing the direction of evolutionary time. Hybrid nodes have 
-   in-degree >= 2 and out-degree 1.
-   
-   **I/O Formats**: eNewick (default), DOT. See :doc:`I/O <../../io>` for details.
-   
-   See :doc:`Directed Networks <directed/overview>` for detailed documentation.
 
-**SemiDirectedPhyNetwork**
-   Networks with directed hybrid edges and undirected tree edges. These allow for more 
-   flexible representation and are useful for unrooted analyses. Semi-directed networks 
-   cannot have undirected cycles.
-   
-   **I/O Formats**: Newick (default), PhyloZoo-DOT. See :doc:`I/O <../../io>` for details.
-   
-   See :doc:`Semi-Directed Networks <semi_directed/overview>` for detailed documentation.
+Submodules
+----------
 
-Choosing a Network Type
------------------------
+- :doc:`Directed Networks <directed/overview>` - Rooted networks with all edges directed
+- :doc:`Semi-Directed Networks <semi_directed/overview>` - Networks with mixed directed and undirected edges
 
-* Use **DirectedPhyNetwork** when you need explicit root information and want to represent 
-  time explicitly through directed edges.
-* Use **SemiDirectedPhyNetwork** when working with unrooted analyses or when the root 
-  location is uncertain.
+See Also
+--------
 
-Both network types support:
-* Hybrid nodes (reticulations)
-* Branch lengths
-* Node and edge attributes
-* Network analysis and transformation operations
-
-For detailed information, see:
-
-* :doc:`Directed Networks <directed/overview>`: Creating, manipulating, and analyzing directed networks
-* :doc:`Semi-Directed Networks <semi_directed/overview>`: Creating, manipulating, and analyzing semi-directed networks
-
-.. seealso::
-   For I/O operations, see :doc:`I/O <../../io>`. 
-   For visualization, see :doc:`Visualization <../../visualization/viz>`.
+- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`I/O <../../io>` - File I/O operations and formats
+- :doc:`Visualization <../../visualization/viz>` - Network visualization and plotting

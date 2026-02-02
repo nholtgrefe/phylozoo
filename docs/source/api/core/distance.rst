@@ -1,4 +1,4 @@
-Distance
+distance
 ========
 
 The distance module provides classes and functions for working with distance matrices.

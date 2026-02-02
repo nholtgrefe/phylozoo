@@ -1,4 +1,4 @@
-Primitives
+primitives
 ==========
 
 Fundamental data structures used throughout PhyloZoo. These classes provide the underlying

@@ -1,4 +1,4 @@
-Inference
+inference
 =========
 
 Network inference algorithms and utilities.

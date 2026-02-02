@@ -10,7 +10,7 @@ All classes and functions on this page can be imported from the core network gen
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import (
+   from phylozoo.core.network.dnetwork.generator import (
        DirectedGenerator,
        all_level_k_generators,
        generators_from_network,
@@ -22,7 +22,7 @@ All classes and functions on this page can be imported from the core network gen
 DirectedGenerator Class
 -----------------------
 
-The :class:`phylozoo.core.dnetwork.generator.DirectedGenerator` class represents a level-k generator
+The :class:`phylozoo.core.network.dnetwork.generator.DirectedGenerator` class represents a level-k generator
 for directed phylogenetic networks. A generator is a biconnected component that represents the
 core structure of a level-k network. Generators use DirectedMultiGraph directly and have their
 own validation rules. These are not networks themselves, but simplified structures used to build networks.
@@ -36,7 +36,7 @@ sides (attachment points) where networks can be connected.
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import DirectedGenerator
+   from phylozoo.core.network.dnetwork.generator import DirectedGenerator
    from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
    
    # Create a level-1 generator (parallel edges from root to hybrid node)
@@ -114,7 +114,7 @@ possible level-k generators.
 
 **Extracting Generators from Networks**
 
-The :func:`phylozoo.core.dnetwork.generator.generators_from_network` function extracts
+The :func:`phylozoo.core.network.dnetwork.generator.generators_from_network` function extracts
 all generators from a binary directed network. This function decomposes the network
 into its biconnected components and identifies the generator structures.
 
@@ -123,7 +123,7 @@ If the network has parallel edges, a warning is issued but the function continue
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import generators_from_network
+   from phylozoo.core.network.dnetwork.generator import generators_from_network
    from phylozoo import DirectedPhyNetwork
    
    # Extract generators from a network
@@ -135,7 +135,7 @@ If the network has parallel edges, a warning is issued but the function continue
 
 **Generating All Level-k Generators**
 
-The :func:`phylozoo.core.dnetwork.generator.all_level_k_generators` function generates
+The :func:`phylozoo.core.network.dnetwork.generator.all_level_k_generators` function generates
 all possible level-k directed generators. This is useful for network classification,
 as any level-k network can be constructed by combining these generators. The function
 returns a set of all distinct generator structures for the specified level.
@@ -146,7 +146,7 @@ optimization, but generators can be explicitly validated using the :meth:`valida
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import all_level_k_generators
+   from phylozoo.core.network.dnetwork.generator import all_level_k_generators
    
    # Get all level-0 generators (single node)
    level_0_generators = all_level_k_generators(0)
@@ -169,19 +169,19 @@ for representing sides.
 
 **Side Base Class**
 
-The :class:`phylozoo.core.dnetwork.generator.Side` class is the base class for all sides.
+The :class:`phylozoo.core.network.dnetwork.generator.Side` class is the base class for all sides.
 It serves as a general wrapper class. Use :class:`HybridSide` for node sides and
 :class:`DirEdgeSide` for edge sides.
 
 **HybridSide**
 
-The :class:`phylozoo.core.dnetwork.generator.HybridSide` class represents a hybrid side of a generator.
+The :class:`phylozoo.core.network.dnetwork.generator.HybridSide` class represents a hybrid side of a generator.
 A hybrid side is a node with in-degree 2 and out-degree 0, representing a hybrid node that serves
 as an attachment point.
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import HybridSide
+   from phylozoo.core.network.dnetwork.generator import HybridSide
    
    # Create a hybrid side
    hybrid_side = HybridSide(node=3)
@@ -189,13 +189,13 @@ as an attachment point.
 
 **DirEdgeSide**
 
-The :class:`phylozoo.core.dnetwork.generator.DirEdgeSide` class represents a directed edge side of a generator.
+The :class:`phylozoo.core.network.dnetwork.generator.DirEdgeSide` class represents a directed edge side of a generator.
 A directed edge side represents an edge (possibly parallel) that serves as an attachment point.
 The edge is identified by its endpoints and key.
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import DirEdgeSide
+   from phylozoo.core.network.dnetwork.generator import DirEdgeSide
    
    # Create an edge side
    edge_side = DirEdgeSide(u=8, v=4, key=0)
@@ -209,7 +209,7 @@ You can iterate over generator sides and check their types:
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.generator import HybridSide, DirEdgeSide
+   from phylozoo.core.network.dnetwork.generator import HybridSide, DirEdgeSide
    
    generator = DirectedGenerator(...)
    for side in generator.sides:

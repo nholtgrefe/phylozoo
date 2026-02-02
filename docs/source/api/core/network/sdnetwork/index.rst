@@ -1,5 +1,5 @@
-Semi-Directed Networks
-======================
+sdnetwork
+=========
 
 The :mod:`phylozoo.core.network.sdnetwork` module provides the :class:`SemiDirectedPhyNetwork`
 and :class:`MixedPhyNetwork` classes and related functions for working with semi-directed

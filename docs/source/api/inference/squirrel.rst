@@ -1,5 +1,5 @@
-Squirrel
-========
+squirrel
+==================
 
 The Squirrel (Semi-directed Quarnet-based Inference to Reconstruct Level-1 Networks) algorithm
 is the main network inference method in PhyloZoo. It reconstructs semi-directed phylogenetic

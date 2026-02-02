@@ -1,5 +1,5 @@
-Quartets
-========
+quartet
+=======
 
 The quartet module provides classes for representing and working with quartets, which
 are unrooted trees on 4 taxa. A quartet can either be resolved (with a single

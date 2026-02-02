@@ -92,12 +92,12 @@ From an existing graph
 ^^^^^^^^^^^^^^^^^^^^^
 
 Directed networks can also be constructed from existing graph objects using the
-:meth:`phylozoo.core.network.dnetwork.conversions.dnetwork_from_graph` function. This is particularly useful when implementing algorithms that
+:func:`phylozoo.core.network.dnetwork.conversions.dnetwork_from_graph` function. This is particularly useful when implementing algorithms that
 operate on mutable graph representations.
 
 .. code-block:: python
 
-   from phylozoo.core.dnetwork.conversions import dnetwork_from_graph
+   from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
    import networkx as nx
 
    G = nx.MultiDiGraph()
