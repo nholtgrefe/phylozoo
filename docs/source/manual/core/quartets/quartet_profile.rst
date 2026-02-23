@@ -6,8 +6,11 @@ Working with Quartet Profiles
 
 The :mod:`phylozoo.core.quartet` module provides the :class:`QuartetProfile` class,
 which represents a probability distribution over the three possible quartet topologies
-for a specific four-taxon set. Quartet profiles are essential for modeling uncertainty
-or mixed phylogenetic signals in quartet-based analyses.
+for a specific four-taxon set. **The weights in a quartet profile always sum to 1.0**
+(within a small tolerance): if no weights are given, each quartet gets equal weight
+:math:`1/k` (where :math:`k` is the number of quartets); if weights are given, they
+are normalized so that they sum to 1.0. Quartet profiles are essential for modeling
+uncertainty or mixed phylogenetic signals in quartet-based analyses.
 
 Creating Quartet Profiles
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,18 +26,18 @@ Quartet profiles can be created by specifying quartets and their corresponding w
    q1 = Quartet(Split({"A", "B"}, {"C", "D"}))
    q2 = Quartet(Split({"A", "C"}, {"B", "D"}))
 
-   # Create a profile using a dictionary
+   # Create a profile using a dictionary (weights are normalized to sum 1.0)
    profile = QuartetProfile({q1: 0.7, q2: 0.3})
 
-   # Create a profile from a list of (quartet, weight) tuples
+   # Create a profile from a list of (quartet, weight) tuples (normalized to sum 1.0)
    full_profile = QuartetProfile([
        (q1, 0.5),
        (q2, 0.3),
        (Quartet(Split({"A", "D"}, {"B", "C"})), 0.2)
    ])
 
-   # Create a profile from a list of quartets (equal weights)
-   equal_profile = QuartetProfile([q1, q2])  # Each gets weight 1.0
+   # Create a profile from a list of quartets (equal weight 1/k each, so total 1.0)
+   equal_profile = QuartetProfile([q1, q2])  # Each gets weight 0.5
 
 All quartets in a profile must have the same four taxa.
 
@@ -51,8 +54,8 @@ Quartet profiles provide comprehensive access to their properties:
    # Get mapping of all quartets to their weights
    quartets_map = profile.quartets  # Mapping[Quartet, float]
 
-   # Get total weight
-   total = profile.total_weight
+   # Weights always sum to 1.0
+   total = sum(profile.quartets.values())
 
    # Get weight for a specific quartet
    weight = profile.get_weight(some_quartet)  # Returns weight or 0.0

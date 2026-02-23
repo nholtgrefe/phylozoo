@@ -281,8 +281,9 @@ class TestQuartetsFromSplitsystem:
             target_quartet = Quartet(Split({1, 2}, {4, 5}))
             
             if target_quartet in profile.quartets:
-                # Should have weight 2.0 (appears in both splits)
-                assert abs(profile.get_weight(target_quartet) - 2.0) < 1e-10
+                # QuartetProfile normalizes so weights sum to 1.0; this profile has one quartet
+                assert abs(profile.get_weight(target_quartet) - 1.0) < 1e-10
+                assert abs(sum(profile.quartets.values()) - 1.0) < 1e-10
     
     def test_weighted_split_system(self) -> None:
         """Test quartets_from_splitsystem with weighted split system."""
@@ -305,8 +306,9 @@ class TestQuartetsFromSplitsystem:
         if target_taxa in profileset.profiles:
             profile, _ = profileset.profiles[target_taxa]
             if target_quartet in profile.quartets:
-                # Weight should be 2.0 + 1.5 = 3.5
-                assert abs(profile.get_weight(target_quartet) - 3.5) < 1e-10
+                # QuartetProfile normalizes to sum 1.0; single quartet has weight 1.0
+                assert abs(profile.get_weight(target_quartet) - 1.0) < 1e-10
+                assert abs(sum(profile.quartets.values()) - 1.0) < 1e-10
     
     def test_empty_system(self) -> None:
         """Test quartets_from_splitsystem with empty system."""

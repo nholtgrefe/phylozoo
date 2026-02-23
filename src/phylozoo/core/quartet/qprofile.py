@@ -2,7 +2,9 @@
 Quartet profile module.
 
 This module provides the QuartetProfile class for representing multiple quartets
-on the same 4-taxon set with weights.
+on the same 4-taxon set with weights. A QuartetProfile always has total weight 1.0:
+weights are either equal (1/k when no weights are provided) or normalized so that
+they sum to 1.0 (within a small tolerance).
 """
 
 from types import MappingProxyType
@@ -13,22 +15,31 @@ from ..primitives.circular_ordering import CircularOrdering
 from ..split.base import Split
 from .base import Quartet
 
+# Tolerance for checking that stored weights sum to 1.0.
+_WEIGHT_SUM_TOLERANCE = 1e-9
+
 
 class QuartetProfile:
     """
     Immutable profile for quartets on the same 4-taxon set.
     
     A QuartetProfile groups multiple quartets that share the same 4 taxa,
-    each with an associated weight. The weights represent the relative
-    importance or frequency of each quartet topology.
+    each with an associated weight. The weights always sum to 1.0 (within a
+    small tolerance), so the profile represents a probability distribution
+    over quartet topologies.
+    
+    - If no weights are provided (list of quartets), each quartet is assigned
+      equal weight 1/k, where k is the number of quartets.
+    - If weights are provided (dict or list of (quartet, weight) tuples),
+      they are normalized so that they sum to 1.0.
     
     Parameters
     ----------
     quartets : dict[Quartet, float] | Mapping[Quartet, float] | list[Quartet] | list[tuple[Quartet, float]]
         Input quartets. Can be:
-        - A dictionary mapping quartets to weights
-        - A list of quartets (each assigned weight 1.0)
-        - A list of (quartet, weight) tuples
+        - A dictionary mapping quartets to weights (normalized to sum 1.0)
+        - A list of quartets (each assigned weight 1/k)
+        - A list of (quartet, weight) tuples (normalized to sum 1.0)
         Taxa are automatically extracted from the quartets.
     
     Attributes
@@ -36,7 +47,7 @@ class QuartetProfile:
     taxa : frozenset[str]
         The 4 taxon labels (extracted from quartets).
     quartets : Mapping[Quartet, float]
-        Read-only mapping of quartets to their weights.
+        Read-only mapping of quartets to their (normalized) weights.
     
     Raises
     ------
@@ -49,21 +60,21 @@ class QuartetProfile:
     >>> from phylozoo.core.split.base import Split
     >>> q1 = Quartet(Split({1, 2}, {3, 4}))
     >>> q2 = Quartet(Split({1, 3}, {2, 4}))
-    >>> # From dictionary with weights
+    >>> # From dictionary with weights (already sum to 1.0)
     >>> profile = QuartetProfile({q1: 0.8, q2: 0.2})
     >>> profile.taxa
     frozenset({1, 2, 3, 4})
     >>> profile.get_weight(q1)
     0.8
-    >>> # From list of quartets (weight 1.0 each)
+    >>> # From list of quartets (equal weight 1/k each)
     >>> profile2 = QuartetProfile([q1, q2])
     >>> profile2.get_weight(q1)
-    1.0
+    0.5
     >>> profile2.get_weight(q2)
-    1.0
+    0.5
     """
     
-    __slots__ = ('_taxa', '_quartets', '_total_weight', '_initialized', '_split_cache', '_circular_orderings_cache')
+    __slots__ = ('_taxa', '_quartets', '_initialized', '_split_cache', '_circular_orderings_cache')
     
     def __init__(
         self,
@@ -77,13 +88,17 @@ class QuartetProfile:
         """
         Initialize a quartet profile.
         
+        Weights are normalized so that the profile's total weight is always 1.0:
+        - List of quartets: each gets weight 1/k (k = number of quartets).
+        - Dict or list of (quartet, weight) tuples: weights are scaled so they sum to 1.0.
+        
         Parameters
         ----------
         quartets : dict[Quartet, float] | Mapping[Quartet, float] | list[Quartet] | list[tuple[Quartet, float]]
             Input quartets. Can be:
-            - A dictionary mapping quartets to weights
-            - A list of quartets (each assigned weight 1.0)
-            - A list of (quartet, weight) tuples
+            - A dictionary mapping quartets to weights (normalized to sum 1.0)
+            - A list of quartets (each assigned weight 1/k)
+            - A list of (quartet, weight) tuples (normalized to sum 1.0)
             Taxa are automatically extracted from quartets.
         
         Raises
@@ -95,46 +110,52 @@ class QuartetProfile:
         if isinstance(quartets, list):
             # Check if it's a list of quartets or list of tuples
             if len(quartets) == 0:
-                quartets = {}
+                raw_dict: dict[Quartet, float] = {}
             elif isinstance(quartets[0], Quartet):
-                # List of quartets: assign weight 1.0 to each
-                # Check for duplicates during iteration using dict itself
-                quartets_dict: dict[Quartet, float] = {}
+                # List of quartets: assign equal weight 1/k to each
+                raw_dict = {}
                 for q in quartets:
-                    if q in quartets_dict:
+                    if q in raw_dict:
                         raise PhyloZooValueError(
                             f"Quartet {q} appears multiple times in the input. "
                             "Each quartet can only appear once in a profile."
                         )
-                    quartets_dict[q] = 1.0
-                quartets = quartets_dict
+                    raw_dict[q] = 1.0
+                k = len(raw_dict)
+                raw_dict = {q: 1.0 / k for q in raw_dict}
             else:
-                # List of tuples: convert to dict, checking for duplicates
-                # Check for duplicates during iteration using dict itself
-                quartets_dict: dict[Quartet, float] = {}
+                # List of tuples: convert to dict (validate after)
+                raw_dict = {}
                 for q, weight in quartets:
-                    if q in quartets_dict:
+                    if q in raw_dict:
                         raise PhyloZooValueError(
                             f"Quartet {q} appears multiple times in the input. "
                             "Each quartet can only appear once in a profile."
                         )
-                    quartets_dict[q] = weight
-                quartets = quartets_dict
+                    raw_dict[q] = weight
+        else:
+            raw_dict = dict(quartets)
         
         # Set quartets before validation
-        object.__setattr__(self, '_quartets', quartets)
-        
-        # Validate quartets (uses self._quartets)
+        object.__setattr__(self, '_quartets', raw_dict)
         self._validate_quartets()
         
-        # Extract taxa from first quartet
+        # Normalize to sum 1.0 (list-of-quartets case already has 1/k so sum is 1.0)
+        total = sum(raw_dict.values())
+        if abs(total - 1.0) > _WEIGHT_SUM_TOLERANCE:
+            normalized = {q: w / total for q, w in raw_dict.items()}
+            object.__setattr__(self, '_quartets', normalized)
+        
+        # Extract taxa and store as immutable
         first_quartet = next(iter(self._quartets.keys()))
         taxa_set = first_quartet.taxa
-        
-        # Store as immutable
+        final_total = sum(self._quartets.values())
+        if abs(final_total - 1.0) > _WEIGHT_SUM_TOLERANCE:
+            raise PhyloZooValueError(
+                f"Weights must sum to 1.0 (within tolerance {_WEIGHT_SUM_TOLERANCE}), got {final_total}"
+            )
         object.__setattr__(self, '_taxa', taxa_set)
         object.__setattr__(self, '_quartets', MappingProxyType(self._quartets))
-        object.__setattr__(self, '_total_weight', sum(self._quartets.values()))
         object.__setattr__(self, '_initialized', True)
     
     def _validate_quartets(self) -> None:
@@ -228,18 +249,6 @@ class QuartetProfile:
             The weight of the quartet, or 0.0 if not found.
         """
         return self._quartets.get(quartet, 0.0)
-    
-    @property
-    def total_weight(self) -> float:
-        """
-        Get the total weight of all quartets in the profile.
-        
-        Returns
-        -------
-        float
-            Sum of all quartet weights.
-        """
-        return self._total_weight
     
     @property
     def split(self) -> Split | None:

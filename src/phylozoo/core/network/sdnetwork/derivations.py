@@ -1008,7 +1008,8 @@ def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
        appears in multiple displayed trees)
     
     The profiles are then returned as a QuartetProfileSet, where each profile
-    (one per quartet) has no weight (default weight 1.0).
+    (one per 4-taxon set) has quartet weights that sum to 1.0 (the displayed-tree
+    probabilities). Each profile in the set has default profile weight 1.0.
     
     Parameters
     ----------

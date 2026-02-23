@@ -23,19 +23,19 @@ class TestQuartetProfileInit:
         assert len(profile) == 2
         assert profile.get_weight(q1) == 0.8
         assert profile.get_weight(q2) == 0.2
-        assert profile.total_weight == 1.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
     def test_init_from_list_quartets(self) -> None:
-        """Test creating a profile from a list of quartets."""
+        """Test creating a profile from a list of quartets (equal weight 1/k each)."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         profile = QuartetProfile([q1, q2])
         
         assert profile.taxa == frozenset({1, 2, 3, 4})
         assert len(profile) == 2
-        assert profile.get_weight(q1) == 1.0
-        assert profile.get_weight(q2) == 1.0
-        assert profile.total_weight == 2.0
+        assert profile.get_weight(q1) == 0.5
+        assert profile.get_weight(q2) == 0.5
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
     def test_init_from_list_tuples(self) -> None:
         """Test creating a profile from a list of (quartet, weight) tuples."""
@@ -47,7 +47,7 @@ class TestQuartetProfileInit:
         assert len(profile) == 2
         assert profile.get_weight(q1) == 0.7
         assert profile.get_weight(q2) == 0.3
-        assert profile.total_weight == 1.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
     def test_init_empty_error(self) -> None:
         """Test that empty profile raises ValueError."""
@@ -101,18 +101,21 @@ class TestQuartetProfileInit:
         quartets_dict = {q1: 0.5, q2: 0.3}
         quartets_dict[q1] = 0.2  # This overwrites, so no error
         # The dict itself doesn't have duplicates, so this is fine
+        # Weights 0.2 + 0.3 = 0.5, normalized to 0.4 and 0.6
         profile = QuartetProfile(quartets_dict)
-        assert profile.get_weight(q1) == 0.2  # Last value wins
+        assert profile.get_weight(q1) == pytest.approx(0.4)
+        assert profile.get_weight(q2) == pytest.approx(0.6)
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
     def test_init_single_quartet(self) -> None:
-        """Test creating a profile with a single quartet."""
+        """Test creating a profile with a single quartet (weight 1.0)."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         profile = QuartetProfile([q1])
         
         assert profile.taxa == frozenset({1, 2, 3, 4})
         assert len(profile) == 1
         assert profile.get_weight(q1) == 1.0
-        assert profile.total_weight == 1.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
     def test_init_mixed_star_and_resolved(self) -> None:
         """Test creating a profile with both star and resolved quartets on same taxa."""
@@ -124,6 +127,18 @@ class TestQuartetProfileInit:
         assert len(profile) == 2
         assert profile.get_weight(q1) == 0.6
         assert profile.get_weight(q2) == 0.4
+
+    def test_weights_sum_to_one(self) -> None:
+        """Test that quartet weights always sum to 1.0 (within tolerance) for all input types."""
+        q1 = Quartet(Split({1, 2}, {3, 4}))
+        q2 = Quartet(Split({1, 3}, {2, 4}))
+        for profile in (
+            QuartetProfile([q1]),
+            QuartetProfile([q1, q2]),
+            QuartetProfile({q1: 0.8, q2: 0.2}),
+            QuartetProfile([(q1, 2.0), (q2, 3.0)]),  # normalized to 0.4, 0.6
+        ):
+            assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
 
 
 class TestQuartetProfileProperties:
@@ -150,13 +165,13 @@ class TestQuartetProfileProperties:
         assert quartets[q1] == 0.8
         assert quartets[q2] == 0.2
     
-    def test_total_weight_property(self) -> None:
-        """Test total_weight property."""
+    def test_weights_sum_to_one_property(self) -> None:
+        """Test that quartet weights sum to 1.0."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         profile = QuartetProfile({q1: 0.3, q2: 0.7})
         
-        assert profile.total_weight == 1.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
     def test_immutability(self) -> None:
         """Test that profile is immutable."""
@@ -390,37 +405,37 @@ class TestQuartetProfileEdgeCases:
             QuartetProfile([q1, q1, q2])
     
     def test_duplicate_quartets_in_dict(self) -> None:
-        """Test that duplicate quartets in dict use last weight."""
+        """Test that duplicate quartets in dict use last weight; single quartet has weight 1.0."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
-        # Same quartet with different weights (dict behavior)
+        # Same key twice: dict has only one entry (last wins), so profile has one quartet
         profile = QuartetProfile({q1: 0.5, q1: 0.8})
         
-        # Dict will only have one entry (last one wins)
         assert len(profile) == 1
-        assert profile.get_weight(q1) == 0.8
+        assert profile.get_weight(q1) == 1.0  # Single quartet always has normalized weight 1.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
     
-    def test_large_weights(self) -> None:
-        """Test profile with large weights."""
+    def test_large_weights_normalized(self) -> None:
+        """Test profile with large weights is normalized to sum 1.0."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         profile = QuartetProfile({q1: 100.0, q2: 200.0})
         
-        assert profile.total_weight == 300.0
-        assert profile.get_weight(q1) == 100.0
-        assert profile.get_weight(q2) == 200.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
+        assert profile.get_weight(q1) == pytest.approx(1.0 / 3.0)
+        assert profile.get_weight(q2) == pytest.approx(2.0 / 3.0)
     
-    def test_small_weights(self) -> None:
-        """Test profile with very small weights."""
+    def test_small_weights_normalized(self) -> None:
+        """Test profile with very small weights is normalized to sum 1.0."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         profile = QuartetProfile({q1: 0.0001, q2: 0.0002})
         
-        assert profile.total_weight == pytest.approx(0.0003)
-        assert profile.get_weight(q1) == 0.0001
-        assert profile.get_weight(q2) == 0.0002
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
+        assert profile.get_weight(q1) == pytest.approx(1.0 / 3.0)
+        assert profile.get_weight(q2) == pytest.approx(2.0 / 3.0)
     
-    def test_many_quartets(self) -> None:
-        """Test profile with many quartets."""
+    def test_many_quartets_equal_weight(self) -> None:
+        """Test profile with many quartets gets equal weight 1/k each."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         q3 = Quartet(Split({1, 4}, {2, 3}))
@@ -429,7 +444,8 @@ class TestQuartetProfileEdgeCases:
         profile = QuartetProfile([q1, q2, q3, star])
         
         assert len(profile) == 4
-        assert profile.total_weight == 4.0
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
+        assert all(profile.get_weight(q) == 0.25 for q in [q1, q2, q3, star])
         assert all(q in profile for q in [q1, q2, q3, star])
 
 
