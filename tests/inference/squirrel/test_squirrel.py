@@ -9,7 +9,7 @@ from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 from phylozoo.core.quartet.base import Quartet
 from phylozoo.core.split.base import Split
 from phylozoo.inference.squirrel.squirrel import squirrel
-from phylozoo.inference.utils import root_at_outgroup
+from phylozoo.core.network.sdnetwork.derivations import root_at_outgroup
 from phylozoo.inference.squirrel.sqprofile import SqQuartetProfile
 from phylozoo.inference.squirrel.sqprofileset import SqQuartetProfileSet
 from phylozoo.inference.squirrel.qsimilarity import sqprofileset_from_network, sqprofileset_similarity

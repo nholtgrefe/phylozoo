@@ -11,7 +11,7 @@ from ...core.network.dnetwork import DirectedPhyNetwork
 from ...core.network.sdnetwork import SemiDirectedPhyNetwork
 from ...utils.parallel import ParallelConfig, ParallelBackend
 
-from ..utils.rooting import root_at_outgroup
+from ...core.network.sdnetwork.derivations import root_at_outgroup
 from .cycle_resolution import resolve_cycles
 from .qjoining import adapted_quartet_joining
 from .qsimilarity import sqprofileset_from_network, sqprofileset_similarity

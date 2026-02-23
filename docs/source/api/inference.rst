@@ -12,12 +12,3 @@ The Squirrel algorithm for phylogenetic network inference from quartet profiles.
    :maxdepth: 2
    
    inference/squirrel
-
-Utilities
----------
-
-Utility functions for network inference.
-
-.. automodule:: phylozoo.inference.utils
-   :members:
-   :show-inheritance:

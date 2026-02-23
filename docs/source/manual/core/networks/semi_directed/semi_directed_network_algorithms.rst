@@ -303,6 +303,15 @@ semi-directed network to a directed network by orienting all undirected edges aw
    # Convert to directed network
    d_net = derivations.to_d_network(network)
 
+The :func:`phylozoo.core.network.sdnetwork.derivations.root_at_outgroup` function roots a
+semi-directed network at the edge leading to a specified outgroup taxon (convenience wrapper
+around :func:`to_d_network`).
+
+.. code-block:: python
+
+   # Root at outgroup leaf
+   d_net = derivations.root_at_outgroup(network, outgroup='A')
+
 Pairwise Distances
 ^^^^^^^^^^^^^^^^^^^^^^
 
