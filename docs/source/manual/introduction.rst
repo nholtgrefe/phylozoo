@@ -12,8 +12,7 @@ explicitly represent reticulate evolutionary events where lineages merge, provid
 realistic model of evolutionary history for many groups of organisms.
 
 PhyloZoo provides a comprehensive toolkit for phylogenetic network analysis, including 
-network representation, manipulation, inference from sequence data, diversity calculations, 
-and visualization. The package is designed with a focus on correctness, performance, and 
+network representation, manipulation, and visualization. The package is designed with a focus on correctness, performance, and 
 ease of use. It supports both directed and semi-directed network representations, allowing 
 you to work with rooted and unrooted phylogenetic analyses. PhyloZoo integrates seamlessly 
 with the Python scientific computing ecosystem, using NumPy for efficient numerical 
@@ -36,9 +35,9 @@ PhyloZoo offers several advantages for phylogenetic network analysis:
    provides clear, helpful error messages when something goes wrong.
 
 **Comprehensive Functionality**
-   From network inference to diversity analysis to visualization, PhyloZoo provides 
-   end-to-end support for phylogenetic network workflows. You can go from sequence data 
-   to inferred networks to diversity calculations without switching between different tools.
+   From network representation and manipulation to visualization, PhyloZoo provides 
+   support for phylogenetic network workflows. You can work with sequence data, 
+   networks, quartets, and splits without switching between different tools.
 
 **Performance and Scalability**
    PhyloZoo is designed to handle both small exploratory analyses and larger production 
@@ -86,31 +85,6 @@ see the corresponding sections in this manual:
      ``CircularSetOrdering`` used throughout the package. See :doc:`Primitives <core/primitives/index>` 
      for details.
 
-**Inference Module** (`phylozoo.inference`)
-   Algorithms for inferring phylogenetic networks from data. See :doc:`Inference Module <inference/index>` 
-   for detailed documentation.
-   
-   * **Squirrel**: Implementation of the SQuaRE (SQuirrel quartet-based REconstruction) 
-     algorithm for inferring semi-directed phylogenetic networks from quartet profiles 
-     :cite:`SquirrelAlgorithm2024`. This includes quartet profile generation, cycle 
-     resolution, and network assembly. See :doc:`Squirrel Algorithm <inference/squirrel>` 
-     for details.
-   
-   * **Delta Heuristic**: Methods for generating quartet profiles from distance matrices 
-     using the delta heuristic approach.
-
-**Diversity Module** (`phylozoo.panda`)
-   Phylogenetic diversity calculations and optimization. See :doc:`Diversity Module <diversity/index>` 
-   for detailed documentation.
-   
-   * **Diversity Measures**: Protocol-based architecture for defining and computing 
-     various phylogenetic diversity metrics, such as all-paths diversity. See 
-     :doc:`All-Paths Diversity <diversity/all_paths_diversity>` for details.
-   
-   * **Optimization**: Algorithms for finding sets of taxa that maximize phylogenetic 
-     diversity, including greedy approaches and exact solutions using dynamic programming 
-     for certain network structures :cite:`DiversityOptimization2024`.
-
 **Visualization Module** (`phylozoo.viz`)
    Flexible plotting system for networks. See :doc:`Visualization Module <visualization/index>` 
    for detailed documentation.
@@ -153,18 +127,9 @@ Key Features
   NumPy-based storage, bootstrapping support, and distance calculations. Supports 
   common formats like FASTA and NEXUS.
 
-* **Network Inference**: Implementation of quartet-based network inference algorithms, 
-  including the Squirrel algorithm for reconstructing semi-directed phylogenetic networks 
-  from quartet profiles. Includes methods for generating quartet profiles from distance 
-  matrices.
-
 * **Visualization**: Flexible plotting system with multiple layout algorithms (including 
   custom PhyloZoo layouts and standard NetworkX/Graphviz layouts) for creating 
   publication-quality figures. Supports customizable styling and rendering.
-
-* **Diversity Analysis**: Phylogenetic diversity calculations with optimization algorithms 
-  for selecting diverse sets of taxa. Includes both greedy and exact optimization methods 
-  for certain network structures.
 
 * **Parallelization**: Built-in support for parallel execution of computationally 
   intensive tasks, allowing you to leverage multiple CPU cores for faster analysis.
@@ -203,8 +168,6 @@ To get started with PhyloZoo, see the :doc:`Quickstart <../quickstart>` guide fo
 instructions and basic examples. For detailed documentation on specific modules, see:
 
 * :doc:`Core Module <core/index>`: Data structures and network operations
-* :doc:`Inference Module <inference/index>`: Network inference algorithms
-* :doc:`Diversity Module <diversity/index>`: Phylogenetic diversity calculations
 * :doc:`Visualization Module <visualization/index>`: Network plotting and visualization
 
 For complete API reference, see the :doc:`API Reference <../api/index>` section.

@@ -519,55 +519,6 @@ Example usage:
    # Load from PhyloZoo-DOT
    network2 = SemiDirectedPhyNetwork.load("network.pzdot", format="phylozoo-dot")
 
-PZ Format
----------
-
-PZ is a custom JSON-based format for Squirrel quartet profile sets.
-
-**Classes using PZ format:**
-
-* **SqQuartetProfileSet** (default format)
-
-**File Extensions:** ``.pz``
-
-**Format Structure**
-
-JSON-based format storing quartet profile sets with metadata:
-
-.. code-block:: json
-
-   {
-       "profiles": [
-           {
-               "taxa": ["A", "B", "C", "D"],
-               "quartets": [
-                   {"split": ["A", "B"], "weight": 0.7},
-                   {"split": ["A", "C"], "weight": 0.3}
-               ]
-           }
-       ],
-       "metadata": {...}
-   }
-
-Example usage:
-
-.. code-block:: python
-
-   from phylozoo.inference.squirrel import SqQuartetProfileSet, SqQuartetProfile
-   from phylozoo.core.quartet import Quartet
-   from phylozoo.core.split import Split
-   
-   # Create quartet profile set
-   q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
-   profile1 = SqQuartetProfile([q1])
-   profileset = SqQuartetProfileSet(profiles=[profile1])
-   
-   # Save to PZ (default format)
-   profileset.save("profiles.pz")
-   
-   # Load from PZ
-   profileset2 = SqQuartetProfileSet.load("profiles.pz")
-
 Edge List Format
 ----------------
 

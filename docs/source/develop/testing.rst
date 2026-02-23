@@ -60,8 +60,6 @@ Test Structure
 Tests are organized to mirror the source code structure:
 
 * `tests/core/` - Tests for core modules (networks, quartets, splits, sequences, distance)
-* `tests/inference/` - Tests for inference algorithms
-* `tests/panda/` - Tests for diversity calculations
 * `tests/viz/` - Tests for visualization
 * `tests/utils/` - Tests for utility modules
 * `tests/conftest.py` - Shared fixtures and pytest configuration

@@ -243,6 +243,5 @@ Here's the complete workflow in one script:
    example, certain diversity optimization methods require networks without 2-blobs.
 
 .. seealso::
-   For network inference workflows, see :doc:`Inference Workflow <workflow_inference>`. 
    For detailed function documentation, see :doc:`Networks (Basic) <../manual/core/networks/basic>` 
    and :doc:`Networks (Advanced) <../manual/core/networks/advanced>`.

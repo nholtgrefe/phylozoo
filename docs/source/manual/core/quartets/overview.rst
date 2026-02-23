@@ -25,4 +25,3 @@ See Also
 
 - :doc:`API Reference <../../../api/core/quartet>` - Complete function signatures and detailed examples
 - :doc:`Distance Matrices <../distance>` - Computing distances from quartet profiles
-- :doc:`Inference <../../inference/overview>` - Network inference using quartets

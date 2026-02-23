@@ -128,31 +128,29 @@ Here's an example of properly styled code:
 .. code-block:: python
 
    from typing import TypeVar
+   from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
    
    T = TypeVar('T')
    
    
-   def compute_diversity(
-       network: DirectedPhyNetwork,
-       taxa: set[str],
-       measure: DiversityMeasure,
-   ) -> float:
+   def induced_subnetwork(
+       network: SemiDirectedPhyNetwork,
+       taxa: list[str],
+   ) -> SemiDirectedPhyNetwork:
        """
-       Compute phylogenetic diversity for a set of taxa.
+       Extract the subnetwork induced by a subset of taxa.
        
        Parameters
        ----------
-       network : DirectedPhyNetwork
+       network : SemiDirectedPhyNetwork
            The phylogenetic network.
-       taxa : set[str]
-           Set of taxon names to compute diversity for.
-       measure : DiversityMeasure
-           The diversity measure to use.
+       taxa : list[str]
+           Subset of taxon labels to induce the subnetwork on.
        
        Returns
        -------
-       float
-           The diversity value.
+       SemiDirectedPhyNetwork
+           The induced subnetwork.
        
        Raises
        ------
@@ -161,13 +159,11 @@ Here's an example of properly styled code:
        
        Examples
        --------
-       >>> from phylozoo.panda import AllPathsDiversity
-       >>> measure = AllPathsDiversity(network)
-       >>> diversity = compute_diversity(network, {"A", "B", "C"}, measure)
-       >>> diversity > 0
+       >>> from phylozoo.core.network.sdnetwork import derivations
+       >>> network = ...  # SemiDirectedPhyNetwork
+       >>> sub = derivations.subnetwork(network, taxa=["A", "B", "C"])
+       >>> len(sub.taxa) <= 3
        True
        """
-       if not taxa.issubset(network.taxa):
-           raise PhyloZooValueError("All taxa must be in the network")
-       
-       return measure.compute_diversity(taxa)
+       from phylozoo.core.network.sdnetwork import derivations
+       return derivations.subnetwork(network, taxa)

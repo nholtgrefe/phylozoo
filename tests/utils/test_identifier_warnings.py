@@ -8,7 +8,7 @@ import warnings
 
 import pytest
 
-from phylozoo.utils.identifier_warnings import warn_on_keyword, warn_on_none_value
+from phylozoo.utils.exceptions import warn_on_keyword, warn_on_none_value
 
 
 class TestWarnOnKeyword:

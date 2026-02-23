@@ -18,16 +18,6 @@ PhyloZoo is organized into logical modules based on functionality:
    * **Distance** (`phylozoo.core.distance`): ``DistanceMatrix``
    * **Primitives** (`phylozoo.core.primitives`): ``Partition``, ``CircularOrdering``, ``CircularSetOrdering``
 
-**Inference Module** (`phylozoo.inference`)
-   Network inference algorithms:
-   
-   * **Squirrel** (`phylozoo.inference.squirrel`): Squirrel algorithm for network reconstruction
-
-**Diversity Module** (`phylozoo.panda`)
-   Phylogenetic diversity calculations:
-   
-   * **Diversity Measures**: Protocol-based architecture for diversity metrics
-
 **Visualization Module** (`phylozoo.viz`)
    Network plotting and visualization:
    
@@ -74,12 +64,6 @@ PhyloZoo follows a consistent import strategy:
       from phylozoo.core.quartet import Quartet, QuartetProfile
       from phylozoo.core.sequence import bootstrap, hamming_distances
       from phylozoo.core.distance import is_kalmanson
-      
-      # Inference
-      from phylozoo.inference.squirrel import squirrel, delta_heuristic
-      
-      # Diversity
-      from phylozoo.panda import diversity, AllPathsDiversity
       
       # Visualization
       from phylozoo.viz import plot_dnetwork, plot_sdnetwork

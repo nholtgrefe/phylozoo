@@ -13,26 +13,6 @@ Core data structures and classes for phylogenetic networks and related structure
    
    core/index
 
-Inference
----------
-
-Network inference algorithms and utilities.
-
-.. toctree::
-   :maxdepth: 3
-   
-   inference
-
-Panda
------
-
-Phylogenetic diversity calculations and optimization.
-
-.. toctree::
-   :maxdepth: 3
-   
-   panda
-
 Visualization
 -------------
 

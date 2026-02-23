@@ -1,4 +1,0 @@
-"""
-Squirrel submodule tests.
-"""
-

@@ -10,7 +10,5 @@ This manual provides comprehensive guides for using PhyloZoo.
    installation
    introduction
    core/index
-   inference/index
-   diversity/index
    visualization/index
    utils/index

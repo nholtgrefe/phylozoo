@@ -220,19 +220,11 @@ Example: Comprehensive Error Handling
        PhyloZooNotImplementedError
    )
    from phylozoo import DirectedPhyNetwork
-   from phylozoo.panda import solve_max_diversity, greedy_max_diversity
    
    try:
        # Load network
        network = DirectedPhyNetwork.load("network.enewick")
-       
-       # Try exact solution
-       try:
-           result = solve_max_diversity(network, k=5, measure=measure)
-       except PhyloZooNotImplementedError:
-           # Fall back to greedy
-           result = greedy_max_diversity(network, k=5, measure=measure)
-       
+       # ... use network ...
    except PhyloZooParseError as e:
        print(f"Failed to parse network file: {e}")
    except PhyloZooNetworkStructureError as e:

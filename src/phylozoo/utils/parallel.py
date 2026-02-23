@@ -7,32 +7,31 @@ multiprocessing) and can be used via function parameters.
 
 Examples
 --------
-Basic usage with function parameter:
+Basic usage with a function that accepts a ``parallel`` parameter:
 
     >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend
-    >>> from phylozoo.inference.squirrel import squirrel
-    >>> 
+    >>>
     >>> # Use multiprocessing with 4 cores
-    >>> network = squirrel(
-    ...     profileset,
+    >>> result = some_parallel_function(
+    ...     data,
     ...     parallel=ParallelConfig(
     ...         backend=ParallelBackend.MULTIPROCESSING,
     ...         n_jobs=4
     ...     )
     ... )
-    >>> 
+    >>>
     >>> # Use all available cores (auto-detect)
-    >>> network = squirrel(
-    ...     profileset,
+    >>> result = some_parallel_function(
+    ...     data,
     ...     parallel=ParallelConfig(
     ...         backend=ParallelBackend.MULTIPROCESSING,
     ...         n_jobs=None  # or -1 for all cores
     ...     )
     ... )
-    >>> 
+    >>>
     >>> # Sequential execution (no parallelization)
-    >>> network = squirrel(
-    ...     profileset,
+    >>> result = some_parallel_function(
+    ...     data,
     ...     parallel=ParallelConfig(backend=ParallelBackend.SEQUENTIAL)
     ... )
 
