@@ -6,7 +6,7 @@ Working with Quartet Profiles
 
 The :mod:`phylozoo.core.quartet` module provides the :class:`QuartetProfile` class,
 which represents a probability distribution over the three possible quartet topologies
-for a specific four-taxon set. **The weights in a quartet profile always sum to 1.0**
+for a specific four-taxon set. The weights in a quartet profile always sum to 1.0
 (within a small tolerance): if no weights are given, each quartet gets equal weight
 :math:`1/k` (where :math:`k` is the number of quartets); if weights are given, they
 are normalized so that they sum to 1.0. Quartet profiles are essential for modeling
@@ -53,9 +53,6 @@ Quartet profiles provide comprehensive access to their properties:
 
    # Get mapping of all quartets to their weights
    quartets_map = profile.quartets  # Mapping[Quartet, float]
-
-   # Weights always sum to 1.0
-   total = sum(profile.quartets.values())
 
    # Get weight for a specific quartet
    weight = profile.get_weight(some_quartet)  # Returns weight or 0.0
