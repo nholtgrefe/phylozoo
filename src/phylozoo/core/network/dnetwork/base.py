@@ -24,7 +24,7 @@ from ....utils.exceptions import (
 from ...primitives.d_multigraph import DirectedMultiGraph
 from ...primitives.d_multigraph.features import is_connected, has_self_loops
 from ....utils.validation import validation_aware
-from ....utils.io import IOMixin
+from phylozoo.utils.io import IOMixin
 
 T = TypeVar('T')
 

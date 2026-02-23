@@ -21,7 +21,7 @@ from ...primitives.m_multigraph.features import (
 )
 from ...primitives.m_multigraph.transformations import orient_away_from_vertex
 from ....utils.validation import no_validation, validation_aware
-from ....utils.io import IOMixin
+from phylozoo.utils.io import IOMixin
 from .base import MixedPhyNetwork
 
 T = TypeVar('T')

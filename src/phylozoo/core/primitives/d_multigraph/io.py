@@ -42,7 +42,7 @@ from typing import Any
 
 from phylozoo.utils.exceptions import PhyloZooParseError
 
-from ....utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
 from .base import DirectedMultiGraph
 
 

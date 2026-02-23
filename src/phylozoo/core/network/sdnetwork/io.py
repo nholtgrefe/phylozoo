@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
-from ....utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
 
 if TYPE_CHECKING:
     from .sd_phynetwork import SemiDirectedPhyNetwork

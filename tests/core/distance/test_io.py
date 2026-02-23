@@ -25,7 +25,7 @@ class TestDistanceMatrixIO:
         nexus_str = dm.to_string()
         
         assert '#NEXUS' in nexus_str
-        assert 'BEGIN Taxa' in nexus_str
+        assert 'BEGIN TAXA' in nexus_str
         assert 'BEGIN Distances' in nexus_str
         assert 'A' in nexus_str
         assert 'B' in nexus_str
@@ -47,7 +47,7 @@ class TestDistanceMatrixIO:
                 content = f.read()
             
             assert '#NEXUS' in content
-            assert 'BEGIN Taxa' in content
+            assert 'BEGIN TAXA' in content
             assert 'BEGIN Distances' in content
             assert 'A' in content
             assert 'B' in content
@@ -198,6 +198,45 @@ class TestDistanceMatrixIO:
             dm2 = DistanceMatrix.load(file_path)
             assert dm2.labels == dm.labels
             assert np.allclose(dm2._matrix, dm._matrix)
+
+    def test_load_from_multi_block_nexus(self) -> None:
+        """DistanceMatrix.load from NEXUS with Distances and SPLITS uses only Distances."""
+        multi_block_nexus = """#NEXUS
+
+BEGIN TAXA;
+    DIMENSIONS ntax=3;
+    TAXLABELS
+        A
+        B
+        C
+    ;
+END;
+
+BEGIN Distances;
+    DIMENSIONS ntax=3;
+    FORMAT triangle=LOWER diagonal LABELS;
+    MATRIX
+        A 0
+        B 1 0
+        C 2 1 0
+    ;
+END;
+
+BEGIN SPLITS;
+    DIMENSIONS NSPLITS=1;
+    FORMAT LABELS=YES;
+    MATRIX
+        [1] (A B) (C)
+    ;
+END;
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = os.path.join(tmpdir, 'multi.nexus')
+            with open(file_path, 'w') as f:
+                f.write(multi_block_nexus)
+            dm = DistanceMatrix.load(file_path)
+        assert list(dm.labels) == ['A', 'B', 'C']
+        assert np.allclose(dm._matrix, np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]]))
     
     def test_from_string(self) -> None:
         """Test creating distance matrix from NEXUS string."""
@@ -318,7 +357,7 @@ BEGIN Taxa;
 END;'''
         
         from phylozoo.utils.exceptions import PhyloZooParseError
-        with pytest.raises(PhyloZooParseError, match="Could not find Distances block"):
+        with pytest.raises(PhyloZooParseError, match="no Distances block"):
             DistanceMatrix.from_string(nexus_str)
     
     def test_from_string_mismatched_dimensions(self) -> None:
@@ -417,7 +456,7 @@ A         0.00000 1.00000 2.00000
 B         1.00000 0.00000 1.00000
 '''
         
-        with pytest.raises(PhyloZooParseError, match="Expected.*lines"):
+        with pytest.raises(PhyloZooParseError, match="data lines.*expected"):
             DistanceMatrix.from_string(phylip_str, format='phylip')
     
     def test_from_phylip_non_symmetric(self) -> None:

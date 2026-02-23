@@ -36,7 +36,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ....utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
 from ....utils.exceptions import PhyloZooParseError
 from .base import MixedMultiGraph
 

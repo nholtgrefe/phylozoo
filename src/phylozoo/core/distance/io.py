@@ -33,8 +33,11 @@ from typing import Any
 
 import numpy as np
 
-from ...utils.exceptions import PhyloZooParseError, PhyloZooValueError
-from ...utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
+from phylozoo.utils.io.formats import nexus as nexus_fmt
+from phylozoo.utils.io.formats import phylip as phylip_fmt
+from phylozoo.utils.exceptions import PhyloZooParseError, PhyloZooValueError
+
 from .base import DistanceMatrix
 
 
@@ -84,40 +87,29 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     triangle = kwargs.get('triangle', 'LOWER').upper()
     if triangle not in ('LOWER', 'UPPER', 'BOTH'):
         raise PhyloZooValueError(f"triangle must be 'LOWER', 'UPPER', or 'BOTH', got '{triangle}'")
-    
+
     n = len(distance_matrix)
-    nexus_string = "#NEXUS\n\nBEGIN Taxa;\n"
-    nexus_string += f"    DIMENSIONS ntax={n};\n"
-    nexus_string += "    TAXLABELS\n"
-    nexus_string += "\n".join(f"        {taxon}" for taxon in distance_matrix.labels)
-    nexus_string += ";\nEND;\n\n"
-    
-    nexus_string += "BEGIN Distances;\n"
-    nexus_string += f"    DIMENSIONS ntax={n};\n"
-    nexus_string += f"    FORMAT triangle={triangle} diagonal LABELS;\n"
-    nexus_string += "    MATRIX\n"
-    
     matrix = distance_matrix._matrix
-    
+    body = f"    DIMENSIONS ntax={n};\n"
+    body += f"    FORMAT triangle={triangle} diagonal LABELS;\n"
+    body += "    MATRIX\n"
     if triangle == 'LOWER':
-        # Lower triangular: row i has values for columns 0..i
         for i, taxon in enumerate(distance_matrix.labels):
             row = " ".join(f"{matrix[i, j]:.6f}" for j in range(i + 1))
-            nexus_string += f"    {taxon} {row}\n"
+            body += f"    {taxon} {row}\n"
     elif triangle == 'UPPER':
-        # Upper triangular: row i has values for columns i..n-1
         for i, taxon in enumerate(distance_matrix.labels):
             row = " ".join(f"{matrix[i, j]:.6f}" for j in range(i, n))
-            nexus_string += f"    {taxon} {row}\n"
+            body += f"    {taxon} {row}\n"
     else:  # BOTH
-        # Full matrix: row i has all n values
         for i, taxon in enumerate(distance_matrix.labels):
             row = " ".join(f"{matrix[i, j]:.6f}" for j in range(n))
-            nexus_string += f"    {taxon} {row}\n"
-    
-    nexus_string += ";\nEND;\n"
-    
-    return nexus_string
+            body += f"    {taxon} {row}\n"
+    return (
+        nexus_fmt.nexus_header()
+        + nexus_fmt.write_taxa_block(distance_matrix.labels)
+        + nexus_fmt.write_block("Distances", body)
+    )
 
 
 def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
@@ -181,30 +173,20 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     - A Distances block with FORMAT triangle=LOWER/UPPER/BOTH diagonal LABELS
     - Lower triangular, upper triangular, or full matrix formats
     """
-    # Extract taxa labels
-    taxa_match = re.search(
-        r'BEGIN\s+Taxa;.*?TAXLABELS\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not taxa_match:
-        raise PhyloZooParseError("Could not find Taxa block with TAXLABELS in NEXUS string")
-    
-    taxa_section = taxa_match.group(1)
-    labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
-    
+    labels, blocks = nexus_fmt.parse_nexus(nexus_string)
+    content = blocks.get("Distances")
+    if content is None:
+        raise PhyloZooParseError(
+            f"NEXUS file contains no Distances block (found: {list(blocks.keys())})"
+        )
+
+    n = len(labels)
     if not labels:
         raise PhyloZooParseError("No taxa labels found in NEXUS string")
-    
-    n = len(labels)
-    
-    # Extract FORMAT line to determine triangle type
-    format_match = re.search(
-        r'FORMAT\s+(.*?);',
-        nexus_string,
-        re.IGNORECASE
-    )
-    triangle = 'LOWER'  # Default
+
+    # Extract FORMAT line to determine triangle type from block content
+    format_match = re.search(r'FORMAT\s+(.*?);', content, re.IGNORECASE)
+    triangle = 'LOWER'
     if format_match:
         format_section = format_match.group(1).upper()
         if 'TRIANGLE=UPPER' in format_section:
@@ -213,16 +195,11 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
             triangle = 'BOTH'
         elif 'TRIANGLE=LOWER' in format_section:
             triangle = 'LOWER'
-    
-    # Extract distance matrix
-    matrix_match = re.search(
-        r'BEGIN\s+Distances;.*?MATRIX\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
+
+    # Extract MATRIX section from block content
+    matrix_match = re.search(r'MATRIX\s+(.*?);', content, re.DOTALL | re.IGNORECASE)
     if not matrix_match:
-        raise PhyloZooParseError("Could not find Distances block with MATRIX in NEXUS string")
-    
+        raise PhyloZooParseError("Could not find MATRIX in Distances block")
     matrix_section = matrix_match.group(1)
     matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
@@ -342,17 +319,12 @@ def to_phylip(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     Distances are formatted with 5 decimal places.
     """
     n = len(distance_matrix)
-    phylip_lines = [str(n)]
-    
     matrix = distance_matrix._matrix
-    for i, taxon in enumerate(distance_matrix.labels):
-        # Pad taxon name to 10 characters (PHYLIP standard)
-        taxon_padded = str(taxon).ljust(10)
-        # Format all distances for this row
-        distances_str = ' '.join(f"{matrix[i, j]:.5f}" for j in range(n))
-        phylip_lines.append(f"{taxon_padded}{distances_str}")
-    
-    return '\n'.join(phylip_lines) + '\n'
+    rows = [
+        (str(taxon), ' '.join(f"{matrix[i, j]:.5f}" for j in range(n)))
+        for i, taxon in enumerate(distance_matrix.labels)
+    ]
+    return phylip_fmt.write_phylip_matrix(n, rows)
 
 
 def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
@@ -402,60 +374,26 @@ def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
     - Subsequent lines: taxon name (first 10 chars or until whitespace) followed by distances
     - Full matrix format (not just lower triangle)
     """
-    lines = [line.strip() for line in phylip_string.strip().split('\n') if line.strip()]
-    
-    if not lines:
-        raise PhyloZooParseError("PHYLIP string is empty")
-    
-    # First line is number of taxa
-    try:
-        n = int(lines[0])
-    except ValueError as e:
-        raise PhyloZooParseError(f"Could not parse number of taxa from first line: {e}") from e
-    
-    if n <= 0:
-        raise PhyloZooValueError(f"Number of taxa must be positive, got {n}")
-    
-    if len(lines) < n + 1:
-        raise PhyloZooParseError(
-            f"Expected {n + 1} lines (header + {n} taxa), got {len(lines)}"
-        )
-    
-    labels: list[str] = []
+    n, rows = phylip_fmt.parse_phylip_matrix(phylip_string)
+    labels = [r[0] for r in rows]
     matrix = np.zeros((n, n), dtype=np.float64)
-    
-    # Parse each taxon line
-    for i, line in enumerate(lines[1:n + 1], start=0):
-        # Taxon name is first 10 characters (PHYLIP standard) or until whitespace
-        # Try to extract taxon name (first word or first 10 chars)
-        parts = line.split()
-        if not parts:
-            raise PhyloZooParseError(f"Empty line {i + 2} in PHYLIP string")
-        
-        taxon = parts[0]
-        labels.append(taxon)
-        
-        # Remaining parts are distances
-        if len(parts) < n + 1:
+    for i, (_, rest) in enumerate(rows):
+        parts = rest.split()
+        if len(parts) < n:
             raise PhyloZooParseError(
                 f"Line {i + 2} has insufficient values. "
-                f"Expected {n + 1} values (taxon + {n} distances), got {len(parts)}"
+                f"Expected {n} distances, got {len(parts)}"
             )
-        
         for j in range(n):
             try:
-                value = float(parts[j + 1])
+                value = float(parts[j])
                 matrix[i, j] = value
             except (ValueError, IndexError) as e:
                 raise PhyloZooParseError(
                     f"Could not parse distance value at row {i + 1}, column {j + 1}: {e}"
                 ) from e
-    
-    # Verify symmetry (PHYLIP should be symmetric)
     if not np.allclose(matrix, matrix.T, rtol=1e-10, atol=1e-10):
         raise PhyloZooParseError("PHYLIP matrix is not symmetric")
-    
-    # Create DistanceMatrix
     return DistanceMatrix(matrix, labels=labels)
 
 

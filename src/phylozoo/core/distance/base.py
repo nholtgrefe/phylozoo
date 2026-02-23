@@ -11,7 +11,7 @@ from typing import TypeVar
 import numpy as np
 
 from ...utils.exceptions import PhyloZooValueError
-from ...utils.io import IOMixin
+from phylozoo.utils.io import IOMixin
 
 T = TypeVar('T')
 

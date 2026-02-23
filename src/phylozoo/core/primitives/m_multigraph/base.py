@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterator, List, Set, Tuple, TypeVar, TYPE_CHECKING
 import networkx as nx
 
 from phylozoo.utils.exceptions import warn_on_keyword, warn_on_none_value
-from ....utils.io import IOMixin
+from phylozoo.utils.io import IOMixin
 from phylozoo.utils.exceptions import PhyloZooValueError
 
 if TYPE_CHECKING:

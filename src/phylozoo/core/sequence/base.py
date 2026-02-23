@@ -12,7 +12,7 @@ from typing import Any
 import numpy as np
 
 from ...utils.exceptions import PhyloZooValueError, PhyloZooTypeError
-from ...utils.io import IOMixin
+from phylozoo.utils.io import IOMixin
 
 # Default nucleotide encoding
 DEFAULT_NUCLEOTIDE_ENCODING = {

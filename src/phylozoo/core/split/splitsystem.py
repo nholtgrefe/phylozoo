@@ -7,7 +7,7 @@ This module provides classes for working with split systems.
 from typing import Iterator, TYPE_CHECKING
 
 from ...utils.exceptions import PhyloZooValueError
-from ...utils.io import IOMixin
+from phylozoo.utils.io import IOMixin
 from .base import Split
 
 class SplitSystem(IOMixin):

@@ -15,10 +15,7 @@ First release:
         - SD generator validation
         - update network classifications
     - Quartet:
-        - quartet weights within a profilein [0,1]?
-- Inference:
-    - Squirel:
-        - CF/gene tree support?
+        - quartet weights within a profile in [0,1]?
 - Vizualize:
     - add sd-plotting
 
@@ -61,6 +58,7 @@ Later releases:
         - check which squirrel helper methods should use general qpset or sq qpset
         - squirrel could actually take in any set of input trees?
     - Add invariant/algebra support, or add load_from_invariants function
+    - CF/gene tree support?
 - PANDA: 
     - MAPPD:handle 2-blobs and parallel edges better
     - external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?

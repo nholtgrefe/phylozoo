@@ -32,8 +32,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ...utils.exceptions import PhyloZooParseError, PhyloZooValueError
-from ...utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
+from phylozoo.utils.io.formats import nexus as nexus_fmt
+from phylozoo.utils.exceptions import PhyloZooParseError, PhyloZooValueError
+
 from .base import Split
 from .splitsystem import SplitSystem
 from .weighted_splitsystem import WeightedSplitSystem
@@ -143,49 +145,33 @@ def to_nexus_split_system(split_system: SplitSystem, **kwargs: Any) -> str:
     - SPLITS block with split definitions (no weights for unweighted systems)
     """
     if len(split_system.elements) == 0:
-        # Empty split system
-        return (
-            "#NEXUS\n\nBEGIN TAXA;\n"
-            "    DIMENSIONS NTAX=0;\n"
-            "    TAXLABELS\n"
-            "    ;\n"
-            "END;\n\n"
-            "BEGIN SPLITS;\n"
+        body = (
             "    DIMENSIONS NSPLITS=0;\n"
             "    FORMAT LABELS=YES;\n"
             "    MATRIX\n"
-            "    ;\n"
-            "END;\n"
+            "    "
         )
-    
+        return (
+            nexus_fmt.nexus_header()
+            + nexus_fmt.write_taxa_block([])
+            + nexus_fmt.write_block("SPLITS", body)
+        )
     labels = _get_taxon_labels(split_system.elements)
-    n = len(labels)
-    
-    nexus_string = "#NEXUS\n\nBEGIN TAXA;\n"
-    nexus_string += f"    DIMENSIONS NTAX={n};\n"
-    nexus_string += "    TAXLABELS\n"
-    nexus_string += "\n".join(f"        {label}" for label in labels)
-    nexus_string += "\n    ;\nEND;\n\n"
-    
-    nexus_string += "BEGIN SPLITS;\n"
-    nexus_string += f"    DIMENSIONS NSPLITS={len(split_system)};\n"
-    nexus_string += "    FORMAT LABELS=YES;\n"
-    nexus_string += "    MATRIX\n"
-    
-    # Write each split
-    # Sort splits for consistent output
+    body = f"    DIMENSIONS NSPLITS={len(split_system)};\n"
+    body += "    FORMAT LABELS=YES;\n"
+    body += "    MATRIX\n"
     sorted_splits = sorted(
         split_system.splits,
-        key=lambda s: (len(s.set1), sorted(str(e) for e in s.set1))
+        key=lambda s: (len(s.set1), sorted(str(e) for e in s.set1)),
     )
-    
     for i, split in enumerate(sorted_splits, start=1):
         set1_str, set2_str = _split_to_nexus_format(split, labels)
-        nexus_string += f"        [{i}] ({set1_str}) ({set2_str})\n"
-    
-    nexus_string += "    ;\nEND;\n"
-    
-    return nexus_string
+        body += f"        [{i}] ({set1_str}) ({set2_str})\n"
+    return (
+        nexus_fmt.nexus_header()
+        + nexus_fmt.write_taxa_block(labels)
+        + nexus_fmt.write_block("SPLITS", body)
+    )
 
 
 def to_nexus_weighted_split_system(weighted_system: WeightedSplitSystem, **kwargs: Any) -> str:
@@ -242,50 +228,34 @@ def to_nexus_weighted_split_system(weighted_system: WeightedSplitSystem, **kwarg
     - SPLITS block with FORMAT WEIGHTS=YES and split definitions with weights
     """
     if len(weighted_system.elements) == 0:
-        # Empty split system
-        return (
-            "#NEXUS\n\nBEGIN TAXA;\n"
-            "    DIMENSIONS NTAX=0;\n"
-            "    TAXLABELS\n"
-            "    ;\n"
-            "END;\n\n"
-            "BEGIN SPLITS;\n"
+        body = (
             "    DIMENSIONS NSPLITS=0;\n"
             "    FORMAT LABELS=YES WEIGHTS=YES;\n"
             "    MATRIX\n"
-            "    ;\n"
-            "END;\n"
+            "    "
         )
-    
+        return (
+            nexus_fmt.nexus_header()
+            + nexus_fmt.write_taxa_block([])
+            + nexus_fmt.write_block("SPLITS", body)
+        )
     labels = _get_taxon_labels(weighted_system.elements)
-    n = len(labels)
-    
-    nexus_string = "#NEXUS\n\nBEGIN TAXA;\n"
-    nexus_string += f"    DIMENSIONS NTAX={n};\n"
-    nexus_string += "    TAXLABELS\n"
-    nexus_string += "\n".join(f"        {label}" for label in labels)
-    nexus_string += "\n    ;\nEND;\n\n"
-    
-    nexus_string += "BEGIN SPLITS;\n"
-    nexus_string += f"    DIMENSIONS NSPLITS={len(weighted_system)};\n"
-    nexus_string += "    FORMAT LABELS=YES WEIGHTS=YES;\n"
-    nexus_string += "    MATRIX\n"
-    
-    # Write each split with its weight
-    # Sort splits for consistent output
+    body = f"    DIMENSIONS NSPLITS={len(weighted_system)};\n"
+    body += "    FORMAT LABELS=YES WEIGHTS=YES;\n"
+    body += "    MATRIX\n"
     sorted_splits = sorted(
         weighted_system.splits,
-        key=lambda s: (len(s.set1), sorted(str(e) for e in s.set1))
+        key=lambda s: (len(s.set1), sorted(str(e) for e in s.set1)),
     )
-    
     for i, split in enumerate(sorted_splits, start=1):
         set1_str, set2_str = _split_to_nexus_format(split, labels)
         weight = weighted_system.get_weight(split)
-        nexus_string += f"        [{i}] ({set1_str}) ({set2_str}) {weight:.6f}\n"
-    
-    nexus_string += "    ;\nEND;\n"
-    
-    return nexus_string
+        body += f"        [{i}] ({set1_str}) ({set2_str}) {weight:.6f}\n"
+    return (
+        nexus_fmt.nexus_header()
+        + nexus_fmt.write_taxa_block(labels)
+        + nexus_fmt.write_block("SPLITS", body)
+    )
 
 
 def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
@@ -348,22 +318,16 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
     - A SPLITS block with FORMAT LABELS=YES (weights optional, ignored if present)
     - Split definitions in format: [n] (taxa1 taxa2 ...) (taxa3 taxa4 ...) [weight]
     """
-    # Extract taxa labels
-    taxa_match = re.search(
-        r'BEGIN\s+TAXA;.*?TAXLABELS\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not taxa_match:
-        raise PhyloZooParseError("Could not find TAXA block with TAXLABELS in NEXUS string")
-    
-    taxa_section = taxa_match.group(1)
-    labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
-    
+    labels, blocks = nexus_fmt.parse_nexus(nexus_string)
+    content = blocks.get("SPLITS")
+    if content is None:
+        raise PhyloZooParseError(
+            f"NEXUS file contains no SPLITS block (found: {list(blocks.keys())})"
+        )
+
     if not labels:
-        # Empty split system
         return SplitSystem()
-    
+
     # Create mapping from label string to element (try to preserve original type)
     # Try to convert labels back to their original types (int, float, etc.)
     def try_convert(label: str) -> Any:
@@ -383,17 +347,11 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
     
     label_to_elem = {label: try_convert(label) for label in labels}
     elements_set = set(label_to_elem.values())
-    
-    # Extract splits block
-    splits_match = re.search(
-        r'BEGIN\s+SPLITS;.*?MATRIX\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not splits_match:
-        raise PhyloZooParseError("Could not find SPLITS block with MATRIX in NEXUS string")
-    
-    matrix_section = splits_match.group(1)
+
+    matrix_match = re.search(r'MATRIX\s+(.*?);', content, re.DOTALL | re.IGNORECASE)
+    if not matrix_match:
+        raise PhyloZooParseError("Could not find MATRIX in SPLITS block")
+    matrix_section = matrix_match.group(1)
     split_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
     splits: list[Split] = []
@@ -495,24 +453,16 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
     - Split definitions in format: [n] (taxa1 taxa2 ...) (taxa3 taxa4 ...) weight
     - If FORMAT WEIGHTS=YES is specified, all splits must have weights
     """
-    # Extract taxa labels (same as unweighted)
-    taxa_match = re.search(
-        r'BEGIN\s+TAXA;.*?TAXLABELS\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not taxa_match:
-        raise PhyloZooParseError("Could not find TAXA block with TAXLABELS in NEXUS string")
-    
-    taxa_section = taxa_match.group(1)
-    labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
-    
+    labels, blocks = nexus_fmt.parse_nexus(nexus_string)
+    content = blocks.get("SPLITS")
+    if content is None:
+        raise PhyloZooParseError(
+            f"NEXUS file contains no SPLITS block (found: {list(blocks.keys())})"
+        )
+
     if not labels:
-        # Empty split system
         return WeightedSplitSystem()
-    
-    # Create mapping from label string to element (try to preserve original type)
-    # Try to convert labels back to their original types (int, float, etc.)
+
     def try_convert(label: str) -> Any:
         """Try to convert label to original type."""
         # Try int first
@@ -530,22 +480,15 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
     
     label_to_elem = {label: try_convert(label) for label in labels}
     elements_set = set(label_to_elem.values())
-    
-    # Extract splits block and check for WEIGHTS=YES
-    splits_match = re.search(
-        r'BEGIN\s+SPLITS;.*?FORMAT\s+(.*?);.*?MATRIX\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not splits_match:
-        raise PhyloZooParseError("Could not find SPLITS block with MATRIX in NEXUS string")
-    
-    format_section = splits_match.group(1)
-    matrix_section = splits_match.group(2)
-    
-    # Check if weights are required
+
+    format_match = re.search(r'FORMAT\s+(.*?);', content, re.IGNORECASE)
+    format_section = format_match.group(1) if format_match else ''
     has_weights = 'WEIGHTS=YES' in format_section.upper()
-    
+
+    matrix_match = re.search(r'MATRIX\s+(.*?);', content, re.DOTALL | re.IGNORECASE)
+    if not matrix_match:
+        raise PhyloZooParseError("Could not find MATRIX in SPLITS block")
+    matrix_section = matrix_match.group(1)
     split_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
     splits: list[Split] = []

@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ....utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
 from .base import DirectedPhyNetwork
 from ._enewick import to_enewick, from_enewick
 from ...primitives.d_multigraph.io import (

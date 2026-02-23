@@ -27,7 +27,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ...utils.io import FormatRegistry
+from phylozoo.utils.io import FormatRegistry
+from phylozoo.utils.io.formats import nexus as nexus_fmt
+from phylozoo.utils.exceptions import PhyloZooParseError
+
 from .base import MSA
 
 
@@ -235,35 +238,20 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     datatype = kwargs.get('datatype', 'DNA').upper()
     missing = kwargs.get('missing', 'N')
     gap = kwargs.get('gap', '-')
-    
+
     n = msa.num_taxa
     seq_length = msa.sequence_length
-    
-    nexus_string = "#NEXUS\n\n"
-    
-    # TAXA block
-    nexus_string += "BEGIN TAXA;\n"
-    nexus_string += f"    DIMENSIONS ntax={n};\n"
-    nexus_string += "    TAXLABELS\n"
-    for taxon in msa.taxa_order:
-        nexus_string += f"        {taxon}\n"
-    nexus_string += "    ;\n"
-    nexus_string += "END;\n\n"
-    
-    # CHARACTERS block
-    nexus_string += "BEGIN CHARACTERS;\n"
-    nexus_string += f"    DIMENSIONS nchar={seq_length};\n"
-    nexus_string += f"    FORMAT datatype={datatype} missing={missing} gap={gap};\n"
-    nexus_string += "    MATRIX\n"
-    
+    body = f"    DIMENSIONS nchar={seq_length};\n"
+    body += f"    FORMAT datatype={datatype} missing={missing} gap={gap};\n"
+    body += "    MATRIX\n"
     for taxon in msa.taxa_order:
         seq = msa.get_sequence(taxon) or ''
-        nexus_string += f"        {taxon}    {seq}\n"
-    
-    nexus_string += "    ;\n"
-    nexus_string += "END;\n"
-    
-    return nexus_string
+        body += f"        {taxon}    {seq}\n"
+    return (
+        nexus_fmt.nexus_header()
+        + nexus_fmt.write_taxa_block(msa.taxa_order)
+        + nexus_fmt.write_block("CHARACTERS", body)
+    )
 
 
 def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
@@ -325,33 +313,21 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     - Handles missing and gap characters as specified in FORMAT
     - Converts taxon identifiers to strings
     """
-    # Extract taxa labels
-    taxa_match = re.search(
-        r'BEGIN\s+TAXA;.*?TAXLABELS\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not taxa_match:
-        raise PhyloZooParseError("Could not find TAXA block with TAXLABELS in NEXUS string")
-    
-    taxa_section = taxa_match.group(1)
-    labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
-    
+    labels, blocks = nexus_fmt.parse_nexus(nexus_string)
+    content = blocks.get("CHARACTERS")
+    if content is None:
+        raise PhyloZooParseError(
+            f"NEXUS file contains no CHARACTERS block (found: {list(blocks.keys())})"
+        )
+
+    n = len(labels)
     if not labels:
         raise PhyloZooParseError("No taxa labels found in NEXUS string")
-    
-    n = len(labels)
-    
-    # Extract CHARACTERS block
-    chars_match = re.search(
-        r'BEGIN\s+CHARACTERS;.*?MATRIX\s+(.*?);\s*END;',
-        nexus_string,
-        re.DOTALL | re.IGNORECASE
-    )
-    if not chars_match:
-        raise PhyloZooParseError("Could not find CHARACTERS block with MATRIX in NEXUS string")
-    
-    matrix_section = chars_match.group(1)
+
+    matrix_match = re.search(r'MATRIX\s+(.*?);', content, re.DOTALL | re.IGNORECASE)
+    if not matrix_match:
+        raise PhyloZooParseError("Could not find MATRIX in CHARACTERS block")
+    matrix_section = matrix_match.group(1)
     matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
     if len(matrix_lines) != n:

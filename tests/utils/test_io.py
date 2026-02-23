@@ -13,17 +13,17 @@ from pathlib import Path
 
 import pytest
 
-from phylozoo.utils.exceptions import (
-    PhyloZooFormatError,
-    PhyloZooIOError,
-    PhyloZooValueError,
-)
 from phylozoo.utils.io import (
     FormatRegistry,
     IOMixin,
     ensure_directory_exists,
     read_file_safely,
     write_file_safely,
+)
+from phylozoo.utils.exceptions import (
+    PhyloZooFormatError,
+    PhyloZooIOError,
+    PhyloZooValueError,
 )
 
 

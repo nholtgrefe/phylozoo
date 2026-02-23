@@ -150,6 +150,48 @@ END;"""
             
             assert len(loaded_system) == len(system)
             assert loaded_system.elements == system.elements
+
+    def test_load_from_multi_block_nexus(self) -> None:
+        """SplitSystem.load from NEXUS with Distances and SPLITS uses only SPLITS."""
+        multi_block_nexus = """#NEXUS
+
+BEGIN TAXA;
+    DIMENSIONS ntax=4;
+    TAXLABELS
+        1
+        2
+        3
+        4
+    ;
+END;
+
+BEGIN Distances;
+    DIMENSIONS ntax=4;
+    FORMAT triangle=LOWER;
+    MATRIX
+        1 0
+        2 1 0
+        3 2 1 0
+        4 3 2 1 0
+    ;
+END;
+
+BEGIN SPLITS;
+    DIMENSIONS NSPLITS=2;
+    FORMAT LABELS=YES;
+    MATRIX
+        [1] (1 2) (3 4)
+        [2] (1 3) (2 4)
+    ;
+END;
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file_path = os.path.join(tmpdir, 'multi.nexus')
+            with open(file_path, 'w') as f:
+                f.write(multi_block_nexus)
+            loaded = SplitSystem.load(file_path)
+        assert len(loaded) == 2
+        assert loaded.elements == {1, 2, 3, 4}
     
     def test_round_trip(self) -> None:
         """Test round-trip conversion: save and load."""
@@ -170,7 +212,7 @@ END;"""
         
         nexus_str = system.to_string()
         assert '#NEXUS' in nexus_str
-        assert 'DIMENSIONS NTAX=0' in nexus_str
+        assert 'ntax=0' in nexus_str
         assert 'DIMENSIONS NSPLITS=0' in nexus_str
         
         system2 = SplitSystem.from_string(nexus_str)
@@ -395,7 +437,7 @@ END;"""
         
         nexus_str = system.to_string()
         assert '#NEXUS' in nexus_str
-        assert 'DIMENSIONS NTAX=0' in nexus_str
+        assert 'ntax=0' in nexus_str
         assert 'DIMENSIONS NSPLITS=0' in nexus_str
         
         system2 = WeightedSplitSystem.from_string(nexus_str)
