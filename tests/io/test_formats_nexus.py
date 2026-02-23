@@ -100,20 +100,28 @@ class TestNexusHeader:
 class TestWriteTaxaBlock:
     """Tests for write_taxa_block."""
 
-    def test_write_taxa_block_empty(self) -> None:
-        """write_taxa_block with empty labels."""
-        out = nexus_fmt.write_taxa_block([])
-        assert "BEGIN TAXA" in out
-        assert "ntax=0" in out
-        assert "END;" in out
-
-    def test_write_taxa_block_labels(self) -> None:
-        """write_taxa_block with labels."""
-        out = nexus_fmt.write_taxa_block(['A', 'B', 'C'])
-        assert "BEGIN TAXA" in out
-        assert "ntax=3" in out
-        assert "A" in out and "B" in out and "C" in out
-        assert "END;" in out
+    @pytest.mark.parametrize(
+        "labels,expected_ntax,expected_substrings",
+        [
+            ([], "0", ["BEGIN TAXA", "ntax=0", "END;"]),
+            (
+                ['A', 'B', 'C'],
+                "3",
+                ["BEGIN TAXA", "ntax=3", "A", "B", "C", "END;"],
+            ),
+        ],
+    )
+    def test_write_taxa_block(
+        self,
+        labels: list[str],
+        expected_ntax: str,
+        expected_substrings: list[str],
+    ) -> None:
+        """write_taxa_block with empty or non-empty labels."""
+        out = nexus_fmt.write_taxa_block(labels)
+        assert f"ntax={expected_ntax}" in out
+        for sub in expected_substrings:
+            assert sub in out
 
 
 class TestWriteBlock:

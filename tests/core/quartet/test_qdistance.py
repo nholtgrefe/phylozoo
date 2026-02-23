@@ -22,21 +22,20 @@ from phylozoo.core.split.base import Split
 class TestRhoDistance:
     """Tests for the _rho_distance helper function."""
 
-    def test_rho_distance_single_quartet_same_side(self) -> None:
-        """Test rho_distance for single quartet with leaves on same side."""
+    @pytest.mark.parametrize(
+        "leaf1,leaf2,expected",
+        [
+            ('A', 'B', 0.5),   # same side -> rho_c
+            ('A', 'C', 1.0),   # different sides -> rho_s
+        ],
+    )
+    def test_rho_distance_single_quartet(self, leaf1: str, leaf2: str, expected: float) -> None:
+        """Test rho_distance for single quartet (same side vs different sides)."""
         q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
         profile = QuartetProfile([q1])
         rho = (0.5, 1.0, 0.5, 1.0)
-        dist = _rho_distance(profile, 'A', 'B', rho)
-        assert dist == 0.5  # rho_c (same side)
-
-    def test_rho_distance_single_quartet_different_sides(self) -> None:
-        """Test rho_distance for single quartet with leaves on different sides."""
-        q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
-        profile = QuartetProfile([q1])
-        rho = (0.5, 1.0, 0.5, 1.0)
-        dist = _rho_distance(profile, 'A', 'C', rho)
-        assert dist == 1.0  # rho_s (different sides)
+        dist = _rho_distance(profile, leaf1, leaf2, rho)
+        assert dist == expected
 
     def test_rho_distance_two_quartets_adjacent(self) -> None:
         """Test rho_distance for two quartets with adjacent leaves."""
@@ -205,18 +204,21 @@ class TestQuartetDistance:
         with pytest.raises(ValueError, match="Rho vector must have 4 elements"):
             quartet_distance(profileset, (0.5, 1.0, 0.5))  # Only 3 elements
 
-    def test_quartet_distance_invalid_rho_constraints_raises_error(self) -> None:
+    @pytest.mark.parametrize(
+        "rho",
+        [
+            (0.5, 1.0, 1.5, 1.0),   # rho_a > rho_o
+            (1.5, 1.0, 0.5, 1.0),   # rho_c > rho_s
+        ],
+    )
+    def test_quartet_distance_invalid_rho_constraints_raises_error(
+        self, rho: tuple[float, float, float, float]
+    ) -> None:
         """Test that invalid rho constraints raise an error."""
         q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
         profileset = QuartetProfileSet(profiles=[q1], taxa={'A', 'B', 'C', 'D'})
-        
-        # rho_a > rho_o should raise error
         with pytest.raises(ValueError, match="Rho vector must satisfy"):
-            quartet_distance(profileset, (0.5, 1.0, 1.5, 1.0))
-        
-        # rho_c > rho_s should raise error
-        with pytest.raises(ValueError, match="Rho vector must satisfy"):
-            quartet_distance(profileset, (1.5, 1.0, 0.5, 1.0))
+            quartet_distance(profileset, rho)
 
     def test_quartet_distance_symmetric(self) -> None:
         """Test that distance matrix is symmetric."""
@@ -473,19 +475,22 @@ class TestQuartetDistanceWithPartition:
         with pytest.raises(ValueError, match="Rho vector must have 4 elements"):
             quartet_distance_with_partition(profileset, partition, (0.5, 1.0, 0.5))  # Only 3 elements
 
-    def test_quartet_distance_with_partition_invalid_rho_constraints_raises_error(self) -> None:
+    @pytest.mark.parametrize(
+        "rho",
+        [
+            (0.5, 1.0, 1.5, 1.0),   # rho_a > rho_o
+            (1.5, 1.0, 0.5, 1.0),   # rho_c > rho_s
+        ],
+    )
+    def test_quartet_distance_with_partition_invalid_rho_constraints_raises_error(
+        self, rho: tuple[float, float, float, float]
+    ) -> None:
         """Test that invalid rho constraints raise an error."""
         q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
         profileset = QuartetProfileSet(profiles=[q1], taxa={'A', 'B', 'C', 'D'})
         partition = Partition([{'A'}, {'B'}, {'C'}, {'D'}])
-        
-        # rho_a > rho_o should raise error
         with pytest.raises(ValueError, match="Rho vector must satisfy"):
-            quartet_distance_with_partition(profileset, partition, (0.5, 1.0, 1.5, 1.0))
-        
-        # rho_c > rho_s should raise error
-        with pytest.raises(ValueError, match="Rho vector must satisfy"):
-            quartet_distance_with_partition(profileset, partition, (1.5, 1.0, 0.5, 1.0))
+            quartet_distance_with_partition(profileset, partition, rho)
 
     def test_quartet_distance_with_partition_nanuq_rho(self) -> None:
         """Test with NANUQ rho vector."""

@@ -14,20 +14,16 @@ from phylozoo.utils.exceptions import warn_on_keyword, warn_on_none_value
 class TestWarnOnKeyword:
     """Test cases for warn_on_keyword function."""
 
-    def test_keyword_identifier_warns(self) -> None:
-        """Keywords used as identifiers should emit a warning."""
+    @pytest.mark.parametrize(
+        "keyword,context",
+        [("for", "Identifier"), ("class", "Key"), ("def", "Name")],
+    )
+    def test_keyword_context_warns(
+        self, keyword: str, context: str
+    ) -> None:
+        """Keywords used as identifier/key/name should emit a warning."""
         with pytest.warns(UserWarning, match="is a Python keyword"):
-            warn_on_keyword("for", "Identifier")
-
-    def test_keyword_key_warns(self) -> None:
-        """Keywords used as keys should emit a warning."""
-        with pytest.warns(UserWarning, match="is a Python keyword"):
-            warn_on_keyword("class", "Key")
-
-    def test_keyword_name_warns(self) -> None:
-        """Keywords used as names should emit a warning."""
-        with pytest.warns(UserWarning, match="is a Python keyword"):
-            warn_on_keyword("def", "Name")
+            warn_on_keyword(keyword, context)
 
     def test_non_keyword_no_warning(self) -> None:
         """Non-keywords should not emit a warning."""
@@ -37,20 +33,11 @@ class TestWarnOnKeyword:
             warn_on_keyword("my_key", "Key")
             warn_on_keyword("my_name", "Name")
 
-    def test_none_as_keyword_warns(self) -> None:
-        """None is a keyword and should warn."""
+    @pytest.mark.parametrize("value", [None, True, False])
+    def test_literal_keyword_warns(self, value: bool | None) -> None:
+        """None, True, False as keywords should warn."""
         with pytest.warns(UserWarning, match="is a Python keyword"):
-            warn_on_keyword(None, "Identifier")
-
-    def test_true_as_keyword_warns(self) -> None:
-        """True is a keyword and should warn."""
-        with pytest.warns(UserWarning, match="is a Python keyword"):
-            warn_on_keyword(True, "Identifier")
-
-    def test_false_as_keyword_warns(self) -> None:
-        """False is a keyword and should warn."""
-        with pytest.warns(UserWarning, match="is a Python keyword"):
-            warn_on_keyword(False, "Identifier")
+            warn_on_keyword(value, "Identifier")
 
     def test_numeric_value_no_warning(self) -> None:
         """Numeric values should not emit a warning."""

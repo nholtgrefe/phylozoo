@@ -16,15 +16,16 @@ class TestSplit:
         assert split.set2 == {3, 4}
         assert split.elements == {1, 2, 3, 4}
 
-    def test_split_empty_set1_raises_error(self) -> None:
-        """Test that creating a split with empty set1 raises ValueError."""
+    @pytest.mark.parametrize(
+        "set1,set2",
+        [(set(), {3, 4}), ({1, 2}, set())],
+    )
+    def test_split_empty_set_raises_error(
+        self, set1: set[int], set2: set[int]
+    ) -> None:
+        """Test that creating a split with empty set1 or set2 raises ValueError."""
         with pytest.raises(ValueError, match="Split sets cannot be empty"):
-            Split(set(), {3, 4})
-
-    def test_split_empty_set2_raises_error(self) -> None:
-        """Test that creating a split with empty set2 raises ValueError."""
-        with pytest.raises(ValueError, match="Split sets cannot be empty"):
-            Split({1, 2}, set())
+            Split(set1, set2)
 
     def test_split_canonical_ordering(self) -> None:
         """Test that splits use canonical ordering (set1 is always the same)."""
@@ -76,17 +77,25 @@ class TestSplit:
         split2 = Split({1, 3}, {2, 4})
         assert is_compatible(split1, split2) is False
 
-    def test_is_compatible_raises_error_first_arg(self) -> None:
-        """Test that is_compatible raises error for non-Split as first argument."""
+    @pytest.mark.parametrize(
+        "first_arg,second_arg,match_substring",
+        [
+            ("not a split", None, "First argument must be a Split instance"),
+            (None, "not a split", "Second argument must be a Split instance"),
+        ],
+    )
+    def test_is_compatible_raises_error_invalid_arg(
+        self,
+        first_arg: str | None,
+        second_arg: str | None,
+        match_substring: str,
+    ) -> None:
+        """Test that is_compatible raises error for non-Split argument."""
         split = Split({1, 2}, {3, 4})
-        with pytest.raises(ValueError, match="First argument must be a Split instance"):
-            is_compatible("not a split", split)  # type: ignore
-
-    def test_is_compatible_raises_error_second_arg(self) -> None:
-        """Test that is_compatible raises error for non-Split as second argument."""
-        split = Split({1, 2}, {3, 4})
-        with pytest.raises(ValueError, match="Second argument must be a Split instance"):
-            is_compatible(split, "not a split")  # type: ignore
+        arg1 = first_arg if first_arg is not None else split
+        arg2 = second_arg if second_arg is not None else split
+        with pytest.raises(ValueError, match=match_substring):
+            is_compatible(arg1, arg2)  # type: ignore
 
     def test_is_subsplit_true(self) -> None:
         """Test is_subsplit returns True when one split is subsplit of another."""
@@ -100,17 +109,25 @@ class TestSplit:
         split2 = Split({1, 3}, {2, 4})
         assert is_subsplit(split1, split2) is False
 
-    def test_is_subsplit_raises_error_first_arg(self) -> None:
-        """Test that is_subsplit raises error for non-Split as first argument."""
+    @pytest.mark.parametrize(
+        "first_arg,second_arg,match_substring",
+        [
+            ("not a split", None, "First argument must be a Split instance"),
+            (None, "not a split", "Second argument must be a Split instance"),
+        ],
+    )
+    def test_is_subsplit_raises_error_invalid_arg(
+        self,
+        first_arg: str | None,
+        second_arg: str | None,
+        match_substring: str,
+    ) -> None:
+        """Test that is_subsplit raises error for non-Split argument."""
         split = Split({1, 2}, {3, 4})
-        with pytest.raises(ValueError, match="First argument must be a Split instance"):
-            is_subsplit("not a split", split)  # type: ignore
-
-    def test_is_subsplit_raises_error_second_arg(self) -> None:
-        """Test that is_subsplit raises error for non-Split as second argument."""
-        split = Split({1, 2}, {3, 4})
-        with pytest.raises(ValueError, match="Second argument must be a Split instance"):
-            is_subsplit(split, "not a split")  # type: ignore
+        arg1 = first_arg if first_arg is not None else split
+        arg2 = second_arg if second_arg is not None else split
+        with pytest.raises(ValueError, match=match_substring):
+            is_subsplit(arg1, arg2)  # type: ignore
 
     def test_induced_quartetsplits(self) -> None:
         """Test induced_quartetsplits generates correct quartet splits."""

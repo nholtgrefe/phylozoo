@@ -87,23 +87,13 @@ class TestSplitSystemIO:
             with pytest.raises(FileExistsError, match="already exists"):
                 system.save(file_path, overwrite=False)
     
-    def test_save_nex_extension(self) -> None:
-        """Test that .nex extension is accepted."""
+    @pytest.mark.parametrize("ext", [".nex", ".nxs"])
+    def test_save_nex_extensions(self, ext: str) -> None:
+        """Test that .nex and .nxs extensions are accepted."""
         split1 = Split({1, 2}, {3, 4})
         system = SplitSystem([split1])
-        
         with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, 'test.nex')
-            system.save(file_path, overwrite=True)
-            assert os.path.exists(file_path)
-    
-    def test_save_nxs_extension(self) -> None:
-        """Test that .nxs extension is accepted."""
-        split1 = Split({1, 2}, {3, 4})
-        system = SplitSystem([split1])
-        
-        with tempfile.TemporaryDirectory() as tmpdir:
-            file_path = os.path.join(tmpdir, 'test.nxs')
+            file_path = os.path.join(tmpdir, f'test{ext}')
             system.save(file_path, overwrite=True)
             assert os.path.exists(file_path)
     
@@ -261,20 +251,17 @@ END;"""
         assert '#NEXUS' in converted
         assert 'BEGIN SPLITS' in converted
     
-    def test_from_string_invalid_format_raises_error(self) -> None:
-        """Test that invalid format raises PhyloZooFormatError."""
+    @pytest.mark.parametrize("method", ["from_string", "to_string"])
+    def test_invalid_format_raises_error(self, method: str) -> None:
+        """Test that invalid format raises PhyloZooFormatError for from_string and to_string."""
         from phylozoo.utils.exceptions import PhyloZooFormatError
         with pytest.raises(PhyloZooFormatError, match="not supported"):
-            SplitSystem.from_string("invalid", format='invalid_format')
-    
-    def test_to_string_invalid_format_raises_error(self) -> None:
-        """Test that invalid format raises PhyloZooFormatError."""
-        from phylozoo.utils.exceptions import PhyloZooFormatError
-        split1 = Split({1, 2}, {3, 4})
-        system = SplitSystem([split1])
-        
-        with pytest.raises(PhyloZooFormatError, match="not supported"):
-            system.to_string(format='invalid_format')
+            if method == "from_string":
+                SplitSystem.from_string("invalid", format='invalid_format')
+            else:
+                SplitSystem([Split({1, 2}, {3, 4})]).to_string(
+                    format='invalid_format'
+                )
     
     def test_from_string_malformed_nexus_raises_error(self) -> None:
         """Test that malformed NEXUS string raises PhyloZooParseError."""

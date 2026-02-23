@@ -21,21 +21,13 @@ class TestQuartetInit:
         assert quartet.is_resolved()
         assert not quartet.is_star()
     
-    def test_init_from_taxa_star(self) -> None:
-        """Test creating a star quartet from taxa."""
-        quartet = Quartet({1, 2, 3, 4})
-        
+    @pytest.mark.parametrize("taxa_input", [{1, 2, 3, 4}, frozenset({1, 2, 3, 4})])
+    def test_init_from_set_like_star(self, taxa_input: set[int] | frozenset[int]) -> None:
+        """Test creating a star quartet from set or frozenset of taxa."""
+        quartet = Quartet(taxa_input)
         assert quartet.taxa == frozenset({1, 2, 3, 4})
         assert quartet.split is None
         assert not quartet.is_resolved()
-        assert quartet.is_star()
-    
-    def test_init_from_frozenset_star(self) -> None:
-        """Test creating a star quartet from frozenset."""
-        quartet = Quartet(frozenset({1, 2, 3, 4}))
-        
-        assert quartet.taxa == frozenset({1, 2, 3, 4})
-        assert quartet.split is None
         assert quartet.is_star()
     
     def test_init_trivial_split_error(self) -> None:
@@ -52,13 +44,11 @@ class TestQuartetInit:
         with pytest.raises(ValueError, match="Split must have exactly 4 elements"):
             Quartet(wrong_split)
     
-    def test_init_wrong_number_taxa_star(self) -> None:
+    @pytest.mark.parametrize("taxa", [{1, 2, 3}, {1, 2, 3, 4, 5}])
+    def test_init_wrong_number_taxa_star(self, taxa: set[int]) -> None:
         """Test that star trees with wrong number of taxa raise ValueError."""
         with pytest.raises(ValueError, match="Taxa must have exactly 4 elements"):
-            Quartet({1, 2, 3})
-        
-        with pytest.raises(ValueError, match="Taxa must have exactly 4 elements"):
-            Quartet({1, 2, 3, 4, 5})
+            Quartet(taxa)
 
 
 class TestQuartetProperties:
@@ -93,37 +83,42 @@ class TestQuartetProperties:
 class TestQuartetMethods:
     """Tests for Quartet methods."""
     
-    def test_is_resolved(self) -> None:
+    @pytest.mark.parametrize(
+        "quartet_input,expected_resolved",
+        [
+            (Split({1, 2}, {3, 4}), True),
+            ({1, 2, 3, 4}, False),
+        ],
+    )
+    def test_is_resolved(
+        self, quartet_input: Split | set[int], expected_resolved: bool
+    ) -> None:
         """Test is_resolved method."""
-        resolved = Quartet(Split({1, 2}, {3, 4}))
-        assert resolved.is_resolved()
-        
-        star = Quartet({1, 2, 3, 4})
-        assert not star.is_resolved()
-    
-    def test_is_star(self) -> None:
+        quartet = Quartet(quartet_input)
+        assert quartet.is_resolved() == expected_resolved
+
+    @pytest.mark.parametrize(
+        "quartet_input,expected_star",
+        [
+            (Split({1, 2}, {3, 4}), False),
+            ({1, 2, 3, 4}, True),
+        ],
+    )
+    def test_is_star(
+        self, quartet_input: Split | set[int], expected_star: bool
+    ) -> None:
         """Test is_star method."""
-        resolved = Quartet(Split({1, 2}, {3, 4}))
-        assert not resolved.is_star()
-        
-        star = Quartet({1, 2, 3, 4})
-        assert star.is_star()
+        quartet = Quartet(quartet_input)
+        assert quartet.is_star() == expected_star
     
-    def test_copy(self) -> None:
-        """Test copy method."""
-        original = Quartet(Split({1, 2}, {3, 4}))
+    @pytest.mark.parametrize(
+        "quartet_input",
+        [Split({1, 2}, {3, 4}), {1, 2, 3, 4}],
+    )
+    def test_copy(self, quartet_input: Split | set[int]) -> None:
+        """Test copy method for resolved and star quartets."""
+        original = Quartet(quartet_input)
         copied = original.copy()
-        
-        assert copied is not original
-        assert copied.taxa == original.taxa
-        assert copied.split == original.split
-        assert copied == original
-    
-    def test_copy_star(self) -> None:
-        """Test copy method for star tree."""
-        original = Quartet({1, 2, 3, 4})
-        copied = original.copy()
-        
         assert copied is not original
         assert copied.taxa == original.taxa
         assert copied.split == original.split
@@ -203,23 +198,30 @@ class TestQuartetEquality:
 
 class TestQuartetRepr:
     """Tests for Quartet string representation."""
-    
-    def test_repr_resolved(self) -> None:
-        """Test string representation of resolved quartet."""
-        quartet = Quartet(Split({1, 2}, {3, 4}))
+
+    @pytest.mark.parametrize(
+        "quartet_input,expect_split_in_repr,check_taxa_in_repr",
+        [
+            (Split({1, 2}, {3, 4}), True, False),
+            ({1, 2, 3, 4}, False, True),
+        ],
+    )
+    def test_repr(
+        self,
+        quartet_input: Split | set[int],
+        expect_split_in_repr: bool,
+        check_taxa_in_repr: bool,
+    ) -> None:
+        """Test string representation of resolved and star quartets."""
+        quartet = Quartet(quartet_input)
         repr_str = repr(quartet)
-        
         assert repr_str.startswith("Quartet(")
-        assert "Split" in repr_str
-    
-    def test_repr_star(self) -> None:
-        """Test string representation of star tree."""
-        quartet = Quartet({1, 2, 3, 4})
-        repr_str = repr(quartet)
-        
-        assert repr_str.startswith("Quartet(")
-        assert "Split" not in repr_str
-        assert "1" in repr_str and "2" in repr_str
+        if expect_split_in_repr:
+            assert "Split" in repr_str
+        else:
+            assert "Split" not in repr_str
+        if check_taxa_in_repr:
+            assert "1" in repr_str and "2" in repr_str
 
 
 class TestQuartetHashability:
