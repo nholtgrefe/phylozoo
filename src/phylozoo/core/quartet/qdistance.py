@@ -170,8 +170,8 @@ def _rho_distance(
     Compute rho-distance between two leaves in a quartet profile.
     
     If the profile has 1 quartet (split quarnet), uses split-based logic:
-    - Same side of split: rho_s
-    - Different sides: rho_c
+    - Same side of split: rho_c
+    - Different sides: rho_s
     
     If the profile has 2 quartets (four-cycle), uses circular ordering logic:
     - Adjacent in ordering: rho_a

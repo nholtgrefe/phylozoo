@@ -28,7 +28,7 @@ class TestRhoDistance:
         profile = QuartetProfile([q1])
         rho = (0.5, 1.0, 0.5, 1.0)
         dist = _rho_distance(profile, 'A', 'B', rho)
-        assert dist == 1.0  # rho_s
+        assert dist == 0.5  # rho_c (same side)
 
     def test_rho_distance_single_quartet_different_sides(self) -> None:
         """Test rho_distance for single quartet with leaves on different sides."""
@@ -36,7 +36,7 @@ class TestRhoDistance:
         profile = QuartetProfile([q1])
         rho = (0.5, 1.0, 0.5, 1.0)
         dist = _rho_distance(profile, 'A', 'C', rho)
-        assert dist == 0.5  # rho_c
+        assert dist == 1.0  # rho_s (different sides)
 
     def test_rho_distance_two_quartets_adjacent(self) -> None:
         """Test rho_distance for two quartets with adjacent leaves."""
@@ -104,12 +104,12 @@ class TestQuartetDistance:
         for taxon in dist_matrix.labels:
             assert dist_matrix.get_distance(taxon, taxon) == 0.0
         # Check constant was added: 2*4 - 4 = 4
-        # A and B are on same side, so rho_s = 1.0, delta = 2*1.0 = 2.0
-        # Total = 2.0 + 4 = 6.0
-        assert dist_matrix.get_distance('A', 'B') == pytest.approx(6.0)
-        # A and C are on different sides, so rho_c = 0.5, delta = 2*0.5 = 1.0
+        # A and B are on same side, so rho_c = 0.5, delta = 2*0.5 = 1.0
         # Total = 1.0 + 4 = 5.0
-        assert dist_matrix.get_distance('A', 'C') == pytest.approx(5.0)
+        assert dist_matrix.get_distance('A', 'B') == pytest.approx(5.0)
+        # A and C are on different sides, so rho_s = 1.0, delta = 2*1.0 = 2.0
+        # Total = 2.0 + 4 = 6.0
+        assert dist_matrix.get_distance('A', 'C') == pytest.approx(6.0)
 
     def test_quartet_distance_five_taxa_dense(self) -> None:
         """Test quartet_distance with 5 taxa (dense profile set)."""
@@ -259,12 +259,12 @@ class TestQuartetDistance:
         dist_matrix = quartet_distance(profileset, rho)
         
         assert isinstance(dist_matrix, DistanceMatrix)
-        # A and B are on same side: rho_s = 1.0, delta = 2*1.0 = 2.0
-        # Total = 2.0 + 4 = 6.0
-        assert dist_matrix.get_distance('A', 'B') == pytest.approx(6.0)
-        # A and C are on different sides: rho_c = 0.0, delta = 2*0.0 = 0.0
+        # A and B are on same side: rho_c = 0.0 (NANUQ), delta = 2*0.0 = 0.0
         # Total = 0.0 + 4 = 4.0
-        assert dist_matrix.get_distance('A', 'C') == pytest.approx(4.0)
+        assert dist_matrix.get_distance('A', 'B') == pytest.approx(4.0)
+        # A and C are on different sides: rho_s = 1.0, delta = 2*1.0 = 2.0
+        # Total = 2.0 + 4 = 6.0
+        assert dist_matrix.get_distance('A', 'C') == pytest.approx(6.0)
 
     def test_quartet_distance_mixed_profiles(self) -> None:
         """Test with mix of 1-quartet and 2-quartet profiles."""
@@ -329,15 +329,15 @@ class TestQuartetDistanceWithPartition:
         
         # Check constant was added: 2*4 - 4 = 4
         # For singleton sets, this should match quartet_distance behavior
-        # A and B are on same side: rho_s = 1.0, delta = 2*1.0 = 2.0
-        # Average = 2.0 (only one quartet), Total = 2.0 + 4 = 6.0
+        # A and B are on same side: rho_c = 0.5, delta = 2*0.5 = 1.0
+        # Average = 1.0 (only one quartet), Total = 1.0 + 4 = 5.0
         set_a = frozenset({'A'})
         set_b = frozenset({'B'})
         set_c = frozenset({'C'})
-        assert dist_matrix.get_distance(set_a, set_b) == pytest.approx(6.0)
-        # A and C are on different sides: rho_c = 0.5, delta = 2*0.5 = 1.0
-        # Average = 1.0, Total = 1.0 + 4 = 5.0
-        assert dist_matrix.get_distance(set_a, set_c) == pytest.approx(5.0)
+        assert dist_matrix.get_distance(set_a, set_b) == pytest.approx(5.0)
+        # A and C are on different sides: rho_s = 1.0, delta = 2*1.0 = 2.0
+        # Average = 2.0, Total = 2.0 + 4 = 6.0
+        assert dist_matrix.get_distance(set_a, set_c) == pytest.approx(6.0)
 
     def test_quartet_distance_with_partition_averaging(self) -> None:
         """Test that distances are averaged when multiple quartets contribute."""
@@ -500,12 +500,12 @@ class TestQuartetDistanceWithPartition:
         set_a = frozenset({'A'})
         set_b = frozenset({'B'})
         set_c = frozenset({'C'})
-        # A and B are on same side: rho_s = 1.0, delta = 2*1.0 = 2.0
-        # Average = 2.0, Total = 2.0 + 4 = 6.0
-        assert dist_matrix.get_distance(set_a, set_b) == pytest.approx(6.0)
-        # A and C are on different sides: rho_c = 0.0, delta = 2*0.0 = 0.0
+        # A and B are on same side: rho_c = 0.0 (NANUQ), delta = 2*0.0 = 0.0
         # Average = 0.0, Total = 0.0 + 4 = 4.0
-        assert dist_matrix.get_distance(set_a, set_c) == pytest.approx(4.0)
+        assert dist_matrix.get_distance(set_a, set_b) == pytest.approx(4.0)
+        # A and C are on different sides: rho_s = 1.0, delta = 2*1.0 = 2.0
+        # Average = 2.0, Total = 2.0 + 4 = 6.0
+        assert dist_matrix.get_distance(set_a, set_c) == pytest.approx(6.0)
 
     def test_quartet_distance_with_partition_two_quartet_profiles(self) -> None:
         """Test with profiles containing 2 quartets (four-cycle)."""
@@ -578,9 +578,9 @@ class TestQuartetDistanceWithPartition:
         # should give the same result as no averaging
         set_a = frozenset({'A'})
         set_b = frozenset({'B'})
-        # A and B are on same side: rho_s = 1.0, delta = 2*1.0 = 2.0
-        # Average = 2.0 (only one contribution), Total = 2.0 + 4 = 6.0
-        assert dist_matrix.get_distance(set_a, set_b) == pytest.approx(6.0)
+        # A and B are on same side: rho_c = 0.5, delta = 2*0.5 = 1.0
+        # Average = 1.0 (only one contribution), Total = 1.0 + 4 = 5.0
+        assert dist_matrix.get_distance(set_a, set_b) == pytest.approx(5.0)
 
     def test_quartet_distance_with_partition_five_sets(self) -> None:
         """Test with partition of 5 sets."""
