@@ -37,8 +37,8 @@ class NodeSide(Side):
     """
     Represents a node side of a generator (attachment at a vertex).
 
-    Used for the single-vertex (level-0) generator, where that vertex is the only
-    attachment point. HybridSide is a subclass for hybrid nodes (in-degree >= 2).
+    Subclasses: Level0NodeSide for the single-vertex (level-0) generator;
+    HybridSide for hybrid nodes (in-degree >= 2).
 
     Parameters
     ----------
@@ -55,6 +55,34 @@ class NodeSide(Side):
 
     def __repr__(self) -> str:
         return f"NodeSide(node={self.node})"
+
+
+@dataclass(frozen=True)
+class Level0NodeSide(NodeSide):
+    """
+    Node side for the single vertex of a level-0 generator.
+
+    A level-0 generator has one vertex and no edges. Level0NodeSide represents
+    that vertex as the only attachment point (as opposed to HybridSide, which
+    is for hybrid nodes). When attaching leaves for binary networks, exactly
+    three leaves must be attached to this side.
+
+    Parameters
+    ----------
+    node : T
+        The node identifier (the unique vertex of the level-0 generator).
+
+    Examples
+    --------
+    >>> side = Level0NodeSide(node=0)
+    >>> side.node
+    0
+    >>> isinstance(side, NodeSide)
+    True
+    """
+
+    def __repr__(self) -> str:
+        return f"Level0NodeSide(node={self.node})"
 
 
 @dataclass(frozen=True)

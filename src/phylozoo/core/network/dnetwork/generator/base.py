@@ -34,7 +34,7 @@ from ...dnetwork.classifications import is_binary, has_parallel_edges
 from ...dnetwork.features import blobs
 from ...dnetwork._utils import _suppress_deg2_nodes
 from .....utils.validation import validation_aware
-from .side import Side, HybridSide, DirEdgeSide, NodeSide
+from .side import Side, HybridSide, DirEdgeSide, Level0NodeSide, NodeSide
 
 if TYPE_CHECKING:
     from ...dnetwork import DirectedPhyNetwork
@@ -436,13 +436,13 @@ class DirectedGenerator:
         """
         Get all sides (attachment points) of this generator.
 
-        For level-0 (single vertex), returns a single NodeSide for that vertex.
+        For level-0 (single vertex), returns a single Level0NodeSide for that vertex.
         Otherwise returns edge sides and hybrid sides.
 
         Returns
         -------
         list[Side]
-            List of all sides (NodeSide for level-0; DirEdgeSide and HybridSide
+            List of all sides (Level0NodeSide for level-0; DirEdgeSide and HybridSide
             for level >= 1).
 
         Examples
@@ -455,7 +455,7 @@ class DirectedGenerator:
         True
         """
         if self.level == 0:
-            return [NodeSide(self.root_node)]
+            return [Level0NodeSide(self.root_node)]
         return list(self.edge_sides) + list(self.hybrid_sides)
     
     def __repr__(self) -> str:
