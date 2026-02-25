@@ -15,9 +15,12 @@ from phylozoo.core.network.dnetwork.generator import (
     Side,
     HybridSide,
     DirEdgeSide,
+    EdgeSide,
+    NodeSide,
     all_level_k_generators,
 )
 from phylozoo.core.network.dnetwork.generator.construction import (
+    _apply_R1,
     _apply_rules,
     _get_node_reachability_matrix,
 )
@@ -26,6 +29,7 @@ from phylozoo.core.network.dnetwork.classifications import is_binary, has_parall
 from phylozoo.utils.exceptions import (
     PhyloZooGeneratorStructureError,
     PhyloZooNotImplementedError,
+    PhyloZooValueError,
 )
 from tests.fixtures.directed_networks import (
     LEVEL_1_DNETWORK_SINGLE_HYBRID,
@@ -38,18 +42,26 @@ class TestSide:
     """Tests for Side classes."""
 
     def test_hybrid_side_creation(self) -> None:
-        """Test creating a HybridSide."""
+        """Test creating a HybridSide (subclass of NodeSide)."""
         side = HybridSide(node=5)
         assert side.node == 5
         assert isinstance(side, Side)
+        assert isinstance(side, NodeSide)
+
+    def test_node_side_creation(self) -> None:
+        """Test creating a NodeSide (level-0 attachment point)."""
+        side = NodeSide(node=0)
+        assert side.node == 0
+        assert isinstance(side, Side)
 
     def test_dir_edge_side_creation(self) -> None:
-        """Test creating a DirEdgeSide."""
+        """Test creating a DirEdgeSide (subclass of EdgeSide)."""
         side = DirEdgeSide(u=0, v=1, key=0)
         assert side.u == 0
         assert side.v == 1
         assert side.key == 0
         assert isinstance(side, Side)
+        assert isinstance(side, EdgeSide)
 
     def test_side_equality(self) -> None:
         """Test side equality."""
@@ -58,6 +70,12 @@ class TestSide:
         side3 = HybridSide(node=6)
         assert side1 == side2
         assert side1 != side3
+
+        node_side1 = NodeSide(node=0)
+        node_side2 = NodeSide(node=0)
+        node_side3 = NodeSide(node=1)
+        assert node_side1 == node_side2
+        assert node_side1 != node_side3
 
         edge1 = DirEdgeSide(u=0, v=1, key=0)
         edge2 = DirEdgeSide(u=0, v=1, key=0)
@@ -76,6 +94,10 @@ class TestSide:
 
     def test_side_repr(self) -> None:
         """Test side string representation."""
+        node_side = NodeSide(node=0)
+        assert "NodeSide" in repr(node_side)
+        assert "0" in repr(node_side)
+
         hybrid = HybridSide(node=3)
         assert "HybridSide" in repr(hybrid)
         assert "3" in repr(hybrid)
@@ -98,7 +120,28 @@ class TestDirectedGenerator:
         assert gen.level == 0
         assert len(gen.graph.nodes()) == 1
         assert len(list(gen.graph.edges())) == 0
-        assert len(gen.hybrid_nodes) == 0
+
+    def test_level_0_generator_sides_single_node_side(self) -> None:
+        """Test that level-0 generator has exactly one side, which is a NodeSide (not HybridSide)."""
+        graph = DirectedMultiGraph()
+        graph.add_node(0)
+        gen = DirectedGenerator(graph)
+        sides = gen.sides
+        assert len(sides) == 1
+        side = sides[0]
+        assert isinstance(side, NodeSide)
+        assert not isinstance(side, HybridSide)
+        assert side.node == gen.root_node
+        assert side.node == 0
+
+    def test_level_1_generator_sides_edge_and_hybrid_only(self) -> None:
+        """Test that level-1 generator sides are only DirEdgeSide and HybridSide (no plain NodeSide)."""
+        graph = DirectedMultiGraph(edges=[(8, 4), (8, 4)])
+        gen = DirectedGenerator(graph)
+        assert gen.level == 1
+        sides = gen.sides
+        assert all(isinstance(s, (DirEdgeSide, HybridSide)) for s in sides)
+        assert len(sides) >= 1
 
     def test_level_1_generator(self) -> None:
         """Test creating a level-1 generator (parallel edges)."""
@@ -287,6 +330,32 @@ class TestNodeReachabilityMatrix:
 
 class TestApplyRules:
     """Tests for _apply_rules function."""
+
+    def test_apply_R1_level_0_produces_level_1(self) -> None:
+        """Test that R1 applied to level-0 (same NodeSide twice) yields level-1 generator."""
+        graph = DirectedMultiGraph()
+        graph.add_node(0)
+        gen0 = DirectedGenerator(graph)
+        assert gen0.level == 0
+        sides = gen0.sides
+        assert len(sides) == 1
+        side = sides[0]
+        assert isinstance(side, NodeSide)
+        new_gen = _apply_R1(gen0, side, side)
+        assert new_gen.level == 1
+        assert new_gen.graph.number_of_nodes() == 2
+        assert new_gen.graph.number_of_edges() == 2
+        assert len(new_gen.hybrid_nodes) == 1
+
+    def test_apply_R1_level_0_requires_same_node_side(self) -> None:
+        """Test that R1 on level-0 with differing sides raises PhyloZooValueError."""
+        graph = DirectedMultiGraph()
+        graph.add_node(0)
+        gen0 = DirectedGenerator(graph)
+        side = gen0.sides[0]
+        other_side = NodeSide(node=99)  # not a side of the generator
+        with pytest.raises(PhyloZooValueError, match="same NodeSide"):
+            _apply_R1(gen0, side, other_side)
 
     def test_apply_rules_level_1_generator(self) -> None:
         """Test applying rules to level-1 generator."""

@@ -17,7 +17,7 @@ from ....primitives.d_multigraph import DirectedMultiGraph
 from ....primitives.d_multigraph.isomorphism import is_isomorphic, _get_graph_invariant
 from .....utils.validation import no_validation
 from .base import DirectedGenerator
-from .side import Side, DirEdgeSide, HybridSide
+from .side import Side, DirEdgeSide, EdgeSide, HybridSide, NodeSide
 from phylozoo.utils.exceptions import PhyloZooValueError
 
 
@@ -117,28 +117,37 @@ def _apply_R1(
     - If X ≠ Y: for edge side (u, v), subdivide into u -> w -> v and add w -> new_hybrid;
       for hybrid side (node h), add edge h -> new_hybrid.
     - The new hybrid node will have in-degree 2 (from the two sides).
+    - Level-0 special case: generator has one NodeSide (the single vertex). R1 with
+      X = Y = that NodeSide adds two edges from that vertex to a new hybrid (level-1).
     """
+    # Level-0 special case: single vertex, attach two edges to new hybrid
+    if generator.level == 0:
+        if not (side_x == side_y and isinstance(side_x, NodeSide) and not isinstance(side_x, HybridSide)):
+            raise PhyloZooValueError(
+                "R1 on a level-0 generator requires both sides to be the same NodeSide (the single vertex)."
+            )
+        root = generator.root_node
+        new_graph = generator.graph.copy()
+        new_hybrid_node = next(new_graph.generate_node_ids(1))
+        new_graph.add_node(new_hybrid_node)
+        new_graph.add_edge(root, new_hybrid_node)
+        new_graph.add_edge(root, new_hybrid_node)
+        with no_validation(classes=["DirectedGenerator"]):
+            return DirectedGenerator(new_graph)
+
     # Create a copy of the generator's graph
     new_graph = generator.graph.copy()
-    
-    # Find the maximum node ID to assign new IDs
-    nodes = list(new_graph.nodes())
-    max_node = max(nodes, default=-1) if nodes else -1
-    new_hybrid_node = max_node + 1
-    
-    # Add the new hybrid node
+    new_hybrid_node = next(new_graph.generate_node_ids(1))
     new_graph.add_node(new_hybrid_node)
-    
+
     # Case 1: X = Y (same edge side)
-    if side_x == side_y:
+    if side_x == side_y and isinstance(side_x, DirEdgeSide):
         # Let uv be X=Y. Subdivide (u,v) twice into (u, w1, w2, v)
         u, v, key = side_x.u, side_x.v, side_x.key
         new_graph.remove_edge(u, v, key=key)
-        
-        # Create intermediate nodes w1 and w2
-        w1 = max_node + 2
-        w2 = max_node + 3
+        w1 = next(new_graph.generate_node_ids(1))
         new_graph.add_node(w1)
+        w2 = next(new_graph.generate_node_ids(1))
         new_graph.add_node(w2)
         
         # Create path: u -> w1 -> w2 -> v (all directed)
@@ -152,19 +161,13 @@ def _apply_R1(
     
     # Case 2: X ≠ Y
     else:
-        # Track next available node ID for subdivision nodes
-        next_node_id = max_node + 2
-        
         # Iterate through both sides (they have similar operations)
         for side in [side_x, side_y]:
             if isinstance(side, DirEdgeSide):
                 # Subdivide edge (u, v) into u -> w -> v
                 u, v, key = side.u, side.v, side.key
                 new_graph.remove_edge(u, v, key=key)
-                
-                # Create subdivision node w
-                w = next_node_id
-                next_node_id += 1
+                w = next(new_graph.generate_node_ids(1))
                 new_graph.add_node(w)
                 
                 # Create path: u -> w -> v
@@ -221,23 +224,16 @@ def _apply_R2(
     """
     # Create a copy of the generator's graph
     new_graph = generator.graph.copy()
-    
-    # Find the maximum node ID to assign new IDs
-    nodes = list(new_graph.nodes())
-    max_node = max(nodes, default=-1) if nodes else -1
-    next_node_id = max_node + 1
-    
+
     # Case 1: Both are edge sides
     if isinstance(side_x, DirEdgeSide) and isinstance(side_y, DirEdgeSide):
         # Case 1a: Same edge side (u, v)
         if side_x == side_y:
             u, v, key = side_x.u, side_x.v, side_x.key
             new_graph.remove_edge(u, v, key=key)
-            
-            # Create intermediate nodes w1 and w2
-            w1 = next_node_id
-            w2 = next_node_id + 1
+            w1 = next(new_graph.generate_node_ids(1))
             new_graph.add_node(w1)
+            w2 = next(new_graph.generate_node_ids(1))
             new_graph.add_node(w2)
             
             # Create path: u -> w1 -> w2 -> v (all directed)
@@ -253,16 +249,14 @@ def _apply_R2(
             # Subdivide side_x: (u_x, v_x) -> u_x -> w_x -> v_x
             u_x, v_x, key_x = side_x.u, side_x.v, side_x.key
             new_graph.remove_edge(u_x, v_x, key=key_x)
-            w_x = next_node_id
-            next_node_id += 1
+            w_x = next(new_graph.generate_node_ids(1))
             new_graph.add_node(w_x)
             new_graph.add_edge(u_x, w_x)
             new_graph.add_edge(w_x, v_x)
-            
             # Subdivide side_y: (u_y, v_y) -> u_y -> w_y -> v_y
             u_y, v_y, key_y = side_y.u, side_y.v, side_y.key
             new_graph.remove_edge(u_y, v_y, key=key_y)
-            w_y = next_node_id
+            w_y = next(new_graph.generate_node_ids(1))
             new_graph.add_node(w_y)
             new_graph.add_edge(u_y, w_y)
             new_graph.add_edge(w_y, v_y)
@@ -275,7 +269,7 @@ def _apply_R2(
         # Subdivide side_y: (u_y, v_y) -> u_y -> w_y -> v_y
         u_y, v_y, key_y = side_y.u, side_y.v, side_y.key
         new_graph.remove_edge(u_y, v_y, key=key_y)
-        w_y = next_node_id
+        w_y = next(new_graph.generate_node_ids(1))
         new_graph.add_node(w_y)
         new_graph.add_edge(u_y, w_y)
         new_graph.add_edge(w_y, v_y)
@@ -324,17 +318,17 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
     def _is_side_reachable_from(side1: Side, side2: Side) -> bool:
         """Check if side1 is reachable from side2 using the node reachability matrix."""
         # Get source node of side1 and target node of side2
-        if isinstance(side1, DirEdgeSide):
-            source1 = side1.u
-        elif isinstance(side1, HybridSide):
+        if isinstance(side1, NodeSide):
             source1 = side1.node
+        elif isinstance(side1, DirEdgeSide):
+            source1 = side1.u
         else:
             return False
         
-        if isinstance(side2, DirEdgeSide):
-            target2 = side2.v
-        elif isinstance(side2, HybridSide):
+        if isinstance(side2, NodeSide):
             target2 = side2.node
+        elif isinstance(side2, DirEdgeSide):
+            target2 = side2.v
         else:
             return False
         
@@ -416,14 +410,8 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
         gen_graph = DirectedMultiGraph()
         gen_graph.add_node(0)  # Use 0 as the node ID
         return {DirectedGenerator(gen_graph)}
-    
-    if k == 1:
-        # Level-1 generators are a single parallel edge
-        # Return set with one generator (single parallel edge)
-        gen_graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
-        return {DirectedGenerator(gen_graph)}
-    
-    # Get all level-(k-1) generators
+
+    # Get all level-(k-1) generators (k>=1: apply R1/R2 to previous level)
     prev_level_generators = all_level_k_generators(k - 1)
     
     # Apply R1 and R2 to each, filtering out isomorphic generators
