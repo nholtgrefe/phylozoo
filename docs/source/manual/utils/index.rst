@@ -8,6 +8,6 @@ exception handling, I/O operations, parallelization, and validation utilities.
    :maxdepth: 2
    
    exceptions
-   io
+   io/index
    parallelization
    validation
