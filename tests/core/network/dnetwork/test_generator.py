@@ -16,7 +16,7 @@ from phylozoo.core.network.dnetwork.generator import (
     HybridSide,
     DirEdgeSide,
     EdgeSide,
-    Level0NodeSide,
+    IsolatedNodeSide,
     NodeSide,
     all_level_k_generators,
 )
@@ -122,15 +122,15 @@ class TestDirectedGenerator:
         assert len(gen.graph.nodes()) == 1
         assert len(list(gen.graph.edges())) == 0
 
-    def test_level_0_generator_sides_single_level0_node_side(self) -> None:
-        """Test that level-0 generator has exactly one side, which is a Level0NodeSide."""
+    def test_level_0_generator_sides_single_isolated_node_side(self) -> None:
+        """Test that level-0 generator has exactly one side, which is an IsolatedNodeSide."""
         graph = DirectedMultiGraph()
         graph.add_node(0)
         gen = DirectedGenerator(graph)
         sides = gen.sides
         assert len(sides) == 1
         side = sides[0]
-        assert isinstance(side, Level0NodeSide)
+        assert isinstance(side, IsolatedNodeSide)
         assert isinstance(side, NodeSide)
         assert not isinstance(side, HybridSide)
         assert side.node == gen.root_node

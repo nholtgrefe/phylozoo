@@ -48,16 +48,31 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     >>> sd_gen = dgenerator_to_sdgenerator(d_gen)
     >>> sd_gen.level
     1
-    >>> # The edge from root to hybrid remains directed
-    >>> len(list(sd_gen.graph.directed_edges_iter()))
-    2
-    >>> # The root node is suppressed
-    >>> 8 not in sd_gen.graph.nodes()
-    True
+    >>> # Level-1 is represented as one node with one undirected self-loop (bidirected edge)
+    >>> sd_gen.graph.number_of_nodes()
+    1
+    >>> sd_gen.graph.number_of_edges()
+    1
+    >>> list(sd_gen.graph.undirected_edges_iter(keys=True))
+    [(4, 4, 0)]
     """
+    # Level-0: single node, no edges
+    if d_generator.level == 0:
+        mixed_graph = MixedMultiGraph()
+        mixed_graph.add_node(d_generator.root_node)
+        return SemiDirectedGenerator(mixed_graph)
+
+    # Level-1 directed generator: two nodes, two parallel edges (root -> hybrid).
+    # Represent as one node with one undirected self-loop (bidirected edge).
+    if d_generator.level == 1:
+        (hybrid_node,) = d_generator.hybrid_nodes
+        return SemiDirectedGenerator(
+            MixedMultiGraph(undirected_edges=[(hybrid_node, hybrid_node)])
+        )
+
     # Get hybrid nodes (nodes with in-degree >= 2)
     hybrid_nodes = d_generator.hybrid_nodes
-    
+
     # Collect all edges and their data, separating into directed and undirected
     directed_edges: list[dict[str, Any]] = []
     undirected_edges: list[dict[str, Any]] = []
@@ -87,7 +102,7 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     root_node = d_generator.root_node
     if root_node in mixed_graph.nodes() and mixed_graph.degree(root_node) == 2:
         suppress_degree2_node(mixed_graph, root_node, merged_attrs=None)
-    
+
     # Create and return SemiDirectedGenerator
     return SemiDirectedGenerator(mixed_graph)
 
@@ -130,7 +145,7 @@ def all_level_k_generators(k: int) -> set[SemiDirectedGenerator]:
     True
     >>> # Get all level-2 semi-directed generators
     >>> level2 = all_level_k_generators(2)
-    >>> len(level2) == 4
+    >>> len(level2) == 2
     True
     """
     if k < 0:

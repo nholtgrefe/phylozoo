@@ -19,7 +19,7 @@ from phylozoo.core.network.dnetwork.generator.base import DirectedGenerator
 from phylozoo.core.network.dnetwork.generator.side import (
     DirEdgeSide,
     HybridSide,
-    Level0NodeSide,
+    IsolatedNodeSide,
     NodeSide,
     Side,
 )
@@ -39,7 +39,7 @@ def _attach_leaves_to_node_side(
     Attach leaves to a node side.
 
     For a ``HybridSide``, exactly one taxon must be provided. For a non-hybrid
-    node side (e.g. ``Level0NodeSide``), exactly three taxa must be provided
+    node side (e.g. ``IsolatedNodeSide``), exactly three taxa must be provided
     (binary networks). Otherwise a :class:`PhyloZooValueError` is raised.
 
     Parameters
@@ -47,7 +47,7 @@ def _attach_leaves_to_node_side(
     graph : DirectedMultiGraph[T]
         Graph to which new leaf nodes and edges are added.
     side : NodeSide[T]
-        Node side (including ``HybridSide`` and ``Level0NodeSide``) that serves
+        Node side (including ``HybridSide`` and ``IsolatedNodeSide``) that serves
         as attachment point.
     taxa : Sequence[str]
         Ordered sequence of taxon labels to attach as leaves.
@@ -65,7 +65,7 @@ def _attach_leaves_to_node_side(
                 f"Hybrid side {side} must have exactly one taxon, got {len(taxa)}."
             )
     else:
-        # Non-hybrid node side (e.g. Level0NodeSide): binary networks require 3 leaves
+        # Non-hybrid node side (e.g. IsolatedNodeSide): binary networks require 3 leaves
         if len(taxa) != 3:
             raise PhyloZooValueError(
                 f"Non-hybrid node side {side} must have exactly three taxa (binary), got {len(taxa)}."
@@ -161,7 +161,7 @@ def attach_leaves_to_generator(
 
     - Every ``HybridSide`` of the generator must appear in ``side_taxa`` with
       exactly one taxon (cannot be omitted or empty).
-    - Every ``Level0NodeSide`` (the single side when the generator has level 0)
+    - Every ``IsolatedNodeSide`` (the single side when the generator has level 0)
       must appear in ``side_taxa`` with exactly three taxa (cannot be omitted or empty).
     - ``DirEdgeSide`` sides may be omitted or given an empty list; they receive no leaves.
 
@@ -193,7 +193,7 @@ def attach_leaves_to_generator(
     for s in sides:
         if isinstance(s, HybridSide):
             required_node_sides.append(s)
-        elif isinstance(s, Level0NodeSide):
+        elif isinstance(s, IsolatedNodeSide):
             required_node_sides.append(s)
 
     for side in required_node_sides:
@@ -211,7 +211,7 @@ def attach_leaves_to_generator(
         else:
             if len(taxa) != 3:
                 raise PhyloZooValueError(
-                    f"Level0NodeSide {side} must have exactly three taxa (binary), got {len(taxa)}."
+                    f"IsolatedNodeSide {side} must have exactly three taxa (binary), got {len(taxa)}."
                 )
 
     # Work on a copy of the generator's graph to avoid mutating the original

@@ -14,7 +14,7 @@ from phylozoo.core.network.dnetwork.generator import (
     DirectedGenerator,
     DirEdgeSide,
     HybridSide,
-    Level0NodeSide,
+    IsolatedNodeSide,
     NodeSide,
     Side,
     attach_leaves_to_generator,
@@ -37,7 +37,7 @@ class TestAttachLeavesNodeSides:
         gen = DirectedGenerator(graph)
 
         side: Side = gen.sides[0]
-        assert isinstance(side, Level0NodeSide)
+        assert isinstance(side, IsolatedNodeSide)
         taxa = ["A", "B", "C"]
 
         network = attach_leaves_to_generator(gen, {side: taxa})
@@ -48,7 +48,7 @@ class TestAttachLeavesNodeSides:
 
     def test_level0_required_side_must_appear_in_mapping(self) -> None:
         """
-        Level0NodeSide must appear in side_taxa; omitting it raises.
+        IsolatedNodeSide must appear in side_taxa; omitting it raises.
         """
         graph: DirectedMultiGraph[int] = DirectedMultiGraph()
         graph.add_node(0)
@@ -59,7 +59,7 @@ class TestAttachLeavesNodeSides:
 
     def test_level0_node_side_requires_exactly_three_taxa(self) -> None:
         """
-        Non-hybrid node side (e.g. Level0NodeSide) must receive exactly three taxa.
+        Non-hybrid node side (e.g. IsolatedNodeSide) must receive exactly three taxa.
 
         Providing fewer or more than three should raise PhyloZooValueError.
         """

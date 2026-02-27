@@ -383,23 +383,9 @@ def orient_away_from_vertex(graph: 'MixedMultiGraph', root: T) -> 'DirectedMulti
                         if not dm.has_edge(current, v, key=key):
                             dm.add_edge(current, v, key=key, **data)
             
-            # Incoming edges: u -> current
+            # Incoming edges: u -> current (keep as-is; multiple in-edges give hybrid nodes, which is fine)
             for u, v, key, data in graph._directed.edges(keys=True, data=True):
                 if v == current:  # Incoming edge
-                    # Check if this edge points towards a vertex already visited via undirected BFS
-                    # This would create an invalid orientation (edge pointing towards BFS path)
-                    if current in visited and u not in visited:
-                        # Check if current was reached via undirected edges
-                        current_reached_via_undirected = any(
-                            graph.normalize_undirected_edge(current, n, k) in processed_undirected_edges
-                            for n in visited
-                            for k in range(graph._undirected.number_of_edges(current, n) if graph._undirected.has_edge(current, n) else 0)
-                        )
-                        if current_reached_via_undirected:
-                            raise PhyloZooValueError(
-                                f"Directed edge ({u}, {current}, key={key}) points towards vertex "
-                                f"{current} which is already in the BFS path from root {root}."
-                            )
                     if u not in visited:
                         visited.add(u)
                         dm.add_edge(u, current, key=key, **data)

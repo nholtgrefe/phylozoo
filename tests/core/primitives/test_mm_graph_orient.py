@@ -108,6 +108,25 @@ class TestOrientMixedGraphFromRoot:
         assert dm.has_edge(4, 5)
         assert dm.has_edge(4, 6)
         assert dm.number_of_edges() == G.number_of_edges()
+
+    def test_directed_edge_into_vertex_reached_via_undirected(self) -> None:
+        """
+        Test orienting when a directed edge points into a vertex already on the BFS path.
+
+        Root 6 is connected by undirected edges to 4 and 1. Vertex 1 is reached via 6-1.
+        The directed edge 3->1 points into 1; this is valid (hybrid node) and should not raise.
+        """
+        G = MixedMultiGraph(
+            directed_edges=[(4, 5, 0), (4, 5, 1), (2, 3, 0), (2, 3, 1), (3, 1, 0)],
+            undirected_edges=[(4, 6, 0), (5, 2, 0), (1, 6, 0)],
+        )
+        dm = orient_away_from_vertex(G, 6)
+        assert dm.number_of_edges() == G.number_of_edges()
+        assert dm.number_of_nodes() == G.number_of_nodes()
+        # Directed edge 3->1 preserved (hybrid at 1); undirected oriented away from root 6
+        assert dm.has_edge(3, 1)
+        assert dm.has_edge(6, 4)
+        assert dm.has_edge(6, 1)
     
     def test_large_tree_structure(self) -> None:
         """Test orienting a larger tree structure."""
@@ -142,27 +161,6 @@ class TestOrientMixedGraphFromRoot:
         
         with pytest.raises(ValueError, match="Root vertex.*not found"):
             orient_away_from_vertex(G, 999)
-    
-    def test_directed_edge_pointing_wrong_way_raises_error(self) -> None:
-        """Test that directed edge pointing towards BFS path raises error."""
-        G = MixedMultiGraph()
-        G.add_undirected_edge(1, 2)
-        G.add_undirected_edge(2, 3)
-        G.add_directed_edge(4, 2)  # Points towards 2, which is in BFS path
-        
-        with pytest.raises(ValueError, match="points towards vertex"):
-            orient_away_from_vertex(G, 1)
-    
-    def test_directed_cycle_raises_error(self) -> None:
-        """Test that directed cycle raises error."""
-        G = MixedMultiGraph()
-        G.add_undirected_edge(1, 2)
-        G.add_directed_edge(2, 3)
-        G.add_directed_edge(3, 4)
-        G.add_directed_edge(4, 2)  # Creates cycle 2->3->4->2
-        
-        with pytest.raises(ValueError, match="points towards vertex"):
-            orient_away_from_vertex(G, 1)
     
     def test_unreachable_undirected_edge_raises_error(self) -> None:
         """Test that unreachable undirected edge raises error."""

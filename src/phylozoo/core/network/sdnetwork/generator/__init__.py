@@ -7,12 +7,18 @@ components that represent the core structure of level-k networks.
 """
 
 from .base import SemiDirectedGenerator
-from .side import UndirEdgeSide
+from .side import (
+    BidirectedEdgeSide,
+    IsolatedNodeSide,
+    UndirEdgeSide,
+)
 from .construction import dgenerator_to_sdgenerator, all_level_k_generators
 
 __all__ = [
     "SemiDirectedGenerator",
     "UndirEdgeSide",
+    "BidirectedEdgeSide",
+    "IsolatedNodeSide",
     "dgenerator_to_sdgenerator",
     "all_level_k_generators",
 ]

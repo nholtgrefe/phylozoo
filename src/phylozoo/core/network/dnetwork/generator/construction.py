@@ -124,7 +124,7 @@ def _apply_R1(
     if generator.level == 0:
         if not (side_x == side_y and isinstance(side_x, NodeSide) and not isinstance(side_x, HybridSide)):
             raise PhyloZooValueError(
-                "R1 on a level-0 generator requires both sides to be the same NodeSide (the single vertex)."
+                "R1 on a level-0 generator requires both sides to be the same NodeSide (IsolatedNodeSide)."
             )
         root = generator.root_node
         new_graph = generator.graph.copy()

@@ -50,6 +50,7 @@ Later releases:
         - circular splitsystem classification
     - biopython/phylox conversions
     - add pretty_print function to classes.
+    - orient_away_from_vertex better implementation
 - Inference:
     - Squirrel:
         - Add a constant 'DEFAULT', with default settings into attr's, then we can also add anotehr settings constant etc.

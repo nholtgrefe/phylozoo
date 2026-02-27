@@ -9,14 +9,14 @@ to generators to obtain full directed phylogenetic networks.
 from .attachment import attach_leaves_to_generator
 from .base import DirectedGenerator, generators_from_network
 from .construction import all_level_k_generators
-from .side import DirEdgeSide, EdgeSide, HybridSide, Level0NodeSide, NodeSide, Side
+from .side import DirEdgeSide, EdgeSide, HybridSide, IsolatedNodeSide, NodeSide, Side
 
 __all__ = [
     "DirectedGenerator",
     "generators_from_network",
     "Side",
     "NodeSide",
-    "Level0NodeSide",
+    "IsolatedNodeSide",
     "HybridSide",
     "EdgeSide",
     "DirEdgeSide",
