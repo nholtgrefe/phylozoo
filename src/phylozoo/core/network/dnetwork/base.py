@@ -88,6 +88,10 @@ class DirectedPhyNetwork(IOMixin):
     
     Attributes
     ----------
+    nodes
+        Cached view of all node IDs (same interface as the underlying graph's ``nodes``).
+    edges
+        Cached view of all directed edges (same interface as the underlying graph's ``edges``).
     _graph : DirectedMultiGraph[T]
         Internal graph structure using DirectedMultiGraph.
         **Warning:** Do not modify directly. Use class methods instead.
@@ -1204,6 +1208,36 @@ class DirectedPhyNetwork(IOMixin):
     
     # ========== Phylogenetic-Specific Methods ==========
     
+    @cached_property
+    def nodes(self):
+        """
+        View of all node IDs in the network.
+
+        Cached. Same callable/view interface as the underlying graph's ``nodes``
+        (e.g. ``net.nodes()``, ``net.nodes(data=True)``).
+
+        Returns
+        -------
+        NodeView
+            Set-like, callable view of node identifiers.
+        """
+        return self._graph.nodes
+
+    @cached_property
+    def edges(self):
+        """
+        View of all directed edges in the network.
+
+        Cached. Same callable/view interface as the underlying graph's ``edges``
+        (e.g. ``net.edges()``, ``net.edges(keys=True)``, ``net.edges(keys=True, data=True)``).
+
+        Returns
+        -------
+        EdgeView
+            Callable view of edges (u, v) or (u, v, key) or with data.
+        """
+        return self._graph.edges
+
     @cached_property
     def leaves(self) -> set[T]:
         """

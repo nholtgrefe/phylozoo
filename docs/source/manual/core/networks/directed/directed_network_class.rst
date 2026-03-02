@@ -309,21 +309,27 @@ Basic properties provide fundamental information about the network size and stru
 
 **Nodes**
 
-The :meth:`nodes` property returns a set of all node IDs.
+The :attr:`nodes` cached property exposes a view of all node IDs (same interface as the
+underlying graph). Use ``network.nodes()`` to iterate, or ``network.nodes(data=True)`` for
+attributes.
 
 .. code-block:: python
 
-   # Get nodes
-   nodes = network.nodes  # Set of node IDs
+   # Get nodes (cached view)
+   list(network.nodes)   # or network.nodes()
+   list(network.nodes(data=True))  # with attributes
 
 **Edges**
 
-The :meth:`edges` property returns a set of all edge IDs.
+The :attr:`edges` cached property exposes a view of all directed edges (same interface as the
+underlying graph). Use ``network.edges()``, ``network.edges(keys=True)``, or
+``network.edges(keys=True, data=True)``.
 
 .. code-block:: python
 
-   # Get edges
-   edges = network.edges  # Set of edge IDs
+   # Get edges (cached view)
+   list(network.edges)   # or network.edges(keys=True)
+   list(network.edges(keys=True, data=True))  # with keys and attributes
    
 **Node and Edge Counts**
 
