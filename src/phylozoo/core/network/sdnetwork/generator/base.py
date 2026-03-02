@@ -439,9 +439,10 @@ class SemiDirectedGenerator:
             return []
         elif self.level == 1:
             node = list(self._graph.nodes())[0]
-            (_, _, key) = next(
-                self._graph._undirected.edges(node, node, keys=True)
+            edge = next(
+                iter(self._graph._undirected.edges(node, node, keys=True))
             )
+            key = edge[2]
             return [BidirectedEdgeSide(node=node, key=key)]
         return list(self.directed_edge_sides) + list(self.undirected_edge_sides)
     

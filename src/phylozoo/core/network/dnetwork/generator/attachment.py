@@ -83,7 +83,7 @@ def _attach_leaves_to_node_side(
         graph.add_edge(side.node, leaf_id)
 
 
-def _attach_leaves_to_dir_edge_side(
+def _attach_leaves_to_edge_side(
     graph: DirectedMultiGraph[T],
     side: DirEdgeSide[T],
     taxa: Sequence[str],
@@ -185,8 +185,27 @@ def attach_leaves_to_generator(
     ------
     PhyloZooValueError
         If a required side (hybrid or level-0 node side) is missing from
-        ``side_taxa`` or has the wrong number of taxa; or if a side refers to
-        a node or edge not present in the generator.
+        ``side_taxa`` or has the wrong number of taxa; if fewer than two
+        taxa are attached in total; or if a side refers to a node or edge not
+        present in the generator.
+
+    Examples
+    --------
+    Build a level-1 directed generator from a directed multigraph (root 0,
+    hybrid 1, two parallel edges), then attach leaves to the hybrid and one
+    edge side:
+
+    >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+    >>> from phylozoo.core.network.dnetwork.generator.base import DirectedGenerator
+    >>> dmg = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
+    >>> gen = DirectedGenerator(dmg)
+    >>> hybrid_side = gen.hybrid_sides[0]
+    >>> edge_side = gen.edge_sides[0]
+    >>> network = attach_leaves_to_generator(
+    ...     gen, {hybrid_side: ["H"], edge_side: ["A", "B"]}
+    ... )
+    >>> sorted(network.taxa)
+    ['A', 'B', 'H']
     """
     sides = generator.sides
     required_node_sides: list[NodeSide[T]] = []
@@ -214,6 +233,13 @@ def attach_leaves_to_generator(
                     f"IsolatedNodeSide {side} must have exactly three taxa (binary), got {len(taxa)}."
                 )
 
+    # Require at least two taxa in total across all sides
+    total_taxa = sum(len(taxa) for taxa in side_taxa.values())
+    if total_taxa < 2:
+        raise PhyloZooValueError(
+            f"At least two taxa must be attached in total, got {total_taxa}."
+        )
+
     # Work on a copy of the generator's graph to avoid mutating the original
     graph: DirectedMultiGraph[T] = generator.graph.copy()
 
@@ -224,7 +250,7 @@ def attach_leaves_to_generator(
         if isinstance(side, DirEdgeSide):
             if not taxa:
                 continue
-            _attach_leaves_to_dir_edge_side(graph, side, taxa)
+            _attach_leaves_to_edge_side(graph, side, taxa)
         elif isinstance(side, NodeSide):
             _attach_leaves_to_node_side(graph, side, taxa)
         else:

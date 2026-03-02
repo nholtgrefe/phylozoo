@@ -79,7 +79,9 @@ class TestAttachLeavesNodeSides:
 
     def test_attach_single_taxon_to_hybrid_side(self) -> None:
         """
-        Attach a single taxon to a hybrid side of a level-1 generator.
+        Attach a single taxon to a hybrid side of a level-1 generator, plus one
+        additional leaf on an edge side so that at least two taxa are attached
+        in total.
 
         The hybrid node obtains out-degree 1 (to the new leaf) and the taxon
         appears in the network's taxa.
@@ -91,8 +93,13 @@ class TestAttachLeavesNodeSides:
         assert len(hybrid_sides) == 1
         hybrid_side: HybridSide[int] = hybrid_sides[0]
 
-        taxa = ["X"]
-        network = attach_leaves_to_generator(gen, {hybrid_side: taxa})
+        edge_side: DirEdgeSide[int] = gen.edge_sides[0]
+
+        taxa_hybrid = ["X"]
+        taxa_edge = ["Y"]
+        network = attach_leaves_to_generator(
+            gen, {hybrid_side: taxa_hybrid, edge_side: taxa_edge}
+        )
 
         assert "X" in network.taxa
         outdeg = network._graph.outdegree(hybrid_side.node)  # type: ignore[attr-defined]
@@ -163,10 +170,24 @@ class TestAttachLeavesEdgeSides:
         graph: DirectedMultiGraph[int] = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
         hybrid_side = gen.hybrid_sides[0]
+        node_side: NodeSide[int] = NodeSide(node=gen.root_node)
 
-        # Only required side (hybrid) present; no edge sides
-        network = attach_leaves_to_generator(gen, {hybrid_side: ["H"]})
-        assert network.taxa == {"H"}
+        # Only required sides (hybrid and a level-0-like node side) present; no edge sides
+        network = attach_leaves_to_generator(
+            gen, {hybrid_side: ["H"], node_side: ["R1", "R2", "R3"]}
+        )
+        assert network.taxa == {"H", "R1", "R2", "R3"}
+
+    def test_requires_at_least_two_taxa_total(self) -> None:
+        """
+        Attaching fewer than two taxa in total should raise PhyloZooValueError.
+        """
+        graph: DirectedMultiGraph[int] = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
+        gen = DirectedGenerator(graph)
+        hybrid_side = gen.hybrid_sides[0]
+
+        with pytest.raises(PhyloZooValueError, match="At least two taxa"):
+            attach_leaves_to_generator(gen, {hybrid_side: ["H"]})
 
 
 class TestAttachLeavesMixed:

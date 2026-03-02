@@ -6,13 +6,14 @@ semi-directed phylogenetic networks. Generators are minimal biconnected
 components that represent the core structure of level-k networks.
 """
 
+from .attachment import attach_leaves_to_generator
 from .base import SemiDirectedGenerator
+from .construction import all_level_k_generators, dgenerator_to_sdgenerator
 from .side import (
     BidirectedEdgeSide,
     IsolatedNodeSide,
     UndirEdgeSide,
 )
-from .construction import dgenerator_to_sdgenerator, all_level_k_generators
 
 __all__ = [
     "SemiDirectedGenerator",
@@ -21,5 +22,6 @@ __all__ = [
     "IsolatedNodeSide",
     "dgenerator_to_sdgenerator",
     "all_level_k_generators",
+    "attach_leaves_to_generator",
 ]
 
