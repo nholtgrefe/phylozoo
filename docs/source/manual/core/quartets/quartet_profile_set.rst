@@ -27,8 +27,8 @@ Quartet profile sets can be created from existing profiles or directly from quar
    q1 = Quartet(Split({"A", "B"}, {"C", "D"}))
    q2 = Quartet(Split({"A", "C"}, {"B", "D"}))
 
-   profile1 = QuartetProfile({q1: 0.8})
-   profile2 = QuartetProfile({q2: 0.6})
+   profile1 = QuartetProfile({q1: 1.0})  # Single quartet: weight must be 1.0
+   profile2 = QuartetProfile({q2: 1.0})
 
    # Create profile set with profile-weight tuples
    profile_set = QuartetProfileSet([
@@ -49,8 +49,8 @@ Quartet profile sets can be created from existing profiles or directly from quar
    profile_set = QuartetProfileSet(profiles=quartets)
 
 When created from quartets, they are automatically grouped by their four-taxon sets
-and converted to profiles. Each quartet within a profile keeps its input weight, and
-the profile weight is the sum of quartet weights.
+and converted to profiles. Weights within each profile are normalized to sum to 1.0;
+the profile weight (in the set) is the sum of the input quartet weights for that taxa set.
 
 **Specifying Total Taxa**
 

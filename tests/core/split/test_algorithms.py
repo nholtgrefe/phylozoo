@@ -281,7 +281,7 @@ class TestQuartetsFromSplitsystem:
             target_quartet = Quartet(Split({1, 2}, {4, 5}))
             
             if target_quartet in profile.quartets:
-                # QuartetProfile normalizes so weights sum to 1.0; this profile has one quartet
+                # quartets_from_splitsystem normalizes per profile; this profile has one quartet
                 assert abs(profile.get_weight(target_quartet) - 1.0) < 1e-10
                 assert abs(sum(profile.quartets.values()) - 1.0) < 1e-10
     
@@ -306,7 +306,7 @@ class TestQuartetsFromSplitsystem:
         if target_taxa in profileset.profiles:
             profile, _ = profileset.profiles[target_taxa]
             if target_quartet in profile.quartets:
-                # QuartetProfile normalizes to sum 1.0; single quartet has weight 1.0
+                # quartets_from_splitsystem normalizes per profile; single quartet has weight 1.0
                 assert abs(profile.get_weight(target_quartet) - 1.0) < 1e-10
                 assert abs(sum(profile.quartets.values()) - 1.0) < 1e-10
     

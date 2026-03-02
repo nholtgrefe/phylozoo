@@ -372,11 +372,14 @@ def quartets_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> Quar
             # Using defaultdict, we don't need to check if quartet_taxa exists
             profile_data[quartet_taxa][quartet] = profile_data[quartet_taxa].get(quartet, 0.0) + split_weight
     
-    # Create QuartetProfile objects from the grouped data
+    # Create QuartetProfile objects from the grouped data.
+    # QuartetProfile requires weights to sum to 1.0; normalize accumulated weights per profile.
     profiles: list[QuartetProfile] = []
     for quartet_taxa, quartets_dict in profile_data.items():
         if quartets_dict:  # Only create profile if it has quartets
-            profile = QuartetProfile(quartets_dict)
+            total = sum(quartets_dict.values())
+            normalized = {q: w / total for q, w in quartets_dict.items()}
+            profile = QuartetProfile(normalized)
             profiles.append(profile)
     
     # Create QuartetProfileSet (each profile gets default weight 1.0)

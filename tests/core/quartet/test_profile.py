@@ -95,13 +95,10 @@ class TestQuartetProfileInit:
         with pytest.raises(ValueError, match="appears multiple times in the input"):
             QuartetProfile([(q1, 0.5), (q2, 0.3), (q1, 0.2)])
         
-        # Duplicate in dict (can't actually happen with dict syntax, but test explicit dict)
-        # Note: dict syntax automatically overwrites, so we can't test this directly
-        # But we can test that the validation would catch it if we construct it manually
-        quartets_dict = {q1: 0.5, q2: 0.3}
-        quartets_dict[q1] = 0.2  # This overwrites, so no error
-        # The dict itself doesn't have duplicates, so this is fine
-        # Weights 0.2 + 0.3 = 0.5, normalized to 0.4 and 0.6
+        # Duplicate key in dict: Python overwrites, so we get one entry per quartet.
+        # Weights must sum to 1.0 (no normalization).
+        quartets_dict = {q1: 0.4, q2: 0.6}
+        quartets_dict[q1] = 0.4  # Overwrite same key; still {q1: 0.4, q2: 0.6}
         profile = QuartetProfile(quartets_dict)
         assert profile.get_weight(q1) == pytest.approx(0.4)
         assert profile.get_weight(q2) == pytest.approx(0.6)
@@ -136,7 +133,7 @@ class TestQuartetProfileInit:
             QuartetProfile([q1]),
             QuartetProfile([q1, q2]),
             QuartetProfile({q1: 0.8, q2: 0.2}),
-            QuartetProfile([(q1, 2.0), (q2, 3.0)]),  # normalized to 0.4, 0.6
+            QuartetProfile([(q1, 0.4), (q2, 0.6)]),
         ):
             assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
 
@@ -405,34 +402,33 @@ class TestQuartetProfileEdgeCases:
             QuartetProfile([q1, q1, q2])
     
     def test_duplicate_quartets_in_dict(self) -> None:
-        """Test that duplicate quartets in dict use last weight; single quartet has weight 1.0."""
+        """Test that duplicate keys in dict use last value; single quartet must have weight 1.0."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
-        # Same key twice: dict has only one entry (last wins), so profile has one quartet
-        profile = QuartetProfile({q1: 0.5, q1: 0.8})
-        
+        # Same key twice: dict has only one entry (last wins). Weight must sum to 1.0.
+        profile = QuartetProfile({q1: 1.0})
         assert len(profile) == 1
-        assert profile.get_weight(q1) == 1.0  # Single quartet always has normalized weight 1.0
+        assert profile.get_weight(q1) == 1.0
         assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
-    
-    def test_large_weights_normalized(self) -> None:
-        """Test profile with large weights is normalized to sum 1.0."""
+
+    def test_provided_weights_stored_as_is(self) -> None:
+        """Test that when weights are provided and sum to 1.0, they are stored without scaling."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
-        profile = QuartetProfile({q1: 100.0, q2: 200.0})
-        
-        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
+        profile = QuartetProfile({q1: 1.0 / 3.0, q2: 2.0 / 3.0})
         assert profile.get_weight(q1) == pytest.approx(1.0 / 3.0)
         assert profile.get_weight(q2) == pytest.approx(2.0 / 3.0)
-    
-    def test_small_weights_normalized(self) -> None:
-        """Test profile with very small weights is normalized to sum 1.0."""
+        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
+
+    def test_weights_must_sum_to_one_error(self) -> None:
+        """Test that provided weights that do not sum to 1.0 raise."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
-        profile = QuartetProfile({q1: 0.0001, q2: 0.0002})
-        
-        assert abs(sum(profile.quartets.values()) - 1.0) < 1e-9
-        assert profile.get_weight(q1) == pytest.approx(1.0 / 3.0)
-        assert profile.get_weight(q2) == pytest.approx(2.0 / 3.0)
+        with pytest.raises(ValueError, match="Weights must sum to 1.0"):
+            QuartetProfile({q1: 100.0, q2: 200.0})
+        with pytest.raises(ValueError, match="Weights must sum to 1.0"):
+            QuartetProfile({q1: 0.0001, q2: 0.0002})
+        with pytest.raises(ValueError, match="Weights must sum to 1.0"):
+            QuartetProfile({q1: 0.8})  # single quartet with weight != 1.0
     
     def test_many_quartets_equal_weight(self) -> None:
         """Test profile with many quartets gets equal weight 1/k each."""

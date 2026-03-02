@@ -182,16 +182,19 @@ class QuartetProfileSet:
                     )
                 profile_data[quartet_taxa][quartet] = weight
         
-        # If we processed quartets, create profiles from grouped data
+        # If we processed quartets, create profiles from grouped data.
+        # QuartetProfile requires weights to sum to 1.0; normalize per profile.
         if mode == 'quartet':
             for taxa_set, quartets_dict in profile_data.items():
                 # Validate no empty profiles
                 if len(quartets_dict) == 0:
                     raise PhyloZooValueError(f"Cannot have empty profile for taxa {taxa_set}")
                 
-                profile = QuartetProfile(quartets_dict)
-                # Profile weight = sum of quartet weights
-                profile_weight = sum(quartets_dict.values())
+                total = sum(quartets_dict.values())
+                normalized = {q: w / total for q, w in quartets_dict.items()}
+                profile = QuartetProfile(normalized)
+                # Profile weight = sum of original quartet weights
+                profile_weight = total
                 profiles_dict[taxa_set] = (profile, profile_weight)
         
         # Store as immutable

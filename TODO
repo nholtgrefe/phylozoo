@@ -10,12 +10,8 @@ First release:
         - Explain editable install
 - Core:
     - Network:
-        - fix/check eNewick parser and writer
-        - do the network classes need .edges and.nodes?
-        - SD generator validation
         - update network classifications
-    - Quartet:
-        - quartet weights within a profile in [0,1]?
+
 - Vizualize:
     - add sd-plotting
 
@@ -36,6 +32,7 @@ Later releases:
         - add undirected network and make mixed a superclass or child?
         - Split binary resolution into out_resolution and in_resolution methods?
         - is_OLP function
+        - fix/check eNewick parser and writer
         - Generator:
             - add parallelization of generator construction
             - reuse level (k-1) generators or allow as input?

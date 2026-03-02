@@ -3,8 +3,8 @@ Quartet profile module.
 
 This module provides the QuartetProfile class for representing multiple quartets
 on the same 4-taxon set with weights. A QuartetProfile always has total weight 1.0:
-weights are either equal (1/k when no weights are provided) or normalized so that
-they sum to 1.0 (within a small tolerance).
+if no weights are provided, each quartet is assigned 1/k; if weights are provided,
+they must sum to 1.0 (within a small tolerance) and are not scaled.
 """
 
 from types import MappingProxyType
@@ -31,15 +31,15 @@ class QuartetProfile:
     - If no weights are provided (list of quartets), each quartet is assigned
       equal weight 1/k, where k is the number of quartets.
     - If weights are provided (dict or list of (quartet, weight) tuples),
-      they are normalized so that they sum to 1.0.
+      they must sum to 1.0 (within tolerance); they are not scaled.
     
     Parameters
     ----------
     quartets : dict[Quartet, float] | Mapping[Quartet, float] | list[Quartet] | list[tuple[Quartet, float]]
         Input quartets. Can be:
-        - A dictionary mapping quartets to weights (normalized to sum 1.0)
+        - A dictionary mapping quartets to weights (must sum to 1.0)
         - A list of quartets (each assigned weight 1/k)
-        - A list of (quartet, weight) tuples (normalized to sum 1.0)
+        - A list of (quartet, weight) tuples (weights must sum to 1.0)
         Taxa are automatically extracted from the quartets.
     
     Attributes
@@ -47,13 +47,13 @@ class QuartetProfile:
     taxa : frozenset[str]
         The 4 taxon labels (extracted from quartets).
     quartets : Mapping[Quartet, float]
-        Read-only mapping of quartets to their (normalized) weights.
+        Read-only mapping of quartets to their weights.
     
     Raises
     ------
     PhyloZooValueError
-        If quartets is empty, if quartets have different taxa, or if any
-        weight is non-positive.
+        If quartets is empty, if quartets have different taxa, if any
+        weight is non-positive, or if provided weights do not sum to 1.0.
     
     Examples
     --------
@@ -88,24 +88,27 @@ class QuartetProfile:
         """
         Initialize a quartet profile.
         
-        Weights are normalized so that the profile's total weight is always 1.0:
+        Total weight is always 1.0:
         - List of quartets: each gets weight 1/k (k = number of quartets).
-        - Dict or list of (quartet, weight) tuples: weights are scaled so they sum to 1.0.
+        - Dict or list of (quartet, weight) tuples: weights must sum to 1.0 (within
+          tolerance). If they do not sum to 1.0, initialization
+          is invalid.
         
         Parameters
         ----------
         quartets : dict[Quartet, float] | Mapping[Quartet, float] | list[Quartet] | list[tuple[Quartet, float]]
             Input quartets. Can be:
-            - A dictionary mapping quartets to weights (normalized to sum 1.0)
+            - A dictionary mapping quartets to weights (must sum to 1.0)
             - A list of quartets (each assigned weight 1/k)
-            - A list of (quartet, weight) tuples (normalized to sum 1.0)
+            - A list of (quartet, weight) tuples (weights must sum to 1.0)
             Taxa are automatically extracted from quartets.
         
         Raises
         ------
         PhyloZooValueError
             If quartets is empty, if quartets have different taxa, if any quartet appears
-            multiple times, or if any weight is non-positive.
+            multiple times, if any weight is non-positive, or if provided weights do not
+            sum to 1.0 (within tolerance).
         """
         if isinstance(quartets, list):
             # Check if it's a list of quartets or list of tuples
@@ -140,20 +143,17 @@ class QuartetProfile:
         object.__setattr__(self, '_quartets', raw_dict)
         self._validate_quartets()
         
-        # Normalize to sum 1.0 (list-of-quartets case already has 1/k so sum is 1.0)
-        total = sum(raw_dict.values())
+        # When weights are provided they must sum to 1.0 (no scaling). List-of-quartets
+        # case already has 1/k so sum is 1.0.
+        total = sum(self._quartets.values())
         if abs(total - 1.0) > _WEIGHT_SUM_TOLERANCE:
-            normalized = {q: w / total for q, w in raw_dict.items()}
-            object.__setattr__(self, '_quartets', normalized)
+            raise PhyloZooValueError(
+                f"Weights must sum to 1.0 (within tolerance {_WEIGHT_SUM_TOLERANCE}), got {total}"
+            )
         
         # Extract taxa and store as immutable
         first_quartet = next(iter(self._quartets.keys()))
         taxa_set = first_quartet.taxa
-        final_total = sum(self._quartets.values())
-        if abs(final_total - 1.0) > _WEIGHT_SUM_TOLERANCE:
-            raise PhyloZooValueError(
-                f"Weights must sum to 1.0 (within tolerance {_WEIGHT_SUM_TOLERANCE}), got {final_total}"
-            )
         object.__setattr__(self, '_taxa', taxa_set)
         object.__setattr__(self, '_quartets', MappingProxyType(self._quartets))
         object.__setattr__(self, '_initialized', True)

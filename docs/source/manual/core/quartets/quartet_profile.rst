@@ -9,7 +9,7 @@ which represents a probability distribution over the three possible quartet topo
 for a specific four-taxon set. The weights in a quartet profile always sum to 1.0
 (within a small tolerance): if no weights are given, each quartet gets equal weight
 :math:`1/k` (where :math:`k` is the number of quartets); if weights are given, they
-are normalized so that they sum to 1.0. Quartet profiles are essential for modeling
+must sum to 1.0 (they are not scaled). Quartet profiles are essential for modeling
 uncertainty or mixed phylogenetic signals in quartet-based analyses.
 
 Creating Quartet Profiles
@@ -26,10 +26,10 @@ Quartet profiles can be created by specifying quartets and their corresponding w
    q1 = Quartet(Split({"A", "B"}, {"C", "D"}))
    q2 = Quartet(Split({"A", "C"}, {"B", "D"}))
 
-   # Create a profile using a dictionary (weights are normalized to sum 1.0)
+   # Create a profile using a dictionary (weights must sum to 1.0)
    profile = QuartetProfile({q1: 0.7, q2: 0.3})
 
-   # Create a profile from a list of (quartet, weight) tuples (normalized to sum 1.0)
+   # Create a profile from a list of (quartet, weight) tuples (weights must sum to 1.0)
    full_profile = QuartetProfile([
        (q1, 0.5),
        (q2, 0.3),
