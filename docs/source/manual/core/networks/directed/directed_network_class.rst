@@ -89,7 +89,7 @@ Edges may be given as tuples or dictionaries; nodes can explicitly be specified 
    )
 
 From an existing graph
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 Directed networks can also be constructed from existing graph objects using the
 :func:`phylozoo.core.network.dnetwork.conversions.dnetwork_from_graph` function. This is particularly useful when implementing algorithms that
@@ -145,7 +145,7 @@ Supported formats include:
    consistent file handling across PhyloZoo classes. 
    
    For details on the I/O system,
-   see the :doc:`I/O documentation <../../../../io>`. 
+   see the :doc:`I/O documentation <../../../utils/io/index>`. 
    
    For specific information about
    supported file formats and parameter options for networks, see the
@@ -167,7 +167,7 @@ guarantees that the object represents a well-defined phylogenetic network:
 By default, invalid networks cannot be constructed. Validation can be disabled for
 performance-critical operations or when working with intermediate network states that
 may temporarily violate validation rules. 
-See the :doc:`Validation documentation <../../../../utils/validation>`
+See the :doc:`Validation documentation <../../../utils/validation>`
 for details on how to disable validation.
 
 Attributes
@@ -525,7 +525,7 @@ underlying graph structure but is a separate instance.
 
 
 Visualization
-------------
+-------------
 
 DirectedPhyNetwork can be visualized using the PhyloZoo visualization module. The
 visualization system supports multiple layout algorithms and styling options.
@@ -545,15 +545,15 @@ visualization system supports multiple layout algorithms and styling options.
    plot_dnetwork(network)
 
 For more visualization options, including different layout types (rectangular, combining),
-styling, and customization, see the :doc:`Visualization documentation <../../../../visualization/viz>`.
+styling, and customization, see the :doc:`Visualization documentation <../../../visualization/viz>`.
 
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples
 - :doc:`Directed Network (Advanced) <directed_network_algorithms>` - Advanced features, transformations, and classifications
 - :doc:`Directed Generator <directed_generator>` - Level-k network generators
 - :doc:`Semi-Directed Networks <../semi_directed/overview>` - Semi-directed network representations
-- :doc:`I/O <../../../../io>` - File I/O operations and formats
-- :doc:`Validation <../../../../utils/validation>` - Validation system and disabling validation
-- :doc:`Visualization <../../../../visualization/viz>` - Network visualization and plotting
+- :doc:`I/O <../../../utils/io/index>` - File I/O operations and formats
+- :doc:`Validation <../../../utils/validation>` - Validation system and disabling validation
+- :doc:`Visualization <../../../visualization/viz>` - Network visualization and plotting

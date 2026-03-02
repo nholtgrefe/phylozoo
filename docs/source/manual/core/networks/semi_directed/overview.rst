@@ -27,5 +27,5 @@ Documentation
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples
 - :doc:`Directed Networks <../directed/overview>` - Rooted networks with all edges directed

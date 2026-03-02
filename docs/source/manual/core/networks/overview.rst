@@ -19,6 +19,6 @@ Submodules
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
-- :doc:`I/O <../../io>` - File I/O operations and formats
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples
+- :doc:`I/O <../../utils/io/index>` - File I/O operations and formats
 - :doc:`Visualization <../../visualization/viz>` - Network visualization and plotting

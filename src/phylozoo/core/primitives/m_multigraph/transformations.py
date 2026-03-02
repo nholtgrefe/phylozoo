@@ -477,15 +477,15 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     
     This operation modifies the graph in place. Suppression may create parallel edges.
     
-    Edge attributes are handled as follows:
-    - If `merged_attrs` is provided: these attributes are used directly for the new edge.
-      This allows the caller to apply special merging logic before suppression.
-    - If `merged_attrs` is None: attributes are merged by taking the first edge's data,
-      then the second edge's data overriding. The order of edges is determined by edge
-      type priority: directed_in edges first, then undirected edges, then directed_out
-      edges. If both edges are of the same type, the order may be non-deterministic
-      (depends on graph iteration order). For attributes present in both edges, the
-      second edge's value overrides the first.
+    Edge attributes are handled as follows. If `merged_attrs` is provided, these
+    attributes are used directly for the new edge (allowing the caller to apply
+    special merging logic before suppression). If `merged_attrs` is None,
+    attributes are merged by taking the first edge's data, then the second edge's
+    data overriding. The order of edges is determined by edge type priority:
+    directed_in edges first, then undirected edges, then directed_out edges. If
+    both edges are of the same type, the order may be non-deterministic (depends
+    on graph iteration order). For attributes present in both edges, the second
+    edge's value overrides the first.
     
     Parameters
     ----------
@@ -628,12 +628,12 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
     Note: Directed and undirected edges between the same nodes are mutually exclusive
     in MixedMultiGraph, so this function handles only one type at a time.
     
-    Edge attributes are handled as follows:
-    - If `merged_attrs` is provided: these attributes are used directly for the kept edge.
-      This allows the caller to apply special merging logic before identification.
-    - If `merged_attrs` is None: attributes are merged by taking the first edge's data,
-      then subsequent edges' data overriding. For attributes present in multiple edges,
-      the last edge's value overrides earlier values.
+    Edge attributes are handled as follows. If `merged_attrs` is provided, these
+    attributes are used directly for the kept edge (allowing the caller to apply
+    special merging logic before identification). If `merged_attrs` is None,
+    attributes are merged by taking the first edge's data, then subsequent edges'
+    data overriding; for attributes present in multiple edges, the last edge's
+    value overrides earlier values.
     
     Parameters
     ----------

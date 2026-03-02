@@ -43,10 +43,9 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     2. Undirect all non-hybrid edges; hybrid edges remain directed.
     3. Suppress any degree-2 node (this stems from a degree-2 root). Suppression may
        create parallel edges. Suppression connects the two neighbors directly:
-       - undirected+undirected -> undirected
-       - directed+directed (u->x, x->v) -> directed (u->v)
-       - directed into x and undirected out (u->x, x—v) -> undirected (u-v)
-       - undirected into x and directed out (u—x, x->v) -> directed (u->v)
+       undirected+undirected -> undirected; directed+directed (u->x, x->v) -> directed
+       (u->v); directed into x and undirected out (u->x, x-v) -> undirected (u-v);
+       undirected into x and directed out (u-x, x->v) -> directed (u->v).
 
     Parameters
     ----------

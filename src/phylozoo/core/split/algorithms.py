@@ -37,11 +37,11 @@ def tree_from_splitsystem(
     
     Builds a tree that induces all splits in the system using a star tree approach:
     1. Start with a star tree (center node connected to all leaves)
-    2. For each non-trivial split S = A|B:
-       - Find a cut-vertex v whose partition is a refinement of S
-       - Replace v with a cut-edge (two internal nodes u and w connected by an edge)
-       - Reconnect components: parts in A connect to u, parts in B connect to w
-    
+    2. For each non-trivial split S = A|B, find a cut-vertex v whose partition is a
+       refinement of S, replace v with a cut-edge (two internal nodes u and w
+       connected by an edge), and reconnect components: parts in A connect to u,
+       parts in B connect to w.
+
     This approach iteratively refines the star tree by splitting cut-vertices into
     cut-edges, creating the final tree structure that displays induces all splits.
     

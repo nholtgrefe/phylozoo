@@ -253,10 +253,9 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     A 2-blob is a blob with exactly 2 incident edges. This function:
     1. Finds all 2-blobs using k_blobs
-    2. For each 2-blob (except those containing the root):
-       - Identifies all vertices in the blob with the first vertex
-       - This creates a degree-2 node
-       - Suppresses the degree-2 node using proper attribute merging
+    2. For each 2-blob (except those containing the root), identifies all
+       vertices in the blob with the first vertex (creating a degree-2 node),
+       then suppresses the degree-2 node using proper attribute merging
     3. Returns a new validated network
     
     Parameters
@@ -694,18 +693,18 @@ def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     Notes
     -----
-    - Attribute handling:
-      - All attributes are removed except branch_length and gamma
-      - Branch length handling:
-        - If the original network had branch lengths on any edges, new edges in the
-          caterpillar structures are assigned branch_length=0.0
-        - Original edges keep their branch_length values
-      - Gamma handling (for high in-degree nodes only):
-        - The top two hybrid edges in the caterpillar maintain the same ratio as
-          the original top two hybrid edges
-        - As we go down the caterpillar, each new hybrid edge's gamma accounts for
-          the cumulative probability from previous edges
-        - Gamma values are computed using _compute_caterpillar_gammas()
+    Attribute handling:
+
+    - All attributes are removed except branch_length and gamma
+    - Branch length handling:
+      If the original network had branch lengths on any edges, new edges in the
+      caterpillar structures are assigned branch_length=0.0. Original edges keep
+      their branch_length values.
+    - Gamma handling (for high in-degree nodes only):
+      The top two hybrid edges in the caterpillar maintain the same ratio as the
+      original top two hybrid edges. As we go down the caterpillar, each new hybrid
+      edge's gamma accounts for the cumulative probability from previous edges.
+      Gamma values are computed using _compute_caterpillar_gammas().
     - Node labels are preserved
     - The network must not have parallel edges
     

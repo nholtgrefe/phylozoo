@@ -27,7 +27,7 @@ between representations.
    :maxdepth: 2
    :caption: Workflows
    
-   tutorials/workflows
+   tutorials/index
 
 .. toctree::
    :maxdepth: 3

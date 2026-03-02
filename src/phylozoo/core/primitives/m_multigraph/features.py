@@ -306,8 +306,8 @@ def source_components(graph: 'MixedMultiGraph') -> list[tuple[list[T], list[tupl
         For each source component, returns a tuple containing:
         - List of nodes in the component
         - List of undirected edges (u, v, key) within the component (includes all parallel edges)
-        - List of directed edges (u, v, key) with u in the component and v not in the component
-          (all outgoing edges of the component, includes all parallel edges)
+        - List of directed edges (u, v, key) with u in the component and v not in the
+          component (all outgoing edges of the component, includes all parallel edges)
     
     Examples
     --------

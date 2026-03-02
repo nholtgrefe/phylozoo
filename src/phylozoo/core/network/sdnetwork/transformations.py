@@ -191,10 +191,9 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     
     A 2-blob is a blob with exactly 2 incident edges. This function:
     1. Finds all 2-blobs using k_blobs
-    2. For each 2-blob:
-       - Identifies all vertices in the blob with the first vertex
-       - This creates a degree-2 node
-       - Suppresses the degree-2 node using proper attribute merging
+    2. For each 2-blob, identifies all vertices in the blob with the first vertex
+       (creating a degree-2 node), then suppresses the degree-2 node using proper
+       attribute merging
     3. Returns a new validated network
     
     Parameters

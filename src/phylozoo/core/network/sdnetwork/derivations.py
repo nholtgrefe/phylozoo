@@ -1003,8 +1003,8 @@ def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
     1. Extracts the subnetwork induced by those 4 taxa
     2. Gets all displayed trees of that subnetwork (with probabilities)
     3. Converts each displayed tree to a quartet (4-leaf tree)
-    4. Creates a quartet profile where each quartet's weight is the probability
-       of the displayed tree that induced it (summing weights if the same quartet
+    4. Creates a quartet profile where each quartet's weight is the probability of
+       the displayed tree that induced it (summing weights if the same quartet
        appears in multiple displayed trees)
     
     The profiles are then returned as a QuartetProfileSet, where each profile

@@ -258,4 +258,4 @@ See Also
 - :doc:`Semi-Directed Network Algorithms <semi_directed_network_algorithms>` - Network level classification
 - :doc:`Semi-Directed Network Class <semi_directed_network_class>` - The SemiDirectedPhyNetwork class
 - :doc:`Directed Generator <../directed/directed_generator>` - Directed generators
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples

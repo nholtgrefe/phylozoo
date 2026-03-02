@@ -6,9 +6,10 @@ to/from files. Format handlers are registered with FormatRegistry for use with
 the IOMixin system.
 
 The following format handlers are defined and registered:
-- **phylozoo-dot**: PhyloZoo DOT format (extensions: .pzdot)
-  - Writer: `to_phylozoo_dot()` - Converts MixedMultiGraph to phylozoo-dot string
-  - Reader: `from_phylozoo_dot()` - Parses phylozoo-dot string to MixedMultiGraph
+
+- **phylozoo-dot**: PhyloZoo DOT format (extensions: .pzdot).
+  Writer: `to_phylozoo_dot()` converts MixedMultiGraph to phylozoo-dot string.
+  Reader: `from_phylozoo_dot()` parses phylozoo-dot string to MixedMultiGraph.
 
 These handlers are automatically registered when this module is imported.
 MixedMultiGraph inherits from IOMixin, so you can use:

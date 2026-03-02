@@ -38,18 +38,16 @@ def quartet_distance(
         Each profile must contain exactly 1 or 2 resolved quartets.
     rho : tuple[float, float, float, float]
         Rho vector (rho_c, rho_s, rho_a, rho_o) specifying distance contributions
-        for different quartet topologies:
-        - rho_c: contribution when two leaves are on the same side of a split
-          (used for profiles with 1 quartet)
-        - rho_s: contribution when two leaves are on different sides of a split
-          (used for profiles with 1 quartet)
-        - rho_a: contribution when two leaves are adjacent in a circular ordering
-          (used for profiles with 2 quartets, which induce a circular ordering)
-        - rho_o: contribution when two leaves are opposite in a circular ordering
-          (used for profiles with 2 quartets, which induce a circular ordering)
-        Note: For each quartet profile containing a pair of leaves, 2*rho_xy is
-        added to the distance between leaves x and y, where rho_xy is the
-        appropriate rho value based on the profile type and leaf positions.
+        for different quartet topologies. rho_c: contribution when two leaves are
+        on the same side of a split (used for profiles with 1 quartet). rho_s:
+        contribution when two leaves are on different sides of a split (used for
+        profiles with 1 quartet). rho_a: contribution when two leaves are adjacent
+        in a circular ordering (used for profiles with 2 quartets). rho_o:
+        contribution when two leaves are opposite in a circular ordering (used for
+        profiles with 2 quartets). For each quartet profile containing a pair of
+        leaves, 2*rho_xy is added to the distance between leaves x and y, where
+        rho_xy is the appropriate rho value based on the profile type and leaf
+        positions.
     
     Returns
     -------

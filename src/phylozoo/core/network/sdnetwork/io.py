@@ -31,10 +31,10 @@ def to_newick(sd_network: 'SemiDirectedPhyNetwork', **kwargs: Any) -> str:
     sd_network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network to convert.
     **kwargs
-        Additional arguments to pass to to_d_network and to_enewick:
-        - root_location: RootLocation to use when converting to directed network
-          (if None, a default location is chosen)
-        - Other arguments are passed to to_enewick
+        Additional arguments to pass to to_d_network and to_enewick. Use
+        root_location to specify RootLocation when converting to directed network
+        (if None, a default location is chosen). Other arguments are passed to
+        to_enewick.
     
     Returns
     -------

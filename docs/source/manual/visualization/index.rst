@@ -9,6 +9,7 @@ customizable styling.
    :maxdepth: 1
    
    overview
+   viz
    layouts
    styling
    plotting

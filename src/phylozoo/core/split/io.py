@@ -6,11 +6,12 @@ to/from files. Format handlers are registered with FormatRegistry for use with
 the IOMixin system.
 
 The following format handlers are defined and registered:
-- **nexus**: NEXUS format for split systems (extensions: .nexus, .nex, .nxs)
-  - Writer: `to_nexus_split_system()` - Converts SplitSystem to NEXUS string
-  - Reader: `from_nexus_split_system()` - Parses NEXUS string to SplitSystem
-  - Writer: `to_nexus_weighted_split_system()` - Converts WeightedSplitSystem to NEXUS string
-  - Reader: `from_nexus_weighted_split_system()` - Parses NEXUS string to WeightedSplitSystem
+
+- **nexus**: NEXUS format for split systems (extensions: .nexus, .nex, .nxs).
+  Writer: `to_nexus_split_system()` converts SplitSystem to NEXUS string.
+  Reader: `from_nexus_split_system()` parses NEXUS string to SplitSystem.
+  Writer: `to_nexus_weighted_split_system()` converts WeightedSplitSystem to NEXUS string.
+  Reader: `from_nexus_weighted_split_system()` parses NEXUS string to WeightedSplitSystem.
 
 These handlers are automatically registered when this module is imported.
 SplitSystem and WeightedSplitSystem inherit from IOMixin, so you can use:

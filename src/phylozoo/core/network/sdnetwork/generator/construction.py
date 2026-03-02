@@ -24,8 +24,8 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     
     This function semi-directs a directed generator by:
     1. Converting all edges to undirected, except those entering a hybrid node
-       (a node with in-degree >= 2)
-    2. Suppressing the degree-2 root node
+       (a node with in-degree >= 2).
+    2. Suppressing the degree-2 root node.
     
     Parameters
     ----------

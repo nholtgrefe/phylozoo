@@ -411,7 +411,7 @@ be specified for comparison.
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples
 - :doc:`Semi-Directed Network Class <semi_directed_network_class>` - The SemiDirectedPhyNetwork class and its properties
 - :doc:`Semi-Directed Generator <generators>` - Level-k network generators
 - :doc:`Directed Networks <../directed/overview>` - Fully directed network representations

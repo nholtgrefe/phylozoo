@@ -120,7 +120,7 @@ Supported formats include:
    consistent file handling across PhyloZoo classes. 
    
    For details on the I/O system,
-   see the :doc:`I/O documentation <../../../../io>`. 
+   see the :doc:`I/O documentation <../../../utils/io/index>`. 
    
    For specific information about
    supported file formats and parameter options for networks, see the
@@ -143,7 +143,7 @@ guarantees that the object represents a well-defined phylogenetic network:
 By default, invalid networks cannot be constructed. Validation can be disabled for
 performance-critical operations or when working with intermediate network states that
 may temporarily violate validation rules. 
-See the :doc:`Validation documentation <../../../../utils/validation>`
+See the :doc:`Validation documentation <../../../utils/validation>`
 for details on how to disable validation.
 
 Attributes
@@ -255,7 +255,7 @@ Labels can be accessed via dedicated methods:
    node_id = network.get_node_id("A")  # Returns node ID or None
 
 Additional attributes
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 Any additional node or edge attributes may be attached freely. Attributes without a
 special semantic role are preserved by the network object and by I/O operations but are
@@ -480,7 +480,7 @@ underlying graph structure but is a separate instance.
 
 
 Visualization
-------------
+-------------
 
 SemiDirectedPhyNetwork can be visualized using the PhyloZoo visualization module. The
 visualization system supports multiple layout algorithms and styling options.
@@ -500,7 +500,7 @@ visualization system supports multiple layout algorithms and styling options.
    plot_sdnetwork(network)
 
 For more visualization options, including different layout types, styling, and customization,
-see the :doc:`Visualization documentation <../../../../visualization/viz>`.
+see the :doc:`Visualization documentation <../../../visualization/viz>`.
 
 .. note::
    The :class:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork` class is a more general
@@ -508,16 +508,16 @@ see the :doc:`Visualization documentation <../../../../visualization/viz>`.
    a :class:`MixedPhyNetwork` may contain undirected cycles. Many functions in the
    :mod:`phylozoo.core.network.sdnetwork` module are designed to work with both
    :class:`SemiDirectedPhyNetwork` and :class:`MixedPhyNetwork` instances.
-   Refer to the :doc:`API Reference <../../../api/core/network>` for specific function
+   Refer to the :doc:`API Reference <../../../../api/core/network/index>` for specific function
    signatures and details on which network types are supported.
 
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples
 - :doc:`Semi-Directed Network (Advanced Features) <semi_directed_network_algorithms>` - Advanced features, transformations, and classifications
 - :doc:`Semi-Directed Generator <generators>` - Level-k network generators
 - :doc:`Directed Networks <../directed/overview>` - Fully directed network representations
-- :doc:`I/O <../../../../io>` - File I/O operations and formats
-- :doc:`Validation <../../../../utils/validation>` - Validation system and disabling validation
-- :doc:`Visualization <../../../../visualization/viz>` - Network visualization and plotting
+- :doc:`I/O <../../../utils/io/index>` - File I/O operations and formats
+- :doc:`Validation <../../../utils/validation>` - Validation system and disabling validation
+- :doc:`Visualization <../../../visualization/viz>` - Network visualization and plotting

@@ -724,8 +724,8 @@ class MixedPhyNetwork:
         6. Bootstrap values are in [0.0, 1.0]
         7. Gamma constraints (gamma only on hybrid edges, sum to 1.0 if specified)
         8. Branch length constraints: for each set of parallel edges, if one edge has
-           branch_length, all must have branch_length, and all values must be the same
-        
+           branch_length, all must have branch_length, and all values must be the same.
+
         Raises
         ------
         PhyloZooNetworkStructureError
@@ -1382,7 +1382,7 @@ class MixedPhyNetwork:
 
         Returns
         -------
-        NodeView
+        MixedMultiGraph.NodeView
             Set-like, callable view of node identifiers.
         """
         return self._graph.nodes
@@ -1397,7 +1397,7 @@ class MixedPhyNetwork:
 
         Returns
         -------
-        EdgeView
+        MixedMultiGraph.EdgeView
             Callable view of edges (u, v) or (u, v, key) or with data.
         """
         return self._graph.edges

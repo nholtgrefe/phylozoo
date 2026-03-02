@@ -615,6 +615,7 @@ class DirectedPhyNetwork(IOMixin):
             If empty network is detected.
         PhyloZooSingleNodeNetworkWarning
             If single-node network is detected.
+
         Notes
         -----
         This method performs comprehensive validation of the network structure
@@ -1218,7 +1219,7 @@ class DirectedPhyNetwork(IOMixin):
 
         Returns
         -------
-        NodeView
+        DirectedMultiGraph.NodeView
             Set-like, callable view of node identifiers.
         """
         return self._graph.nodes
@@ -1233,7 +1234,7 @@ class DirectedPhyNetwork(IOMixin):
 
         Returns
         -------
-        EdgeView
+        DirectedMultiGraph.EdgeView
             Callable view of edges (u, v) or (u, v, key) or with data.
         """
         return self._graph.edges
