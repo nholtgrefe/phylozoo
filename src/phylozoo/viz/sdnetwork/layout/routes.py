@@ -84,7 +84,6 @@ def compute_radial_routes(
                 is_parallel=is_parallel,
             ),
             points=points,
-            curve_control=None,
         )
 
     return edge_routes

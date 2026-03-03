@@ -72,13 +72,10 @@ def compute_mmgraph_routes(
                 continue
 
             is_parallel = num_parallel > 1
-            
-            # For parallel edges, the backend will compute the curve
-            # So we just provide start and end points
+
             x1, y1 = positions[u_edge]
             x2, y2 = positions[v_edge]
             points = ((x1, y1), (x2, y2))
-            curve_control = None
 
             edge_routes[(u_edge, v_edge, key)] = EdgeRoute(
                 edge_type=EdgeType(
@@ -87,7 +84,6 @@ def compute_mmgraph_routes(
                     is_parallel=is_parallel,
                 ),
                 points=points,
-                curve_control=curve_control,
             )
 
     return edge_routes

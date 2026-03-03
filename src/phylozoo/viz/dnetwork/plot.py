@@ -8,16 +8,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from matplotlib.path import Path as MPath
-from matplotlib.patches import Circle
 
 from phylozoo.utils.exceptions import PhyloZooLayoutError
+from phylozoo.viz._layout_utils import compute_layout_center
 
 from .style import DNetStyle, default_style
-from phylozoo.viz._types import EdgeRoute
 from .layout import compute_nx_layout, compute_pz_dag_layout
+from phylozoo.viz._render import (
+    build_parallel_groups,
+    draw_edge,
+    draw_label,
+    draw_node,
+)
 
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
@@ -79,17 +82,14 @@ def plot_dnetwork(
     ... )
     >>> ax = plot_dnetwork(net)
     """
-    # Get or create style
     if style is None:
         style = default_style()
 
-    # Create or use existing axes
     if ax is None:
         fig, ax = plt.subplots()
     else:
         fig = ax.figure
 
-    # Compute layout
     if layout == 'pz-dag':
         computed_layout = compute_pz_dag_layout(network, **layout_kwargs)
     elif layout.startswith('pz-'):
@@ -98,28 +98,17 @@ def plot_dnetwork(
             "Supported PhyloZoo layouts: 'pz-dag'"
         )
     else:
-        # NetworkX or Graphviz layout
         computed_layout = compute_nx_layout(network, layout=layout, **layout_kwargs)
 
-    # Render edges
     network_obj = computed_layout.network
     positions = computed_layout.positions
+    center = compute_layout_center(positions)
 
-    # Group parallel edges for offset calculation
-    base_parallel_offset = 0.15
-    parallel_offset_step = 0.1
-    parallel_groups: dict[tuple[Any, Any], list[int]] = {}
+    parallel_groups = build_parallel_groups(computed_layout.edge_routes)
+
     for (u, v, key), route in computed_layout.edge_routes.items():
-        if route.edge_type.is_parallel:
-            if (u, v) not in parallel_groups:
-                parallel_groups[(u, v)] = []
-            parallel_groups[(u, v)].append(key)
+        draw_edge(ax, route, style, parallel_groups, (u, v, key))
 
-    # Render all edges
-    for (u, v, key), route in computed_layout.edge_routes.items():
-        _draw_edge(ax, route, style, computed_layout, network_obj, parallel_groups, key)
-
-    # Render nodes
     leaves = network_obj.leaves
     hybrid_nodes = network_obj.hybrid_nodes
     root = network_obj.root_node
@@ -134,203 +123,17 @@ def plot_dnetwork(
         else:
             node_type = 'tree'
 
-        _draw_node(ax, node, position, node_type, style)
+        draw_node(ax, position, node_type, style)
 
-        # Add labels if enabled
         if style.with_labels:
             label = network_obj.get_label(node)
             if label:
-                _draw_label(ax, position, label, style, node_type)
+                draw_label(ax, position, label, style, node_type, center=center)
 
-    # Set axis properties
     ax.set_aspect('equal')
     ax.axis('off')
 
-    # Show plot if requested
     if show:
         plt.show()
 
     return ax
-
-
-def _draw_edge(
-    ax: Any,
-    route: EdgeRoute,
-    style: DNetStyle,
-    layout: Any,
-    network: 'DirectedPhyNetwork',
-    parallel_groups: dict[tuple[Any, Any], list[int]],
-    key: int,
-) -> None:
-    """Draw a single edge."""
-    points = route.points
-    if not points:
-        return
-
-    # Determine edge color
-    target_pos = points[-1]
-    is_hybrid_target = False
-    for node, pos in layout.positions.items():
-        if (abs(pos[0] - target_pos[0]) < 1e-6
-            and abs(pos[1] - target_pos[1]) < 1e-6
-            and node in network.hybrid_nodes):
-            is_hybrid_target = True
-            break
-
-    edge_color = (
-        style.hybrid_edge_color
-        if (route.edge_type.is_hybrid or is_hybrid_target)
-        else style.edge_color
-    )
-
-    # Calculate parallel edge offset if needed
-    base_parallel_offset = 0.15
-    parallel_offset_step = 0.1
-    parallel_offset = 0.0
-    if route.edge_type.is_parallel:
-        # Find the edge key in parallel groups
-        for (u_node, v_node), keys in parallel_groups.items():
-            if len(keys) > 1 and key in keys:
-                parallel_keys = sorted(keys)
-                key_index = parallel_keys.index(key)
-                direction = 1 if key_index % 2 == 0 else -1
-                magnitude = base_parallel_offset + (key_index // 2) * parallel_offset_step
-                parallel_offset = direction * magnitude
-                break
-
-    # Draw edge
-    if route.edge_type.is_parallel and parallel_offset != 0.0:
-        # Bezier curve for parallel edges
-        px, py = points[0]
-        ex, ey = points[-1]
-        mid_x = (px + ex) / 2
-        mid_y = (py + ey) / 2
-
-        if abs(ex - px) < abs(ey - py):
-            cx = mid_x + parallel_offset
-            cy = mid_y
-        else:
-            cx = mid_x
-            cy = mid_y + parallel_offset
-
-        verts = [(px, py), (cx, cy), (ex, ey)]
-        codes = [MPath.MOVETO, MPath.CURVE3, MPath.CURVE3]
-        path = MPath(verts, codes)
-        patch = mpatches.PathPatch(
-            path,
-            edgecolor=edge_color,
-            facecolor='none',
-            linewidth=style.edge_width,
-            zorder=1,
-        )
-        ax.add_patch(patch)
-
-        # Add arrow
-        dx = ex - cx
-        dy = ey - cy
-        ax.annotate(
-            '',
-            xy=(ex, ey),
-            xytext=(ex - 0.1 * dx, ey - 0.1 * dy),
-            arrowprops=dict(
-                arrowstyle='->',
-                color=edge_color,
-                lw=style.edge_width,
-            ),
-            zorder=2,
-        )
-    else:
-        # Straight line
-        xs = [p[0] for p in points]
-        ys = [p[1] for p in points]
-        ax.plot(
-            xs,
-            ys,
-            color=edge_color,
-            linewidth=style.edge_width,
-            zorder=1,
-        )
-
-        # Add arrow for directed edges
-        if route.edge_type.is_directed and len(points) >= 2:
-            ax.annotate(
-                '',
-                xy=(xs[-1], ys[-1]),
-                xytext=(xs[-2], ys[-2]),
-                arrowprops=dict(
-                    arrowstyle='->',
-                    color=edge_color,
-                    lw=style.edge_width,
-                ),
-                zorder=2,
-            )
-
-
-def _draw_node(
-    ax: Any,
-    node: Any,
-    position: tuple[float, float],
-    node_type: str,
-    style: DNetStyle,
-) -> Circle:
-    """Draw a single node."""
-    x, y = position
-
-    # Determine node color and size
-    if node_type == 'leaf':
-        color = style.leaf_color
-        size = style.leaf_size
-    elif node_type == 'hybrid':
-        color = style.hybrid_color
-        size = style.node_size
-    else:
-        color = style.node_color
-        size = style.node_size
-
-    # Convert size to radius
-    radius = (size / 1000.0) ** 0.5 * 0.03
-
-    circle = Circle(
-        (x, y),
-        radius=radius,
-        color=color,
-        zorder=3,
-    )
-    ax.add_patch(circle)
-    return circle
-
-
-def _draw_label(
-    ax: Any,
-    position: tuple[float, float],
-    text: str,
-    style: DNetStyle,
-    node_type: str = 'leaf',
-) -> Any:
-    """Add a text label."""
-    x, y = position
-
-    # Position labels based on node type
-    if node_type == 'leaf':
-        # Leaves: place below (negative y offset)
-        offset_x = 0.0
-        offset_y = -style.label_offset
-        ha = 'center'
-        va = 'top'
-    else:
-        # Internal nodes: place to the right
-        offset_x = style.label_offset
-        offset_y = 0.0
-        ha = 'left'
-        va = 'center'
-
-    return ax.text(
-        x + offset_x,
-        y + offset_y,
-        text,
-        fontsize=style.label_font_size,
-        color=style.label_color,
-        ha=ha,
-        va=va,
-        zorder=4,
-    )

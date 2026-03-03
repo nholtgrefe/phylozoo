@@ -24,9 +24,9 @@ class SDNetStyle(MGraphStyle):
     node_color : str
         Color for internal tree nodes. Default is 'lightblue'.
     leaf_color : str
-        Color for leaf nodes. Default is 'lightgreen'.
+        Color for leaf nodes. Default is 'lightblue' (same as node_color).
     hybrid_color : str
-        Color for hybrid nodes. Default is 'salmon'.
+        Color for hybrid nodes. Default is 'lightblue' (same as node_color).
     node_size : float
         Size of internal nodes. Default is 500.0.
     leaf_size : float
@@ -53,9 +53,9 @@ class SDNetStyle(MGraphStyle):
     'blue'
     """
 
-    leaf_color: str = 'lightgreen'
-    hybrid_color: str = 'salmon'
-    leaf_size: float = 600.0
+    leaf_color: str = 'lightblue'
+    hybrid_color: str = 'lightblue'
+    leaf_size: float = 500.0
     hybrid_edge_color: str = 'red'
 
     def copy(self) -> 'SDNetStyle':
@@ -80,6 +80,8 @@ class SDNetStyle(MGraphStyle):
             hybrid_color=self.hybrid_color,
             node_size=self.node_size,
             leaf_size=self.leaf_size,
+            node_edge_color=self.node_edge_color,
+            node_edge_width=self.node_edge_width,
             edge_color=self.edge_color,
             hybrid_edge_color=self.hybrid_edge_color,
             edge_width=self.edge_width,

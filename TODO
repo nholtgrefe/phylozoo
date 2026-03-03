@@ -33,6 +33,7 @@ Later releases:
         - Split binary resolution into out_resolution and in_resolution methods?
         - is_OLP function
         - fix/check eNewick parser and writer
+        - phylox conversion
         - Generator:
             - add parallelization of generator construction
             - reuse level (k-1) generators or allow as input?

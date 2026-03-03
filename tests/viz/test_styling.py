@@ -15,8 +15,8 @@ class TestDNetStyle:
         style = DNetStyle()
 
         assert style.node_color == 'lightblue'
-        assert style.leaf_color == 'lightgreen'
-        assert style.hybrid_color == 'salmon'
+        assert style.leaf_color == 'lightblue'
+        assert style.hybrid_color == 'lightblue'
         assert style.edge_color == 'gray'
         assert style.hybrid_edge_color == 'red'
         assert style.with_labels is True

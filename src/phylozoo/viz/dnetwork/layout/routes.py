@@ -60,18 +60,18 @@ def compute_backbone_routes(
     for u, v, key in backbone_edges:
         if u in positions and v in positions:
             is_parallel = parallel_counts[(u, v)] > 1
+            # Edges into hybrid nodes are hybrid edges (one may be in backbone)
+            is_hybrid = v in network.hybrid_nodes
 
-            # Straight line route
             points = (positions[u], positions[v])
 
             edge_routes[(u, v, key)] = EdgeRoute(
                 edge_type=EdgeType(
                     is_directed=True,
-                    is_hybrid=False,
+                    is_hybrid=is_hybrid,
                     is_parallel=is_parallel,
                 ),
                 points=points,
-                curve_control=None,
             )
 
     return edge_routes
@@ -132,7 +132,6 @@ def compute_hybrid_routes(
                 is_parallel=is_parallel,
             ),
             points=points,
-            curve_control=None,
         )
 
     return edge_routes

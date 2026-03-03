@@ -45,27 +45,22 @@ class EdgeRoute:
     Edge routing information for layout.
 
     This class stores geometric routing information for edges, independent
-    of the rendering backend. It contains the path points and optional
-    control points for curved edges.
+    of the rendering backend. It contains the path points. Curved edges
+    (e.g. parallel edges) are computed at render time from the points.
 
     Attributes
     ----------
     edge_type : EdgeType
         Type of edge with three dimensions (directed/undirected, hybrid/tree, parallel/unique).
     points : tuple[tuple[float, float], ...]
-        Polyline points for the edge route. For tree edges, this is
-        typically [parent_pos, child_pos]. For hybrid edges, includes
-        curve control points.
-    curve_control : tuple[float, float] | None
-        Control point for curved edges (hybrid edges only).
-        None for straight tree edges.
+        Polyline points for the edge route. Typically (parent_pos, child_pos)
+        for straight edges.
 
     Examples
     --------
     >>> route = EdgeRoute(
     ...     edge_type=EdgeType(is_directed=True, is_hybrid=False, is_parallel=False),
     ...     points=((0.0, 0.0), (1.0, 1.0)),
-    ...     curve_control=None
     ... )
     >>> route.edge_type.is_directed
     True
@@ -73,7 +68,6 @@ class EdgeRoute:
 
     edge_type: EdgeType
     points: tuple[tuple[float, float], ...]
-    curve_control: tuple[float, float] | None = None
 
 
 # Type aliases for clarity

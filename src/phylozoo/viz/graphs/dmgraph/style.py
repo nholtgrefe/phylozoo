@@ -30,7 +30,7 @@ class BaseStyle:
     with_labels : bool
         Whether to show node labels. Default is True.
     label_offset : float
-        Offset for labels from nodes. Default is 0.1.
+        Offset for labels from nodes. Default is 0.12.
     label_font_size : float
         Font size for labels. Default is 10.0.
     label_color : str
@@ -45,10 +45,12 @@ class BaseStyle:
 
     node_color: str = 'lightblue'
     node_size: float = 500.0
+    node_edge_color: str = 'black'
+    node_edge_width: float = 1.5
     edge_color: str = 'gray'
     edge_width: float = 2.0
     with_labels: bool = True
-    label_offset: float = 0.1
+    label_offset: float = 0.12
     label_font_size: float = 10.0
     label_color: str = 'black'
 
@@ -73,7 +75,7 @@ class DMGraphStyle(BaseStyle):
     with_labels : bool
         Whether to show node labels. Default is True.
     label_offset : float
-        Offset for labels from nodes. Default is 0.1.
+        Offset for labels from nodes. Default is 0.12.
     label_font_size : float
         Font size for labels. Default is 10.0.
     label_color : str
