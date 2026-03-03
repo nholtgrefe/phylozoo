@@ -1,4 +1,4 @@
-"""SemiDirectedPhyNetwork plotting module."""
+"""Plotting and styling for semi-directed phylogenetic networks (SemiDirectedPhyNetwork)."""
 
 from .layout import SDNetLayout, compute_nx_layout, compute_pz_radial_layout
 from .plot import plot_sdnetwork

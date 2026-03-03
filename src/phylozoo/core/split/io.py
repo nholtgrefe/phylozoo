@@ -1,9 +1,8 @@
 """
 Split system I/O module.
 
-This module provides format handlers for reading and writing split systems
-to/from files. Format handlers are registered with FormatRegistry for use with
-the IOMixin system.
+Split systems support reading and writing in NEXUS format. This module provides
+format handlers registered with FormatRegistry for use with the IOMixin system.
 
 The following format handlers are defined and registered:
 

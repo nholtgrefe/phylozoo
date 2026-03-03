@@ -1,14 +1,14 @@
 viz
 ===
 
-Network visualization and plotting. The visualization module provides a flexible plotting
-system for phylogenetic networks and graphs with support for multiple layout algorithms
-and customizable styling.
+.. py:module:: phylozoo.viz
+
+.. automodule:: phylozoo.viz
+   :noindex:
+   :no-members:
 
 viz.dnetwork
 ------------
-
-Plotting and styling for directed phylogenetic networks.
 
 Plotting
 ^^^^^^^^
@@ -34,8 +34,6 @@ Layout
 viz.sdnetwork
 -------------
 
-Plotting and styling for semi-directed phylogenetic networks.
-
 Plotting
 ^^^^^^^^
 
@@ -59,8 +57,6 @@ Layout
 
 viz.graphs
 ----------
-
-Plotting and styling for underlying graph structures (DirectedMultiGraph and MixedMultiGraph).
 
 viz.graphs.dmgraph
 ^^^^^^^^^^^^^^^^^^^

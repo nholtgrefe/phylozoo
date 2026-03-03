@@ -1,9 +1,9 @@
 """
 Distance matrix operations module.
 
-This module provides operations on distance matrices, including TSP (Traveling Salesman Problem)
-solving and other optimization algorithms.
-
+This module provides algorithms for working with distance matrices, including the
+Traveling Salesman Problem (TSP) solver using the Held-Karp dynamic programming
+algorithm.
 """
 
 from __future__ import annotations

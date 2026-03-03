@@ -7,8 +7,8 @@ This manual provides comprehensive guides for using PhyloZoo.
    :maxdepth: 3
    :caption: Contents:
    
-   installation
    introduction
+   installation
    core/index
    visualization/index
    utils/index

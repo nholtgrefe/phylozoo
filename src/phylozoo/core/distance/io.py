@@ -1,9 +1,9 @@
 """
 Distance matrix I/O module.
 
-This module provides format handlers for reading and writing distance matrices
-to/from files. Format handlers are registered with FormatRegistry for use with
-the IOMixin system.
+Distance matrices support reading and writing in multiple formats: NEXUS, PHYLIP,
+and CSV. This module provides format handlers registered with FormatRegistry for
+use with the IOMixin system.
 
 The following format handlers are defined and registered:
 - **nexus**: NEXUS format for distance matrices (extensions: .nexus, .nex, .nxs)

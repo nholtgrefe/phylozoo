@@ -1,8 +1,9 @@
 """
 Distance matrix classification module.
 
-This module provides functions for classifying distance matrices (metric, pseudo-metric, Kalmanson, etc.).
-
+This module provides functions for classifying distance matrices based on mathematical
+properties: triangle inequality, metric properties (triangle inequality, symmetry,
+non-negativity), and Kalmanson conditions (circular ordering constraints).
 """
 
 from __future__ import annotations

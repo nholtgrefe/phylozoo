@@ -1,7 +1,7 @@
 Visualization Module
 ====================
 
-The visualization module (`phylozoo.viz`) provides a flexible plotting system for 
+The :mod:`phylozoo.viz` module provides a flexible plotting system for 
 phylogenetic networks and graphs with support for multiple layout algorithms and 
 customizable styling :cite:`PhyloZoo2024`.
 

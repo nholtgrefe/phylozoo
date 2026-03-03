@@ -1,8 +1,9 @@
 """
 Quartet profile set module.
 
-This module provides the QuartetProfileSet class for working with
-collections of quartet profiles (multiple quartets per 4-taxon set).
+A quartet profile set is a collection of quartet profiles, typically used for
+network reconstruction algorithms such as Squirrel. This module provides the
+QuartetProfileSet class.
 """
 
 from functools import cached_property

@@ -1,8 +1,10 @@
 """
-Visualization module for PhyloZoo (viz).
+Network visualization and plotting (viz).
 
-This module provides a modular visualization system for phylogenetic networks
-and graphs with clear separation between layout computation and rendering.
+The visualization module provides a flexible plotting system for phylogenetic
+networks and graphs with support for multiple layout algorithms and customizable
+styling. It uses a modular design with clear separation between layout
+computation and rendering.
 
 **When to use which plot function:**
 

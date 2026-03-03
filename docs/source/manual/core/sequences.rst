@@ -3,8 +3,7 @@ Multiple Sequence Alignments
 
 The :mod:`phylozoo.core.sequence` module provides immutable containers for multiple sequence
 alignments (MSAs), along with comprehensive tools for distance computation, bootstrap
-resampling, and other operations essential for phylogenetic analysis. MSAs serve as
-the standard input format for empirical algorithms.
+resampling, and other operations essential for phylogenetic analysis.
 
 All classes and functions on this page can be imported from the core sequence module:
 
@@ -17,7 +16,7 @@ All classes and functions on this page can be imported from the core sequence mo
 Working with Multiple Sequence Alignments
 ------------------------------------------
 
-The :class:`phylozoo.core.sequence.MSA` class is the canonical container for aligned
+The :class:`~phylozoo.core.sequence.base.MSA` class is the canonical container for aligned
 sequences in PhyloZoo. It provides an immutable, labeled, and read-only representation
 that ensures data integrity throughout your analysis pipeline.
 
@@ -34,7 +33,7 @@ that ensures data integrity throughout your analysis pipeline.
    - To modify sequences, create a new ``MSA`` instance with the updated data
    - The alignment is validated for equal sequence lengths at construction time
 
-   For implementation details, see :mod:`src/phylozoo/core/sequence/base.py`.
+   For implementation details, see the :mod:`phylozoo.core.sequence.base` module.
 
 Creating an MSA
 ^^^^^^^^^^^^^^^^
@@ -55,7 +54,7 @@ MSAs can be created from dictionaries mapping taxon names to sequence strings:
    msa = MSA(sequences)
 
 All sequences must have the same length. The constructor validates these properties
-and raises :class:`phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
+and raises :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
 
 For performance-critical applications, you can also create MSAs directly from pre-encoded arrays:
 
@@ -117,15 +116,14 @@ MSAs support reading and writing in multiple phylogenetic formats:
    msa.save("output.fasta")
 
 .. seealso::
-   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. 
+   The I/O system uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   consistent file handling across PhyloZoo classes.
    
    For details on the I/O system,
-   see the :doc:`I/O documentation <../utils/io>`. 
+   see the :doc:`I/O documentation <../utils/io>`.
    
-   For specific information about
-   supported file formats and parameter options for MSAs, see the
-   :mod:`API reference <phylozoo.core.sequence.io>`.
+   For supported file formats and parameter options for MSAs, see the
+   :mod:`phylozoo.core.sequence.io` module in the API.
 
 Bootstrap Resampling
 ---------------------
@@ -136,7 +134,7 @@ for assessing the statistical support of phylogenetic inferences.
 Basic Bootstrap
 ^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.sequence.bootstrap` function generates bootstrap replicates
+The :func:`~phylozoo.core.sequence.bootstrap.bootstrap` function generates bootstrap replicates
 by sampling alignment columns with replacement:
 
 .. code-block:: python
@@ -154,7 +152,7 @@ length), and ``seed`` ensures reproducible results for testing and debugging.
 Gene-Based Bootstrap
 ^^^^^^^^^^^^^^^^^^^^
 
-For multi-gene alignments, the :func:`phylozoo.core.sequence.bootstrap_per_gene`
+For multi-gene alignments, the :func:`~phylozoo.core.sequence.bootstrap.bootstrap_per_gene`
 function resamples columns within each gene separately:
 
 .. code-block:: python
@@ -177,7 +175,7 @@ from multiple sequence alignments.
 Hamming Distance
 ^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.sequence.hamming_distances` function computes normalized
+The :func:`~phylozoo.core.sequence.distances.hamming_distances` function computes normalized
 Hamming distances between all pairs of sequences:
 
 .. math::
@@ -207,6 +205,6 @@ large alignments.
 See Also
 --------
 
-- :doc:`API Reference <../../api/core/sequence>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../api/core/sequences>` - Complete function signatures and detailed examples
 - :mod:`phylozoo.core.sequence.io` - MSA I/O format details and parameter options
 - :doc:`Distance Matrices <distance>` - Working with distance matrices computed from alignments

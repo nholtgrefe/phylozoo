@@ -1,17 +1,17 @@
 utils
 =====
 
-Utility functions and classes used throughout PhyloZoo.
+.. py:module:: phylozoo.utils
+
+.. automodule:: phylozoo.utils
+   :noindex:
+   :no-members:
 
 Exceptions
 ----------
 
-Custom exception hierarchy and warning utilities.
-
 Exception Classes
 ^^^^^^^^^^^^^^^^^
-
-Base exceptions and domain-specific exceptions.
 
 .. automodule:: phylozoo.utils.exceptions
    :members:
@@ -21,15 +21,11 @@ Base exceptions and domain-specific exceptions.
 Warning Utilities
 ^^^^^^^^^^^^^^^^
 
-Functions for warning about identifier-related issues.
-
 .. automodule:: phylozoo.utils.exceptions
    :members: warn_on_keyword, warn_on_none_value
 
 Parallel Processing
 ------------------
-
-Parallel execution backends and configuration.
 
 .. automodule:: phylozoo.utils.parallel
    :members:
@@ -38,16 +34,12 @@ Parallel execution backends and configuration.
 Validation
 ----------
 
-Validation utilities and decorators.
-
 .. automodule:: phylozoo.utils.validation
    :members:
    :show-inheritance:
 
 I/O Utilities
 -------------
-
-General I/O utility functions.
 
 .. automodule:: phylozoo.utils.io
    :members:

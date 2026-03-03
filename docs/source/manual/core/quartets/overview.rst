@@ -23,5 +23,5 @@ Classes
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/quartet>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../api/core/quartets>` - Complete function signatures and detailed examples
 - :doc:`Distance Matrices <../distance>` - Computing distances from quartet profiles

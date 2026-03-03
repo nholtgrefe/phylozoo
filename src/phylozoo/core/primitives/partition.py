@@ -1,7 +1,10 @@
 """
 Partition module.
 
-This module provides a class for working with partitions of sets.
+A partition is a division of a set into non-empty, disjoint subsets (parts).
+Partitions are used to represent splits and other set-theoretic structures
+in phylogenetic analysis. This module provides the Partition class for
+working with partitions of sets.
 """
 
 import itertools

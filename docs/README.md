@@ -45,10 +45,9 @@ Then open `build/html/index.html` in your browser.
 - `source/` - Source RST files
   - `manual/` - User manual (installation, introduction, etc.)
   - `tutorials/` - Extended tutorials
-  - `examples/` - Code examples
-  - `library/` - API reference
-  - `guides/` - Developer guides
-  - `reference/` - Reference material (glossary, bibliography, changelog)
+  - `api/` - API reference
+  - `develop/` - Developer guides
+  - `reference/` - Reference material (bibliography, changelog)
 - `build/` - Built HTML output
 - `source/conf.py` - Sphinx configuration
 - `requirements.txt` - Documentation dependencies

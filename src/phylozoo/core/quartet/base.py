@@ -1,7 +1,8 @@
 """
 Quartet base module.
 
-This module provides the Quartet class for representing quartets (4-taxon trees).
+This module provides the Quartet class for representing quartets (4-taxon unrooted
+trees). A quartet can be resolved (single non-trivial split) or unresolved (star tree).
 """
 
 from typing import TYPE_CHECKING

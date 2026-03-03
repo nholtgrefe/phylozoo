@@ -2,8 +2,7 @@
 Quartet distance module.
 
 This module provides functions for computing distance matrices from quartet profiles
-based on the quartet distance metric.
-
+using quartet distance metrics.
 """
 
 import itertools

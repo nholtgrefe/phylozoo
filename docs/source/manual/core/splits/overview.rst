@@ -22,4 +22,4 @@ Classes
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/split>` - Complete function signatures
+- :doc:`API Reference <../../../api/core/splits>` - Complete function signatures

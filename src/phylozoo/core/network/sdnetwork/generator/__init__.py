@@ -1,9 +1,10 @@
 """
-Generator module for semi-directed level-k generators.
+Level-k generators for semi-directed phylogenetic networks.
 
 This module provides classes for representing level-k generators of
 semi-directed phylogenetic networks. Generators are minimal biconnected
-components that represent the core structure of level-k networks.
+components that represent the core structure of level-k semi-directed
+phylogenetic networks.
 """
 
 from .attachment import attach_leaves_to_generator

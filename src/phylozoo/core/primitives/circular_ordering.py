@@ -1,7 +1,10 @@
 """
 Circular ordering module.
 
-This module provides classes for working with circular orderings of sets and elements.
+A circular ordering represents a cyclic arrangement of elements, such as the order
+of taxa around a circular phylogenetic tree or network. Circular orderings are
+used in network reconstruction algorithms and visualization. This module provides
+classes for working with circular orderings of sets and elements.
 """
 
 import itertools

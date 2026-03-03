@@ -3,10 +3,30 @@ Testing Guide
 
 This guide covers testing practices and guidelines for PhyloZoo.
 
+Testing Dependencies
+--------------------
+
+PhyloZoo uses a small set of testing tools:
+
+* `pytest <https://docs.pytest.org/>`_ >= 7.0.0
+* `pytest-cov <https://pytest-cov.readthedocs.io/>`_ >= 4.0.0
+
+You can install them directly:
+
+.. code-block:: bash
+
+   pip install pytest pytest-cov
+
+or as part of the development extra when working on PhyloZoo itself:
+
+.. code-block:: bash
+
+   pip install -e ".[dev]"
+
 Test Framework
 --------------
 
-PhyloZoo uses `pytest` as the testing framework. Tests are located in the `tests/` directory 
+PhyloZoo uses `pytest` as the testing framework. Tests are located in the ``tests/`` directory
 and mirror the source code structure.
 
 Running Tests

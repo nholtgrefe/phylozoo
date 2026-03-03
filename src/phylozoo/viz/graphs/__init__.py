@@ -1,8 +1,4 @@
-"""Graph plotting module for viz.
-
-This module provides plotting functions for DirectedMultiGraph and MixedMultiGraph
-through the dmgraph and mmgraph submodules.
-"""
+"""Plotting and styling for underlying graph structures (DirectedMultiGraph and MixedMultiGraph)."""
 
 from .dmgraph import plot_dmgraph
 from .mmgraph import plot_mmgraph

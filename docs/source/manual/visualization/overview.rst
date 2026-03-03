@@ -1,7 +1,7 @@
 Overview
 ========
 
-The visualization module (`phylozoo.viz`) provides a flexible plotting system for 
+The :mod:`phylozoo.viz` module provides a flexible plotting system for 
 phylogenetic networks and graphs with support for multiple layout algorithms and 
 customizable styling :cite:`PhyloZoo2024`.
 
@@ -38,11 +38,12 @@ Network Types
 Graph Types
 -----------
 
-**DirectedMultiGraph**
-   Directed multigraphs supporting parallel edges. Uses standard NetworkX/Graphviz layouts.
-
-**MixedMultiGraph**
-   Mixed multigraphs with both directed and undirected edges. Uses standard NetworkX/Graphviz layouts.
+**DirectedMultiGraph** and **MixedMultiGraph**
+   Low-level graph structures. Use :func:`plot_dmgraph` and :func:`plot_mmgraph`
+   when working with raw graph objects (e.g. when implementing algorithms or
+   debugging). These do not apply phylogenetic semantics (root, leaf, hybrid)
+   and use only NetworkX/Graphviz layouts. For typical phylogenetic visualization,
+   prefer :func:`plot_dnetwork` or :func:`plot_sdnetwork` with network objects.
 
 Quick Start
 -----------

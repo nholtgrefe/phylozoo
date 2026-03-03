@@ -1,5 +1,5 @@
 Welcome to the PhyloZoo docs!
-========
+=============================
 
 PhyloZoo is a Python package for working with phylogenetic networks and related
 evolutionary data. Phylogenetic networks extend evolutionary trees by allowing
@@ -7,15 +7,10 @@ multiple ancestral paths, capturing complex processes such as hybridization,
 recombination, or gene exchange.
 
 PhyloZoo provides a unified framework for handling network objects and closely
-related data types, including split systems, quartets, distance matrices, gene trees, and sequence alignments. It offers consistent data structures, internal
+related data types, including split systems, quartets, distance matrices, and sequence alignments. 
+It offers consistent data structures, internal
 validation, and robust file input/output, and allows users to move seamlessly
 between representations.
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Quickstart
-   
-   quickstart
 
 .. toctree::
    :maxdepth: 2
@@ -25,13 +20,13 @@ between representations.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Workflows
+   :caption: Tutorials
    
    tutorials/index
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Library (API Reference)
+   :maxdepth: 2
+   :caption: API Reference
    
    api/index
 
@@ -48,7 +43,7 @@ between representations.
    reference/index
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

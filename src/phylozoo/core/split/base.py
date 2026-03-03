@@ -1,7 +1,9 @@
 """
 Splits module.
 
-This module provides classes for working with phylogenetic splits.
+This module provides classes for working with phylogenetic splits. A split is a
+2-partition {A, B} of a set of elements where A ∪ B equals the full set and
+A ∩ B = ∅.
 """
 
 import itertools

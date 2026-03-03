@@ -1,8 +1,8 @@
 """
 Split system classifications module.
 
-This module provides functions for classifying split systems (e.g., checking
-if they are compatible with trees).
+This module provides functions for classifying split systems, such as checking
+pairwise compatibility.
 """
 
 import itertools

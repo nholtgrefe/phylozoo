@@ -1,10 +1,9 @@
 """
 Quartet profile module.
 
-This module provides the QuartetProfile class for representing multiple quartets
-on the same 4-taxon set with weights. A QuartetProfile always has total weight 1.0:
-if no weights are provided, each quartet is assigned 1/k; if weights are provided,
-they must sum to 1.0 (within a small tolerance) and are not scaled.
+A quartet profile groups multiple quartets on the same 4-taxon set, each with an
+associated weight representing the relative importance or frequency of each quartet
+topology. This module provides the QuartetProfile class; total weight is always 1.0.
 """
 
 from types import MappingProxyType

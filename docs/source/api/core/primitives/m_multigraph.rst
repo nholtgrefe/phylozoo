@@ -1,11 +1,11 @@
 primitives.m_multigraph
 =======================
 
-The :mod:`phylozoo.core.primitives.m_multigraph` module provides the :class:`MixedMultiGraph`
-class and related functions for working with mixed multi-graphs. A mixed multi-graph contains
-both directed and undirected edges, and allows multiple edges between vertices. This is the
-underlying graph structure for semi-directed phylogenetic networks, where tree edges are
-undirected and reticulation arcs are directed.
+.. py:module:: phylozoo.core.primitives.m_multigraph
+
+.. automodule:: phylozoo.core.primitives.m_multigraph
+   :noindex:
+   :no-members:
 
 Base Class
 ----------

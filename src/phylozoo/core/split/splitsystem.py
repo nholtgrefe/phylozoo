@@ -1,7 +1,9 @@
 """
 Split systems module.
 
-This module provides classes for working with split systems.
+This module provides classes for working with split systems. A split system is a
+collection of splits where each split covers the complete set of elements.
+Weighted split systems assign positive weights to each split.
 """
 
 from typing import Iterator, TYPE_CHECKING

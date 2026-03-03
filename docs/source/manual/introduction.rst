@@ -18,36 +18,14 @@ you to work with rooted and unrooted phylogenetic analyses. PhyloZoo integrates 
 with the Python scientific computing ecosystem, using NumPy for efficient numerical 
 operations and providing a clean, intuitive API for phylogenetic analysis workflows.
 
-Why PhyloZoo?
--------------
-
-PhyloZoo offers several advantages for phylogenetic network analysis:
-
-**Unified Framework**
-   PhyloZoo provides a single, consistent interface for working with networks, quartets, 
-   splits, sequences, and distance matrices. All data structures follow the same design 
-   principles, making it easy to move between different representations and combine them 
-   in your analyses.
-
-**Robust Validation**
-   All network objects are automatically validated upon creation, ensuring that you're 
-   always working with valid phylogenetic structures. This catches errors early and 
-   provides clear, helpful error messages when something goes wrong.
-
-**Comprehensive Functionality**
-   From network representation and manipulation to visualization, PhyloZoo provides 
-   support for phylogenetic network workflows. You can work with sequence data, 
-   networks, quartets, and splits without switching between different tools.
-
-**Performance and Scalability**
-   PhyloZoo is designed to handle both small exploratory analyses and larger production 
-   workflows. Efficient NumPy-based operations and optional parallelization support make 
-   it suitable for analyzing networks of various sizes.
-
-**Extensible Design**
-   The package uses a protocol-based architecture for diversity measures and provides 
-   flexible layout and styling systems for visualization, making it easy to extend and 
-   customize for your specific needs.
+Beyond network representation, PhyloZoo offers native support for quartets, split systems,
+multiple sequence alignments, and distance matrices within a consistent interface.
+Conversions between these representations are supported, allowing analyses to move
+flexibly between data types as required. All core data structures are validated upon
+construction to ensure well-defined phylogenetic objects, improving reliability and
+reproducibility. The package includes support for standard file formats such as eNewick,
+DOT, FASTA, and NEXUS, optional parallel execution for computationally intensive tasks,
+and flexible visualization functionality with customizable layouts for figures.
 
 Package Structure
 -----------------
@@ -62,13 +40,12 @@ see the corresponding sections in this manual:
    * **Networks**: ``DirectedPhyNetwork`` and ``SemiDirectedPhyNetwork`` classes for 
      representing phylogenetic networks. Directed networks are fully directed DAGs with 
      explicit root and hybrid nodes, while semi-directed networks allow undirected tree 
-     edges for more flexible representation :cite:`NetworkRepresentation2024`. 
+     edges for modelling root uncertainty :cite:`NetworkRepresentation2024`. 
      See :doc:`Networks <core/networks/index>` for details.
    
    * **Quartets**: ``Quartet``, ``QuartetProfile``, and ``QuartetProfileSet`` classes for 
      working with four-taxon relationships, which are fundamental building blocks for 
-     network inference :cite:`QuartetInference2024`. See :doc:`Quartets <core/quartets/index>` 
-     for details.
+     network inference. See :doc:`Quartets <core/quartets/index>` for details.
    
    * **Splits**: ``Split`` and ``SplitSystem`` classes for representing bipartitions of 
      taxa, a common way to encode phylogenetic relationships. See :doc:`Splits <core/splits/index>` 
@@ -85,7 +62,7 @@ see the corresponding sections in this manual:
      ``CircularSetOrdering`` used throughout the package. See :doc:`Primitives <core/primitives/index>` 
      for details.
 
-**Visualization Module** (`phylozoo.viz`)
+**Visualization Module** (:mod:`phylozoo.viz`)
    Flexible plotting system for networks. See :doc:`Visualization Module <visualization/index>` 
    for detailed documentation.
    
@@ -97,42 +74,20 @@ see the corresponding sections in this manual:
      standard NetworkX and Graphviz layouts for various visualization needs. See 
      :doc:`Layouts <visualization/layouts>` for details.
 
-**Utilities Module** (`phylozoo.utils`)
+**Utilities Module** (:mod:`phylozoo.utils`)
    Supporting functionality. See :doc:`Utils Module <utils/index>` for detailed documentation.
    
    * **Exceptions**: Comprehensive custom exception hierarchy for clear error reporting. 
      See :doc:`Exceptions <utils/exceptions>` for details.
    
-   * **Validation**: Network validation utilities and decorators. See 
+   * **Validation**: Class and object validation utilities and decorators. See 
      :doc:`Validation <utils/validation>` for details.
    
-   * **I/O**: File format support including eNewick, DOT, and other formats. See 
+   * **I/O**: File format support including eNewick, DOT, and many other formats. See 
      :doc:`I/O <utils/io>` for details.
    
    * **Parallelization**: Support for parallel execution of computationally intensive tasks. 
      See :doc:`Parallelization <utils/parallelization>` for details.
-
-Key Features
-------------
-
-* **Network Representation**: Support for both directed and semi-directed phylogenetic 
-  networks with comprehensive validation and feature extraction. Networks can be created 
-  programmatically or loaded from various file formats.
-
-* **Network Manipulation**: Tools for creating, modifying, and transforming networks, 
-  including binary resolution, subnetwork extraction, and network generators for creating 
-  test networks.
-
-* **Sequence Analysis**: Efficient MSA (Multiple Sequence Alignment) handling with 
-  NumPy-based storage, bootstrapping support, and distance calculations. Supports 
-  common formats like FASTA and NEXUS.
-
-* **Visualization**: Flexible plotting system with multiple layout algorithms (including 
-  custom PhyloZoo layouts and standard NetworkX/Graphviz layouts) for creating 
-  publication-quality figures. Supports customizable styling and rendering.
-
-* **Parallelization**: Built-in support for parallel execution of computationally 
-  intensive tasks, allowing you to leverage multiple CPU cores for faster analysis.
 
 Design Philosophy
 -----------------
@@ -164,10 +119,13 @@ PhyloZoo follows several key design principles that benefit end users:
 Getting Started
 ---------------
 
-To get started with PhyloZoo, see the :doc:`Quickstart <../quickstart>` guide for installation 
-instructions and basic examples. For detailed documentation on specific modules, see:
+To get started with PhyloZoo, see the :doc:`Installation Guide <installation>` for detailed installation 
+instructions and visit the detailed documentation on specific modules:
 
 * :doc:`Core Module <core/index>`: Data structures and network operations
 * :doc:`Visualization Module <visualization/index>`: Network plotting and visualization
+* :doc:`Utilities Module <utils/index>`: Utility functions and classes
+
+Alternatively, see the :doc:`Quickstart <../tutorials/quickstart>` guide for a quickstart tutorial.
 
 For complete API reference, see the :doc:`API Reference <../api/index>` section.

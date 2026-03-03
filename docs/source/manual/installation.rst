@@ -4,13 +4,15 @@ Installation
 Installing PhyloZoo
 -------------------
 
-PhyloZoo can be installed using pip from PyPI:
+PhyloZoo is a Python package that runs on `Python <https://www.python.org/>`_ (>= 3.10).
+You can install PhyloZoo and its dependencies using ``pip`` from `PyPI <https://pypi.org/project/phylozoo/>`_:
 
 .. code-block:: bash
 
    pip install phylozoo
 
-For the latest development version, clone the repository and install in editable mode:
+For development and contributing to PhyloZoo, install the latest source version in
+editable mode:
 
 .. code-block:: bash
 
@@ -21,25 +23,20 @@ For the latest development version, clone the repository and install in editable
 Requirements
 ------------
 
-PhyloZoo requires:
+PhyloZoo is designed to be lightweight and keeps its mandatory dependencies to a small set
+of widely used scientific Python packages. The core requirements are:
 
-* Python >= 3.10
-* NumPy >= 1.20.0
-* NetworkX >= 3.0.0
-* Numba >= 0.56.0
+* `NumPy <https://numpy.org/>`_ >= 1.20.0 (for numerical operations)
+* `NetworkX <https://networkx.org/>`_ >= 3.0.0 (for graph operations)
+* `Numba <https://numba.pydata.org/>`_ >= 0.56.0 (for JIT compilation of computationally intensive algorithms)
+* `Matplotlib <https://matplotlib.org/>`_ >= 3.5.0 (for plotting networks and visualizations)
 
-Optional Dependencies
----------------------
-
-* **Visualization**: Matplotlib >= 3.5.0 (for plotting networks and visualizations)
-* **Testing**: pytest >= 7.0.0, pytest-cov >= 4.0.0
-* **Development**: mypy >= 1.0.0, black >= 23.0.0, ruff >= 0.1.0
-* **Documentation**: Sphinx >= 7.0.0, sphinx-autobuild, sphinx-rtd-theme, sphinxcontrib-napoleon
+These are installed automatically when installing PhyloZoo.
 
 Verifying Installation
 ----------------------
 
-To verify that PhyloZoo is installed correctly:
+To verify that PhyloZoo is installed correctly, you can import it and print the version:
 
 .. code-block:: python
 
@@ -51,6 +48,33 @@ To verify that PhyloZoo is installed correctly:
    >>> net = DirectedPhyNetwork(edges=[(1, 2), (1, 3)], nodes=[(2, {'label': 'A'}), (3, {'label': 'B'})])
    >>> print(net.leaves)
    [2, 3]
+
+
+Building Documentation
+----------------------
+
+To build the documentation locally, install the optional documentation dependencies using
+the ``docs`` extra:
+
+.. code-block:: bash
+
+   pip install -e ".[docs]"
+   cd docs
+   make html
+
+This extra installs the main documentation tools:
+
+* `Sphinx <https://www.sphinx-doc.org/>`_ >= 7.0.0
+* `sphinx-autobuild <https://github.com/executablebooks/sphinx-autobuild>`_
+* `sphinx-rtd-theme <https://sphinx-rtd-theme.readthedocs.io/>`_
+* `sphinxcontrib-napoleon <https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html>`_
+
+Or with ``sphinx-autobuild`` for live reloading:
+
+.. code-block:: bash
+
+   sphinx-autobuild source build/html
+
 
 Troubleshooting
 ---------------
@@ -66,20 +90,3 @@ Troubleshooting
 .. code-block:: bash
 
    pip install matplotlib
-
-Building Documentation
-----------------------
-
-To build the documentation locally:
-
-.. code-block:: bash
-
-   pip install -e ".[docs]"
-   cd docs
-   make html
-
-Or with sphinx-autobuild for live reloading:
-
-.. code-block:: bash
-
-   sphinx-autobuild source build/html

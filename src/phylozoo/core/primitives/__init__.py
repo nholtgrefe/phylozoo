@@ -1,7 +1,9 @@
 """
-Primitives module for PhyloZoo.
+Fundamental data structures used throughout PhyloZoo.
 
-This submodule contains fundamental data structures used throughout the package.
+This submodule provides the underlying graph and set-theoretic structures that
+support the higher-level phylogenetic network classes: Partition, CircularOrdering,
+DirectedMultiGraph, and MixedMultiGraph.
 """
 
 from ..split import Split, SplitSystem

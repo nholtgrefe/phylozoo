@@ -1,11 +1,11 @@
 sdnetwork
 =========
 
-The :mod:`phylozoo.core.network.sdnetwork` module provides the :class:`SemiDirectedPhyNetwork`
-and :class:`MixedPhyNetwork` classes and related functions for working with semi-directed
-phylogenetic networks. Semi-directed phylogenetic networks contain both directed edges
-(reticulation arcs) and undirected edges (tree edges). Internal nodes have degree
-:math:`\geq 3`, and hybrid nodes have at least one incoming directed edge.
+.. py:module:: phylozoo.core.network.sdnetwork
+
+.. automodule:: phylozoo.core.network.sdnetwork
+   :noindex:
+   :no-members:
 
 Base Classes
 ------------

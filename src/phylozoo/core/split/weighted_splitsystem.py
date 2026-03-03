@@ -1,7 +1,8 @@
 """
 Weighted split systems module.
 
-This module provides classes for working with weighted split systems.
+This module provides classes for working with weighted split systems. A weighted
+split system assigns positive weights to each split in the system.
 """
 
 from typing import TYPE_CHECKING

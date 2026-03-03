@@ -80,6 +80,30 @@ Naming Conventions
 Code Formatting
 ---------------
 
+Development Dependencies
+------------------------
+
+For code quality checks and automation PhyloZoo relies on a few standard tools:
+
+* `Black <https://black.readthedocs.io/>`_ (code formatting)
+* `Ruff <https://docs.astral.sh/ruff/>`_ (linting)
+* `mypy <https://mypy.readthedocs.io/>`_ (static type checking)
+
+Install them directly:
+
+.. code-block:: bash
+
+   pip install black ruff mypy
+
+or via the development extra:
+
+.. code-block:: bash
+
+   pip install -e ".[dev]"
+
+Code Formatting
+---------------
+
 PhyloZoo uses **Black** for code formatting with a line length of 100 characters.
 
 Format code before committing:

@@ -1,10 +1,11 @@
 primitives.d_multigraph
 =======================
 
-The :mod:`phylozoo.core.primitives.d_multigraph` module provides the :class:`DirectedMultiGraph`
-class and related functions for working with directed multi-graphs. A directed multi-graph
-allows multiple directed edges between the same pair of vertices. This is the underlying
-graph structure for directed phylogenetic networks, where multiple edges can represent parallel arcs.
+.. py:module:: phylozoo.core.primitives.d_multigraph
+
+.. automodule:: phylozoo.core.primitives.d_multigraph
+   :noindex:
+   :no-members:
 
 Base Class
 ----------

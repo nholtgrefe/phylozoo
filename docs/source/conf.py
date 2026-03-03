@@ -10,7 +10,7 @@ from pathlib import Path
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'phylozoo'
-copyright = '2025, N. Holtgrefe'
+copyright = '2026, N. Holtgrefe'
 author = 'N. Holtgrefe'
 release = '0.1.0'
 

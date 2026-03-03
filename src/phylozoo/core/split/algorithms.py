@@ -1,9 +1,8 @@
 """
 Split system algorithms module.
 
-This module provides algorithms for working with split systems, such as
-converting split systems to trees.
-
+This module provides algorithms for working with split systems, including
+conversion to phylogenetic networks and computation of distance matrices.
 """
 
 import networkx as nx

@@ -1,7 +1,7 @@
 Utils Module
 ============
 
-The utils module (`phylozoo.utils`) provides supporting functionality for PhyloZoo, including 
+The :mod:`phylozoo.utils` module provides supporting functionality for PhyloZoo, including 
 exception handling, I/O operations, parallelization, and validation utilities.
 
 .. toctree::
