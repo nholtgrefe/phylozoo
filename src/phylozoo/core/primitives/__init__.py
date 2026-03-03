@@ -6,15 +6,12 @@ support the higher-level phylogenetic network classes: Partition, CircularOrderi
 DirectedMultiGraph, and MixedMultiGraph.
 """
 
-from ..split import Split, SplitSystem
 from .partition import Partition
 from .circular_ordering import CircularOrdering, CircularSetOrdering
 from .d_multigraph import DirectedMultiGraph
 from .m_multigraph import MixedMultiGraph
 
 __all__ = [
-    "Split",
-    "SplitSystem",
     "Partition",
     "CircularOrdering",
     "CircularSetOrdering",

@@ -10,6 +10,7 @@ primitives
 .. toctree::
    :maxdepth: 2
    
-   primitives
+   partition
+   circular_ordering
    d_multigraph
    m_multigraph
