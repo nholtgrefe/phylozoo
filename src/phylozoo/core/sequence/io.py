@@ -6,15 +6,20 @@ to/from files. Format handlers are registered with FormatRegistry for use with
 the IOMixin system.
 
 The following format handlers are defined and registered:
+
 - **fasta**: FASTA format for sequence alignments (extensions: .fasta, .fa, .fas)
+
   - Writer: `to_fasta()` - Converts MSA to FASTA string
   - Reader: `from_fasta()` - Parses FASTA string to MSA
+
 - **nexus**: NEXUS format for sequence alignments (extensions: .nexus, .nex, .nxs)
+
   - Writer: `to_nexus()` - Converts MSA to NEXUS string
   - Reader: `from_nexus()` - Parses NEXUS string to MSA
 
 These handlers are automatically registered when this module is imported.
 MSA inherits from IOMixin, so you can use:
+
 - `msa.save('file.fasta')` - Save to file (auto-detects format)
 - `msa.load('file.fasta')` - Load from file (auto-detects format)
 - `msa.to_string(format='fasta')` - Convert to string
@@ -39,6 +44,7 @@ def to_fasta(msa: MSA, **kwargs: Any) -> str:
     Convert an MSA to FASTA format string.
     
     FASTA format consists of:
+
     - Each sequence starts with a '>' followed by the taxon identifier
     - The sequence follows on subsequent lines (can be wrapped)
     - Sequences are separated by newlines
@@ -49,6 +55,7 @@ def to_fasta(msa: MSA, **kwargs: Any) -> str:
         The MSA to convert.
     **kwargs
         Additional arguments:
+
         - line_length (int): Maximum line length for sequences (default: 80).
           Set to 0 or None for no wrapping.
     
@@ -135,6 +142,7 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
     Notes
     -----
     This parser:
+
     - Handles multi-line sequences (concatenates lines between headers)
     - Strips whitespace from sequence lines
     - Converts taxon identifiers to strings (FASTA format uses strings)
@@ -194,6 +202,7 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     Convert an MSA to NEXUS format string.
     
     NEXUS format for sequences consists of:
+
     - #NEXUS header
     - TAXA block with taxon labels
     - CHARACTERS block with sequence data
@@ -204,6 +213,7 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
         The MSA to convert.
     **kwargs
         Additional arguments:
+
         - datatype (str): Data type (default: 'DNA'). Can be 'DNA', 'RNA', 'PROTEIN', etc.
         - missing (str): Missing data character (default: 'N')
         - gap (str): Gap character (default: '-')
@@ -231,6 +241,7 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     Notes
     -----
     The NEXUS format includes:
+
     - Taxa block with DIMENSIONS and TAXLABELS
     - Characters block with DIMENSIONS, FORMAT, and MATRIX
     - Taxon identifiers are converted to strings
@@ -308,6 +319,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     Notes
     -----
     This parser supports:
+
     - TAXA block with TAXLABELS
     - CHARACTERS block with MATRIX
     - Handles missing and gap characters as specified in FORMAT

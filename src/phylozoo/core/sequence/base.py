@@ -61,9 +61,9 @@ class MSA(IOMixin):
     
     Raises
     ------
-    ValueError
+    PhyloZooValueError
         If sequences dictionary is empty, or if sequences have different lengths.
-    TypeError
+    PhyloZooTypeError
         If sequences is not a dictionary.
     
     Examples
@@ -88,6 +88,7 @@ class MSA(IOMixin):
     Notes
     -----
     The internal representation uses:
+
     - Numpy array (`_coded_array`) of shape (num_taxa, sequence_length) with dtype int8
     - Precomputed lookup table for efficient character encoding
     - Reverse lookup table for decoding back to strings when needed
@@ -124,7 +125,7 @@ class MSA(IOMixin):
         """
         # Input validation
         if not isinstance(sequences, dict):
-            raise TypeError("sequences must be a dictionary")
+            raise PhyloZooTypeError("sequences must be a dictionary")
         
         if len(sequences) == 0:
             raise PhyloZooValueError("sequences dictionary cannot be empty")
@@ -132,9 +133,9 @@ class MSA(IOMixin):
         # Validate all values are strings
         for taxon, seq in sequences.items():
             if not isinstance(seq, str):
-                raise TypeError(f"Sequence for taxon '{taxon}' must be a string")
+                raise PhyloZooTypeError(f"Sequence for taxon '{taxon}' must be a string")
             if not isinstance(taxon, str):
-                raise TypeError("All taxon names must be strings")
+                raise PhyloZooTypeError("All taxon names must be strings")
         
         # Check sequence lengths
         lengths = [len(seq) for seq in sequences.values()]

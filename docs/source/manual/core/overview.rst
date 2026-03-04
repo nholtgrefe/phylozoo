@@ -5,7 +5,7 @@ The :mod:`phylozoo.core` module provides fundamental data structures and classes
 throughout PhyloZoo for representing and analyzing phylogenetic networks, quartets, splits,
 sequences, distance matrices, and other core phylogenetic concepts.
 
-All core data structures are available at the package top-level for convenience:
+All core data structures are available at the package top-level for convenience, but functions must be imported from the submodules.
 
 .. code-block:: python
 
@@ -40,4 +40,4 @@ between different data representations.
 See Also
 --------
 
-- :doc:`API Reference <../../api/core>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../api/core/index>` — Complete function signatures and detailed examples

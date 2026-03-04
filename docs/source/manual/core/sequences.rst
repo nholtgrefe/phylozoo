@@ -2,8 +2,8 @@ Multiple Sequence Alignments
 ============================
 
 The :mod:`phylozoo.core.sequence` module provides immutable containers for multiple sequence
-alignments (MSAs), along with comprehensive tools for distance computation, bootstrap
-resampling, and other operations essential for phylogenetic analysis.
+alignments (MSAs), along with comprehensive tools for distance computation and bootstrap
+resampling.
 
 All classes and functions on this page can be imported from the core sequence module:
 
@@ -19,21 +19,6 @@ Working with Multiple Sequence Alignments
 The :class:`~phylozoo.core.sequence.base.MSA` class is the canonical container for aligned
 sequences in PhyloZoo. It provides an immutable, labeled, and read-only representation
 that ensures data integrity throughout your analysis pipeline.
-
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   Multiple sequence alignments are designed for immutability and performance:
-
-   - Sequences are stored internally as a NumPy ``int8`` array of shape ``(num_taxa, sequence_length)``
-   - The default encoding maps nucleotides A/C/G/T to 0/1/2/3, with gaps/unknown characters as -1
-   - Taxa are stored in canonical sorted order and exposed via immutable properties
-   - To modify sequences, create a new ``MSA`` instance with the updated data
-   - The alignment is validated for equal sequence lengths at construction time
-
-   For implementation details, see the :mod:`phylozoo.core.sequence.base` module.
 
 Creating an MSA
 ^^^^^^^^^^^^^^^^
@@ -101,8 +86,8 @@ File Input/Output
 
 MSAs support reading and writing in multiple phylogenetic formats:
 
-- **FASTA** (default): Standard sequence alignment format
-- **NEXUS**: Comprehensive phylogenetic data format
+- **FASTA** (default): Standard sequence alignment format — see :doc:`FASTA format <../utils/io/formats/fasta>`
+- **NEXUS**: Comprehensive phylogenetic data format — see :doc:`NEXUS format <../utils/io/formats/nexus>`
 
 .. code-block:: python
 
@@ -116,14 +101,10 @@ MSAs support reading and writing in multiple phylogenetic formats:
    msa.save("output.fasta")
 
 .. seealso::
-   The I/O system uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes.
-   
-   For details on the I/O system,
-   see the :doc:`I/O documentation <../utils/io>`.
-   
-   For supported file formats and parameter options for MSAs, see the
-   :mod:`phylozoo.core.sequence.io` module in the API.
+   The `MSA` class uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   consistent file handling across PhyloZoo classes. For details on the I/O system,
+   see the :doc:`I/O documentation <../utils/io/overview>`.
+
 
 Bootstrap Resampling
 ---------------------
@@ -206,5 +187,4 @@ See Also
 --------
 
 - :doc:`API Reference <../../api/core/sequences>` - Complete function signatures and detailed examples
-- :mod:`phylozoo.core.sequence.io` - MSA I/O format details and parameter options
 - :doc:`Distance Matrices <distance>` - Working with distance matrices computed from alignments
