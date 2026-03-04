@@ -1,4 +1,4 @@
-primitives.m_multigraph
+m_multigraph
 =======================
 
 .. py:module:: phylozoo.core.primitives.m_multigraph
@@ -7,7 +7,7 @@ primitives.m_multigraph
    :noindex:
    :no-members:
 
-Base Class
+Main Class
 ----------
 
 .. automodule:: phylozoo.core.primitives.m_multigraph.base

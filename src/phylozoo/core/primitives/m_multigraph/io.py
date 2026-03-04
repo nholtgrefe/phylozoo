@@ -13,6 +13,7 @@ The following format handlers are defined and registered:
 
 These handlers are automatically registered when this module is imported.
 MixedMultiGraph inherits from IOMixin, so you can use:
+
 - `graph.save('file.pzdot')` - Save to file (auto-detects format)
 - `graph.load('file.pzdot')` - Load from file (auto-detects format)
 - `graph.to_string(format='phylozoo-dot')` - Convert to string
@@ -22,6 +23,7 @@ MixedMultiGraph inherits from IOMixin, so you can use:
 Notes
 -----
 PhyloZoo DOT format:
+
 - Similar to Graphviz DOT format but supports both directed and undirected edges
 - Uses `--` for undirected edges
 - Uses `->` for directed edges
@@ -136,6 +138,7 @@ def to_phylozoo_dot(graph: MixedMultiGraph, **kwargs: Any) -> str:
     Notes
     -----
     The phylozoo-dot format includes:
+
     - graph declaration (not digraph, since we have both types)
     - Node declarations with attributes
     - Undirected edge declarations with `--`
@@ -275,6 +278,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> MixedMultiGraph:
     Notes
     -----
     This parser expects:
+
     - graph declaration (not digraph)
     - Node declarations (optional attributes)
     - Undirected edge declarations with `--` (optional attributes)

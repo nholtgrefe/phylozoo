@@ -463,12 +463,14 @@ def suppress_degree2_node(graph: 'MixedMultiGraph', node: T, merged_attrs: dict[
     
     A degree-2 node has exactly two incident edges. Suppression connects the two
     neighbors directly, preserving edge types according to these rules:
+
     - undirected + undirected -> undirected edge
     - directed_in + directed_out (u->x, x->v) -> directed edge (u->v)
     - directed_in + undirected (u->x, x—v) -> undirected edge (u—v)
     - undirected + directed_out (u—x, x->v) -> directed edge (u->v)
-    
+
     Invalid combinations that raise ValueError:
+
     - directed_in + directed_in: Multiple incoming directed edges
     - directed_out + directed_out: Multiple outgoing directed edges
     
@@ -622,6 +624,7 @@ def identify_parallel_edge(graph: 'MixedMultiGraph', u: T, v: T, merged_attrs: d
     is kept, and all others are removed.
     
     For mixed multigraphs, parallel edges can be either:
+
     - Multiple directed edges from u to v (if any directed edges exist)
     - Multiple undirected edges between u and v (if any undirected edges exist)
     

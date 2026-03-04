@@ -6,6 +6,7 @@ to/from files. Format handlers are registered with FormatRegistry for use with
 the IOMixin system.
 
 The following format handlers are defined and registered:
+
 - **dot**: DOT format (Graphviz) (extensions: .dot, .gv)
   - Writer: `to_dot()` - Converts DirectedMultiGraph to DOT string
   - Reader: `from_dot()` - Parses DOT string to DirectedMultiGraph
@@ -15,6 +16,7 @@ The following format handlers are defined and registered:
 
 These handlers are automatically registered when this module is imported.
 DirectedMultiGraph inherits from IOMixin, so you can use:
+
 - `graph.save('file.dot')` - Save to file (auto-detects format)
 - `graph.load('file.dot')` - Load from file (auto-detects format)
 - `graph.to_string(format='dot')` - Convert to string
@@ -138,6 +140,7 @@ def to_dot(graph: DirectedMultiGraph, **kwargs: Any) -> str:
     Notes
     -----
     The DOT format includes:
+
     - digraph declaration
     - Node declarations with attributes
     - Edge declarations with attributes
@@ -249,6 +252,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedMultiGraph:
     Notes
     -----
     This parser expects:
+
     - digraph declaration
     - Node declarations (optional attributes)
     - Edge declarations (optional attributes)
@@ -521,6 +525,7 @@ def to_edgelist(graph: DirectedMultiGraph, **kwargs: Any) -> str:
     Notes
     -----
     The edge-list format:
+
     - One edge per line
     - Format: `u v` or `u v key` or `u v key attr1=value1 attr2=value2`
     - Uses node_id as the label/name
@@ -594,6 +599,7 @@ def from_edgelist(edgelist_string: str, **kwargs: Any) -> DirectedMultiGraph:
     Notes
     -----
     This parser expects:
+
     - One edge per line
     - Format: `u v` or `u v key` or `u v key attr1=value1 attr2=value2`
     - Uses node_id as the label/name

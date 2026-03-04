@@ -23,6 +23,7 @@ class MixedMultiGraph(IOMixin):
     Mixed multi-graph with undirected and directed edges.
 
     This class uses composition with separate NetworkX graphs:
+
     - _undirected: nx.MultiGraph for undirected edges
     - _directed: nx.MultiDiGraph for directed edges
     - _combined: nx.MultiGraph combining all edges for connectivity analysis
@@ -38,12 +39,14 @@ class MixedMultiGraph(IOMixin):
     ----------
     directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of directed edges. Can be:
+
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
         If keys are not provided, they will be auto-generated. By default None.
     undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of undirected edges. Can be:
+
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
@@ -116,12 +119,14 @@ class MixedMultiGraph(IOMixin):
         ----------
         directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of directed edges. Can be:
+
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' keys and optional 'key' and edge attributes
             By default None.
         undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of undirected edges. Can be:
+
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' keys and optional 'key' and edge attributes

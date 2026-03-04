@@ -304,6 +304,7 @@ def source_components(graph: 'MixedMultiGraph') -> list[tuple[list[T], list[tupl
     -------
     list[tuple[list[T], list[tuple[T, T, int]], list[tuple[T, T, int]]]]
         For each source component, returns a tuple containing:
+
         - List of nodes in the component
         - List of undirected edges (u, v, key) within the component (includes all parallel edges)
         - List of directed edges (u, v, key) with u in the component and v not in the
@@ -403,6 +404,7 @@ def cut_edges(
     -------
     set or list
         Cut-edges. Format depends on keys and data parameters:
+
         - keys=False, data=False: {(u, v), ...} (set)
         - keys=True, data=False: {(u, v, key), ...} (set)
         - keys=False, data=True: [(u, v, data_dict), ...] (list, since dicts are unhashable)
@@ -515,6 +517,7 @@ def cut_vertices(
     -------
     set or list
         Cut-vertices. Format depends on data parameter:
+
         - data=False: {v, ...} (set)
         - data=True: [(v, data_dict), ...] (list, since dicts are unhashable)
         - data='attr': {(v, attr_value), ...} (set)

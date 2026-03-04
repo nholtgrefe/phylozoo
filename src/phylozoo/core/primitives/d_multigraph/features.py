@@ -290,6 +290,7 @@ def cut_edges(
     -------
     set or list
         Cut-edges. Format depends on keys and data parameters:
+
         - keys=False, data=False: {(u, v), ...} (set)
         - keys=True, data=False: {(u, v, key), ...} (set)
         - keys=False, data=True: [(u, v, data_dict), ...] (list, since dicts are unhashable)
@@ -377,6 +378,7 @@ def cut_vertices(
     -------
     set or list
         Cut-vertices. Format depends on data parameter:
+
         - data=False: {v, ...} (set)
         - data=True: [(v, data_dict), ...] (list, since dicts are unhashable)
         - data='attr': {(v, attr_value), ...} (set)

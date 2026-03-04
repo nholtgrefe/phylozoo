@@ -37,6 +37,6 @@ Submodules
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/primitives>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/primitives>` - Complete function signatures and detailed examples
 - :doc:`Networks <../networks/overview>` - Network classes that use these primitives
 - :doc:`Splits <../splits/overview>` - Split systems based on partitions

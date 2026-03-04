@@ -102,6 +102,7 @@ def is_isomorphic(
     
     Notes
     -----
+
     - Graph attributes are checked first for efficiency (early exit if they don't match).
     - NetworkX's efficient categorical matching functions are used internally.
     """

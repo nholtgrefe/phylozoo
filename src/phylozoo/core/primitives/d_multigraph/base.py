@@ -20,6 +20,7 @@ class DirectedMultiGraph(IOMixin):
     Directed multi-graph where all edges are directed.
 
     This class uses composition with a NetworkX MultiDiGraph:
+
     - _graph: nx.MultiDiGraph for directed edges
     - _combined: nx.MultiGraph combining all edges as undirected for connectivity analysis
 
@@ -31,6 +32,7 @@ class DirectedMultiGraph(IOMixin):
     ----------
     edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of directed edges. Can be:
+
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
@@ -93,6 +95,7 @@ class DirectedMultiGraph(IOMixin):
         ----------
         edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of directed edges. Can be:
+
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' keys and optional 'key' and edge attributes

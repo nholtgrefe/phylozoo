@@ -2,10 +2,11 @@ Mixed Multi-Graphs
 ==================
 
 The :mod:`phylozoo.core.primitives.m_multigraph` module provides the
-:class:`MixedMultiGraph` class, a mixed multigraph that supports both directed
-and undirected edges with parallel edges of both types. This class serves as the
-foundation for :class:`SemiDirectedPhyNetwork` and enables representation of
-phylogenetic networks with both tree-like and reticulate evolutionary relationships.
+:class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` class, a mixed
+multigraph that supports both directed and undirected edges with parallel edges of both
+types. It serves as the foundation for :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`
+and enables representation of phylogenetic networks with both tree-like and reticulate
+evolutionary relationships.
 
 All classes and functions on this page can be imported from the mixed multigraph submodule:
 
@@ -16,215 +17,209 @@ All classes and functions on this page can be imported from the mixed multigraph
 Working with Mixed Multi-Graphs
 --------------------------------
 
-Mixed multi-graphs combine the capabilities of directed and undirected graphs,
-allowing complex phylogenetic structures where some relationships are directed
-(reticulations, hybridization) and others are undirected (tree-like relationships).
-This flexibility makes them ideal for semi-directed phylogenetic networks.
+Creating and modifying mixed multi-graphs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. note::
-   :class: dropdown
+Mixed multi-graphs support both directed and undirected edges in one structure. You
+specify directed and undirected edge lists separately; between any given pair of nodes,
+edges must be either all directed or all undirected (mutual exclusivity). Parallel edges
+are allowed for both types.
 
-   **Implementation details**
+**Creating**
 
-   MixedMultiGraph is designed for complex phylogenetic network analysis:
-
-   - Separate NetworkX MultiDiGraph and MultiGraph for directed/undirected edges
-   - Mutual exclusivity: edges between same nodes must be all directed or all undirected
-   - Parallel edges supported for both edge types
-   - Rich attribute support for phylogenetic annotations
-
-Creating Mixed Multi-Graphs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Mixed multi-graphs can be created with separate directed and undirected edge specifications:
+Use ``directed_edges`` and ``undirected_edges`` as lists of ``(u, v)`` tuples or dicts
+with ``u`` and ``v``. You can pass only one of them for a graph that is fully directed
+or fully undirected.
 
 .. code-block:: python
 
    from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 
-   # Empty graph
    empty_graph = MixedMultiGraph()
-
-   # Graph with only undirected edges (tree-like)
    tree_graph = MixedMultiGraph(undirected_edges=[(1, 2), (2, 3), (3, 4)])
-
-   # Graph with only directed edges (reticulate)
    network_graph = MixedMultiGraph(directed_edges=[(1, 2), (1, 3), (2, 4), (3, 4)])
-
-   # Mixed graph
    mixed_graph = MixedMultiGraph(
-       directed_edges=[(1, 3), (2, 3)],      # Reticulations to node 3
-       undirected_edges=[(3, 4), (4, 5), (4, 6)]  # Tree structure below
+       directed_edges=[(1, 3), (2, 3)],
+       undirected_edges=[(3, 4), (4, 5), (4, 6)]
    )
 
-   # With edge attributes
+Optional ``nodes`` and ``attributes`` let you attach node or graph-level metadata:
+
+.. code-block:: python
+
    attributed_graph = MixedMultiGraph(
        directed_edges=[{'u': 1, 'v': 2, 'weight': 1.0, 'type': 'hybrid'}],
        undirected_edges=[{'u': 2, 'v': 3, 'length': 0.5, 'bootstrap': 95}]
    )
-
-   # With node attributes
    labeled_graph = MixedMultiGraph(
        directed_edges=[(1, 2)],
        undirected_edges=[(2, 3)],
        nodes=[{'id': 1, 'label': 'A'}, {'id': 2, 'label': 'B'}, {'id': 3, 'label': 'C'}]
    )
 
-   # With graph attributes
-   annotated_graph = MixedMultiGraph(
-       directed_edges=[(1, 2)],
-       undirected_edges=[(2, 3)],
-       attributes={'name': 'phylogenetic_network', 'method': 'inference'}
-   )
+.. tip::
+   For graphs without parallel edges, you can build or manipulate them in NetworkX
+   (e.g. :class:`networkx.Graph` or :class:`networkx.DiGraph`) and then convert to
+   :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph`. See the
+   **NetworkX conversion** section below.
 
-Edge Operations
-^^^^^^^^^^^^^^^
 
-Mixed multi-graphs support comprehensive edge operations for both edge types.
+**Directed edges**
 
-**Directed Edges**
-
-Directed edges represent relationships with a clear direction. You can add multiple
-parallel directed edges between the same nodes, each with its own attributes.
+Add or remove directed edges with
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.add_directed_edge` and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.remove_directed_edge`;
+each edge has a unique key.
 
 .. code-block:: python
 
-   # Add directed edges
    key1 = mixed_graph.add_directed_edge(1, 2, weight=1.0, type='reticulation')
-   key2 = mixed_graph.add_directed_edge(1, 2, weight=2.0, type='parallel_reticulation')
-
-   # Remove directed edge
+   key2 = mixed_graph.add_directed_edge(1, 2, weight=2.0)
    mixed_graph.remove_directed_edge(1, 2, key=key1)
 
-   # Access directed edge data
-   edge_data = mixed_graph.get_directed_edge_data(1, 2, key=key2)
-
-**Undirected Edges**
-
-Undirected edges have no directionality. Like directed edges, you can have multiple parallel undirected
-edges between the same nodes.
+Batch operations for directed edges:
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.add_directed_edges_from` and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.remove_directed_edges_from`.
 
 .. code-block:: python
 
-   # Add undirected edges
+   mixed_graph.add_directed_edges_from([(1, 4), (2, 4)])
+   mixed_graph.remove_directed_edges_from([(1, 4)])
+
+**Undirected edges**
+
+Undirected edges are added with
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.add_undirected_edge` and
+removed with :meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.remove_edge`
+(which applies to undirected edges between the given pair). Parallel undirected edges are supported.
+
+.. code-block:: python
+
    key3 = mixed_graph.add_undirected_edge(2, 3, length=0.5, bootstrap=95)
    key4 = mixed_graph.add_undirected_edge(2, 3, length=0.7, bootstrap=87)
+   mixed_graph.remove_edge(2, 3, key=key3)
 
-   # Remove undirected edge
-   mixed_graph.remove_undirected_edge(2, 3, key=key3)
+Batch operations for undirected edges:
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.add_undirected_edges_from` and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.remove_edges_from`.
 
-   # Access undirected edge data
-   edge_data = mixed_graph.get_undirected_edge_data(2, 3, key=key4)
+.. code-block:: python
 
-**Mutual Exclusivity Constraint**
+   mixed_graph.add_undirected_edges_from([(4, 5), (5, 6)])
+   mixed_graph.remove_edges_from([(5, 6)])
 
-A key feature of mixed multi-graphs is the mutual exclusivity constraint: edges
-between the same pair of nodes must be either all directed or all undirected:
+**Mutual exclusivity**
+
+Between the same pair of nodes, all edges must be either directed or undirected. Adding
+a directed edge between a pair that currently has undirected edges (or the reverse)
+replaces those edges with the new type.
 
 .. code-block:: python
 
    graph = MixedMultiGraph()
-
-   # Add undirected edge between nodes 1 and 2
    graph.add_undirected_edge(1, 2, weight=1.0)
+   graph.add_directed_edge(1, 2, weight=2.0)  # Replaces the undirected edge
+   assert graph.has_directed_edge(1, 2) and not graph.has_undirected_edge(1, 2)
 
-   # Adding directed edge between same nodes removes undirected edge
-   graph.add_directed_edge(1, 2, weight=2.0)  # Removes the undirected edge
+**Node operations**
 
-   # Now only directed edge exists
-   assert graph.has_directed_edge(1, 2)
-   assert not graph.has_undirected_edge(1, 2)
-
-   # Vice versa: undirected edge removes directed edge
-   graph.add_undirected_edge(1, 2, weight=3.0)  # Removes the directed edge
-   assert graph.has_undirected_edge(1, 2)
-   assert not graph.has_directed_edge(1, 2)
-
-This constraint ensures mathematical consistency while allowing flexible network topologies.
-
-Node Operations
-^^^^^^^^^^^^^^^
-
-Nodes can be added with attributes and their connectivity analyzed:
+Nodes are added with optional attributes; the :attr:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.nodes`
+view gives attribute access by node.
 
 .. code-block:: python
 
-   # Add node with attributes
    mixed_graph.add_node(5, label='taxon_A', type='leaf', support=100)
-
-   # Access node attributes
    node_attrs = mixed_graph.nodes[5]
+   in_degree = mixed_graph.indegree(3)
+   out_degree = mixed_graph.outdegree(1)
+   undirected_degree = mixed_graph.undirected_degree(3)
+   total_degree = mixed_graph.degree(3)
 
-   # Degree analysis
-   in_degree = mixed_graph.in_degree(3)     # Directed edges pointing to node
-   out_degree = mixed_graph.out_degree(1)   # Directed edges from node
-   undirected_degree = mixed_graph.degree(3) # All edges incident to node
-
-Accessing Graph Structure
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Mixed multi-graphs provide comprehensive access to their structure:
+You can add or remove multiple nodes with
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.add_nodes_from`,
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.remove_node`, and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.remove_nodes_from`, and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.generate_node_ids`
+returns an iterator of fresh integer IDs.
 
 .. code-block:: python
 
-   # Basic properties
+   mixed_graph.add_nodes_from([7, 8, 9], type='internal')
+   mixed_graph.remove_node(9)
+
+**Accessing graph structure**
+
+Use :meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.number_of_nodes` and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.number_of_edges` for
+counts. The :attr:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.directed_edges`
+and :attr:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.undirected_edges`
+views yield ``(u, v, key)`` tuples; :attr:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.edges`
+returns all edges. :meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.neighbors`
+returns all nodes adjacent to a vertex (via any edge type).
+
+.. code-block:: python
+
    num_nodes = mixed_graph.number_of_nodes()
    num_edges = mixed_graph.number_of_edges()
+   directed_edges = list(mixed_graph.directed_edges())
+   undirected_edges = list(mixed_graph.undirected_edges())
+   all_edges = list(mixed_graph.edges())
+   neighbors = list(mixed_graph.neighbors(3))
 
-   # Node access
-   nodes = list(mixed_graph.nodes())
-   node_exists = mixed_graph.has_node(1)
+Use :meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.has_edge` for
+edge membership (optionally with a key). For edges incident to a vertex, use
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.incident_parent_edges`,
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.incident_child_edges`, and
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.incident_undirected_edges`.
+:meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.copy` returns a shallow
+copy; :meth:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph.clear` removes all
+nodes and edges.
 
-   # Directed edge access
-   directed_edges = list(mixed_graph.directed_edges())  # (u, v, key) tuples
-   directed_exists = mixed_graph.has_directed_edge(1, 3, key=0)
+.. code-block:: python
 
-   # Undirected edge access
-   undirected_edges = list(mixed_graph.undirected_edges())  # (u, v, key) tuples
-   undirected_exists = mixed_graph.has_undirected_edge(3, 4, key=0)
-
-   # Combined edge access
-   all_edges = list(mixed_graph.edges())  # All edges regardless of direction
-
-   # Connectivity
-   neighbors = list(mixed_graph.neighbors(3))     # All adjacent nodes
-   successors = list(mixed_graph.successors(1))   # Nodes reachable via directed edges
-   predecessors = list(mixed_graph.predecessors(3)) # Nodes that reach via directed edges
+   mixed_graph.has_edge(1, 3, key=0)
+   incoming = list(mixed_graph.incident_parent_edges(3, keys=True))
+   outgoing = list(mixed_graph.incident_child_edges(1, keys=True))
+   undir_at_3 = list(mixed_graph.incident_undirected_edges(3))
+   graph_copy = mixed_graph.copy()
+   graph_copy.clear()
 
 File Input/Output
 ^^^^^^^^^^^^^^^^^
 
-Mixed multi-graphs support specialized phylogenetic formats:
+Mixed multi-graphs support reading and writing in PhyloZoo DOT format (default), which preserves
+the directed/undirected edge distinction:
 
-- **PhyloZoo DOT**: Extended DOT format preserving directed/undirected distinction
+- **PhyloZoo DOT** (default): Extended DOT format for mixed graphs — see :doc:`DOT format <../../utils/io/formats/dot>`
 
 .. code-block:: python
 
+   # Load from file (auto-detects format by extension)
+   mixed_graph = MixedMultiGraph.load("phylogenetic_network.pzdot")
+
+   # Load with explicit format
+   mixed_graph = MixedMultiGraph.load("network.txt", format="phylozoo-dot")
+
    # Save to file
-   mixed_graph.save('phylogenetic_network.pzdot')
+   mixed_graph.save("output.pzdot")
 
-   # Load from file
-   loaded_graph = MixedMultiGraph.load('phylogenetic_network.pzdot')
-
-   # Convert to string
-   pzdot_string = mixed_graph.to_string(format='phylozoo-dot')
-
-   # Create from string
-   graph_from_string = MixedMultiGraph.from_string(pzdot_string, format='phylozoo-dot')
+.. seealso::
+   The :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` class uses the
+   :class:`~phylozoo.utils.io.IOMixin` interface, providing consistent file handling across PhyloZoo
+   classes. For details on the I/O system, see the :doc:`I/O manual <../../utils/io/overview>`.
 
 Graph Analysis Features
 -----------------------
 
 Mixed multi-graphs provide specialized algorithms for phylogenetic network analysis.
 
-Connectivity Analysis
-^^^^^^^^^^^^^^^^^^^^^
+**Connectivity**
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.is_connected` function checks weak connectivity (ignoring edge directions).
+The :func:`~phylozoo.core.primitives.m_multigraph.features.is_connected` function checks weak connectivity (ignoring edge directions).
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.number_of_connected_components` function counts the number of connected components.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.number_of_connected_components` function counts the number of connected components.
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.connected_components` function returns an iterator over all connected components.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.connected_components` function returns an iterator over all connected components.
 
 .. code-block:: python
 
@@ -242,10 +237,9 @@ The :func:`phylozoo.core.primitives.m_multigraph.features.connected_components` 
    for component in connected_components(mixed_graph):
        print(f"Component: {component}")
 
-Source Components
-^^^^^^^^^^^^^^^^^
+**Source components**
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.source_components` function finds source components (nodes with no incoming directed edges), which is important for phylogenetic network analysis.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.source_components` function finds source components (nodes with no incoming directed edges), which is important for phylogenetic network analysis.
 
 .. code-block:: python
 
@@ -254,12 +248,11 @@ The :func:`phylozoo.core.primitives.m_multigraph.features.source_components` fun
    # Find source components (no incoming directed edges)
    sources = source_components(mixed_graph)  # List of (nodes, directed_edges, undirected_edges) tuples
 
-Biconnectivity Analysis
-^^^^^^^^^^^^^^^^^^^^^^^
+**Biconnectivity**
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.biconnected_components` function returns an iterator over biconnected components.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.biconnected_components` function returns an iterator over biconnected components.
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.bi_edge_connected_components` function returns an iterator over bi-edge-connected components.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.bi_edge_connected_components` function returns an iterator over bi-edge-connected components.
 
 .. code-block:: python
 
@@ -275,12 +268,11 @@ The :func:`phylozoo.core.primitives.m_multigraph.features.bi_edge_connected_comp
    for component in bi_edge_connected_components(mixed_graph):
        print(f"Bi-edge-connected component: {component}")
 
-Cut Analysis
-^^^^^^^^^^^^
+**Cut edges and vertices**
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.cut_edges` function finds all cut edges.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.cut_edges` function finds all cut edges.
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.cut_vertices` function finds all cut vertices.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.cut_vertices` function finds all cut vertices.
 
 .. code-block:: python
 
@@ -292,10 +284,9 @@ The :func:`phylozoo.core.primitives.m_multigraph.features.cut_vertices` function
    # Find cut vertices
    cut_nodes = cut_vertices(mixed_graph)  # Returns set of nodes
 
-Up-Down Paths
-^^^^^^^^^^^^^
+**Up-down paths**
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.updown_path_vertices` function finds all vertices that lie on an up-down path between two given vertices (a path that first goes up via directed edges, then down via directed edges).
+The :func:`~phylozoo.core.primitives.m_multigraph.features.updown_path_vertices` function finds all vertices that lie on an up-down path between two given vertices (a path that first goes up via directed edges, then down via directed edges).
 
 .. code-block:: python
 
@@ -304,12 +295,11 @@ The :func:`phylozoo.core.primitives.m_multigraph.features.updown_path_vertices` 
    # Find vertices on up-down paths between x and y
    vertices = updown_path_vertices(mixed_graph, x=1, y=5)
 
-Parallel Edges and Self-Loops
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Parallel edges and self-loops**
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.has_parallel_edges` function checks if the graph contains any parallel edges.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.has_parallel_edges` function checks if the graph contains any parallel edges.
 
-The :func:`phylozoo.core.primitives.m_multigraph.features.has_self_loops` function checks for edges connecting a node to itself.
+The :func:`~phylozoo.core.primitives.m_multigraph.features.has_self_loops` function checks for edges connecting a node to itself.
 
 .. code-block:: python
 
@@ -323,10 +313,9 @@ The :func:`phylozoo.core.primitives.m_multigraph.features.has_self_loops` functi
    # Check for self-loops
    has_loops = has_self_loops(mixed_graph)
 
-Graph Isomorphism
-^^^^^^^^^^^^^^^^^
+**Isomorphism**
 
-The :func:`phylozoo.core.primitives.m_multigraph.isomorphism.is_isomorphic` function compares graph structures while respecting the mixed edge types, checking if two graphs have the same topology regardless of node labeling.
+The :func:`~phylozoo.core.primitives.m_multigraph.isomorphism.is_isomorphic` function compares graph structures while respecting the mixed edge types, checking if two graphs have the same topology regardless of node labeling.
 
 .. code-block:: python
 
@@ -354,9 +343,9 @@ Graph Transformations
 
 The mixed multi-graph module provides functions for transforming graph structures.
 
-**Vertex Identification**
+**Vertex identification**
 
-The :func:`phylozoo.core.primitives.m_multigraph.transformations.identify_vertices` function merges multiple vertices into a single vertex, combining their incident edges.
+The :func:`~phylozoo.core.primitives.m_multigraph.transformations.identify_vertices` function merges multiple vertices into a single vertex, combining their incident edges.
 
 .. code-block:: python
 
@@ -367,7 +356,7 @@ The :func:`phylozoo.core.primitives.m_multigraph.transformations.identify_vertic
 
 **Orientation**
 
-The :func:`phylozoo.core.primitives.m_multigraph.transformations.orient_away_from_vertex` function orients all undirected edges away from a given root vertex, converting the mixed graph to a directed graph.
+The :func:`~phylozoo.core.primitives.m_multigraph.transformations.orient_away_from_vertex` function orients all undirected edges away from a given root vertex, converting the mixed graph to a directed graph.
 
 .. code-block:: python
 
@@ -376,9 +365,9 @@ The :func:`phylozoo.core.primitives.m_multigraph.transformations.orient_away_fro
    # Orient all edges away from root vertex
    directed_graph = orient_away_from_vertex(mixed_graph, root=1)
 
-**Node Suppression**
+**Degree-2 node suppression**
 
-The :func:`phylozoo.core.primitives.m_multigraph.transformations.suppress_degree2_node` function removes a degree-2 node and connects its neighbors directly.
+The :func:`~phylozoo.core.primitives.m_multigraph.transformations.suppress_degree2_node` function removes a degree-2 node and connects its neighbors directly.
 
 .. code-block:: python
 
@@ -387,9 +376,9 @@ The :func:`phylozoo.core.primitives.m_multigraph.transformations.suppress_degree
    # Suppress a degree-2 node
    suppress_degree2_node(mixed_graph, node=5)
 
-**Parallel Edge Identification**
+**Parallel edge identification**
 
-The :func:`phylozoo.core.primitives.m_multigraph.transformations.identify_parallel_edge` function merges all parallel edges between two nodes into a single edge.
+The :func:`~phylozoo.core.primitives.m_multigraph.transformations.identify_parallel_edge` function merges all parallel edges between two nodes into a single edge.
 
 .. code-block:: python
 
@@ -398,9 +387,9 @@ The :func:`phylozoo.core.primitives.m_multigraph.transformations.identify_parall
    # Merge all parallel edges between nodes 1 and 2
    identify_parallel_edge(mixed_graph, u=1, v=2)
 
-**Subgraph Extraction**
+**Subgraph extraction**
 
-The :func:`phylozoo.core.primitives.m_multigraph.transformations.subgraph` function creates a subgraph containing only the specified nodes and their incident edges.
+The :func:`~phylozoo.core.primitives.m_multigraph.transformations.subgraph` function creates a subgraph containing only the specified nodes and their incident edges.
 
 .. code-block:: python
 
@@ -412,8 +401,8 @@ The :func:`phylozoo.core.primitives.m_multigraph.transformations.subgraph` funct
 NetworkX Conversion
 -----------------
 
-Convert from various NetworkX graph types. The :func:`phylozoo.core.primitives.m_multigraph.conversions.graph_to_mixedmultigraph` function converts a NetworkX Graph to a MixedMultiGraph, the :func:`phylozoo.core.primitives.m_multigraph.conversions.multigraph_to_mixedmultigraph` function converts a NetworkX MultiGraph to a MixedMultiGraph, and the :func:`phylozoo.core.primitives.m_multigraph.conversions.multidigraph_to_mixedmultigraph` function converts a NetworkX MultiDiGraph to a MixedMultiGraph.
-Also, the :func:`phylozoo.core.primitives.m_multigraph.conversions.directedmultigraph_to_mixedmultigraph` function converts a DirectedMultiGraph to a MixedMultiGraph.
+Convert from various NetworkX graph types. The :func:`~phylozoo.core.primitives.m_multigraph.conversions.graph_to_mixedmultigraph` function converts a NetworkX Graph to a MixedMultiGraph, the :func:`~phylozoo.core.primitives.m_multigraph.conversions.multigraph_to_mixedmultigraph` function converts a NetworkX MultiGraph to a MixedMultiGraph, and the :func:`~phylozoo.core.primitives.m_multigraph.conversions.multidigraph_to_mixedmultigraph` function converts a NetworkX MultiDiGraph to a MixedMultiGraph.
+Also, the :func:`~phylozoo.core.primitives.m_multigraph.conversions.directedmultigraph_to_mixedmultigraph` function converts a DirectedMultiGraph to a MixedMultiGraph.
 
 .. code-block:: python
 
@@ -446,9 +435,17 @@ Also, the :func:`phylozoo.core.primitives.m_multigraph.conversions.directedmulti
    dmg = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
    mmg_from_dmg = directedmultigraph_to_mixedmultigraph(dmg)
 
+.. tip::
+   The class stores three NetworkX graphs that can be accessed for further use with
+   NetworkX algorithms. The undirected edges are stored as a :class:`networkx.MultiGraph`
+   in the ``_undirected`` attribute, the directed edges as a :class:`networkx.MultiDiGraph`
+   in the ``_directed`` attribute, and the ``_combined`` attribute stores a combined
+   undirected view of the graph as a :class:`networkx.MultiGraph` for quick connectivity
+   analyses.
+
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/primitives>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/primitives/index>` - Complete function signatures and detailed examples
 - :doc:`Directed Multi-Graph <directed_multigraph>` - Directed-only graphs
-- :doc:`Networks (Basic) <../networks/basic>` - Network classes using mixed multi-graphs
+- :doc:`Networks <../networks/overview>` - Network classes using mixed multi-graphs

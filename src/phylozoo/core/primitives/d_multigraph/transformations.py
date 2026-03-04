@@ -192,12 +192,14 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     the two neighbors directly: u->x->v becomes u->v.
     
     Invalid configurations that raise ValueError:
+
     - indegree=2, outdegree=0: Multiple incoming directed edges
     - indegree=0, outdegree=2: Multiple outgoing directed edges
-    
+
     This operation modifies the graph in place. Suppression may create parallel edges.
-    
+
     Edge attributes are handled as follows:
+
     - If `merged_attrs` is provided: these attributes are used directly for the new edge.
       This allows the caller to apply special merging logic before suppression.
     - If `merged_attrs` is None: attributes are merged by taking the incoming edge's data
@@ -309,12 +311,13 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
     is kept, and all others are removed.
     
     Edge attributes are handled as follows:
+
     - If `merged_attrs` is provided: these attributes are used directly for the kept edge.
       This allows the caller to apply special merging logic before identification.
     - If `merged_attrs` is None: attributes are merged by taking the first edge's data,
       then subsequent edges' data overriding. For attributes present in multiple edges,
       the last edge's value overrides earlier values.
-    
+
     Parameters
     ----------
     graph : DirectedMultiGraph
