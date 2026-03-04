@@ -6,7 +6,6 @@ of directed phylogenetic networks. Generators are minimal biconnected components
 that represent the core structure of level-k networks. These are not networks
 themselves, but simplified structures used to build networks.
 
-Based on Gambette, Berry, and Paul (2009): "The Structure of Level-k Phylogenetic Networks".
 """
 
 from __future__ import annotations
@@ -160,6 +159,7 @@ class DirectedGenerator:
         Validate the generator structure.
         
         Checks that:
+
         - The generator is not empty
         - Single node generators have no self-loops
         - Structural constraints (biconnected, no self-loops, acyclic)

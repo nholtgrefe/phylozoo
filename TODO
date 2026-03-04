@@ -38,6 +38,8 @@ Later releases:
             - add parallelization of generator construction
             - reuse level (k-1) generators or allow as input?
             - add IOmixin.
+            - add network to sdgenerator function.
+            - rename construction module and level-k generator function?
     - Quartet:
         - qdistance/nanuq distance, correct weighting and allow other profiles.
     - MSA:

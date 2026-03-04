@@ -1,10 +1,8 @@
 """
 Construction module for building level-k generators from level-(k-1) generators.
 
-This module implements the R1 and R2 transformation rules from Gambette, Berry, and Paul (2009)
-to construct all level-k generators from level-(k-1) generators.
-
-Based on Gambette, Berry, and Paul (2009): "The Structure of Level-k Phylogenetic Networks".
+This module implements the R1 and R2 transformation rules from :cite:`Gambette2009`
+to construct all level-k directed generators from level-(k-1) generators.
 """
 
 from __future__ import annotations
@@ -43,6 +41,7 @@ def _get_node_reachability_matrix(
     
     Notes
     -----
+
     - Uses topological sort + dynamic programming for efficient DAG processing.
     - Each node is reachable from itself.
     - Only stores True values; use .get(key, False) to check reachability.
@@ -214,6 +213,7 @@ def _apply_R2(
     
     Notes
     -----
+
     - side_y must be an edge side (DirEdgeSide).
     - It is assumed that side_x is not reachable from side_y
       (this check is done in the caller before invoking this function).
@@ -367,7 +367,7 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     Generate all (strict) level-k generators.
     
     This function constructs all (strict) level-k generators by starting 
-    with level-0 generators and iteratively applying R1 and R2 rules.
+    with level-0 generators and iteratively applying R1 and R2 rules from :cite:`Gambette2009`.
     
     Parameters
     ----------
