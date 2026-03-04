@@ -78,9 +78,7 @@ def quartet_distance(
     
     Notes
     -----
-    Common rho vector values:
-    - Squirrel/MONAD: (0.5, 1.0, 0.5, 1.0)
-    - NANUQ: (0.0, 1.0, 0.5, 1.0)
+    See the manual for more details.
     """
     # Validate rho vector
     if len(rho) != 4:
@@ -293,6 +291,10 @@ def quartet_distance_with_partition(
     >>> dist_matrix = quartet_distance_with_partition(profileset, partition)
     >>> len(dist_matrix)
     4
+
+    Notes
+    -----
+    See the manual for more details.
     """
     # Validate rho vector
     if len(rho) != 4:

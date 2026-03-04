@@ -79,7 +79,7 @@ class Quartet:
             taxa_set = frozenset(split.elements)
             
             # Validate split is 2|2 (not trivial)
-            if split.is_trivial():
+            if split.is_trivial:
                 raise PhyloZooValueError("Split must be a 2|2 split (non-trivial)")
             
             # Validate exactly 4 taxa

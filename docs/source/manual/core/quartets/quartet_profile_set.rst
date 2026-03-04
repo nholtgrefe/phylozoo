@@ -4,10 +4,9 @@ Quartet Profile Sets
 Working with Quartet Profile Sets
 ----------------------------------
 
-The :mod:`phylozoo.core.quartet` module provides the :class:`QuartetProfileSet` class,
+The :mod:`phylozoo.core.quartet` module provides the :class:`~phylozoo.core.quartet.qprofileset.QuartetProfileSet` class,
 which represents a weighted collection of quartet profiles covering multiple four-taxon
-subsets. This is the primary data structure for quartet-based phylogenetic analysis
-and network inference algorithms.
+.
 
 Note that this allows for two-level weights: the weight of a profile and the weight of a quartet within a profile.
 
@@ -49,8 +48,16 @@ Quartet profile sets can be created from existing profiles or directly from quar
    profile_set = QuartetProfileSet(profiles=quartets)
 
 When created from quartets, they are automatically grouped by their four-taxon sets
-and converted to profiles. Weights within each profile are normalized to sum to 1.0;
-the profile weight (in the set) is the sum of the input quartet weights for that taxa set.
+and converted to profiles. For each 4-taxon set, all quartets on that set form a
+single :class:`~phylozoo.core.quartet.qprofile.QuartetProfile` in which every quartet
+receives equal weight :math:`1/k` (where :math:`k` is the number of quartets for that
+taxa set); the resulting profile in the set has default profile weight 1.0.
+
+If you need non-uniform quartet weights within a profile, construct a
+:class:`~phylozoo.core.quartet.qprofile.QuartetProfile` explicitly (using a dictionary
+or list of ``(Quartet, weight)`` pairs that sum to 1.0) and pass that
+``QuartetProfile`` to :class:`~phylozoo.core.quartet.qprofileset.QuartetProfileSet`,
+optionally together with a separate profile weight.
 
 **Specifying Total Taxa**
 
@@ -67,6 +74,8 @@ appear in any profile:
 
 Accessing Profile Set Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Basic properties**
 
 Quartet profile sets provide comprehensive access to their structure and contents:
 
@@ -94,16 +103,16 @@ Quartet profile sets provide comprehensive access to their structure and content
 
 **Density**
 
-The :meth:`is_dense` property checks if the quartet profile set is dense, meaning it has a profile for every possible 4-taxon combination.
+The :attr:`~phylozoo.core.quartet.qprofileset.QuartetProfileSet.is_dense` property checks if the quartet profile set is dense, meaning it has a profile for every possible 4-taxon combination.
 
 .. code-block:: python
 
    is_dense = profile_set.is_dense  # True if has all possible 4-taxon combinations
 
 
-**All Resolved**
+**Resolution status**
 
-The :meth:`is_all_resolved` property checks if all profiles in the set are resolved, meaning all quartets in the profile are resolved.
+The :attr:`~phylozoo.core.quartet.qprofileset.QuartetProfileSet.is_all_resolved` property checks if all profiles in the set are resolved, meaning all quartets in the profile are resolved.
 
 .. code-block:: python
 
@@ -114,14 +123,13 @@ Quartet Distance Computation
 ----------------------------
 
 The quartet module provides functions for computing distance matrices from quartet profile sets.
-This quartet distance metric was first defined for trees and their quartets :cite:`rhodes2019`,
-and later extended to networks :cite:`NANUQ, Squirrel, NANUQ+, level2`. The quartet distance is 
-a key component of the Squirrel algorithm for phylogenetic network inference.
+This quartet distance metric was first defined for trees and their quartets :cite:`Rhodes2019`,
+then extended to networks for the NANUQ algorithm :cite:`Allman2019`, and later further explored in various forms in :cite:`Holtgrefe2025a` (for the Squirrel algorithm), :cite:`Allman2025` (for the NANUQ+ algorithm), and :cite:`Holtgrefe2025b` (for level-2 networks).
 
 Quartet Distance
 ^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.quartet.qdistance.quartet_distance` function computes
+The :func:`~phylozoo.core.quartet.qdistance.quartet_distance` function computes
 a distance matrix from a quartet profile set using a rho vector.
 The distance between two taxa is computed by aggregating contributions from all
 quartet profiles, where the contribution depends on the quartet topology and the
@@ -148,7 +156,7 @@ for the 4-taxon set :math:`S`, and :math:`\rho_{\text{dist}}` is the rho-distanc
 The rho-distance function :math:`\rho_{\text{dist}}(Q_S, i, j, \rho)` depends on the quartet profile type,
 the leaves :math:`i` and :math:`j`, and the rho vector :math:`\rho = (\rho_c, \rho_s, \rho_a, \rho_o)`
 
-*Profiles with 1 quartet (split quarnet):*
+*Profiles with 1 quartet (split):*
 
 For a profile containing a single quartet with split :math:`\{a,b\} | \{c,d\}`, the rho-distance is:
 
@@ -176,13 +184,14 @@ For a profile containing two quartets, which therefore induce a single circular 
 The rho vector must satisfy :math:`\rho_a \leq \rho_o` and :math:`\rho_c \leq \rho_s`.
 
 Common rho vector values:
-- **Squirrel/MONAD**: :math:`(0.5, 1.0, 0.5, 1.0)`
-- **NANUQ**: :math:`(0.0, 1.0, 0.5, 1.0)`
+
+- **NANUQ**: :math:`(0.0, 1.0, 0.5, 1.0)` :cite:`Allman2019`, :cite:`Holtgrefe2025b`
+- **Squirrel/MONAD**: :math:`(0.5, 1.0, 0.5, 1.0)` :cite:`Holtgrefe2025a`, :cite:`Allman2025`
 
 Quartet Distance with Partition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.quartet.qdistance.quartet_distance_with_partition` function
+The :func:`~phylozoo.core.quartet.qdistance.quartet_distance_with_partition` function
 computes a distance matrix between partition sets (rather than individual taxa) based
 on quartet profiles:
 

@@ -3,8 +3,7 @@ Pairwise Distances
 
 The :mod:`phylozoo.core.distance` module provides immutable containers for pairwise distances
 between taxa, along with comprehensive tools for classification and optimization.
-Distance matrices are fundamental to many phylogenetic inference algorithms, serving
-as the standard input format for e.g. Squirrel.
+Distance matrices are fundamental to many phylogenetic inference algorithms.
 
 
 All classes and functions on this page can be imported from the core distance module:
@@ -18,23 +17,9 @@ All classes and functions on this page can be imported from the core distance mo
 Working with Distance Matrices
 --------------------------------
 
-The :class:`phylozoo.core.distance.DistanceMatrix` class is the canonical container
+The :class:`~phylozoo.core.distance.base.DistanceMatrix` class is the canonical container
 for pairwise distances in PhyloZoo. It provides an immutable, labeled, and read-only
 representation that ensures data integrity throughout your analysis pipeline.
-
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   Distance matrices are designed for immutability and performance:
-
-   - The underlying NumPy array is made read-only after construction
-   - Labels are stored as an immutable tuple and must be hashable (e.g., ``str``, ``int``, ``tuple``)
-   - To modify distances, create a new ``DistanceMatrix`` instance with the updated data
-   - The matrix is validated for symmetry and squareness at construction time
-
-   For implementation details, see :mod:`src/phylozoo/core/distance/base.py`.
 
 Creating a Distance Matrix
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -60,7 +45,7 @@ Distance matrices can be created from NumPy arrays with optional labels:
    dm2 = DistanceMatrix(matrix)
 
 The matrix must be square and symmetric. The constructor validates these properties
-and raises :class:`phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
+and raises :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
 
 Accessing Distances
 ^^^^^^^^^^^^^^^^^^^
@@ -87,9 +72,9 @@ File Input/Output
 
 Distance matrices support reading and writing in multiple phylogenetic formats:
 
-- **NEXUS** (default): Standard phylogenetic data format
-- **PHYLIP**: Classic phylogenetic format
-- **CSV**: Comma-separated values for interoperability
+- **NEXUS** (default): Standard phylogenetic data format — see :doc:`NEXUS format <../utils/io/formats/nexus>`
+- **PHYLIP**: Classic phylogenetic format — see :doc:`PHYLIP format <../utils/io/formats/phylip>`
+- **CSV**: Comma-separated values for interoperability — see :doc:`CSV format <../utils/io/formats/csv>`
 
 .. code-block:: python
 
@@ -102,16 +87,10 @@ Distance matrices support reading and writing in multiple phylogenetic formats:
    # Save to file
    dm.save("output.csv", format="csv")
 
-.. seealso::
-   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. 
-   
-   For details on the I/O system,
-   see the :doc:`I/O documentation <../utils/io>`. 
-   
-   For specific information about
-   supported file formats and parameter options for distance matrices, see the
-   :mod:`API reference <phylozoo.core.distance.io>`.
+.. seealso::   
+   The `DistanceMatrix` class uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   consistent file handling across PhyloZoo classes. For details on the I/O system,
+   see the :doc:`I/O manual <../utils/io/overview>`.
 
 Classification Functions
 -------------------------
@@ -125,20 +104,20 @@ Basic Properties
 
 **Non-negativity**
 
-The :func:`phylozoo.core.distance.classifications.is_nonnegative` function checks
+The :func:`~phylozoo.core.distance.classifications.is_nonnegative` function checks
 that all distances are non-negative: :math:`d(i,j) \geq 0` for all :math:`i, j`.
 This is a fundamental requirement for distance functions.
 
 **Zero Diagonal**
 
-The :func:`phylozoo.core.distance.classifications.has_zero_diagonal` function
+The :func:`~phylozoo.core.distance.classifications.has_zero_diagonal` function
 verifies that all diagonal entries are exactly zero, ensuring that the distance
 from any item to itself is zero. This is a strict equality check using NumPy
 equality, intended to verify metric conventions.
 
 **Triangle Inequality**
 
-The :func:`phylozoo.core.distance.classifications.satisfies_triangle_inequality`
+The :func:`~phylozoo.core.distance.classifications.satisfies_triangle_inequality`
 function checks whether the distance matrix satisfies the triangle inequality:
 
 .. math::
@@ -172,19 +151,19 @@ A metric distance matrix satisfies four properties:
 3. Zero diagonal: :math:`d(x, x) = 0` for all :math:`x`
 4. Symmetry: :math:`d(x, y) = d(y, x)` for all :math:`x, y` (enforced by constructor)
 
-The :func:`phylozoo.core.distance.classifications.is_metric` function provides
+The :func:`~phylozoo.core.distance.classifications.is_metric` function provides
 a convenient wrapper that checks all of these properties. Use this function when
 downstream algorithms require a proper metric and you want a single boolean check.
 
 **Pseudo-metrics**
 
 A pseudo-metric is like a metric but allows distinct items to have zero distance.
-The :func:`phylozoo.core.distance.classifications.is_pseudo_metric` function
+The :func:`~phylozoo.core.distance.classifications.is_pseudo_metric` function
 checks non-negativity and triangle inequality, but does not require a zero diagonal.
 
 **Kalmanson Conditions**
 
-The Kalmanson condition :cite:`Kalmanson` is a pair of inequalities that must hold for every ordered
+The Kalmanson condition :cite:`Kalmanson1975` is a pair of inequalities that must hold for every ordered
 quadruple :math:`(i < j < k < l)` in a circular ordering:
 
 .. math::
@@ -192,11 +171,11 @@ quadruple :math:`(i < j < k < l)` in a circular ordering:
    d(i,j) + d(k,l) &\leq d(i,k) + d(j,l) \\
    d(i,l) + d(j,k) &\leq d(i,k) + d(j,l)
 
-The :func:`phylozoo.core.distance.classifications.is_kalmanson` function checks
+The :func:`~phylozoo.core.distance.classifications.is_kalmanson` function checks
 these conditions with respect to a given circular ordering. This function requires:
 
 - The matrix to be a pseudo-metric
-- The provided :class:`phylozoo.core.primitives.CircularOrdering` to contain
+- The provided :class:`~phylozoo.core.primitives.circular_ordering.CircularOrdering` to contain
   exactly the same labels as the distance matrix
 
 The check is implemented using Numba-accelerated loops.
@@ -211,10 +190,10 @@ starting point. TSP solutions are useful for generating circular orderings.
 Exact Solution
 ^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.distance.operations.optimal_tsp_tour` function provides
+The :func:`~phylozoo.core.distance.operations.optimal_tsp_tour` function provides
 an exact solution using the Held–Karp dynamic programming algorithm :cite:`HeldKarp1962`.
 
-The function returns a :class:`phylozoo.core.primitives.CircularOrdering` in canonical
+The function returns a :class:`~phylozoo.core.primitives.circular_ordering.CircularOrdering` in canonical
 form, representing the optimal tour.
 
 Example:
@@ -226,27 +205,12 @@ Example:
    tour = optimal_tsp_tour(dm)
    print(f"Optimal tour: {tour.order}")
 
-.. note::
-   :class: dropdown
-
-   **Implementation details**
-
-   The Held–Karp algorithm implementation:
-
-   - Uses bitmask-based dynamic programming for efficient state representation
-   - Is accelerated with Numba JIT compilation for performance
-   - Memory grows exponentially with :math:`2^n`, so avoid large :math:`n`
-   - For large instances, consider using approximate methods instead
-
-   The algorithm uses a memoization table of size :math:`n \times 2^{n-1}` to store
-   optimal subproblem solutions, making it practical only for small instances
-   (typically :math:`n \leq 15`–:math:`20` depending on available memory).
 
 Approximate Solutions
 ^^^^^^^^^^^^^^^^^^^^^
 
 For larger instances where exact solutions are infeasible, the
-:func:`phylozoo.core.distance.operations.approximate_tsp_tour` function provides
+:func:`~phylozoo.core.distance.operations.approximate_tsp_tour` function provides
 heuristic solvers. Supported methods include:
 
 - **simulated_annealing** (default): Simulated annealing with greedy initialization.
@@ -255,16 +219,15 @@ heuristic solvers. Supported methods include:
 - **greedy**: Nearest-neighbor heuristic. Very fast but can produce poor results
   in adversarial cases.
 
-- **christofides**: Christofides algorithm :cite:`Christofides` providing a :math:`3/2`-approximation
+- **christofides**: Christofides algorithm :cite:`Christofides1976` providing a :math:`3/2`-approximation
   when the distance matrix is metric.
 
 The function uses :mod:`NetworkX <networkx>`'s traveling salesman utilities and returns a
-:class:`phylozoo.core.primitives.CircularOrdering`. It is suitable for larger
+:class:`~phylozoo.core.primitives.circular_ordering.CircularOrdering`. It is suitable for larger
 matrices where exact solutions are computationally prohibitive.
 
 See Also
 --------
 
-- :doc:`API Reference <../../api/core/distance>` - Complete function signatures and detailed examples
-- :mod:`phylozoo.core.distance.io` - Distance matrix I/O format details and parameter options
-- :doc:`Circular Orderings <../primitives/circular_ordering>` - Working with circular orderings
+- :doc:`API Reference <../../api/core/distance>` — Complete function signatures and detailed examples
+- :doc:`Circular Orderings <../primitives/circular_ordering>` — Working with circular orderings

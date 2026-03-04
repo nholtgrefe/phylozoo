@@ -6,6 +6,7 @@ and CSV. This module provides format handlers registered with FormatRegistry for
 use with the IOMixin system.
 
 The following format handlers are defined and registered:
+
 - **nexus**: NEXUS format for distance matrices (extensions: .nexus, .nex, .nxs)
   - Writer: `to_nexus()` - Converts DistanceMatrix to NEXUS string
   - Reader: `from_nexus()` - Parses NEXUS string to DistanceMatrix
@@ -18,6 +19,7 @@ The following format handlers are defined and registered:
 
 These handlers are automatically registered when this module is imported.
 DistanceMatrix inherits from IOMixin, so you can use:
+
 - `dm.save('file.nexus')` - Save to file (auto-detects format)
 - `dm.load('file.nexus')` - Load from file (auto-detects format)
 - `dm.to_string(format='phylip')` - Convert to string

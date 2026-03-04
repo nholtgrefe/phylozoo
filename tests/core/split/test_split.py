@@ -48,10 +48,10 @@ class TestSplit:
     def test_is_trivial(self) -> None:
         """Test the is_trivial method."""
         trivial_split = Split({1}, {2, 3, 4})
-        assert trivial_split.is_trivial() is True
+        assert trivial_split.is_trivial is True
 
         non_trivial_split = Split({1, 2}, {3, 4})
-        assert non_trivial_split.is_trivial() is False
+        assert non_trivial_split.is_trivial is False
 
     def test_is_compatible_true_same_elements(self) -> None:
         """Test is_compatible returns True for compatible splits with same elements."""
@@ -131,7 +131,7 @@ class TestSplit:
 
     def test_induced_quartetsplits(self) -> None:
         """Test induced_quartetsplits generates correct quartet splits."""
-        from phylozoo.core.split.base import induced_quartetsplits
+        from phylozoo.core.split.algorithms import induced_quartetsplits
         
         split = Split({1, 2, 3}, {4, 5, 6})
         quartets = induced_quartetsplits(split)
@@ -146,7 +146,7 @@ class TestSplit:
 
     def test_induced_quartetsplits_include_trivial(self) -> None:
         """Test induced_quartetsplits with include_trivial=True."""
-        from phylozoo.core.split.base import induced_quartetsplits
+        from phylozoo.core.split.algorithms import induced_quartetsplits
         
         split = Split({1, 2}, {3, 4, 5})
         quartets = induced_quartetsplits(split, include_trivial=True)
@@ -157,7 +157,7 @@ class TestSplit:
         assert len(quartets) >= 3  # At least the 2|2 splits
         
         # Check that trivial splits are included
-        trivial_count = sum(1 for q in quartets if q.is_trivial())
+        trivial_count = sum(1 for q in quartets if q.is_trivial)
         assert trivial_count > 0
 
     def test_split_repr(self) -> None:

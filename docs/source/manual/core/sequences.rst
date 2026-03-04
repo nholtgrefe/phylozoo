@@ -103,7 +103,7 @@ MSAs support reading and writing in multiple phylogenetic formats:
 .. seealso::
    The `MSA` class uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
    consistent file handling across PhyloZoo classes. For details on the I/O system,
-   see the :doc:`I/O documentation <../utils/io/overview>`.
+   see the :doc:`I/O manual <../utils/io/overview>`.
 
 
 Bootstrap Resampling

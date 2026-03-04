@@ -36,6 +36,7 @@ class QuartetProfile:
     ----------
     quartets : dict[Quartet, float] | Mapping[Quartet, float] | list[Quartet] | list[tuple[Quartet, float]]
         Input quartets. Can be:
+
         - A dictionary mapping quartets to weights (must sum to 1.0)
         - A list of quartets (each assigned weight 1/k)
         - A list of (quartet, weight) tuples (weights must sum to 1.0)
@@ -97,6 +98,7 @@ class QuartetProfile:
         ----------
         quartets : dict[Quartet, float] | Mapping[Quartet, float] | list[Quartet] | list[tuple[Quartet, float]]
             Input quartets. Can be:
+
             - A dictionary mapping quartets to weights (must sum to 1.0)
             - A list of quartets (each assigned weight 1/k)
             - A list of (quartet, weight) tuples (weights must sum to 1.0)

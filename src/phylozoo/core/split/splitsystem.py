@@ -51,10 +51,6 @@ class SplitSystem(IOMixin):
     >>> split1 in system
     True
     
-    Notes
-    -----
-    The split system is immutable after initialization. Attempts to modify attributes
-    will raise AttributeError.
     """
     
     __slots__ = ('_splits', '_elements', '_initialized')

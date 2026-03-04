@@ -5,6 +5,7 @@ This module provides algorithms for working with split systems, including
 conversion to phylogenetic networks and computation of distance matrices.
 """
 
+import itertools
 import networkx as nx
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any
@@ -19,12 +20,64 @@ from ..primitives.m_multigraph import MixedMultiGraph
 from ..primitives.m_multigraph.features import cut_vertices
 from ..primitives.partition import Partition
 from ..quartet import Quartet, QuartetProfile, QuartetProfileSet
+from .base import Split, T
 from .classifications import is_tree_compatible
 from .splitsystem import SplitSystem
 from .weighted_splitsystem import WeightedSplitSystem
 
 if TYPE_CHECKING:
     pass
+
+
+def induced_quartetsplits(split: Split, include_trivial: bool = False) -> set[Split]:
+    """
+    Return a set of all subsplits of size 4 of the split.
+
+    Generates all quartet splits (2|2 splits) that can be induced from this
+    split by selecting 2 elements from each side.
+
+    Parameters
+    ----------
+    split : Split[T]
+        The split to generate quartet splits from.
+    include_trivial : bool, optional
+        If True, also include trivial quartet splits (1|3 splits).
+        By default False.
+
+    Returns
+    -------
+    set[Split[T]]
+        A set of quartet splits induced from this split.
+
+    Examples
+    --------
+    >>> split = Split({1, 2, 3}, {4, 5, 6})
+    >>> quartets = induced_quartetsplits(split)
+    >>> len(quartets) > 0
+    True
+
+    """
+    res: list[Split] = []
+
+    # Generate 2|2 splits
+    for s1 in itertools.combinations(split.set1, 2):
+        for s2 in itertools.combinations(split.set2, 2):
+            quartet_split = Split(set(s1), set(s2))
+            res.append(quartet_split)
+
+    # Optionally include trivial splits (1|3)
+    if include_trivial:
+        for s1 in itertools.combinations(split.set1, 1):
+            for s2 in itertools.combinations(split.set2, 3):
+                quartet_split = Split(set(s1), set(s2))
+                res.append(quartet_split)
+
+        for s1 in itertools.combinations(split.set1, 3):
+            for s2 in itertools.combinations(split.set2, 1):
+                quartet_split = Split(set(s1), set(s2))
+                res.append(quartet_split)
+
+    return set(res)
 
 
 def tree_from_splitsystem(
@@ -35,6 +88,7 @@ def tree_from_splitsystem(
     Convert a split system to a tree (SemiDirectedPhyNetwork).
     
     Builds a tree that induces all splits in the system using a star tree approach:
+
     1. Start with a star tree (center node connected to all leaves)
     2. For each non-trivial split S = A|B, find a cut-vertex v whose partition is a
        refinement of S, replace v with a cut-edge (two internal nodes u and w
@@ -121,6 +175,7 @@ def tree_from_splitsystem(
         Get the partition induced by a cut-vertex v.
         
         Returns a tuple of:
+
         - The Partition object representing the partition of taxa
         - A dictionary mapping each part (frozenset of taxa) to the neighbor (u, v)
           where u is the neighbor of v in that component
@@ -165,7 +220,7 @@ def tree_from_splitsystem(
     
     # Process each non-trivial split
     for split in splits_list:
-        if split.is_trivial():
+        if split.is_trivial:
             continue
         
         # Find a cut-vertex whose partition is a refinement of this split
@@ -351,14 +406,13 @@ def quartets_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> Quar
     # Process each split
     for split in system.splits:
         # Skip splits that can't produce quartets (need at least 2 elements on each side)
-        if split.is_trivial():
+        if split.is_trivial:
             continue
         
         # Get weight for this split (1.0 if not weighted, or actual weight if weighted)
         split_weight = system.get_weight(split) if is_weighted else 1.0
         
         # Get all quartet splits induced by this split
-        from ..split.base import induced_quartetsplits
         quartet_splits = induced_quartetsplits(split, include_trivial=False)
         
         # Convert each quartet split to a Quartet and add to profile

@@ -134,6 +134,7 @@ def is_metric(distance_matrix: DistanceMatrix) -> bool:
     Check if the distance matrix is a metric.
     
     A metric distance matrix satisfies:
+
     1. Non-negativity: d(x, y) >= 0 for all x, y
     2. Triangle inequality: d(x, z) <= d(x, y) + d(y, z) for all x, y, z
     3. Zero diagonal: d(x, x) = 0 for all x
@@ -179,6 +180,7 @@ def is_pseudo_metric(distance_matrix: DistanceMatrix) -> bool:
     Check if the distance matrix is a pseudo-metric.
     
     A pseudo-metric distance matrix satisfies:
+
     1. Non-negativity: d(x, y) >= 0 for all x, y
     2. Triangle inequality: d(x, z) <= d(x, y) + d(y, z) for all x, y, z
     
@@ -229,7 +231,10 @@ def is_kalmanson(
     A distance matrix is Kalmanson with respect to a circular order if it satisfies
     the Kalmanson inequalities for all quadruples of labels in that order.
     
+    The Kalmanson conditions are classical inequalities for circular metrics :cite:`Kalmanson`.
+    
     For a circular order (l1, l2, ..., ln), the Kalmanson conditions are:
+
     - d(ei, ej) + d(ek, el) <= d(ei, ek) + d(ej, el) for all i < j < k < l
     - d(ei, el) + d(ej, ek) <= d(ei, ek) + d(ej, el) for all i < j < k < l
     

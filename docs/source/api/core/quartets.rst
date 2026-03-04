@@ -14,15 +14,9 @@ Main Classes
    :members:
    :show-inheritance:
 
-Quartet Profiles
-----------------
-
 .. automodule:: phylozoo.core.quartet.qprofile
    :members:
    :show-inheritance:
-
-Quartet Profile Sets
---------------------
 
 .. automodule:: phylozoo.core.quartet.qprofileset
    :members:

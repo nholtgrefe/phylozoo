@@ -4,7 +4,7 @@ Quartets
 Working with Quartets
 ----------------------
 
-The :mod:`phylozoo.core.quartet` module provides the :class:`Quartet` class, which
+The :mod:`phylozoo.core.quartet` module provides the :class:`~phylozoo.core.quartet.base.Quartet` class, which
 represents an unrooted tree topology on four taxa. Quartets are the fundamental units
 of phylogenetic relationships in quartet-based methods, with three possible resolved
 topologies or an unresolved star quartet.
@@ -35,25 +35,40 @@ on exactly 4 taxa.
 Accessing Quartet Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Quartets provide methods to query their structure and relationships:
+**Basic properties**
+
+Quartets provide access to their taxa and underlying split:
 
 .. code-block:: python
 
-   # Check resolution status
-   is_resolved = q1.is_resolved()    # True for resolved quartets
-   is_star = star.is_star()          # True for star quartets
-
    # Access taxa
-   taxa = q1.taxa                    # frozenset({"A", "B", "C", "D"})
+   taxa = q1.taxa   # frozenset({"A", "B", "C", "D"})
 
-   # Access underlying split (for resolved quartets)
-   split = q1.split                  # Split object or None
+   # Access underlying split (for resolved quartets only)
+   split = q1.split  # Split object or None for star quartets
 
-   # Get circular orderings (for resolved quartets)
-   orderings = q1.circular_orderings  # frozenset of :class:`phylozoo.core.primitives.CircularOrdering` objects
+**Resolution status**
 
-   # Create a copy
-   quartet_copy = q1.copy()
+The :meth:`~phylozoo.core.quartet.base.Quartet.is_resolved` and :meth:`~phylozoo.core.quartet.base.Quartet.is_star` methods indicate whether the quartet is resolved or a star:
+
+.. code-block:: python
+
+   is_resolved = q1.is_resolved()   # True for resolved quartets
+   is_star = star.is_star()         # True for star quartets
+
+**Circular orderings**
+
+Quartets can be queried for circular orderings that are congruent with their topology, using the :attr:`~phylozoo.core.quartet.base.Quartet.circular_orderings` property:
+
+.. code-block:: python
+
+   # Get circular orderings for a resolved quartet
+   orderings = q1.circular_orderings  # Returns 2 orderings for resolved quartets
+
+   # Get circular orderings for a star quartet
+   star_orderings = star.circular_orderings  # Returns all 3 orderings for star quartets
+
+For a resolved quartet with split {a,b}|{c,d}, this returns the two circular orderings where a and b are neighbors and c and d are neighbors. For a star tree, this returns all three circular orderings.
 
 Quartet Operations
 ------------------
@@ -75,44 +90,24 @@ Quartets implement equality comparison and hashing, making them suitable for use
 
 Quartets with the same topology (whether resolved with the same split or both star quartets on the same taxa) are considered equal.
 
-**String Representations**
-
-Quartets provide both human-readable and programmatic string representations:
-
-.. code-block:: python
-
-   # Human-readable string representation
-   quartet_str = str(q1)           # Shows topology in readable format
-
-   # Python representation (for debugging)
-   quartet_repr = repr(q1)         # Shows constructor call
-
-These representations help with debugging and logging quartet-based analyses.
-
 **Network Conversion**
 
-Resolved quartets can be converted to phylogenetic networks:
+Resolved quartets can be converted to phylogenetic networks using the :meth:`~phylozoo.core.quartet.base.Quartet.to_network` method:
 
 .. code-block:: python
 
    # Convert resolved quartet to network representation
-   network = q1.to_network()       # Returns :class:`phylozoo.core.network.sdnetwork.SemiDirectedPhyNetwork`
+   network = q1.to_network()  # Returns a SemiDirectedPhyNetwork
 
 This operation creates a small phylogenetic network containing just the quartet topology, useful for visualization and further analysis.
 
-**Circular Orderings**
+**Copy**
 
-Quartets can be queried for circular orderings that are congruent with their topology:
+The :meth:`~phylozoo.core.quartet.base.Quartet.copy` method returns an independent copy of the quartet:
 
 .. code-block:: python
 
-   # Get circular orderings for a resolved quartet
-   orderings = q1.circular_orderings  # Returns 2 orderings for resolved quartets
-
-   # Get circular orderings for a star quartet
-   star_orderings = star.circular_orderings  # Returns all 3 orderings for star quartets
-
-For a resolved quartet with split {a,b}|{c,d}, returns the two circular orderings where a and b are neighbors and c and d are neighbors. For a star tree, returns all three circular orderings.
+   quartet_copy = q1.copy()
 
 See Also
 --------

@@ -1072,7 +1072,7 @@ def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
             # Find the non-trivial split (2|2 split) if it exists
             quartet_split: Split | None = None
             for split in tree_splits.splits:
-                if not split.is_trivial() and len(split.set1) == 2 and len(split.set2) == 2:
+                if not split.is_trivial and len(split.set1) == 2 and len(split.set2) == 2:
                     quartet_split = split
                     break
             

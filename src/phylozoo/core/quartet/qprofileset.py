@@ -1,9 +1,8 @@
 """
 Quartet profile set module.
 
-A quartet profile set is a collection of quartet profiles, typically used for
-network reconstruction algorithms such as Squirrel. This module provides the
-QuartetProfileSet class.
+A quartet profile set is a collection of quartet profiles covering multiple four-taxon sets.
+This module provides the QuartetProfileSet class.
 """
 
 from functools import cached_property
@@ -33,13 +32,22 @@ class QuartetProfileSet:
     
     Parameters
     ----------
-    profiles : list[QuartetProfile | Quartet | tuple[QuartetProfile, float] | tuple[Quartet, float]] | None, optional
-        List of QuartetProfile objects, Quartet objects, or tuples with weights.
-        - If QuartetProfile: used directly (optionally with weight tuple)
-        - If Quartet: automatically grouped by taxa into profiles
-        - If tuple: (profile/quartet, weight) where weight defaults to 1.0
-        When quartets are provided, each profile's weight is the sum of weights
-        of quartets in that profile. Each quartet within the profile keeps its input weight.
+    profiles : list[QuartetProfile | Quartet | tuple[QuartetProfile, float]] | None, optional
+        List of QuartetProfile objects, Quartet objects, or tuples with profile weights.
+        
+        - If QuartetProfile: used directly (optionally with a profile-weight tuple).
+        - If Quartet: automatically grouped by taxa into profiles. For each 4-taxon
+          set, all quartets on that set are collected into a :class:`QuartetProfile`
+          with equal weights :math:`1/k` (where :math:`k` is the number of quartets
+          for that taxa set). Each resulting profile in the set receives default
+          profile weight 1.0.
+        - If tuple: (profile, weight) where weight is the profile weight.
+        
+        Passing quartets together with explicit weights (e.g. ``(Quartet, weight)``)
+        is not supported. To use non-uniform quartet weights within a profile,
+        construct a :class:`QuartetProfile` explicitly and pass that (optionally
+        with a profile weight).
+        
         By default None.
     taxa : frozenset[str] | None, optional
         Total set of taxa. If provided, must be a superset of all taxa in the
@@ -83,7 +91,7 @@ class QuartetProfileSet:
     
     def __init__(
         self,
-        profiles: list[QuartetProfile | Quartet | tuple[QuartetProfile, float] | tuple[Quartet, float]] | None = None,
+        profiles: list[QuartetProfile | Quartet | tuple[QuartetProfile, float]] | None = None,
         taxa: frozenset[str] | None = None,
     ) -> None:
         """
@@ -91,13 +99,21 @@ class QuartetProfileSet:
         
         Parameters
         ----------
-        profiles : list[QuartetProfile | Quartet | tuple[QuartetProfile, float] | tuple[Quartet, float]] | None, optional
-            List of QuartetProfile objects, Quartet objects, or tuples with weights.
-            - If QuartetProfile: used directly (optionally with weight tuple)
-            - If Quartet: automatically grouped by taxa into profiles
-            - If tuple: (profile/quartet, weight) where weight defaults to 1.0
-            When quartets are provided, each profile's weight is the sum of weights
-            of quartets in that profile. Each quartet within the profile keeps its input weight.
+        profiles : list[QuartetProfile | Quartet | tuple[QuartetProfile, float]] | None, optional
+            List of QuartetProfile objects, Quartet objects, or tuples with profile weights.
+            
+            - If QuartetProfile: used directly (optionally with profile-weight tuple)
+            - If Quartet: automatically grouped by taxa into profiles. Each resulting
+              profile receives default weight 1.0 and uses :class:`QuartetProfile`
+              to handle internal quartet weights (equal weights 1/k when created
+              from a list of quartets).
+            - If tuple: (profile, weight) where weight is the profile weight and
+              must be positive.
+            
+            Passing quartets with explicit weights (e.g. ``(Quartet, weight)``) is
+            not supported. To specify non-uniform quartet weights, construct a
+            :class:`QuartetProfile` explicitly and pass that instead.
+            
             By default None.
         taxa : frozenset[str] | None, optional
             Total set of taxa. If provided, must be a superset of all taxa in the
@@ -121,9 +137,15 @@ class QuartetProfileSet:
         profile_data: dict[frozenset[str], dict[Quartet, float]] = {}
         
         for item in profiles:
-            # Extract object and weight
+            # Extract object and weight (weights only allowed for QuartetProfile)
             if isinstance(item, tuple):
                 obj, weight = item
+                if isinstance(obj, Quartet):
+                    raise PhyloZooValueError(
+                        "Quartet weights are not supported in QuartetProfileSet. "
+                        "Construct a QuartetProfile with quartet weights and pass "
+                        "that instead."
+                    )
             else:
                 obj = item
                 weight = 1.0
@@ -168,7 +190,7 @@ class QuartetProfileSet:
                 profiles_dict[profile_taxa] = (profile, weight)
             
             else:
-                # Mode 2: From Quartet objects (group into profiles)
+                # Mode 2: From Quartet objects (group into profiles, no quartet weights)
                 quartet = obj
                 quartet_taxa = quartet.taxa
                 all_taxa_from_input.update(quartet_taxa)
@@ -181,21 +203,20 @@ class QuartetProfileSet:
                         f"Quartet {quartet} appears multiple times in the input. "
                         "Each quartet can only appear once per taxa set."
                     )
-                profile_data[quartet_taxa][quartet] = weight
+                # Value is unused beyond duplicate detection; all quartets are unweighted here.
+                profile_data[quartet_taxa][quartet] = 1.0
         
         # If we processed quartets, create profiles from grouped data.
-        # QuartetProfile requires weights to sum to 1.0; normalize per profile.
+        # Each taxa set becomes a QuartetProfile built from its quartets, with
+        # default profile weight 1.0 in the set.
         if mode == 'quartet':
             for taxa_set, quartets_dict in profile_data.items():
                 # Validate no empty profiles
                 if len(quartets_dict) == 0:
                     raise PhyloZooValueError(f"Cannot have empty profile for taxa {taxa_set}")
                 
-                total = sum(quartets_dict.values())
-                normalized = {q: w / total for q, w in quartets_dict.items()}
-                profile = QuartetProfile(normalized)
-                # Profile weight = sum of original quartet weights
-                profile_weight = total
+                profile = QuartetProfile(list(quartets_dict.keys()))
+                profile_weight = 1.0
                 profiles_dict[taxa_set] = (profile, profile_weight)
         
         # Store as immutable

@@ -2,7 +2,7 @@
 Distance matrix operations module.
 
 This module provides algorithms for working with distance matrices, including the
-Traveling Salesman Problem (TSP) solver using the Held-Karp dynamic programming
+Traveling Salesman Problem (TSP) solver using the Held-Karp dynamic programming :cite:`HeldKarp1962`
 algorithm.
 """
 
@@ -125,20 +125,13 @@ def optimal_tsp_tour(distance_matrix: DistanceMatrix) -> CircularOrdering:
     
     Notes
     -----
-    This implementation uses the Held-Karp algorithm with dynamic programming,
+    This implementation uses the Held-Karp algorithm :cite:`HeldKarp1962` with dynamic programming,
     optimized with Numba JIT compilation and bitmask-based set operations.
     The time complexity is O(n^2 * 2^n), so it's only practical for small
     instances (typically n <= 20).
     
     The algorithm uses bitmasks to represent sets of nodes, which is more
     efficient than Python sets and compatible with Numba acceleration.
-    
-    References
-    ----------
-    .. [1] Held, M., & Karp, R. M. (1962). A dynamic programming approach to sequencing
-           problems. Journal of the Society for Industrial and Applied Mathematics,
-           10(1), 196-210.
-    .. [2] https://en.wikipedia.org/wiki/Held%E2%80%93Karp_algorithm
     
     Examples
     --------
@@ -230,6 +223,7 @@ def approximate_tsp_tour(
         The distance matrix to solve TSP for.
     method : str, optional
         Heuristic method to use. Must be one of:
+
         - 'simulated_annealing': Simulated annealing heuristic (default)
         - 'greedy': Greedy nearest-neighbor heuristic
         - 'christofides': Christofides algorithm (for metric distances)
@@ -250,7 +244,7 @@ def approximate_tsp_tour(
     - **simulated_annealing**: Uses simulated annealing with a greedy initialization.
       Generally produces good solutions but is slower than greedy.
     - **greedy**: Simple nearest-neighbor heuristic. Fast but may produce poor solutions.
-    - **christofides**: Provides a 3/2-approximation for metric distances. Slower than
+    - **christofides**: Provides a 3/2-approximation for metric distances :cite:`Christofides`. Slower than
       greedy but guarantees better worst-case performance.
     
     Examples

@@ -56,28 +56,18 @@ class TestQuartetProfileSetInit:
         profileset = QuartetProfileSet(profiles=[q1, q2, q3])
         
         assert len(profileset) == 2
-        # Profile weight should be sum of quartet weights (both default to 1.0)
-        assert profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 2.0
+        # Each profile constructed from bare quartets gets default profile weight 1.0
+        assert profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 1.0
         assert profileset.get_profile_weight(frozenset({5, 6, 7, 8})) == 1.0
     
-    def test_init_from_quartets_with_weights(self) -> None:
-        """Test creating from Quartet objects with explicit weights."""
+    def test_init_from_quartets_with_weights_not_supported(self) -> None:
+        """Test that passing quartets with explicit weights is not supported."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         q3 = Quartet(Split({5, 6}, {7, 8}))
         
-        profileset = QuartetProfileSet(profiles=[(q1, 0.8), (q2, 0.2), (q3, 1.0)])
-        
-        assert len(profileset) == 2
-        # Profile weight should be sum of quartet weights
-        assert profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 1.0
-        assert profileset.get_profile_weight(frozenset({5, 6, 7, 8})) == 1.0
-        
-        # Check that quartets within profile keep their weights
-        profile = profileset.get_profile(frozenset({1, 2, 3, 4}))
-        assert profile is not None
-        assert profile.get_weight(q1) == 0.8
-        assert profile.get_weight(q2) == 0.2
+        with pytest.raises(ValueError, match="Quartet weights are not supported"):
+            QuartetProfileSet(profiles=[(q1, 0.8), (q2, 0.2), (q3, 1.0)])
     
     def test_init_mixed_quartet_profiles_error(self) -> None:
         """Test that mixing QuartetProfile and Quartet raises error."""
@@ -120,10 +110,6 @@ class TestQuartetProfileSetInit:
         with pytest.raises(ValueError, match="appears multiple times in the input"):
             QuartetProfileSet(profiles=[q1, q2, q1])
         
-        # Same quartet with different weights
-        with pytest.raises(ValueError, match="appears multiple times in the input"):
-            QuartetProfileSet(profiles=[(q1, 0.5), (q2, 0.3), (q1, 0.2)])
-        
         # Different quartets with same taxa (this is OK - they get merged)
         q3 = Quartet(Split({1, 4}, {2, 3}))  # Different quartet, same taxa
         profileset = QuartetProfileSet(profiles=[q1, q2, q3])
@@ -132,14 +118,14 @@ class TestQuartetProfileSetInit:
         assert profile is not None
         assert len(profile) == 3
     
-    def test_init_non_positive_quartet_weight_error(self) -> None:
-        """Test that non-positive quartet weights raise error."""
+    def test_init_quartet_weights_not_supported(self) -> None:
+        """Test that providing quartet weights is not supported at all."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         
-        with pytest.raises(ValueError, match="Quartet weight must be positive"):
+        with pytest.raises(ValueError, match="Quartet weights are not supported"):
             QuartetProfileSet(profiles=[(q1, 0.0)])
         
-        with pytest.raises(ValueError, match="Quartet weight must be positive"):
+        with pytest.raises(ValueError, match="Quartet weights are not supported"):
             QuartetProfileSet(profiles=[(q1, -0.5)])
     
     def test_init_with_taxa_parameter(self) -> None:
@@ -495,12 +481,13 @@ class TestQuartetProfileSetEdgeCases:
         q2 = Quartet(Split({1, 3}, {2, 4}))
         q3 = Quartet(Split({1, 4}, {2, 3}))
         
-        profileset = QuartetProfileSet(profiles=[(q1, 0.5), (q2, 0.3), (q3, 0.2)])
+        profileset = QuartetProfileSet(profiles=[q1, q2, q3])
         
         assert len(profileset) == 1
         profile = profileset.get_profile(frozenset({1, 2, 3, 4}))
         assert profile is not None
         assert len(profile) == 3
+        # Profile built from bare quartets has default weight 1.0
         assert profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 1.0
     
     def test_star_tree_quartets(self) -> None:
@@ -544,27 +531,24 @@ class TestQuartetProfileSetEdgeCases:
         assert len(profileset) == 10
         assert len(profileset.taxa) == 40
     
-    def test_profile_weights_sum_quartet_weights(self) -> None:
-        """Test that profile weight equals sum of quartet weights."""
+    def test_profile_weights_and_quartet_weights_from_profile(self) -> None:
+        """Test profile and quartet weights when constructed from QuartetProfile."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
         q2 = Quartet(Split({1, 3}, {2, 4}))
         q3 = Quartet(Split({1, 4}, {2, 3}))
         
-        profileset = QuartetProfileSet(profiles=[
-            (q1, 0.4),
-            (q2, 0.3),
-            (q3, 0.3)
-        ])
+        profile = QuartetProfile({q1: 0.4, q2: 0.3, q3: 0.3})
+        profileset = QuartetProfileSet(profiles=[profile])
         
-        # Profile weight should be sum: 0.4 + 0.3 + 0.3 = 1.0
+        # Default profile weight is 1.0
         assert profileset.get_profile_weight(frozenset({1, 2, 3, 4})) == 1.0
         
-        # Individual quartet weights should be preserved
-        profile = profileset.get_profile(frozenset({1, 2, 3, 4}))
-        assert profile is not None
-        assert profile.get_weight(q1) == 0.4
-        assert profile.get_weight(q2) == 0.3
-        assert profile.get_weight(q3) == 0.3
+        # Individual quartet weights are preserved from the profile
+        stored_profile = profileset.get_profile(frozenset({1, 2, 3, 4}))
+        assert stored_profile is not None
+        assert stored_profile.get_weight(q1) == 0.4
+        assert stored_profile.get_weight(q2) == 0.3
+        assert stored_profile.get_weight(q3) == 0.3
 
 
 class TestQuartetProfileSetValidation:

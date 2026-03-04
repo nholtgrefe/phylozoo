@@ -14,9 +14,6 @@ Main Classes
    :members:
    :show-inheritance:
 
-Split Systems
--------------
-
 .. automodule:: phylozoo.core.split.splitsystem
    :members:
    :show-inheritance:
@@ -25,17 +22,17 @@ Split Systems
    :members:
    :show-inheritance:
 
-Algorithms
-----------
-
-.. automodule:: phylozoo.core.split.algorithms
-   :members:
-   :show-inheritance:
-
 Classification Functions
 ------------------------
 
 .. automodule:: phylozoo.core.split.classifications
+   :members:
+   :show-inheritance:
+
+Algorithms
+----------
+
+.. automodule:: phylozoo.core.split.algorithms
    :members:
    :show-inheritance:
 

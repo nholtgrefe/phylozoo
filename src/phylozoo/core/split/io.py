@@ -14,6 +14,7 @@ The following format handlers are defined and registered:
 
 These handlers are automatically registered when this module is imported.
 SplitSystem and WeightedSplitSystem inherit from IOMixin, so you can use:
+
 - `system.save('file.nexus')` - Save to file (auto-detects format)
 - `system.load('file.nexus')` - Load from file (auto-detects format)
 - `system.to_string(format='nexus')` - Convert to string
@@ -141,6 +142,7 @@ def to_nexus_split_system(split_system: SplitSystem, **kwargs: Any) -> str:
     Notes
     -----
     The NEXUS format includes:
+
     - TAXA block with taxon labels
     - SPLITS block with split definitions (no weights for unweighted systems)
     """
@@ -224,6 +226,7 @@ def to_nexus_weighted_split_system(weighted_system: WeightedSplitSystem, **kwarg
     Notes
     -----
     The NEXUS format includes:
+
     - TAXA block with taxon labels
     - SPLITS block with FORMAT WEIGHTS=YES and split definitions with weights
     """
@@ -314,6 +317,7 @@ def from_nexus_split_system(nexus_string: str, **kwargs: Any) -> SplitSystem:
     Notes
     -----
     This parser expects:
+
     - A TAXA block with TAXLABELS
     - A SPLITS block with FORMAT LABELS=YES (weights optional, ignored if present)
     - Split definitions in format: [n] (taxa1 taxa2 ...) (taxa3 taxa4 ...) [weight]
@@ -448,6 +452,7 @@ def from_nexus_weighted_split_system(nexus_string: str, **kwargs: Any) -> Weight
     Notes
     -----
     This parser expects:
+
     - A TAXA block with TAXLABELS
     - A SPLITS block with FORMAT LABELS=YES WEIGHTS=YES (or just LABELS=YES if weights optional)
     - Split definitions in format: [n] (taxa1 taxa2 ...) (taxa3 taxa4 ...) weight

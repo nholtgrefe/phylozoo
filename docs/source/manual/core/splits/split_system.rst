@@ -4,11 +4,10 @@ Split Systems
 Working with Split Systems
 --------------------------
 
-The :mod:`phylozoo.core.split` module provides the :class:`SplitSystem` and :class:`WeightedSplitSystem` classes,
+The :mod:`phylozoo.core.split` module provides the :class:`~phylozoo.core.split.splitsystem.SplitSystem` and :class:`~phylozoo.core.split.weighted_splitsystem.WeightedSplitSystem` classes,
 which represent collections of splits covering a complete set of elements.
 Split systems provide a comprehensive way to represent phylogenetic relationships
-across multiple taxa. The classes validate that all splits cover the same element set and
-support various operations for phylogenetic analysis and conversion.
+across multiple taxa.
 
 Creating Split Systems
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -29,7 +28,7 @@ Split systems can be created from collections of splits:
    # Create split system
    split_system = SplitSystem(splits)
 
-The constructor validates that all splits cover the same set of elements and that there are no duplicate splits.
+The constructor validates that all splits cover the same set of elements and that there are no duplicate splits. It raises a :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
 
 Creating Weighted Split Systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,7 +92,7 @@ File Input/Output
 
 Split systems support reading and writing in NEXUS format:
 
-- **NEXUS** (default): Standard phylogenetic data format for split systems
+- **NEXUS** (default): Standard phylogenetic data format for split systems — see :doc:`NEXUS format <../../utils/io/formats/nexus>`
 
 .. code-block:: python
 
@@ -117,16 +116,9 @@ Weighted split systems also support NEXUS format with weights:
    weighted_system.save("output.nexus")
 
 .. seealso::
-   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. 
-   
-   For details on the I/O system,
-   see the :doc:`I/O documentation <../../utils/io>`. 
-   
-   For specific information about
-   supported file formats and parameter options for split systems, see the
-   :mod:`API reference <phylozoo.core.split.io>`.
-
+   The `SplitSystem` and `WeightedSplitSystem` classes use the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   consistent file handling across PhyloZoo classes. For details on the I/O system,
+   see the :doc:`I/O manual <../../utils/io/overview>`.
 
 Classifications
 ---------------
@@ -136,8 +128,8 @@ These classifications are essential for validating that split systems meet the r
 
 **Trivial Splits**
 
-The :func:`phylozoo.core.split.classifications.has_all_trivial_splits` function checks
-whether the split system contains all trivial splits. See :func:`phylozoo.core.split.is_trivial` for the definition of trivial splits. 
+The :func:`~phylozoo.core.split.classifications.has_all_trivial_splits` function checks
+whether the split system contains all trivial splits. See :meth:`~phylozoo.core.split.base.Split.is_trivial` for the definition of trivial splits. 
 For a split system with :math:`n` elements, there should be exactly :math:`n` trivial splits.
 
 .. code-block:: python
@@ -149,9 +141,9 @@ For a split system with :math:`n` elements, there should be exactly :math:`n` tr
 
 **Pairwise Compatibility**
 
-The :func:`phylozoo.core.split.classifications.is_pairwise_compatible` function checks
+The :func:`~phylozoo.core.split.classifications.is_pairwise_compatible` function checks
 whether all pairs of splits in the system are compatible with each other. See 
-:func:`phylozoo.core.split.is_compatible` for the definition of compatibility.
+:func:`~phylozoo.core.split.classifications.is_compatible` for the definition of compatibility.
 
 .. code-block:: python
 
@@ -165,7 +157,7 @@ compatible with each other.
 
 **Tree Compatibility**
 
-The :func:`phylozoo.core.split.classifications.is_tree_compatible` function checks
+The :func:`~phylozoo.core.split.classifications.is_tree_compatible` function checks
 whether a split system is compatible with a tree. A split system is tree-compatible if:
 1. All pairs of splits are compatible (pairwise compatible)
 2. All trivial splits are present in the system
@@ -190,8 +182,8 @@ Split systems support fundamental phylogenetic operations for analysis and conve
 Tree Reconstruction
 ^^^^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.split.algorithms.tree_from_splitsystem` function converts a
-compatible split system into a phylogenetic tree represented as a SemiDirectedPhyNetwork.
+The :func:`~phylozoo.core.split.algorithms.tree_from_splitsystem` function converts a
+compatible split system into an unrooted phylogenetic tree represented as a `~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
 The algorithm builds a tree that displays all splits in the system.
 
 .. code-block:: python
@@ -209,7 +201,7 @@ specified.
 Distance Matrix Extraction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.split.algorithms.distances_from_splitsystem` function computes
+The :func:`~phylozoo.core.split.algorithms.distances_from_splitsystem` function computes
 a distance matrix from a split system. The distance between two taxa is
 the sum of weights of all splits that separate them.
 
@@ -226,8 +218,8 @@ For regular split systems, each split contributes weight 1.0 to the distances.
 Quartet Profile Extraction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`phylozoo.core.split.algorithms.quartets_from_splitsystem` function extracts
-quartet profiles from a split system. For each split, the function generates all
+The :func:`~phylozoo.core.split.algorithms.quartets_from_splitsystem` function extracts
+quartet profiles (see :doc:`Quartets <../quartets/overview>`) from a split system. For each split, the function generates all
 quartets induced by that split, then groups them by four-taxon sets into profiles.
 
 .. code-block:: python

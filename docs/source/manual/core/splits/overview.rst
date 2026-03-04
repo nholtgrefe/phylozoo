@@ -17,7 +17,7 @@ Classes
 -------
 
 - :doc:`Split <split>` - Individual bipartitions
-- :doc:`Split System and Weighted Split System<split_system>` - (Weighted) Collections of splits for phylogenetic analysis
+- :doc:`Split System and Weighted Split System<split_system>` - Collections of splits for phylogenetic analysis
 
 See Also
 --------

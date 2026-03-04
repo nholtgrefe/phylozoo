@@ -23,6 +23,7 @@ class WeightedSplitSystem(SplitSystem):
     ----------
     splits : set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None, optional
         Input splits with weights. Can be:
+
         - A set or list of splits (each assigned weight 1.0)
         - A dictionary mapping splits to their weights
         - A list of (split, weight) tuples
@@ -73,10 +74,6 @@ class WeightedSplitSystem(SplitSystem):
     >>> system.get_weight(split1)
     0.8
     
-    Notes
-    -----
-    The weighted split system is immutable after initialization. Attempts to modify
-    attributes will raise AttributeError.
     """
     
     __slots__ = ('_splits', '_elements', '_initialized', '_weights', '_total_weight')
@@ -102,6 +99,7 @@ class WeightedSplitSystem(SplitSystem):
         ----------
         splits : set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None, optional
             Input splits with weights. Can be:
+
             - A set or list of splits (each assigned weight 1.0)
             - A dictionary mapping splits to their weights
             - A list of (split, weight) tuples
