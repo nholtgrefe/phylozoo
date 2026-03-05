@@ -34,10 +34,11 @@ class MixedPhyNetwork:
     A MixedPhyNetwork is a weakly connected, mixed multigraph (with both directed and 
     undirected edges) representing a phylogenetic network structure. This is an abstract 
     network type which may have undirected cycles, used for canonical forms and to address 
-    unidentifiability issues. For semi-directed phylogenetic networks without undirected 
+    unidentifiability issues.     For semi-directed phylogenetic networks without undirected 
     cycles, use the SemiDirectedPhyNetwork subclass.
     
     It consists of:
+
     - **Leaf nodes**: Nodes with no outgoing directed edges, each with a taxon label
     - **Tree nodes**: Internal nodes with in-degree 0 and total degree >= 3
     - **Hybrid nodes**: Internal nodes with in-degree >= 2 and total degree = in-degree + 1
@@ -566,6 +567,7 @@ class MixedPhyNetwork:
         Validate degree constraints for nodes.
         
         Checks:
+
         1. All internal nodes have degree >= 3
         2. Each node has indegree either 0 or total_degree-1
         
@@ -601,6 +603,7 @@ class MixedPhyNetwork:
         
         For each set of parallel edges between nodes u and v (for both directed
         and undirected edges separately), this method ensures:
+
         1. If one edge has a branch_length attribute, all parallel edges must have branch_length
         2. All branch_length values must be the same across parallel edges
         
@@ -716,6 +719,7 @@ class MixedPhyNetwork:
         Validate the network structure and edge attributes.
         
         Checks:
+
         1. Network is connected (weakly connected)
         2. No self-loops
         3. All internal nodes have degree >= 3

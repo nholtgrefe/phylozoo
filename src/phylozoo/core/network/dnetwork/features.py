@@ -403,6 +403,7 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
     Find all omnian nodes in a directed phylogenetic network.
     
     An omnian is an internal node (non-leaf) where all of its children are hybrid nodes.
+    See :cite:`Jetten2016` for more details.
     
     Parameters
     ----------
@@ -419,14 +420,7 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
     PhyloZooWarning
         If the network contains parallel edges, as omnians are not defined for
         networks with parallel edges in the original paper. Behavior may be unexpected.
-    
-    Notes
-    -----
-    This function is based on the definition from:
-    
-    Jetten, Laura, and Leo van Iersel. "Nonbinary tree-based phylogenetic networks."
-    IEEE/ACM transactions on computational biology and bioinformatics 15.1 (2016): 205-217.
-    
+
     Examples
     --------
     >>> # Network with omnians (nodes 5 and 8 both have all children as hybrids)

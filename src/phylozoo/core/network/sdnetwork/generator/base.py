@@ -165,6 +165,7 @@ class SemiDirectedGenerator:
         
         A semi-directed generator is valid if it can be rooted on an edge as a directed generator.
         This is done by:
+
         1. Finding source components
         2. Finding an edge in the source component
         3. Subdividing that edge
@@ -245,6 +246,7 @@ class SemiDirectedGenerator:
         Validate that the generator can be rooted on an edge as a directed generator.
         
         This is done by:
+
         1. Finding source components
         2. Finding an edge in the source component
         3. Subdividing that edge

@@ -54,6 +54,7 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
         
     Notes
     -----
+
     - Branch lengths are preserved: summed when suppressing degree-2 nodes, kept from
       first edge when identifying parallel edges (all should be same by validation).
     - Gamma values: summed when identifying parallel edges, preserved from edge2 when
@@ -209,6 +210,7 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
 
     Notes
     -----
+
     - After identifying vertices in a 2-blob, the kept vertex becomes degree-2
       and is then suppressed
     - Edge attributes (branch_length, gamma) are properly merged during suppression

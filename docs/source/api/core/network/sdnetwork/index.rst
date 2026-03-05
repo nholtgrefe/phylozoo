@@ -7,7 +7,7 @@ sdnetwork
    :noindex:
    :no-members:
 
-Base Classes
+Main Classes
 ------------
 
 .. automodule:: phylozoo.core.network.sdnetwork.base

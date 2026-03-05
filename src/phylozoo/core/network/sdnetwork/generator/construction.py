@@ -23,6 +23,7 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     Convert a DirectedGenerator to a SemiDirectedGenerator.
     
     This function semi-directs a directed generator by:
+
     1. Converting all edges to undirected, except those entering a hybrid node
        (a node with in-degree >= 2).
     2. Suppressing the degree-2 root node.
@@ -112,6 +113,7 @@ def all_level_k_generators(k: int) -> set[SemiDirectedGenerator]:
     Generate all (strict) level-k semi-directed generators.
     
     This function constructs all (strict) level-k semi-directed generators by:
+
     1. Getting all level-k directed generators
     2. Semi-directing each one
     3. Filtering out isomorphic generators

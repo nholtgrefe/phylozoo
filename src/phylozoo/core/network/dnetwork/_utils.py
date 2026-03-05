@@ -88,6 +88,7 @@ def _suppress_deg2_nodes(
     
     Notes
     -----
+
     - The function modifies the graph in place.
     - Suppression may create parallel edges.
     - Nodes in `exclude_nodes` are never suppressed, even if they are degree-2.

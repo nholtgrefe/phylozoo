@@ -71,6 +71,7 @@ def to_dot(network: DirectedPhyNetwork, **kwargs: Any) -> str:
     
     Notes
     -----
+
     - Nodes with labels use the label as the node name in DOT
     - Nodes without labels use the node ID as the node name
     - All node and edge attributes are preserved
@@ -207,6 +208,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedPhyNetwork:
     
     Notes
     -----
+
     - Node names in DOT become labels if they are strings
     - If a node has a 'label' attribute in DOT, it overrides the node name
     - Edge attributes are preserved

@@ -11,6 +11,7 @@ First release:
 - Core:
     - Network:
         - update network classifications
+        - rename LSAnode to lsa_node
 
 - Vizualize:
     - add sd-plotting

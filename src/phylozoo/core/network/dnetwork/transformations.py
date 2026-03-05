@@ -151,6 +151,7 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         
     Notes
     -----
+
     - Branch lengths are preserved: summed when suppressing degree-2 nodes, kept from
       first edge when identifying parallel edges (all should be same by validation).
     - Gamma values: summed when identifying parallel edges, preserved from edge2 when
@@ -252,6 +253,7 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     Suppress all 2-blobs in the network.
     
     A 2-blob is a blob with exactly 2 incident edges. This function:
+    
     1. Finds all 2-blobs using k_blobs
     2. For each 2-blob (except those containing the root), identifies all
        vertices in the blob with the first vertex (creating a degree-2 node),
@@ -276,6 +278,7 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     
     Notes
     -----
+
     - 2-blobs containing the root node are skipped (special case for directed networks)
     - After identifying vertices in a 2-blob, the kept vertex becomes degree-2
       and is then suppressed
@@ -441,6 +444,7 @@ def _binary_resolve_tree_nodes(
     
     Notes
     -----
+
     - The function modifies the graph in place.
     - Only branch_length attributes are preserved on edges.
     - New caterpillar edges get branch_length=0.0 if has_branch_lengths is True.
@@ -541,6 +545,7 @@ def _binary_resolve_hybrid_nodes(
     
     Notes
     -----
+
     - The function modifies the graph in place.
     - Branch_length and gamma attributes are preserved on edges.
     - Gamma values are computed using _compute_caterpillar_gammas to preserve ratios.

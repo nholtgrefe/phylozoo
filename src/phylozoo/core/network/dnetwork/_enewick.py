@@ -745,6 +745,7 @@ def to_enewick(network: 'DirectedPhyNetwork', **kwargs: Any) -> str:
     
     Notes
     -----
+
     - For parallel edges between the same nodes, only the first edge is used
     - Labels containing special characters (spaces, parentheses, colons, etc.) 
       are automatically quoted with single quotes
@@ -1048,6 +1049,7 @@ def from_enewick(enewick_string: str, **kwargs: Any) -> 'DirectedPhyNetwork':
     
     Notes
     -----
+
     - Comments starting with '&' are parsed for edge attributes (gamma, bootstrap)
     - Hybrid nodes are identified by #H markers
     - Internal nodes without labels get auto-generated integer IDs

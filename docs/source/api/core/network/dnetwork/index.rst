@@ -7,7 +7,7 @@ dnetwork
    :noindex:
    :no-members:
 
-Base Class
+Main Class
 ----------
 
 .. automodule:: phylozoo.core.network.dnetwork.base

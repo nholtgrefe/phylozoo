@@ -19,6 +19,7 @@ from .sd_phynetwork import SemiDirectedPhyNetwork
 from phylozoo.utils.exceptions import (
     PhyloZooValueError,
     PhyloZooNetworkStructureError,
+    PhyloZooNotImplementedError,
 )
 
 T = TypeVar('T')
@@ -312,7 +313,7 @@ def cut_vertices(network: MixedPhyNetwork) -> set[T]:
 
 def omnians(network: MixedPhyNetwork) -> set[T]:
     """Stub for omnians function."""
-    return set()
+    raise PhyloZooNotImplementedError("Omnians are not yet implemented for mixed phylogenetic networks")
 
 
 def root_locations(

@@ -1,7 +1,7 @@
 """
-Directed network module.
+Directed network base module.
 
-This module provides classes and functions for working with directed phylogenetic networks.
+This module provides the main class for working with directed phylogenetic networks.
 """
 
 import math
@@ -36,6 +36,7 @@ class DirectedPhyNetwork(IOMixin):
     
     A DirectedPhyNetwork is a weakly connected, directed acyclic multi-graph (DAG) representing 
     a phylogenetic network structure. It consists of:
+
     - **Root node**: Exactly one node with in-degree 0
     - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
     - **Tree nodes**: Internal nodes (non-root, non-leaf) with in-degree 1 and out-degree >= 2
@@ -47,7 +48,7 @@ class DirectedPhyNetwork(IOMixin):
     -----
     The class uses composition with ``DirectedMultiGraph`` and is immutable after initialization; 
     construct via ``nodes``/``edges``, from a prebuilt ``DirectedMultiGraph``, or load from a file/eNewick 
-    string :cite:`Cardona2008`.
+    string.
 
     Parameters
     ----------
@@ -471,6 +472,7 @@ class DirectedPhyNetwork(IOMixin):
         Validate degree constraints for nodes.
         
         Checks:
+
         1. Single root node (exactly one node with in-degree 0)
         2. Leaf nodes have in-degree 1 and out-degree 0
         3. Internal nodes have either (in-degree 1 and out-degree >= 2) or
@@ -520,6 +522,7 @@ class DirectedPhyNetwork(IOMixin):
         Validate branch length constraints for parallel edges.
         
         For each set of parallel edges between nodes u and v, this method ensures:
+
         1. If one edge has a branch_length attribute, all parallel edges must have branch_length
         2. All branch_length values must be the same across parallel edges
         
@@ -589,6 +592,7 @@ class DirectedPhyNetwork(IOMixin):
         Validate the network structure and edge attributes.
         
         Checks:
+
         1. Network is connected (weakly connected)
         2. No self-loops
         3. Directed acyclic graph (no directed cycles)

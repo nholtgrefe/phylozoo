@@ -136,9 +136,6 @@ def subnetwork(
         Source network.
     taxa : list[str]
         Subset of taxon labels (leaf labels) to induce the subnetwork on.
-
-    Other parameters (keyword-only)
-    -------------------------------
     suppress_2_blobs : bool, default False
         If True, suppress all 2-blobs in the resulting network.
     identify_parallel_edges : bool, default False
@@ -243,9 +240,6 @@ def k_taxon_subnetworks(
     k : int
         Number of taxa to include in each subnetwork. Must be between 0 and
         the number of taxa in the network (inclusive).
-    
-    Other parameters (keyword-only)
-    -------------------------------
     suppress_2_blobs : bool, default False
         If True, suppress all 2-blobs in each resulting subnetwork.
     identify_parallel_edges : bool, default False
@@ -598,6 +592,7 @@ def distances(
         The semi-directed phylogenetic network.
     mode : Literal['shortest', 'longest', 'average'], optional
         Distance aggregation mode:
+
         - 'shortest': Take the minimum distance across all switchings
         - 'longest': Take the maximum distance across all switchings
         - 'average': Take the probability-weighted average across all switchings

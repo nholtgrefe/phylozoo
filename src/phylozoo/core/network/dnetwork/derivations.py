@@ -39,6 +39,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     Convert a DirectedPhyNetwork to a SemiDirectedPhyNetwork.
 
     Steps:
+
     1. If the directed network is not an LSA network, replace it by its LSA-network.
     2. Undirect all non-hybrid edges; hybrid edges remain directed.
     3. Suppress any degree-2 node (this stems from a degree-2 root). Suppression may
@@ -153,6 +154,7 @@ def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     Create a tree of blobs by suppressing all 2-blobs and collapsing internal blobs.
 
     This function:
+
     1. Suppresses all 2-blobs using suppress_2_blobs
     2. Finds all internal blobs (blobs with more than 1 node, excluding leaves)
     3. For each internal blob, identifies all vertices with a single vertex
@@ -230,9 +232,6 @@ def subnetwork(
         Source network.
     taxa : list[str]
         Subset of taxon labels (leaf labels) to induce the subnetwork on.
-
-    Other parameters (keyword-only)
-    -------------------------------
     suppress_2_blobs : bool, default False
         If True, suppress all 2-blobs in the resulting network.
     identify_parallel_edges : bool, default False
@@ -321,9 +320,6 @@ def k_taxon_subnetworks(
     k : int
         Number of taxa to include in each subnetwork. Must be between 0 and
         the number of taxa in the network (inclusive).
-
-    Other parameters (keyword-only)
-    -------------------------------
     suppress_2_blobs : bool, default False
         If True, suppress all 2-blobs in each resulting subnetwork.
     identify_parallel_edges : bool, default False
@@ -498,6 +494,7 @@ def displayed_trees(network: DirectedPhyNetwork, probability: bool = False) -> I
     Generate all displayed trees of a directed phylogenetic network.
     
     A displayed tree is obtained by:
+
     1. Taking a switching (deleting all but one parent edge per hybrid node)
     2. Exhaustively removing degree-1 nodes that are not leaves or the root
     3. Suppressing all degree-2 nodes
@@ -670,6 +667,7 @@ def distances(
         The directed phylogenetic network.
     mode : Literal['shortest', 'longest', 'average'], optional
         Distance aggregation mode:
+
         - 'shortest': Take the minimum distance across all switchings
         - 'longest': Take the maximum distance across all switchings
         - 'average': Take the probability-weighted average across all switchings
@@ -755,6 +753,7 @@ def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
     Extract all splits induced by cut-edges of the network.
     
     This function:
+
     1. Converts the network to an LSA network
     2. Suppresses all 2-blobs (which don't influence splits)
     3. Finds all cut-edges

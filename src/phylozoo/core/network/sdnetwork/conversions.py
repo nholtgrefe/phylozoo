@@ -123,6 +123,7 @@ def sdnetwork_from_graph(
     
     Notes
     -----
+
     - **Edge attributes**: All edge attributes (e.g., `branch_length`, `bootstrap`,
       `gamma` for hybrid edges) are preserved and passed through to the network.
     - **Node attributes**: All node attributes are preserved. The `label` attribute

@@ -2,11 +2,11 @@ Directed Network (Class)
 =========================
 
 The :mod:`phylozoo.core.network.dnetwork` module defines the
-:class:`DirectedPhyNetwork` class, the central representation of rooted, directed
+:class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` class, the central representation of rooted, directed
 phylogenetic networks in PhyloZoo.
 
 A directed phylogenetic network is a graph with a distinguished root and leaves representing taxa. The
-directed edges encode ancestor–descendant relationships, while nodes of higher
+directed edges encode ancestor–descendant relationships, with nodes of higher
 in-degree represent reticulate evolutionary events such as hybridization,
 recombination, or horizontal gene transfer.
 
@@ -19,8 +19,8 @@ All classes and functions on this page can be imported from the core network mod
    from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 
 
-Definition
-----------
+What is a directed phylogenetic network?
+----------------------------------------
 
 Mathematically, a directed phylogenetic network is a weakly connected, directed
 acyclic multigraph (i.e. allowing parallel edges) with the following nodes:
@@ -66,8 +66,8 @@ A directed network containing a hybrid node with two incoming edges:
 Creating a DirectedPhyNetwork
 ------------------------------
 
-A :class:`DirectedPhyNetwork` is defined by its graph structure and optional attributes.
-There are three ways to construct such a network.
+A :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` is defined by its graph structure and optional attributes.
+There are three main ways to construct such a network.
 
 From edge and node specifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -92,7 +92,7 @@ From an existing graph
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Directed networks can also be constructed from existing graph objects using the
-:func:`phylozoo.core.network.dnetwork.conversions.dnetwork_from_graph` function. This is particularly useful when implementing algorithms that
+:func:`~phylozoo.core.network.dnetwork.conversions.dnetwork_from_graph` function. This is particularly useful when implementing algorithms that
 operate on mutable graph representations.
 
 .. code-block:: python
@@ -106,7 +106,7 @@ operate on mutable graph representations.
    network = dnetwork_from_graph(G)
 
 .. tip::
-   The `dnetwork_from_graph` function is especially useful when writing your own algorithms.
+   The ``dnetwork_from_graph`` function is especially useful when writing your own algorithms.
    It allows you to work directly with the underlying NetworkX or PhyloZoo graph object
    of a DirectedPhyNetwork, after which you can convert back to a DirectedPhyNetwork at the
    end of the algorithm.
@@ -124,38 +124,39 @@ operate on mutable graph representations.
           # Convert back to a DirectedPhyNetwork
           return dnetwork_from_graph(nx_graph)
 
-From a file
-^^^^^^^^^^^^^^^^^^^^^
+File Input/Output
+^^^^^^^^^^^^^^^^^
 
-DirectedPhyNetwork integrates with the PhyloZoo I/O system. The default format is
-eNewick, an extension of Newick that supports hybrid nodes and edge attributes.
+:class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` supports reading and writing in standard formats:
 
-Supported formats include:
-
-- **eNewick**: ``.enewick``, ``.enwk``, ``.nwk``, ``.newick``
-- **DOT (Graphviz)**: ``.dot``, ``.gv``
+- **eNewick** (default): Extended Newick for rooted networks with hybrid nodes and edge attributes — see :doc:`Newick / eNewick <../../../utils/io/formats/newick>`
+- **DOT**: GraphViz format for visualization and storage — see :doc:`DOT format <../../../utils/io/formats/dot>`
 
 .. code-block:: python
 
-   network.save("network.enewick")
+   # Load from file (auto-detects format by extension)
    network = DirectedPhyNetwork.load("network.enewick")
 
+   # Load with explicit format
+   network = DirectedPhyNetwork.load("network.dot", format="dot")
+
+   # Load from string
+   network = DirectedPhyNetwork.from_string("(A,B);", format="enewick")
+
+   # Save to file
+   network.save("output.enewick")
+   network.save("output.dot", format="dot")
+
 .. seealso::
-   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. 
-   
-   For details on the I/O system,
-   see the :doc:`I/O documentation <../../../utils/io/index>`. 
-   
-   For specific information about
-   supported file formats and parameter options for networks, see the
-   :mod:`API reference <phylozoo.core.network.dnetwork.io>`.
+   The :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` class uses the
+   :class:`~phylozoo.utils.io.IOMixin` interface, providing consistent file handling across PhyloZoo
+   classes. For details on the I/O system, see the :doc:`I/O manual <../../../utils/io/overview>`.
 
 
 Validation on Construction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Every :class:`DirectedPhyNetwork` is validated at construction time. Validation
+Every :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` is validated at construction time using the :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.validate` method. Validation
 guarantees that the object represents a well-defined phylogenetic network:
 
 - the graph is acyclic and weakly connected,
@@ -298,7 +299,7 @@ not interpreted or validated. You can access these using generic attribute acces
 Accessing Network Properties
 -----------------------------
 
-The :class:`DirectedPhyNetwork` class provides read-only access to fundamental structural
+The :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` class provides read-only access to fundamental structural
 properties. These properties are computed from the validated network structure and cannot be
 modified directly. All properties are cached for efficient repeated access.
 
@@ -309,7 +310,7 @@ Basic properties provide fundamental information about the network size and stru
 
 **Nodes**
 
-The :attr:`nodes` cached property exposes a view of all node IDs (same interface as the
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.nodes` cached property exposes a view of all node IDs (same interface as the
 underlying graph). Use ``network.nodes()`` to iterate, or ``network.nodes(data=True)`` for
 attributes.
 
@@ -321,7 +322,7 @@ attributes.
 
 **Edges**
 
-The :attr:`edges` cached property exposes a view of all directed edges (same interface as the
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.edges` cached property exposes a view of all directed edges (same interface as the
 underlying graph). Use ``network.edges()``, ``network.edges(keys=True)``, or
 ``network.edges(keys=True, data=True)``.
 
@@ -333,7 +334,7 @@ underlying graph). Use ``network.edges()``, ``network.edges(keys=True)``, or
    
 **Node and Edge Counts**
 
-The :meth:`number_of_nodes` and :meth:`number_of_edges` methods return the total count of
+The :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.number_of_nodes` and :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.number_of_edges` methods return the total count of
 nodes and edges in the network, respectively.
 
 .. code-block:: python
@@ -344,7 +345,7 @@ nodes and edges in the network, respectively.
 
 **Check if Edge Exists**
 
-The :meth:`has_edge` method checks if an edge exists between two nodes.
+The :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.has_edge` method checks if an edge exists between two nodes.
 
 .. code-block:: python
 
@@ -355,13 +356,13 @@ The :meth:`has_edge` method checks if an edge exists between two nodes.
    has_edge_with_key = network.has_edge(u, v, key=0)  # Returns True if edge exists with key 0, False otherwise
 
 Node Types
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 
 Network structure properties identify key nodes and their roles in the network topology.
 
 **Root**
 
-The :attr:`root_node` property returns the unique root node (in-degree 0).
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.root_node` property returns the unique root node (in-degree 0).
 
 .. code-block:: python
 
@@ -370,8 +371,8 @@ The :attr:`root_node` property returns the unique root node (in-degree 0).
 
 **Leaves and Taxa**
 
-The :attr:`leaves` property returns a set of all leaf node IDs (out-degree 0).
-The :attr:`taxa` property returns a set of all taxon labels (strings associated with leaves).
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.leaves` property returns a set of all leaf node IDs (out-degree 0).
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.taxa` property returns a set of all taxon labels (strings associated with leaves).
 
 .. code-block:: python
 
@@ -382,7 +383,7 @@ The :attr:`taxa` property returns a set of all taxon labels (strings associated 
 
 **Internal Nodes**
 
-The :attr:`internal_nodes` property returns a set of all internal (non-leaf)node IDs.
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.internal_nodes` property returns a set of all internal (non-leaf) node IDs.
 
 .. code-block:: python
 
@@ -391,8 +392,8 @@ The :attr:`internal_nodes` property returns a set of all internal (non-leaf)node
 
 **Tree and Hybrid Nodes**
 
-The :attr:`tree_nodes` property returns a set of all tree node IDs (internal nodes with in-degree 1 and out-degree ≥ 2).
-The :attr:`hybrid_nodes` property returns a set of all hybrid node IDs (internal nodes with in-degree ≥ 2 and out-degree 1).
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.tree_nodes` property returns a set of all tree node IDs (internal nodes with in-degree 1 and out-degree ≥ 2).
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.hybrid_nodes` property returns a set of all hybrid node IDs (internal nodes with in-degree ≥ 2 and out-degree 1).
 
 .. code-block:: python
 
@@ -401,18 +402,6 @@ The :attr:`hybrid_nodes` property returns a set of all hybrid node IDs (internal
    # Get hybrid nodes
    hybrid = network.hybrid_nodes  # Set of hybrid node IDs
 
-**LSA Node**
-
-The :attr:`LSA_node` property returns the Least Stable Ancestor node, which is the lowest
-node through which all root-to-leaf paths pass. The LSA is a fundamental concept in
-phylogenetic network analysis.
-
-.. code-block:: python
-
-   # Get LSA node
-   lsa = network.LSA_node  # Returns the LSA node ID
-
-
 Edge Types
 ^^^^^^^^^^
 
@@ -420,8 +409,8 @@ Edge type properties classify edges according to their role in the network struc
 
 **Tree and Hybrid Edges**
 
-The :attr:`tree_edges` property returns all tree edges (edges that are not hybrid edges)
-as a set of (u, v, key) tuples. The :attr:`hybrid_edges` property returns all hybrid edges
+The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.tree_edges` property returns all tree edges (edges that are not hybrid edges)
+as a set of (u, v, key) tuples. The :attr:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.hybrid_edges` property returns all hybrid edges
 (edges entering hybrid nodes) as a set of (u, v, key) tuples.
 
 .. code-block:: python
@@ -442,7 +431,7 @@ Connectivity properties provide information about how nodes are connected in the
 
 **Node Degrees**
 
-The :meth:`degree`, :meth:`indegree`, and :meth:`outdegree` methods return the total degree,
+The :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.degree`, :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.indegree`, and :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.outdegree` methods return the total degree,
 in-degree, and out-degree of a node, respectively.
 
 .. code-block:: python
@@ -454,7 +443,7 @@ in-degree, and out-degree of a node, respectively.
 
 **Neighbors**
 
-The :meth:`parents`, :meth:`children`, and :meth:`neighbors` methods return iterators over
+The :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.parents`, :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.children`, and :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.neighbors` methods return iterators over
 parent nodes, child nodes, and all adjacent nodes, respectively.
 
 .. code-block:: python
@@ -474,7 +463,7 @@ parent nodes, child nodes, and all adjacent nodes, respectively.
 
 **Incident Edges**
 
-The :meth:`incident_parent_edges` and :meth:`incident_child_edges` methods return iterators
+The :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.incident_parent_edges` and :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.incident_child_edges` methods return iterators
 over edges entering and leaving a node, respectively. These methods can optionally include
 edge keys and attribute data.
 
@@ -505,7 +494,7 @@ edge keys and attribute data.
 Copying
 ^^^^^^^^^^^^^^^^^^
 
-The :meth:`copy` method creates a shallow copy of the network. The copy shares the same
+The :meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.copy` method creates a shallow copy of the network. The copy shares the same
 underlying graph structure but is a separate instance.
 
 .. code-block:: python

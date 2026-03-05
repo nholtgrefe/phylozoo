@@ -96,6 +96,7 @@ def is_isomorphic(
     
     Notes
     -----
+
     - Labels are always checked (non-optional) to ensure networks with different
       taxon labels are not considered isomorphic.
     - The function uses the underlying MixedMultiGraph isomorphism checking,

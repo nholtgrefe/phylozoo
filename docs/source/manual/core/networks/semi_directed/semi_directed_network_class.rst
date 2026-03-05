@@ -2,7 +2,7 @@ Semi-Directed Network (Class)
 ==============================
 
 The :mod:`phylozoo.core.network.sdnetwork` module defines the
-:class:`SemiDirectedPhyNetwork` class, the central representation of semi-directed
+:class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` class, the central representation of semi-directed
 phylogenetic networks in PhyloZoo.
 
 A semi-directed phylogenetic network is a graph with directed hybrid edges and undirected tree edges,
@@ -17,15 +17,19 @@ All classes and functions on this page can be imported from the core network mod
    from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
 
+What is a semi-directed phylogenetic network?
+---------------------------------------------
+
 Mathematically, a semi-directed phylogenetic network is a weakly connected, mixed multigraph
-(with both directed and undirected edges) that can be obtained from a directed phylogenetic network 
-by undirecting all non-hybrid edges and suppressing the root node.
+(with both directed and undirected edges, as well as parallel edges) that can be obtained from a directed phylogenetic network 
+(see :doc:`Directed Networks <../directed/directed_network_class>`) by undirecting all non-hybrid edges and suppressing the root node.
+It commonly used to represent uncertainty of the root placement in a directed network.
 
 
 Creating a SemiDirectedPhyNetwork
 ----------------------------------
 
-A :class:`SemiDirectedPhyNetwork` is defined by its graph structure and optional attributes.
+A :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` is defined by its graph structure and optional attributes.
 There are three ways to construct such a network.
 
 From edge and node specifications
@@ -67,7 +71,7 @@ From an existing graph
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Semi-directed networks can also be constructed from existing graph objects using the
-:func:`phylozoo.core.network.sdnetwork.conversions.sdnetwork_from_graph` function.
+:func:`~phylozoo.core.network.sdnetwork.conversions.sdnetwork_from_graph` function.
 
 .. code-block:: python
 
@@ -80,7 +84,7 @@ Semi-directed networks can also be constructed from existing graph objects using
    network = sdnetwork_from_graph(G, network_type='semi-directed')
 
 .. tip::
-   The `sdnetwork_from_graph` function is especially useful when writing your own algorithms.
+   The ``sdnetwork_from_graph`` function is especially useful when writing your own algorithms.
    It allows you to work directly with the underlying NetworkX or PhyloZoo graph object
    of a SemiDirectedPhyNetwork, after which you can convert back to a SemiDirectedPhyNetwork at the
    end of the algorithm.
@@ -99,38 +103,36 @@ Semi-directed networks can also be constructed from existing graph objects using
           # Convert back to a SemiDirectedPhyNetwork
           return sdnetwork_from_graph(phylzoo_mm_graph, network_type='semi-directed')
 
-From a file
-^^^^^^^^^^^^^^^^^^^^
+File Input/Output
+^^^^^^^^^^^^^^^^^
 
-SemiDirectedPhyNetwork integrates with the PhyloZoo I/O system. The default format is
-Newick, an extension of Newick that supports hybrid nodes and edge attributes.
+:class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` supports reading and writing in standard formats:
 
-Supported formats include:
-
-- **Newick**: ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``
-- **PhyloZoo-DOT**: ``.pzdot``
+- **Newick** (default): Newick format for semi-directed networks with hybrid nodes and edge attributes — see :doc:`Newick / eNewick <../../../utils/io/formats/newick>`
+- **PhyloZoo-DOT**: PhyloZoo DOT format for visualization and storage — see :doc:`DOT format <../../../utils/io/formats/dot>`
 
 .. code-block:: python
 
-   network.save("network.newick")
+   # Load from file (auto-detects format by extension)
    network = SemiDirectedPhyNetwork.load("network.newick")
 
+   # Load with explicit format
+   network = SemiDirectedPhyNetwork.load("network.pzdot", format="phylozoo-dot")
+
+   # Save to file
+   network.save("output.newick")
+   network.save("output.pzdot", format="phylozoo-dot")
+
 .. seealso::
-   The I/O system uses the :class:`phylozoo.utils.io.IOMixin` interface, providing
-   consistent file handling across PhyloZoo classes. 
-   
-   For details on the I/O system,
-   see the :doc:`I/O documentation <../../../utils/io/index>`. 
-   
-   For specific information about
-   supported file formats and parameter options for networks, see the
-   :mod:`API reference <phylozoo.core.network.sdnetwork.io>`.
+   The :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` class uses the
+   :class:`~phylozoo.utils.io.IOMixin` interface, providing consistent file handling across PhyloZoo
+   classes. For details on the I/O system, see the :doc:`I/O manual <../../../utils/io/overview>`.
 
 
 Validation on Construction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Every :class:`SemiDirectedPhyNetwork` is validated at construction time. Validation
+Every :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` is validated at construction time using the :meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.validate` method. Validation
 guarantees that the object represents a well-defined phylogenetic network:
 
 - the graph is weakly connected,
@@ -138,13 +140,22 @@ guarantees that the object represents a well-defined phylogenetic network:
 - special attributes lie in their permitted ranges (see below for more details),
 - taxon labels are unique,
 - all hybrid edges are directed and all non-hybrid edges are undirected,
-- the network does not have undirected cycles.
+- the network can be rooted to give a valid directed network.
 
 By default, invalid networks cannot be constructed. Validation can be disabled for
 performance-critical operations or when working with intermediate network states that
 may temporarily violate validation rules. 
 See the :doc:`Validation documentation <../../../utils/validation>`
 for details on how to disable validation.
+
+.. note::
+   The :class:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork` class functions as a more general
+   base class for the :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` class. Unlike ``SemiDirectedPhyNetwork``,
+   a ``MixedPhyNetwork`` may contain undirected cycles and is not guaranteed to be rootable. Many functions in the
+   this module are designed to work with both
+   ``SemiDirectedPhyNetwork`` and ``MixedPhyNetwork`` instances. Moreover, many class methods of ``SemiDirectedPhyNetwork`` are inherited from ``MixedPhyNetwork``.
+   Refer to the :doc:`API Reference <../../../../api/core/network/index>` for specific function
+   signatures and details on which network types are supported.
 
 Attributes
 ----------
@@ -156,7 +167,7 @@ role in semi-directed phylogenetic networks.
 Setting Attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Attributes can be set when initializing a :class:`SemiDirectedPhyNetwork`:
+Attributes can be set when initializing a :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`:
 
 **Edge Attributes**
 
@@ -276,7 +287,7 @@ not interpreted or validated. You can access these using generic attribute acces
 Accessing Network Properties
 -----------------------------
 
-The :class:`SemiDirectedPhyNetwork` class provides read-only access to fundamental structural
+The :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` class provides read-only access to fundamental structural
 properties. These properties are computed from the validated network structure and cannot be
 modified directly. All properties are cached for efficient repeated access.
 
@@ -287,9 +298,9 @@ Basic properties provide fundamental information about the network size and stru
 
 **Nodes**
 
-The :attr:`nodes` cached property exposes a view of all node IDs (same interface as the
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.nodes` cached property exposes a view of all node IDs (same interface as the
 underlying graph). Use ``network.nodes()`` to iterate, or ``network.nodes(data=True)`` for
-attributes. Available on both :class:`SemiDirectedPhyNetwork` and :class:`MixedPhyNetwork`.
+attributes. Available on both :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` and :class:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork`.
 
 .. code-block:: python
 
@@ -299,10 +310,10 @@ attributes. Available on both :class:`SemiDirectedPhyNetwork` and :class:`MixedP
 
 **Edges**
 
-The :attr:`edges` cached property exposes a view of all edges, directed and undirected (same
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.edges` cached property exposes a view of all edges, directed and undirected (same
 interface as the underlying graph). Use ``network.edges()``, ``network.edges(keys=True)``, or
-``network.edges(keys=True, data=True)``. Available on both :class:`SemiDirectedPhyNetwork` and
-:class:`MixedPhyNetwork`.
+``network.edges(keys=True, data=True)``. Available on both :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` and
+:class:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork`.
 
 .. code-block:: python
 
@@ -312,7 +323,7 @@ interface as the underlying graph). Use ``network.edges()``, ``network.edges(key
    
 **Node and Edge Counts**
 
-The :meth:`number_of_nodes` and :meth:`number_of_edges` methods return the total count of
+The :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.number_of_nodes` and :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.number_of_edges` methods return the total count of
 nodes and edges in the network, respectively.
 
 .. code-block:: python
@@ -323,7 +334,7 @@ nodes and edges in the network, respectively.
 
 **Check if Edge Exists**
 
-The :meth:`has_edge` method checks if an edge exists between two nodes.
+The :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.has_edge` method checks if an edge exists between two nodes.
 
 .. code-block:: python
 
@@ -340,8 +351,8 @@ Network structure properties identify key nodes and their roles in the network t
 
 **Leaves and Taxa**
 
-The :attr:`leaves` property returns a set of all leaf node IDs (nodes with no outgoing directed edges).
-The :attr:`taxa` property returns a set of all taxon labels (strings associated with leaves).
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.leaves` property returns a set of all leaf node IDs (nodes with no outgoing directed edges).
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.taxa` property returns a set of all taxon labels (strings associated with leaves).
 
 .. code-block:: python
 
@@ -352,7 +363,7 @@ The :attr:`taxa` property returns a set of all taxon labels (strings associated 
 
 **Internal Nodes**
 
-The :attr:`internal_nodes` property returns a set of all internal (non-leaf) node IDs.
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.internal_nodes` property returns a set of all internal (non-leaf) node IDs.
 
 .. code-block:: python
 
@@ -361,8 +372,8 @@ The :attr:`internal_nodes` property returns a set of all internal (non-leaf) nod
 
 **Tree and Hybrid Nodes**
 
-The :attr:`tree_nodes` property returns a set of all tree node IDs (internal nodes with in-degree 0 and total degree ≥ 3).
-The :attr:`hybrid_nodes` property returns a set of all hybrid node IDs (internal nodes with in-degree ≥ 2 and total degree = in-degree + 1).
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.tree_nodes` property returns a set of all tree node IDs (internal nodes with in-degree 0 and total degree ≥ 3).
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.hybrid_nodes` property returns a set of all hybrid node IDs (internal nodes with in-degree ≥ 2 and total degree = in-degree + 1).
 
 .. code-block:: python
 
@@ -378,8 +389,8 @@ Edge type properties classify edges according to their role in the network struc
 
 **Tree and Hybrid Edges**
 
-The :attr:`tree_edges` property returns all tree edges (undirected edges) as a set of (u, v, key) tuples.
-The :attr:`hybrid_edges` property returns all hybrid edges (directed edges entering hybrid nodes) as a set of (u, v, key) tuples.
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.tree_edges` property returns all tree edges (undirected edges) as a set of (u, v, key) tuples.
+The :attr:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.hybrid_edges` property returns all hybrid edges (directed edges entering hybrid nodes) as a set of (u, v, key) tuples.
 
 .. code-block:: python
 
@@ -399,7 +410,7 @@ Connectivity properties provide information about how nodes are connected in the
 
 **Node Degrees**
 
-The :meth:`degree`, :meth:`indegree`, :meth:`outdegree`, and :meth:`undirected_degree` methods return the total degree,
+The :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.degree`, :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.indegree`, :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.outdegree`, and :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.undirected_degree` methods return the total degree,
 in-degree, out-degree, and undirected degree of a node, respectively.
 
 .. code-block:: python
@@ -412,7 +423,7 @@ in-degree, out-degree, and undirected degree of a node, respectively.
 
 **Neighbors**
 
-The :meth:`neighbors` method returns an iterator over all adjacent nodes (via both directed and undirected edges).
+The :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.neighbors` method returns an iterator over all adjacent nodes (via both directed and undirected edges).
 
 .. code-block:: python
 
@@ -425,7 +436,7 @@ The :meth:`neighbors` method returns an iterator over all adjacent nodes (via bo
 
 **Incident Edges**
 
-The :meth:`incident_parent_edges`, :meth:`incident_child_edges`, and :meth:`incident_undirected_edges` methods return iterators
+The :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.incident_parent_edges`, :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.incident_child_edges`, and :meth:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork.incident_undirected_edges` methods return iterators
 over edges entering, leaving, and incident to a node, respectively. These methods can optionally include
 edge keys and attribute data.
 
@@ -460,7 +471,7 @@ edge keys and attribute data.
 Copying
 ^^^^^^^^^^^^^^^^^^
 
-The :meth:`copy` method creates a shallow copy of the network. The copy shares the same
+The :meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.copy` method creates a shallow copy of the network. The copy shares the same
 underlying graph structure but is a separate instance.
 
 .. code-block:: python
@@ -501,15 +512,6 @@ visualization system supports multiple layout algorithms and styling options.
 
 For more visualization options, including different layout types, styling, and customization,
 see the :doc:`Visualization documentation <../../../visualization/viz>`.
-
-.. note::
-   The :class:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork` class is a more general
-   base class for mixed phylogenetic networks. Unlike :class:`SemiDirectedPhyNetwork`,
-   a :class:`MixedPhyNetwork` may contain undirected cycles. Many functions in the
-   :mod:`phylozoo.core.network.sdnetwork` module are designed to work with both
-   :class:`SemiDirectedPhyNetwork` and :class:`MixedPhyNetwork` instances.
-   Refer to the :doc:`API Reference <../../../../api/core/network/index>` for specific function
-   signatures and details on which network types are supported.
 
 See Also
 --------

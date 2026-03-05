@@ -23,6 +23,7 @@ def _merge_attrs_for_degree2_suppression_mixed(
     Merge edge attributes for suppressing a degree-2 node in a mixed network.
     
     Special handling:
+
     - branch_length: If both edges have branch_length, sum them. Otherwise, use the one that has it.
     - gamma: If edge2 has gamma, use it. Otherwise, don't include gamma.
     - All other attributes (bootstrap, etc.) are removed.
@@ -92,6 +93,7 @@ def _suppress_deg2_nodes(
     
     Notes
     -----
+
     - The function modifies the graph in place.
     - Suppression may create parallel edges.
     - Nodes in `exclude_nodes` are never suppressed, even if they are degree-2.
@@ -165,6 +167,7 @@ def _merge_attrs_for_parallel_identification_mixed(
     Merge edge attributes for identifying parallel edges in a mixed network.
     
     Special handling:
+
     - branch_length: Weighted average by gamma values if gammas are present,
       otherwise simple average. If no branch_lengths are present, it is omitted.
     - gamma: Sum all gamma values from parallel edges.
@@ -243,6 +246,7 @@ def _split_attrs_for_subdividing_edge(
     
     When subdividing an edge (u, v) into (u, w) and (w, v), this function
     splits the attributes appropriately:
+
     - branch_length: Split at subdivision_location
       - First edge (u, w): branch_length * subdivision_location
       - Second edge (w, v): branch_length * (1 - subdivision_location)
@@ -263,6 +267,7 @@ def _split_attrs_for_subdividing_edge(
     -------
     tuple[dict[str, Any], dict[str, Any]]
         A tuple of two edge data dictionaries:
+
         1. Attributes for the first edge (u, w)
         2. Attributes for the second edge (w, v)
     
@@ -350,6 +355,7 @@ def _subdivide_edge(
     -------
     tuple[MixedMultiGraph, Any]
         A tuple containing:
+
         1. The modified MixedMultiGraph with the subdivided edge
         2. The new subdivision node ID
     
