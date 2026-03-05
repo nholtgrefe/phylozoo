@@ -1,13 +1,11 @@
-Utils Module
-============
-
-The :mod:`phylozoo.utils` module provides supporting functionality for PhyloZoo, including 
-exception handling, I/O operations, parallelization, and validation utilities.
+Utilities Module
+================
 
 .. toctree::
    :maxdepth: 2
-   
-   exceptions
+
+   overview
    io/index
-   parallelization
+   exceptions
    validation
+   parallelization

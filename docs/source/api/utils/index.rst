@@ -10,19 +10,10 @@ utils
 Exceptions
 ----------
 
-Exception Classes
-^^^^^^^^^^^^^^^^^
+.. toctree::
+   :maxdepth: 1
 
-.. automodule:: phylozoo.utils.exceptions
-   :members:
-   :show-inheritance:
-   :exclude-members: warn_on_keyword, warn_on_none_value
-
-Warning Utilities
-^^^^^^^^^^^^^^^^
-
-.. automodule:: phylozoo.utils.exceptions
-   :members: warn_on_keyword, warn_on_none_value
+   exceptions
 
 Parallel Processing
 ------------------
