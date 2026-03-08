@@ -1,16 +1,22 @@
-Edge List Format
-================
+Edge list
+=========
 
 Edge list is a simple text format for graphs: one edge per line, given as two node
 identifiers. PhyloZoo uses it for directed multigraphs (e.g. graph topology without
 labels or attributes).
 
-**Classes using Edge list format:** :class:`phylozoo.core.primitives.d_multigraph.DirectedMultiGraph`
+.. seealso::
+   `Edge list <https://en.wikipedia.org/wiki/Edge_list>`_ — Wikipedia
+
+Classes and extensions
+----------------------
+
+**Classes:** :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`
 
 **File extensions:** ``.edgelist``, ``.edges``
 
-Format Structure
-----------------
+Structure
+---------
 
 Each line contains an edge as two node identifiers (space- or tab-separated):
 
@@ -20,8 +26,8 @@ Each line contains an edge as two node identifiers (space- or tab-separated):
    2 3
    3 1
 
-Example
--------
+Examples
+--------
 
 .. code-block:: python
 
@@ -30,7 +36,9 @@ Example
    graph.save("graph.edgelist", format="edgelist")
    graph2 = DirectedMultiGraph.load("graph.edgelist", format="edgelist")
 
-.. seealso::
-   * :doc:`../operations` — Save/load and format detection
-   * :doc:`dot` — DOT format for directed graphs with attributes
-   * :doc:`../../../core/primitives/overview` — Primitives (multigraphs)
+See also
+--------
+
+- :doc:`../operations` — Save/load and format detection
+- :doc:`dot` — DOT format for directed graphs with attributes
+- :doc:`../../../core/primitives/directed_multigraph` — Directed multigraphs

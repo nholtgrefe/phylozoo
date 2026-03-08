@@ -66,6 +66,8 @@ Later releases:
     - external scanwidth package & input tree extension is a nxDigraph on the same nodes, or None?
 - Visualization:
     - other layouts
+- IO:
+    - move dot helpers to format families
 
 Other  ideas:
 - random networks using dgenerators and sides, also add randomly iterating R1 and R2 rules

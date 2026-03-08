@@ -129,7 +129,7 @@ File Input/Output
 
 :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` supports reading and writing in standard formats:
 
-- **eNewick** (default): Extended Newick for rooted networks with hybrid nodes and edge attributes — see :doc:`Newick / eNewick <../../../utils/io/formats/newick>`
+- **eNewick** (default): Extended Newick for rooted networks with hybrid nodes and edge attributes — see :doc:`eNewick <../../../utils/io/formats/enewick>`
 - **DOT**: GraphViz format for visualization and storage — see :doc:`DOT format <../../../utils/io/formats/dot>`
 
 .. code-block:: python

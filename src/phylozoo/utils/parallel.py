@@ -5,6 +5,10 @@ This module provides a unified interface for parallelizing operations across
 the PhyloZoo package. It supports multiple backends (sequential, threading,
 multiprocessing) and can be used via function parameters.
 
+**Note:** This module is currently not used by PhyloZoo but is kept for
+possible future implementations. It is not documented in the user manual or
+API reference.
+
 Examples
 --------
 Basic usage with a function that accepts a ``parallel`` parameter:
@@ -402,9 +406,11 @@ class ParallelConfig:
         Parallelization backend to use. By default ParallelBackend.SEQUENTIAL.
     n_jobs : int | None, optional
         Number of workers. Interpretation depends on backend:
+
         - SEQUENTIAL: Ignored
         - THREADING: Number of threads (None/-1 = 1)
         - MULTIPROCESSING: Number of processes (None/-1 = all CPU cores)
+
         By default None.
     chunksize : int | None, optional
         Number of items to process per worker batch. Backend-dependent.

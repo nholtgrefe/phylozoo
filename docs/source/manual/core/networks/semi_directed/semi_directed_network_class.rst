@@ -108,19 +108,19 @@ File Input/Output
 
 :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` supports reading and writing in standard formats:
 
-- **Newick** (default): Newick format for semi-directed networks with hybrid nodes and edge attributes — see :doc:`Newick / eNewick <../../../utils/io/formats/newick>`
+- **eNewick** (default): eNewick format for semi-directed networks with hybrid nodes and edge attributes — see :doc:`eNewick <../../../utils/io/formats/enewick>`
 - **PhyloZoo-DOT**: PhyloZoo DOT format for visualization and storage — see :doc:`DOT format <../../../utils/io/formats/dot>`
 
 .. code-block:: python
 
    # Load from file (auto-detects format by extension)
-   network = SemiDirectedPhyNetwork.load("network.newick")
+   network = SemiDirectedPhyNetwork.load("network.enewick")
 
    # Load with explicit format
    network = SemiDirectedPhyNetwork.load("network.pzdot", format="phylozoo-dot")
 
    # Save to file
-   network.save("output.newick")
+   network.save("output.enewick")
    network.save("output.pzdot", format="phylozoo-dot")
 
 .. seealso::

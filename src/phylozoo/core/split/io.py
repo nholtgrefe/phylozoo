@@ -7,10 +7,11 @@ format handlers registered with FormatRegistry for use with the IOMixin system.
 The following format handlers are defined and registered:
 
 - **nexus**: NEXUS format for split systems (extensions: .nexus, .nex, .nxs).
-  Writer: `to_nexus_split_system()` converts SplitSystem to NEXUS string.
-  Reader: `from_nexus_split_system()` parses NEXUS string to SplitSystem.
-  Writer: `to_nexus_weighted_split_system()` converts WeightedSplitSystem to NEXUS string.
-  Reader: `from_nexus_weighted_split_system()` parses NEXUS string to WeightedSplitSystem.
+
+  - Writer: `to_nexus_split_system()` converts SplitSystem to NEXUS string.
+  - Reader: `from_nexus_split_system()` parses NEXUS string to SplitSystem.
+  - Writer: `to_nexus_weighted_split_system()` converts WeightedSplitSystem to NEXUS string.
+  - Reader: `from_nexus_weighted_split_system()` parses NEXUS string to WeightedSplitSystem.
 
 These handlers are automatically registered when this module is imported.
 SplitSystem and WeightedSplitSystem inherit from IOMixin, so you can use:
@@ -34,7 +35,7 @@ import re
 from typing import Any
 
 from phylozoo.utils.io import FormatRegistry
-from phylozoo.utils.io.formats import nexus as nexus_fmt
+from phylozoo.utils.io.format_utils import nexus as nexus_fmt
 from phylozoo.utils.exceptions import PhyloZooParseError, PhyloZooValueError
 
 from .base import Split

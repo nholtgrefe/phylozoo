@@ -1,15 +1,21 @@
-PHYLIP Format
-=============
+PHYLIP
+======
 
 PHYLIP is a compact format for distance matrices, compatible with standard PHYLIP
 tools. It is space-efficient and widely used for phylogenetic distance data.
 
-**Classes using PHYLIP format:** :class:`phylozoo.core.distance.DistanceMatrix`
+.. seealso::
+   `PHYLIP <https://en.wikipedia.org/wiki/PHYLIP>`_ — Wikipedia
+
+Classes and extensions
+----------------------
+
+**Classes:** :class:`~phylozoo.core.distance.base.DistanceMatrix`
 
 **File extensions:** ``.phy``, ``.phylip``
 
-Format Structure
-----------------
+Structure
+---------
 
 The first line is the number of taxa. Each following line contains a taxon name
 (padded to 10 characters in strict PHYLIP) followed by the distances for that taxon:
@@ -21,8 +27,8 @@ The first line is the number of taxa. Each following line contains a taxon name
    B          1.00000 0.00000 1.00000
    C          2.00000 1.00000 0.00000
 
-Example
--------
+Examples
+--------
 
 .. code-block:: python
 
@@ -34,8 +40,10 @@ Example
    dm.save("distances.phy", format="phylip")
    dm2 = DistanceMatrix.load("distances.phy", format="phylip")
 
-.. seealso::
-   * :doc:`../operations` — Save/load and format detection
-   * :doc:`nexus` — NEXUS distance matrix format
-   * :doc:`csv` — Tabular distance matrix format
-   * :doc:`../../../core/distance` — Distance matrices
+See also
+--------
+
+- :doc:`../operations` — Save/load and format detection
+- :doc:`nexus` — NEXUS distance matrix format
+- :doc:`csv` — Tabular distance matrix format
+- :doc:`../../../core/distance` — Distance matrices

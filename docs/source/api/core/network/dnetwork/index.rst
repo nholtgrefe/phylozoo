@@ -63,6 +63,10 @@ I/O
    :members:
    :show-inheritance:
 
+.. autofunction:: phylozoo.core.network.dnetwork.io.to_enewick
+.. autofunction:: phylozoo.core.network.dnetwork.io.from_enewick
+
+
 .. toctree::
    :maxdepth: 1
    

@@ -79,7 +79,15 @@ def parse_nexus(nexus_string: str) -> tuple[list[str], dict[str, str]]:
 
 
 def nexus_header() -> str:
-    """Return the NEXUS file header (#NEXUS and blank line)."""
+    """
+    Return the NEXUS file header (#NEXUS and blank line).
+
+    Returns
+    -------
+    str
+        The NEXUS file header.
+    """
+
     return "#NEXUS\n\n"
 
 

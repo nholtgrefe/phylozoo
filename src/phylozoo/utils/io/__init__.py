@@ -2,7 +2,7 @@
 PhyloZoo I/O utilities (phylozoo.utils.io).
 
 Provides FormatRegistry, IOMixin, and file operations. Shared format structure
-(NEXUS, PHYLIP) is in phylozoo.utils.io.formats; class-specific readers/writers
+(NEXUS, PHYLIP) is in phylozoo.utils.io.format_utils; class-specific readers/writers
 are in core/distance/io, core/sequence/io, core/split/io, etc.
 """
 

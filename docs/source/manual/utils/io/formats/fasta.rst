@@ -1,16 +1,22 @@
-FASTA Format
-============
+FASTA
+=====
 
 FASTA is a simple text-based format for sequence data, widely used in bioinformatics.
 Each sequence has a header line starting with ``>`` followed by one or more lines of
 sequence characters.
 
-**Classes using FASTA format:** :class:`phylozoo.core.sequence.MSA` (default format).
+.. seealso::
+   `FASTA format <https://en.wikipedia.org/wiki/FASTA_format>`_ — Wikipedia
+
+Classes and extensions
+----------------------
+
+**Classes:** :class:`~phylozoo.core.sequence.base.MSA` (default format)
 
 **File extensions:** ``.fasta``, ``.fa``, ``.fas``
 
-Format Structure
-----------------
+Structure
+---------
 
 .. code-block:: text
 
@@ -21,8 +27,8 @@ Format Structure
    >taxon3
    AAAAACGT
 
-Example
--------
+Examples
+--------
 
 .. code-block:: python
 
@@ -37,7 +43,9 @@ Example
    msa2 = MSA.load("alignment.fasta")
    fasta_str = msa.to_string(format="fasta", line_length=60)
 
-.. seealso::
-   * :doc:`../operations` — Save/load and format detection
-   * :doc:`nexus` — NEXUS Characters block for alignments
-   * :doc:`../../../core/sequences` — MSA and sequences
+See also
+--------
+
+- :doc:`../operations` — Save/load and format detection
+- :doc:`nexus` — NEXUS Characters block for alignments
+- :doc:`../../../core/sequences` — MSA and sequences

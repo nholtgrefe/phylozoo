@@ -1,12 +1,12 @@
 """
-Tests for phylozoo.utils.io.formats.nexus.
+Tests for phylozoo.utils.io.format_utils.nexus.
 
 Covers parse_nexus, nexus_header, write_taxa_block, write_block.
 """
 
 import pytest
 
-from phylozoo.utils.io.formats import nexus as nexus_fmt
+from phylozoo.utils.io.format_utils import nexus as nexus_fmt
 from phylozoo.utils.exceptions import PhyloZooParseError
 
 

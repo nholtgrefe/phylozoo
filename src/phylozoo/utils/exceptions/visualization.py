@@ -23,6 +23,7 @@ class PhyloZooLayoutError(PhyloZooVisualizationError):
     Raised when layout computation fails.
 
     This exception is used for layout computation errors such as:
+
     - Empty network/graph layout errors
     - Invalid layout algorithm
     - Layout computation failures
@@ -36,6 +37,7 @@ class PhyloZooBackendError(PhyloZooVisualizationError):
     Raised when backend operations fail.
 
     This exception is used for backend-related errors such as:
+
     - Backend not registered
     - Backend initialization failures
     - Backend operation failures

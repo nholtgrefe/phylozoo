@@ -1,7 +1,7 @@
 Exceptions
 ==========
 
-The :mod:`phylozoo.utils.exceptions` module provides a custom exception hierarchy for clear, specific error and warningmessages.
+The :mod:`phylozoo.utils.exceptions` module provides a custom exception hierarchy for clear, specific error and warning messages.
 
 All exceptions and functions on this page can be imported from the exceptions module:
 

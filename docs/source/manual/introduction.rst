@@ -24,8 +24,8 @@ Conversions between these representations are supported, allowing analyses to mo
 flexibly between data types as required. All core data structures are validated upon
 construction to ensure well-defined phylogenetic objects, improving reliability and
 reproducibility. The package includes support for standard file formats such as eNewick,
-DOT, FASTA, and NEXUS, optional parallel execution for computationally intensive tasks,
-and flexible visualization functionality with customizable layouts for figures.
+DOT, FASTA, and NEXUS, and flexible visualization functionality with
+customizable layouts for figures.
 
 Package Structure
 -----------------
@@ -85,9 +85,6 @@ see the corresponding sections in this manual:
    
    * **I/O**: File format support including eNewick, DOT, and many other formats. See 
      :doc:`I/O <utils/io>` for details.
-   
-   * **Parallelization**: Support for parallel execution of computationally intensive tasks. 
-     See :doc:`Parallelization <utils/parallelization>` for details.
 
 Design Philosophy
 -----------------

@@ -1,94 +1,116 @@
 I/O Operations
-=============
+======================
 
-This page describes the I/O methods provided by PhyloZoo: saving and loading files,
-converting to and from strings, and converting between formats. All I/O-capable classes
-use the same interface via ``IOMixin``.
+This page describes the I/O protocol used in PhyloZoo and the basic operations
+available on all I/O-capable classes.
 
-I/O System
----------
+IOMixin and I/O-capable classes
+-------------------------------
 
-All I/O-capable classes in PhyloZoo use the ``IOMixin`` protocol, which provides a
-consistent interface for loading, saving, and converting between formats. The system
-automatically detects file formats based on file extensions and supports explicit
-format specification.
+All I/O in PhyloZoo goes through the :class:`~phylozoo.utils.io.mixin.IOMixin` protocol.
+(If you are new to Python: a *mixin* is a class that provides methods to other
+classes without being the main parent.) IOMixin adds ``save``, ``load``,
+``to_string``, ``from_string``, ``convert``, and ``convert_string`` to any class that inherits from
+it (see below). So instead of each class having its own I/O code, they all share the same
+interface: you call ``network.save("file.enewick")`` or ``msa.load("file.fasta")``
+in the same way regardless of the data type. PhyloZoo detects the format from the
+file extension (e.g. ``.enewick``, ``.fasta``) and uses the registry to find the
+right reader or writer for that class.
 
-Basic Operations
+The following classes use IOMixin (directly or by inheritance):
+
+- :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` — directed phylogenetic networks
+- :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` — semi-directed phylogenetic networks
+- :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` — directed multigraphs
+- :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` — mixed directed/undirected multigraphs
+- :class:`~phylozoo.core.split.splitsystem.SplitSystem` and :class:`~phylozoo.core.split.weighted_splitsystem.WeightedSplitSystem` — split systems
+- :class:`~phylozoo.core.distance.base.DistanceMatrix` — distance matrices
+- :class:`~phylozoo.core.sequence.base.MSA` — multiple sequence alignments
+
+Each class registers one or more formats with the central :class:`~phylozoo.utils.io.registry.FormatRegistry`; the
+format(s) and extensions supported depend on the class. See :doc:`File formats
+<formats/index>` for per-format details; see :doc:`Registering a new format <format_registry>` for how to register a new format for a class.
+
+Basic operations
 ----------------
 
-All I/O-capable classes support these methods:
+All I/O-capable classes support the following methods (defined on :class:`~phylozoo.utils.io.mixin.IOMixin`).
+Methods may accept format-specific keyword arguments (e.g. ``triangle="UPPER"`` for NEXUS,
+``root_location=...`` for semi-directed Newick). See the per-format pages for details.
+
+Saving to a file
+^^^^^^^^^^^^^^^^
+
+The :meth:`~phylozoo.utils.io.mixin.IOMixin.save` method writes the object to a file. Format is detected from the file extension unless ``format`` is given. The ``overwrite`` parameter controls whether to overwrite the file if it already exists. 
+Additional keyword arguments are passed to the format writer.
 
 .. code-block:: python
 
-   from phylozoo import DirectedPhyNetwork, SemiDirectedPhyNetwork, MSA, DistanceMatrix
-
-   # Save to file (auto-detects format from extension)
    network.save("network.enewick")
    msa.save("alignment.fasta")
    dm.save("distances.nexus")
 
-   # Load from file (auto-detects format)
+Loading from a file
+^^^^^^^^^^^^^^^^^^^
+
+The :meth:`~phylozoo.utils.io.mixin.IOMixin.load` method reads an object from a file. Format is detected from the extension unless ``format`` is given. If the extension is ambiguous or you use a non-standard extension, pass the format explicitly:
+
+.. code-block:: python
+
    network = DirectedPhyNetwork.load("network.enewick")
    msa = MSA.load("alignment.fasta")
    dm = DistanceMatrix.load("distances.nexus")
 
-   # Convert to string
-   enewick_string = network.to_string(format="enewick")
-
-   # Parse from string
-   network = DirectedPhyNetwork.from_string(enewick_string, format="enewick")
-
-   # Convert between formats (file to file, without loading into memory)
-   MSA.convert("input.fasta", "output.nexus")
-
-Method summary
-^^^^^^^^^^^^^^
-
-* **``save(filepath, format=None, overwrite=True, **kwargs)``** — Write the object to a
-  file. Format is detected from the file extension unless ``format`` is given.
-  Additional keyword arguments are passed to the format writer.
-
-* **``load(filepath, format=None, **kwargs)``** — Class method. Read an object from a
-  file. Format is detected from the extension unless ``format`` is given.
-
-* **``to_string(format=None, **kwargs)``** — Serialize the object to a string in the
-  given format (default format for the class if not specified).
-
-* **``from_string(string, format=None, **kwargs)``** — Class method. Parse a string
-  and return an instance. Format must be specified or be the class default.
-
-* **``convert(input_path, output_path, input_format=None, output_format=None, **kwargs)``**
-  — Class method. Read from one file and write to another. Formats are detected from
-  extensions when not specified. Useful for large files when you do not need the
-  object in memory.
-
-Format Detection
-----------------
-
-PhyloZoo automatically detects file formats based on file extensions. If the extension
-is ambiguous or you use a non-standard extension, specify the format explicitly:
-
-.. code-block:: python
-
-   # Explicit format specification
+   # Explicit format when extension is unclear
    network = DirectedPhyNetwork.load("network.txt", format="enewick")
    msa = MSA.load("data.txt", format="fasta")
 
-Error Handling
+Serializing to a string
+^^^^^^^^^^^^^^^^^^^^^^
+
+The :meth:`~phylozoo.utils.io.mixin.IOMixin.to_string` method serializes the object to a string in the given format (default format for the class if not specified).
+
+.. code-block:: python
+
+   enewick_string = network.to_string(format="enewick")
+
+Parsing from a string
+^^^^^^^^^^^^^^^^^^^^
+
+The :meth:`~phylozoo.utils.io.mixin.IOMixin.from_string` method parses a string and returns an instance. Format must be specified or be the class default.
+
+.. code-block:: python
+
+   network = DirectedPhyNetwork.from_string(enewick_string, format="enewick")
+
+Converting between file formats
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :meth:`~phylozoo.utils.io.mixin.IOMixin.convert` method is a convenience wrapper that loads from one file and saves to another in one call. Formats are detected from extensions when not specified. Equivalent to ``cls.load(...).save(...)``; the object is created in memory during conversion.
+
+.. code-block:: python
+
+   MSA.convert("input.fasta", "output.nexus")
+
+Converting between string formats
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :meth:`~phylozoo.utils.io.mixin.IOMixin.convert_string` method parses a string in one format and returns the serialized string in another format. Both formats must be specified. Equivalent to ``cls.from_string(content, format=input_format, **kwargs).to_string(format=output_format, **kwargs)``.
+
+.. code-block:: python
+
+   nexus_str = MSA.convert_string(fasta_content, input_format="fasta", output_format="nexus")
+
+Error handling
 --------------
 
-I/O operations raise appropriate exceptions when files cannot be read or written:
+I/O operations raise PhyloZoo exceptions when appropriate:
 
-* **``PhyloZooIOError``** — General I/O errors (e.g. write failure).
-
-* **``PhyloZooParseError``** — Parsing errors (malformed file content).
-
-* **``PhyloZooFormatError``** — Format-related errors (unsupported format, missing
-  format handler, or extension not recognized).
-
-* **``FileNotFoundError``** — File not found (e.g. load from missing path).
-
-Example:
+- :class:`~phylozoo.utils.exceptions.io.PhyloZooIOError` — General I/O errors (e.g. write failure).
+- :class:`~phylozoo.utils.exceptions.io.PhyloZooParseError` — Parsing errors (malformed content).
+- :class:`~phylozoo.utils.exceptions.io.PhyloZooFormatError` — Unsupported format, missing
+  handler, or extension not recognized.
+- :exc:`FileNotFoundError` — File not found (e.g. load from missing path).
 
 .. code-block:: python
 
@@ -99,27 +121,27 @@ Example:
    except PhyloZooParseError as e:
        print(f"Parse error: {e}")
 
-Best Practices
+Best practices
 --------------
 
-1. **Use appropriate file extensions** — PhyloZoo auto-detects formats from extensions.
-   Use standard extensions (e.g. ``.enewick``, ``.fasta``, ``.nexus``) for best results.
+- **Use standard file extensions** — PhyloZoo detects format from extensions. Use
+  standard ones (e.g. ``.enewick``, ``.fasta``, ``.nexus``) when possible.
 
-2. **Specify format explicitly when needed** — If the extension is ambiguous or
-   non-standard, pass the ``format`` parameter.
+- **Specify format when needed** — If the extension is ambiguous or non-standard,
+  pass the ``format`` parameter.
 
-3. **Handle exceptions** — Use try/except for I/O operations to handle parsing errors
-   and missing files gracefully.
+- **Handle exceptions** — Use try/except for I/O to handle parse errors and missing
+  files gracefully.
 
-4. **Preserve metadata** — Some formats preserve more metadata than others. Choose a
-   format that preserves the attributes you need (e.g. eNewick for branch lengths and
-   gamma values on networks).
+- **Preserve metadata** — Some formats preserve more metadata (e.g. eNewick for
+  branch lengths and gamma on networks). Choose a format that preserves what you need.
 
-5. **Convert between formats** — Use the ``convert`` class method to convert between
-   formats without loading into memory when working with large files.
+- **Use convert for convenience** — Use the ``convert`` class method to change
+  format in one call instead of separate load and save.
 
-.. seealso::
-   * :doc:`overview` — Overview of this I/O section
-   * :doc:`format_registry` — Registering a new format
-   * :doc:`formats/index` — Supported file formats
-   * :doc:`../exceptions` — Exception types
+See Also
+--------
+
+- :doc:`File formats <formats/index>` — Supported formats and format families
+- :doc:`Registering a new format <format_registry>` — How to register a format
+- :doc:`API Reference <../../api/utils/io/index>` — The API reference for the I/O module

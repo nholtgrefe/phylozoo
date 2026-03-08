@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .sd_phynetwork import SemiDirectedPhyNetwork
 
 
-def to_newick(sd_network: 'SemiDirectedPhyNetwork', **kwargs: Any) -> str:
+def to_enewick(sd_network: 'SemiDirectedPhyNetwork', **kwargs: Any) -> str:
     """
     Convert a SemiDirectedPhyNetwork to an eNewick format string.
     
@@ -44,18 +44,18 @@ def to_newick(sd_network: 'SemiDirectedPhyNetwork', **kwargs: Any) -> str:
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> from phylozoo.core.network.sdnetwork.io import to_newick
+    >>> from phylozoo.core.network.sdnetwork.io import to_enewick
     >>> 
     >>> net = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> newick_str = to_newick(net)
-    >>> ';' in newick_str
+    >>> enewick_str = to_enewick(net)
+    >>> ';' in enewick_str
     True
-    >>> 'A' in newick_str
+    >>> 'A' in enewick_str
     True
-    >>> 'B' in newick_str
+    >>> 'B' in enewick_str
     True
     
     Notes
@@ -80,7 +80,7 @@ def to_newick(sd_network: 'SemiDirectedPhyNetwork', **kwargs: Any) -> str:
     return to_enewick(d_network, **kwargs)
 
 
-def from_newick(newick_string: str, **kwargs: Any) -> 'SemiDirectedPhyNetwork':
+def from_enewick(enewick_string: str, **kwargs: Any) -> 'SemiDirectedPhyNetwork':
     """
     Parse an eNewick format string and create a SemiDirectedPhyNetwork.
     
@@ -89,7 +89,7 @@ def from_newick(newick_string: str, **kwargs: Any) -> 'SemiDirectedPhyNetwork':
     
     Parameters
     ----------
-    newick_string : str
+    enewick_string : str
         eNewick format string containing network data.
     **kwargs
         Additional arguments to pass to from_enewick (currently unused, for compatibility).
@@ -107,10 +107,10 @@ def from_newick(newick_string: str, **kwargs: Any) -> 'SemiDirectedPhyNetwork':
     
     Examples
     --------
-    >>> from phylozoo.core.network.sdnetwork.io import from_newick
+    >>> from phylozoo.core.network.sdnetwork.io import from_enewick
     >>> 
-    >>> newick_str = "((A,B),C);"
-    >>> net = from_newick(newick_str)
+    >>> enewick_str = "((A,B),C);"
+    >>> net = from_enewick(enewick_str)
     >>> net.number_of_nodes()
     4
     >>> 'A' in net.taxa
@@ -127,7 +127,7 @@ def from_newick(newick_string: str, **kwargs: Any) -> 'SemiDirectedPhyNetwork':
     from ..dnetwork.derivations import to_sd_network
     
     # Parse eNewick string to directed network
-    d_network = from_enewick(newick_string, **kwargs)
+    d_network = from_enewick(enewick_string, **kwargs)
     
     # Convert to semi-directed network
     return to_sd_network(d_network)
@@ -284,11 +284,11 @@ def _register_formats() -> None:
     from .sd_phynetwork import SemiDirectedPhyNetwork
     
     FormatRegistry.register(
-        SemiDirectedPhyNetwork, 'newick',
-        reader=from_newick,
-        writer=to_newick,
+        SemiDirectedPhyNetwork, 'enewick',
+        reader=from_enewick,
+        writer=to_enewick,
         extensions=['.nwk', '.newick', '.enewick', '.eNewick', '.enw'],
-        default=True  # Newick is the default format
+        default=True  # eNewick is the default format
     )
     
     FormatRegistry.register(

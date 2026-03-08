@@ -1,16 +1,22 @@
-CSV Format
-=========
+CSV
+===
 
 CSV (comma-separated values) is a simple tabular format for distance matrices, easy
 to read and edit in spreadsheet applications. PhyloZoo supports a header row with
 taxon labels and optional custom delimiters (e.g. tab for TSV).
 
-**Classes using CSV format:** :class:`phylozoo.core.distance.DistanceMatrix`
+.. seealso::
+   `Comma-separated values <https://en.wikipedia.org/wiki/Comma-separated_values>`_ — Wikipedia
+
+Classes and extensions
+----------------------
+
+**Classes:** :class:`~phylozoo.core.distance.base.DistanceMatrix`
 
 **File extensions:** ``.csv`` (and optionally ``.tsv`` with ``delimiter="\t"``)
 
-Format Structure
-----------------
+Structure
+---------
 
 The first row is a header: an empty first cell followed by taxon labels. Each
 following row has a taxon label in the first column and then the distances:
@@ -22,8 +28,8 @@ following row has a taxon label in the first column and then the distances:
    B,1.0,0.0,1.0
    C,2.0,1.0,0.0
 
-Example
--------
+Examples
+--------
 
 .. code-block:: python
 
@@ -36,8 +42,10 @@ Example
    dm2 = DistanceMatrix.load("distances.csv", format="csv")
    dm.save("distances.tsv", format="csv", delimiter="\t")
 
-.. seealso::
-   * :doc:`../operations` — Save/load and format detection
-   * :doc:`nexus` — NEXUS distance format
-   * :doc:`phylip` — PHYLIP distance format
-   * :doc:`../../../core/distance` — Distance matrices
+See also
+--------
+
+- :doc:`../operations` — Save/load and format detection
+- :doc:`nexus` — NEXUS distance format
+- :doc:`phylip` — PHYLIP distance format
+- :doc:`../../../core/distance` — Distance matrices

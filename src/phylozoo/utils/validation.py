@@ -5,6 +5,7 @@ This module provides context managers and class decorators to temporarily disabl
 validation methods in a controlled, nestable, and context-local way.
 
 Suppression can be specified at two levels:
+
 - **Class level**: Suppress validation for specific classes using fnmatch patterns
 - **Method level**: Suppress validation for specific methods using fnmatch patterns
 

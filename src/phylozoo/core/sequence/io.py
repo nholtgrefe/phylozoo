@@ -33,7 +33,7 @@ import re
 from typing import Any
 
 from phylozoo.utils.io import FormatRegistry
-from phylozoo.utils.io.formats import nexus as nexus_fmt
+from phylozoo.utils.io.format_utils import nexus as nexus_fmt
 from phylozoo.utils.exceptions import PhyloZooParseError
 
 from .base import MSA

@@ -1,23 +1,38 @@
-DOT and PhyloZoo-DOT Formats
-============================
+DOT
+===
 
 DOT is the Graphviz format for graph visualization. PhyloZoo supports **standard DOT**
 for directed graphs and **PhyloZoo-DOT** (``pzdot``) for semi-directed networks,
 where the distinction between directed and undirected edges is preserved.
 
-DOT Format
-----------
+.. seealso::
+   `DOT (graph description language) <https://en.wikipedia.org/wiki/DOT_(graph_description_language)>`_ — Wikipedia
 
-Standard DOT uses a declarative syntax for directed graphs (``digraph``).
+Classes and extensions
+----------------------
 
-**Classes using DOT format:**
+**DOT:** :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`,
+:class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` (default format).
+Extensions: ``.dot``, ``.gv``
 
-* :class:`phylozoo.core.network.dnetwork.DirectedPhyNetwork`
-* :class:`phylozoo.core.primitives.d_multigraph.DirectedMultiGraph` (default format)
+**PhyloZoo-DOT:** :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`,
+:class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` (default format).
+Extensions: ``.pzdot``
 
-**File extensions:** ``.dot``, ``.gv``
+Structure
+---------
 
-Structure:
+Both formats use a declarative syntax with node and edge declarations. Nodes can
+have attributes (e.g. labels); edges can have attributes (e.g. gamma, branch length).
+The main difference is that standard DOT uses ``digraph`` and ``->`` for directed
+edges only, while PhyloZoo-DOT uses ``graph`` with both ``->`` (directed) and ``--``
+(undirected) to represent semi-directed networks.
+
+DOT (standard)
+^^^^^^^^^^^^^^
+
+Standard DOT uses ``digraph`` for directed graphs. Node names in the output use
+labels where available for readability.
 
 .. code-block:: text
 
@@ -29,7 +44,24 @@ Structure:
        h -> leaf1 [label="A"];
    }
 
-Example:
+PhyloZoo-DOT
+^^^^^^^^^^^^
+
+PhyloZoo-DOT uses ``graph`` (not ``digraph``) and represents undirected edges with
+``--`` and directed edges with ``->``, so that both edge types can be represented
+in one file.
+
+.. code-block:: text
+
+   graph {
+       node1 -- node2 [dir=none];
+       node2 -> node3;
+   }
+
+Examples
+--------
+
+**DOT (directed network):**
 
 .. code-block:: python
 
@@ -41,30 +73,7 @@ Example:
    network.save("network.dot", format="dot")
    network2 = DirectedPhyNetwork.load("network.dot", format="dot")
 
-PhyloZoo-DOT Format
--------------------
-
-PhyloZoo-DOT is a custom variant for semi-directed networks. It uses ``graph`` (not
-``digraph``) and represents undirected edges with ``--`` and directed edges with
-``->``, so that both edge types can be represented in one file.
-
-**Classes using PhyloZoo-DOT format:**
-
-* :class:`phylozoo.core.network.sdnetwork.SemiDirectedPhyNetwork`
-* :class:`phylozoo.core.primitives.m_multigraph.MixedMultiGraph` (default format)
-
-**File extensions:** ``.pzdot``
-
-Structure:
-
-.. code-block:: text
-
-   graph {
-       node1 -- node2 [dir=none];
-       node2 -> node3;
-   }
-
-Example:
+**PhyloZoo-DOT (semi-directed network):**
 
 .. code-block:: python
 
@@ -80,8 +89,12 @@ Example:
    network.save("network.pzdot", format="phylozoo-dot")
    network2 = SemiDirectedPhyNetwork.load("network.pzdot", format="phylozoo-dot")
 
-.. seealso::
-   * :doc:`../operations` — Save/load and format detection
-   * :doc:`newick` — Newick and eNewick for trees and networks
-   * :doc:`../../../core/networks/semi_directed/overview` — Semi-directed networks
-   * :doc:`../../../visualization/overview` — Visualization (layouts, plotting)
+See also
+--------
+
+- :doc:`../operations` — Save/load and format detection
+- :doc:`enewick` — eNewick for trees and networks
+- :doc:`../../../core/networks/semi_directed/overview` — Semi-directed networks
+- :doc:`../../../core/primitives/directed_multigraph` — Directed multigraphs
+- :doc:`../../../core/primitives/mixed_multigraph` — Mixed multigraphs
+- :doc:`../../../visualization/overview` — Visualization (layouts, plotting)

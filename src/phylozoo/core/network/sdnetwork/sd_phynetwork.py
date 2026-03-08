@@ -157,8 +157,8 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     """
     
     # I/O format configuration
-    _default_format: str = 'newick'
-    _supported_formats: list[str] = ['newick', 'phylozoo-dot']
+    _default_format: str = 'enewick'
+    _supported_formats: list[str] = ['enewick', 'phylozoo-dot']
     
     def __init__(
         self,

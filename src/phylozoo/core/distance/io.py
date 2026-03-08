@@ -8,12 +8,15 @@ use with the IOMixin system.
 The following format handlers are defined and registered:
 
 - **nexus**: NEXUS format for distance matrices (extensions: .nexus, .nex, .nxs)
+
   - Writer: `to_nexus()` - Converts DistanceMatrix to NEXUS string
   - Reader: `from_nexus()` - Parses NEXUS string to DistanceMatrix
 - **phylip**: PHYLIP format for distance matrices (extensions: .phy, .phylip)
+
   - Writer: `to_phylip()` - Converts DistanceMatrix to PHYLIP string
   - Reader: `from_phylip()` - Parses PHYLIP string to DistanceMatrix
 - **csv**: CSV format for distance matrices (extensions: .csv)
+
   - Writer: `to_csv()` - Converts DistanceMatrix to CSV string
   - Reader: `from_csv()` - Parses CSV string to DistanceMatrix
 
@@ -36,8 +39,8 @@ from typing import Any
 import numpy as np
 
 from phylozoo.utils.io import FormatRegistry
-from phylozoo.utils.io.formats import nexus as nexus_fmt
-from phylozoo.utils.io.formats import phylip as phylip_fmt
+from phylozoo.utils.io.format_utils import nexus as nexus_fmt
+from phylozoo.utils.io.format_utils import phylip as phylip_fmt
 from phylozoo.utils.exceptions import PhyloZooParseError, PhyloZooValueError
 
 from .base import DistanceMatrix
@@ -82,6 +85,7 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     Notes
     -----
     The NEXUS format includes:
+
     - Taxa block with label names
     - Distances block with matrix in specified triangle format
     - Format options: triangle=LOWER, triangle=UPPER, or triangle=BOTH
@@ -171,6 +175,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     Notes
     -----
     This parser supports:
+
     - A Taxa block with TAXLABELS
     - A Distances block with FORMAT triangle=LOWER/UPPER/BOTH diagonal LABELS
     - Lower triangular, upper triangular, or full matrix formats
@@ -287,6 +292,7 @@ def to_phylip(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     Convert a distance matrix to PHYLIP format string.
     
     PHYLIP format consists of:
+
     - First line: number of taxa
     - Subsequent lines: taxon name (padded to 10 chars) followed by all distances
     
@@ -372,6 +378,7 @@ def from_phylip(phylip_string: str, **kwargs: Any) -> DistanceMatrix:
     Notes
     -----
     This parser expects:
+
     - First line: number of taxa
     - Subsequent lines: taxon name (first 10 chars or until whitespace) followed by distances
     - Full matrix format (not just lower triangle)
@@ -413,6 +420,7 @@ def to_csv(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
         The distance matrix to convert.
     **kwargs
         Additional arguments:
+
         - delimiter (str): Field delimiter (default: ',')
         - include_header (bool): Include header row (default: True)
     
@@ -469,6 +477,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
         CSV format string containing distance matrix data.
     **kwargs
         Additional arguments:
+
         - delimiter (str): Field delimiter (default: ','). Can be ',' or '\t' or whitespace
         - has_header (bool): Whether first row is a header (default: True)
     
@@ -502,6 +511,7 @@ def from_csv(csv_string: str, **kwargs: Any) -> DistanceMatrix:
     Notes
     -----
     This parser expects:
+
     - First row (if has_header=True): empty first cell, then taxon labels
     - Subsequent rows: taxon label in first column, then distances
     - Delimiter can be comma, tab, or whitespace

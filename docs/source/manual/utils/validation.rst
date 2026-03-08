@@ -1,211 +1,188 @@
 Validation
-===========
+==========
 
-PhyloZoo includes a comprehensive validation system that ensures objects always represent 
-valid phylogenetic structures. Validation occurs automatically upon object creation and 
-can be controlled through decorators and context managers.
+The :mod:`phylozoo.utils.validation` module contains the utilities used to validate PhyloZoo objects and to disable validation for performance-critical code.
 
-Automatic Validation
+All functions and classes on this page can be imported from the validation module:
+
+.. code-block:: python
+
+   from phylozoo.utils.validation import no_validation, validation_aware
+
+What is validation?
+-------------------
+
+PhyloZoo performs validation on objects to ensure they satisfy required structural and attribute rules. 
+For example, these checks cover connectivity, the absence of forbidden cycles, correct node degrees (such as having exactly one root and leaves with in-degree 1), and valid edge attributes (for example, ensuring hybrid-edge γ values lie in [0, 1] and sum to 1.0 at hybrid nodes).
+
+By default, validation runs automatically at the end of object construction so that invalid objects are rejected as soon as they are created. 
+For some classes, validation is expensive, and it can therefore be disabled; for performance, or when building objects in stages.
+
+If a check fails, a domain‑specific exception is raised (such as :class:`~phylozoo.utils.exceptions.network.PhyloZooNetworkStructureError` or :class:`~phylozoo.utils.exceptions.network.PhyloZooNetworkDegreeError`). 
+See :doc:`Exceptions <exceptions>` for the full exception hierarchy.
+This page explains which classes use the validation system, how to enable or disable it, and how to make your own classes validation‑aware.
+
+Which classes are validation-aware?
+--------------------------------
+
+The following classes are validation-aware and run a validation method that is recognized by the validation system:
+
+- :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` — directed phylogenetic networks
+- :class:`~phylozoo.core.network.sdnetwork.base.MixedPhyNetwork` — mixed directed/undirected networks (base for semi-directed)
+- :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` — semi-directed phylogenetic networks
+- :class:`~phylozoo.core.network.dnetwork.generator.base.DirectedGenerator` — directed level-*k* generators
+- :class:`~phylozoo.core.network.sdnetwork.generator.base.SemiDirectedGenerator` — semi-directed level-*k* generators
+
+For the exact checks each class performs, see their documentation in the :doc:`API reference <../../api/index>`.
+
+Note that some other classes also validate input but they are are not validation-aware.
+This design choice was made for classes where validation is inexpensive.
+
+Disabling validation
 --------------------
 
-By default, network objects are validated upon creation:
+Use the :func:`~phylozoo.utils.validation.no_validation` context manager to
+temporarily disable validation. Inside the block, calls to :meth:`validate` (and
+any other methods you configured) are skipped for the matching classes and
+methods, so construction no longer runs those checks.
+
+**Disable all validation (default methods for all validation-aware classes)**
 
 .. code-block:: python
 
    from phylozoo import DirectedPhyNetwork
-   
-   # This will raise PhyloZooNetworkStructureError due to cycle
-   try:
-       network = DirectedPhyNetwork(edges=[(1, 2), (2, 1)])
-   except PhyloZooNetworkStructureError:
-       print("Invalid network structure detected")
+   from phylozoo.utils.validation import no_validation
 
-Validation ensures that:
-* Network structure is valid (no cycles, proper connectivity)
-* Node degrees satisfy constraints
-* Edge attributes are valid (branch lengths, gamma values, etc.)
-* Network properties are consistent
+   with no_validation():
+       net = DirectedPhyNetwork(edges=[(1, 2), (2, 3)])  # validate() not run
 
-Validation Decorators
----------------------
+**Disable only for specific classes**
 
-The validation system uses decorators to control when validation occurs:
+Use the ``classes`` argument with class names or ``fnmatch`` patterns. Only
+those classes skip validation; others still run it.
 
 .. code-block:: python
 
-   from phylozoo.utils.validation import validation_aware
-   
-   @validation_aware(allowed=["validate"], default=["validate"])
-   class MyNetwork:
-       def validate(self):
-           # Validation logic
-           pass
+   from phylozoo.core.network.dnetwork.generator.base import DirectedGenerator
+   from phylozoo.utils.validation import no_validation
 
-The ``@validation_aware`` decorator specifies which methods trigger validation and which 
-methods are allowed to skip validation.
+   with no_validation(classes=["DirectedGenerator"]):
+       gen = DirectedGenerator(...)        # validate() suppressed
+       net = DirectedPhyNetwork(...)       # validate() still runs
 
-Disabling Validation
---------------------
+   with no_validation(classes=["*Generator"]):  # any class whose name ends with "Generator"
+       gen = DirectedGenerator(...)         # validate() suppressed
 
-For performance-critical code, validation can be temporarily disabled:
+**Disable only specific methods**
+
+Use the ``methods`` argument with method names or `fnmatch` patterns. The
+class’s ``default`` list (see below) is ignored when you pass ``methods``.
 
 .. code-block:: python
 
    from phylozoo.utils.validation import no_validation
-   
-   with no_validation():
-       # Operations that skip validation
-       network = DirectedPhyNetwork(edges=[...])
-       # ... perform operations ...
 
-**Warning**: Only disable validation when you are certain the operations produce valid 
-structures. Invalid networks can cause errors in downstream operations.
+   with no_validation(methods=["validate"]):
+       net = DirectedPhyNetwork(...)  # only validate() is suppressed
 
-Custom Validation
------------------
+   with no_validation(methods=["validate", "_validate_*"]):
+       net = DirectedPhyNetwork(...)  # validate() and all _validate_* helpers suppressed
 
-You can add custom validation logic to network classes:
+**Combine class and method filters**
 
 .. code-block:: python
 
-   class MyNetwork(DirectedPhyNetwork):
-       def _validate_custom_constraint(self):
-           # Custom validation logic
-           if some_condition:
-               raise PhyloZooNetworkStructureError("Custom constraint violated")
+   with no_validation(classes=["*Generator"], methods=["validate"]):
+       gen = DirectedGenerator(...)  # validate() suppressed only for generator classes
 
-Custom validation methods should be named ``_validate_*`` and will be called automatically 
-during validation.
+.. note::
+    Nested blocks stack: inner ``no_validation`` settings apply in addition to
+    outer ones. After exiting the context, validation runs normally again.
 
-Validation Methods
-------------------
+.. warning::
+   Only turn off validation when you are sure the objects you build are valid.
+   Invalid objects can cause confusing errors in later code.
 
-Network classes provide several validation methods:
 
-**validate()**
-   Performs full validation of the network structure, node degrees, and attributes. 
-   Raises appropriate exceptions if validation fails.
+Example: Batch creation of networks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**is_valid()**
-   Checks if the network is valid without raising exceptions. Returns ``True`` if valid, 
-   ``False`` otherwise.
-
-**validate_structure()**
-   Validates only the network structure (connectivity, cycles, etc.).
-
-**validate_degrees()**
-   Validates only node degree constraints.
-
-**validate_attributes()**
-   Validates only edge and node attributes.
-
-Example: Custom Validation
----------------------------
+When building many networks with a particular structures, which are known or tested to be valid, it can be beneficial to disable validation for performance.
+After constructing the networks, you can still validate them individually if needed.
 
 .. code-block:: python
 
-   from phylozoo import DirectedPhyNetwork, PhyloZooNetworkStructureError
-   from phylozoo.utils.validation import validation_aware
-   
-   @validation_aware(allowed=["validate"], default=["validate"])
-   class CustomNetwork(DirectedPhyNetwork):
-       def _validate_max_level(self):
-           """Ensure network level does not exceed maximum."""
-           if self.level() > 3:
-               raise PhyloZooNetworkStructureError(
-                   f"Network level {self.level()} exceeds maximum of 3"
-               )
-       
-       def validate(self):
-           # Call parent validation
-           super().validate()
-           # Call custom validation
-           self._validate_max_level()
-
-Warnings
---------
-
-PhyloZoo also provides custom warning classes for non-critical issues:
-
-.. code-block:: python
-
-   from phylozoo import (
-       PhyloZooWarning,
-       PhyloZooEmptyNetworkWarning,
-       PhyloZooSingleNodeNetworkWarning,
-   )
-
-Warnings are issued for:
-* Empty networks (technically valid but may not be useful)
-* Single-node networks (valid but may not be useful for phylogenetic analysis)
-* Other non-critical issues
-
-Performance Considerations
----------------------------
-
-**Validation Overhead**
-   Validation adds computational overhead to object creation. For performance-critical 
-   code, consider disabling validation when you're certain operations produce valid structures.
-
-**Caching**
-   PhyloZoo uses ``@cached_property`` for expensive computations. Once validated, network 
-   properties are cached for subsequent access.
-
-**Early Validation**
-   Validation occurs early (upon object creation), catching errors before they propagate 
-   to downstream operations. This makes debugging easier.
-
-Best Practices
---------------
-
-1. **Keep validation enabled**: Only disable validation when absolutely necessary for 
-   performance. Validation catches errors early and makes debugging easier.
-
-2. **Use custom validation**: Add custom validation methods for domain-specific constraints.
-
-3. **Handle validation errors**: Always handle validation exceptions appropriately. Don't 
-   suppress validation errors unless you're certain they're acceptable.
-
-4. **Validate after modifications**: If you modify a network (by creating a new instance), 
-   validation will occur automatically. For custom modifications, consider calling ``validate()`` 
-   explicitly.
-
-5. **Use is_valid() for checks**: When you need to check validity without raising exceptions, 
-   use ``is_valid()`` instead of catching exceptions.
-
-6. **Respect validation decorators**: When extending network classes, respect the validation 
-   decorator settings and don't bypass validation unnecessarily.
-
-Example: Validation Workflow
-------------------------------
-
-.. code-block:: python
-
-   from phylozoo import DirectedPhyNetwork, PhyloZooNetworkError
+   from phylozoo import DirectedPhyNetwork
    from phylozoo.utils.validation import no_validation
-   
-   # Normal creation with validation
-   try:
-       network = DirectedPhyNetwork(edges=[(1, 2), (2, 3)])
-       print("Network is valid")
-   except PhyloZooNetworkError as e:
-       print(f"Validation failed: {e}")
-   
-   # Performance-critical code with validation disabled
+   from phylozoo.utils.exceptions import PhyloZooNetworkError
+
    with no_validation():
-       # Create many networks quickly (assumes they're valid)
        networks = [
-           DirectedPhyNetwork(edges=[(i, i+1)]) 
+           DirectedPhyNetwork(edges=[(i, i + 1)])
            for i in range(100)
        ]
-   
-   # Validate after batch creation
-   for network in networks:
-       if not network.is_valid():
-           print(f"Invalid network detected: {network}")
 
-.. seealso::
-   For more information on:
-   * Exceptions: :doc:`Exceptions <../exceptions>`
-   * Network structure: :doc:`Networks (Advanced) <../core/networks/advanced>`
-   * Validation API: See ``phylozoo.utils.validation`` module documentation
+   for net in networks:
+       try:
+           net.validate()
+       except PhyloZooNetworkError as e:
+           print(f"Invalid network: {net}, error: {e}")
+
+
+Using the decorator for your own classes
+----------------------------------------
+
+To make a class participate in this system, decorate it with
+:func:`~phylozoo.utils.validation.validation_aware`. You choose which methods
+can be suppressed and which are suppressed by default when
+:func:`~phylozoo.utils.validation.no_validation` is used with no
+``methods`` argument.
+
+**Parameters**
+
+- **allowed** — Method names or ``fnmatch`` patterns that may be suppressed
+  (e.g. ``["validate", "_validate_*"]``). Only these methods are wrapped.
+- **default** — Subset of ``allowed`` that is suppressed when
+  :func:`~phylozoo.utils.validation.no_validation` is used without
+  ``methods``. Must match at least one ``allowed`` pattern or
+  :class:`~phylozoo.utils.exceptions.general.PhyloZooValueError` is raised.
+
+**Example**
+
+.. code-block:: python
+
+   from phylozoo.utils.validation import validation_aware, no_validation
+
+   @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
+   class MyNetwork:
+       def __init__(self):
+           self.validate()  # runs unless inside no_validation()
+
+       def validate(self):
+           self._validate_structure()
+
+       def _validate_structure(self):
+           # your checks; raise PhyloZoo*Error on failure
+           pass
+
+   # Normal use: validation runs
+   obj = MyNetwork()
+
+   # Suppress only validate (default for this class)
+   with no_validation():
+       obj2 = MyNetwork()  # validate() and _validate_* not run
+
+   # Suppress only a specific method for all classes
+   with no_validation(methods=["_validate_structure"]):
+       obj.validate()  # validate() runs, _validate_structure() is skipped
+
+
+See Also
+--------
+
+- :doc:`Exceptions <exceptions>` — Exception and warning classes raised during validation.
+- :doc:`Directed Network Class <../core/networks/directed/directed_network_class>` — DirectedPhyNetwork construction and validation.
+- :doc:`Semi-Directed Network Class <../core/networks/semi_directed/semi_directed_network_class>` — SemiDirectedPhyNetwork and MixedPhyNetwork construction and validation.
+- :doc:`Directed Generator <../core/networks/directed/directed_generator>` — DirectedGenerator construction and validation.
+- :doc:`Semi-Directed Generator <../core/networks/semi_directed/generators>` — SemiDirectedGenerator construction and validation.
+- :doc:`Validation API <../../api/utils/index>`
