@@ -399,7 +399,7 @@ The :func:`~phylozoo.core.primitives.m_multigraph.transformations.subgraph` func
    sub = subgraph(mixed_graph, nodes=[1, 2, 3, 4])
 
 NetworkX Conversion
------------------
+-------------------
 
 Convert from various NetworkX graph types. The :func:`~phylozoo.core.primitives.m_multigraph.conversions.graph_to_mixedmultigraph` function converts a NetworkX Graph to a MixedMultiGraph, the :func:`~phylozoo.core.primitives.m_multigraph.conversions.multigraph_to_mixedmultigraph` function converts a NetworkX MultiGraph to a MixedMultiGraph, and the :func:`~phylozoo.core.primitives.m_multigraph.conversions.multidigraph_to_mixedmultigraph` function converts a NetworkX MultiDiGraph to a MixedMultiGraph.
 Also, the :func:`~phylozoo.core.primitives.m_multigraph.conversions.directedmultigraph_to_mixedmultigraph` function converts a DirectedMultiGraph to a MixedMultiGraph.

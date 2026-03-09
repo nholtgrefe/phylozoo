@@ -13,7 +13,7 @@ All classes and functions on this page can be imported from the directed generat
    from phylozoo.core.network.dnetwork.generator import DirectedGenerator
 
 What is a (directed) generator?
---------------------
+----------------------------------------
 
 A **directed generator** is a fundamental building block of a binary directed phylogenetic network.
 Formally, it is a directed multi-graph that can be obtained from a blob of a directed network 

@@ -23,7 +23,7 @@ See :doc:`Exceptions <exceptions>` for the full exception hierarchy.
 This page explains which classes use the validation system, how to enable or disable it, and how to make your own classes validation‑aware.
 
 Which classes are validation-aware?
---------------------------------
+-----------------------------------
 
 The following classes are validation-aware and run a validation method that is recognized by the validation system:
 

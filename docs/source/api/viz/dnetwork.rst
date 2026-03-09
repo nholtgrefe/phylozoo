@@ -1,8 +1,6 @@
 dnetwork
 --------
 
-.. py:module:: phylozoo.viz.dnetwork
-
 .. automodule:: phylozoo.viz.dnetwork
    :no-members:
 

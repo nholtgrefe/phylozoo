@@ -1,5 +1,5 @@
 Directed Network (Advanced Features)
-=============================
+====================================
 
 The :mod:`phylozoo.core.network.dnetwork` module provides advanced features, transformations,
 and analysis capabilities for :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`. This page covers network features,
@@ -7,7 +7,7 @@ classifications, transformations, derivations, and isomorphism checking. For the
 class and its properties, see :doc:`Directed Network Class <directed_network_class>`.
 
 Structural Features
-----------------
+-------------------
 
 The features module provides functions to extract advanced structural properties of
 directed networks. These include LSA (Least Stable Ancestor) nodes, blobs (maximal
@@ -89,7 +89,7 @@ network types (LSA, galled, tree-child, tree-based, normal), and structural prop
 like binary resolution and ultrametricity.
 
 Basic Network Properties
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Phylogenetic Trees**
 
@@ -382,7 +382,7 @@ probability-weighted average distances across all displayed trees of the network
    distance_matrix = distances(network, mode='average')  # or 'shortest', 'longest'
 
 Partitions and Splits
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 **Partition from Blob**
 

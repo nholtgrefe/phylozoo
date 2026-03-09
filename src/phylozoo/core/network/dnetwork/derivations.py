@@ -671,8 +671,9 @@ def distances(
         - 'shortest': Take the minimum distance across all switchings
         - 'longest': Take the maximum distance across all switchings
         - 'average': Take the probability-weighted average across all switchings
+
         By default 'average'.
-    
+
     Returns
     -------
     DistanceMatrix

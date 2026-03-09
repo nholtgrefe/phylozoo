@@ -24,33 +24,6 @@ class SDNetStyle(MGraphStyle):
     >>> style = SDNetStyle(node_color='blue', leaf_color='green')
     >>> style.node_color
     'blue'
-    
-    Attributes
-    ----------
-    node_color : str
-        Color for internal tree nodes. Default is 'lightblue'.
-    leaf_color : str
-        Color for leaf nodes. Default is 'lightblue' (same as node_color).
-    hybrid_color : str
-        Color for hybrid nodes. Default is 'lightblue' (same as node_color).
-    node_size : float
-        Size of internal nodes. Default is 500.0.
-    leaf_size : float | None
-        Size of leaf nodes. If None, uses node_size. Default is None.
-    edge_color : str
-        Color for tree edges. Default is 'gray'.
-    hybrid_edge_color : str
-        Color for hybrid edges. Default is 'red'.
-    edge_width : float
-        Width of edges. Default is 2.0.
-    with_labels : bool
-        Whether to show node labels. Default is True.
-    label_offset : float
-        Offset for labels from nodes. Default is 0.1.
-    label_font_size : float
-        Font size for labels. Default is 10.0.
-    label_color : str
-        Color for labels. Default is 'black'.
     """
 
     leaf_color: str = 'lightblue'

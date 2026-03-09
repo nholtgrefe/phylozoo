@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "phylozoo"
 version = "0.1.0"
 authors = [
-    {name = "N. Holtgrefe", email = "n.a.l.holtgrefe@tudelft.nl"},
+    {name = "Niels Holtgrefe", email = "n.a.l.holtgrefe@tudelft.nl"},
 ]
 description = "A phylogenetic networks analysis package"
 readme = "README.md"

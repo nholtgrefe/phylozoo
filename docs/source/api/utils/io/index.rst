@@ -23,7 +23,7 @@ File operations
 
 
 FormatRegistry
--------------
+--------------
 
 .. automodule:: phylozoo.utils.io.registry
    :members:

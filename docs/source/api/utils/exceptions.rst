@@ -43,7 +43,7 @@ Algorithm
    :show-inheritance:
 
 Visualization
-------------
+-------------
 
 .. automodule:: phylozoo.utils.exceptions.visualization
    :members:

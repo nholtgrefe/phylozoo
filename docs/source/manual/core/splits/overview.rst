@@ -1,5 +1,5 @@
 Overview
-======
+========
 
 The :mod:`phylozoo.core.split` module provides data structures for working with
 splits, which represent bipartitions of taxa sets and form the mathematical foundation

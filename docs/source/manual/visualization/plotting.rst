@@ -121,7 +121,7 @@ Custom layouts optimized for phylogenetic networks. Only available for specific 
   - ``angle_direction`` (str, default ``'clockwise'``) — Angle progression: ``'clockwise'`` or ``'counterclockwise'``.
 
 Saving a Figure
------------
+---------------
 
 The :func:`~phylozoo.viz.plot` function returns a matplotlib axes object. Set ``show=False`` and call
 the matplotlib ``savefig`` method on the figure:

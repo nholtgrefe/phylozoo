@@ -24,25 +24,6 @@ class MGraphStyle(BaseStyle):
     >>> style = MGraphStyle(node_color='blue')
     >>> style.node_color
     'blue'
-    
-    Attributes
-    ----------
-    node_color : str
-        Color for nodes. Default is 'lightblue'.
-    node_size : float
-        Size of nodes. Default is 500.0.
-    edge_color : str
-        Color for edges. Default is 'gray'.
-    edge_width : float
-        Width of edges. Default is 2.0.
-    with_labels : bool
-        Whether to show node labels. Default is True.
-    label_offset : float
-        Offset for labels from nodes. Default is 0.1.
-    label_font_size : float
-        Font size for labels. Default is 10.0.
-    label_color : str
-        Color for labels. Default is 'black'.
     """
 
     pass

@@ -84,7 +84,7 @@ see the corresponding sections in this manual:
      :doc:`Validation <utils/validation>` for details.
    
    * **I/O**: File format support including eNewick, DOT, and many other formats. See 
-     :doc:`I/O <utils/io>` for details.
+     :doc:`I/O <utils/io/index>` for details.
 
 Design Philosophy
 -----------------

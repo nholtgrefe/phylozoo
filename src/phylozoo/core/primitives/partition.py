@@ -62,13 +62,6 @@ class Partition:
     frozenset({3, 4})
     >>> partition.parts  # Read-only tuple
     (frozenset({1, 2}), frozenset({3, 4}), frozenset({5}))
-    
-    Attributes
-    ----------
-    parts : tuple[frozenset, ...]
-        Tuple of frozen sets representing the partition blocks in canonical form (read-only).
-    elements : frozenset
-        Frozen set containing the union of all elements in the partition (read-only).
     """
     
     __slots__ = ('_parts', '_elements', '_initialized')

@@ -1,8 +1,6 @@
 sdnetwork
 ---------
 
-.. py:module:: phylozoo.viz.sdnetwork
-
 .. automodule:: phylozoo.viz.sdnetwork
    :no-members:
 

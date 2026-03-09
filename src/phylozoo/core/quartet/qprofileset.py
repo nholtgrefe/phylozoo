@@ -80,12 +80,6 @@ class QuartetProfileSet:
     >>> profileset2 = QuartetProfileSet(profiles=[(profile1, 2.0), (profile2, 1.5)])
     >>> profileset2.get_profile_weight(frozenset({1, 2, 3, 4}))
     2.0
-    
-    Attributes
-    ----------
-    profiles : Mapping[frozenset[str], tuple[QuartetProfile, float]]
-        Read-only mapping of 4-taxon sets to (profile, profile_weight) tuples.
-        Each profile contains multiple quartets with their individual weights.
     """
     
     def __init__(

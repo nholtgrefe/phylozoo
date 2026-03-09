@@ -10,8 +10,8 @@ from pathlib import Path
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'phylozoo'
-copyright = '2026, N. Holtgrefe'
-author = 'N. Holtgrefe'
+copyright = '2026, Niels Holtgrefe'
+author = 'Niels Holtgrefe'
 release = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
@@ -124,13 +124,6 @@ if html_theme == 'pydata_sphinx_theme':
         'show_toc_level': 2,
         'navbar_align': 'left',
         'navbar_end': ['theme-switcher', 'navbar-icon-links'],
-        'icon_links': [
-            {
-                'name': 'GitHub',
-                'url': 'https://github.com/nholtgrefe/phylozoo',
-                'icon': 'fa-brands fa-github',
-            },
-        ],
         'show_nav_level': 2,
         'navigation_depth': 4,
         'collapse_navigation': False,

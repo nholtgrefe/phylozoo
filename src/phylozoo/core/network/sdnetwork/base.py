@@ -149,21 +149,6 @@ class MixedPhyNetwork:
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
-    
-    Attributes
-    ----------
-    nodes
-        Cached view of all node IDs (same interface as the underlying graph's ``nodes``).
-    edges
-        Cached view of all edges (directed and undirected; same interface as the underlying graph's ``edges``).
-    _graph : MixedMultiGraph[T]
-        Internal graph structure using MixedMultiGraph.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _node_to_label : dict[T, str]
-        Mapping from node IDs to labels. Only nodes with explicit labels are included.
-        Leaves always have labels (taxa), but internal nodes may be unlabeled.
-    _label_to_node : dict[str, T]
-        Reverse mapping from labels to node IDs (for quick lookup).
     """
 
     def __init__(

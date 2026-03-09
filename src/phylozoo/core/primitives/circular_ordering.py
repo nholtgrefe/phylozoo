@@ -50,11 +50,6 @@ class CircularSetOrdering(Partition):
     True
     >>> cso.are_neighbors({1, 2}, {3})
     True
-    
-    Attributes
-    ----------
-    setorder : tuple
-        Tuple of frozensets representing the circular ordering in canonical form (read-only).
     """
     
     __slots__ = ('_setorder',)
@@ -481,11 +476,6 @@ class CircularOrdering(CircularSetOrdering):
     True
     >>> co.are_neighbors(1, 2)
     True
-    
-    Attributes
-    ----------
-    order : tuple
-        Tuple of elements in the circular ordering in canonical form (read-only).
     """
     
     __slots__ = ('_order',)

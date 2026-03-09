@@ -231,7 +231,7 @@ def is_kalmanson(
     A distance matrix is Kalmanson with respect to a circular order if it satisfies
     the Kalmanson inequalities for all quadruples of labels in that order.
     
-    The Kalmanson conditions are classical inequalities for circular metrics :cite:`Kalmanson`.
+    The Kalmanson conditions are classical inequalities for circular metrics :cite:`Kalmanson1975`.
     
     For a circular order (l1, l2, ..., ln), the Kalmanson conditions are:
 

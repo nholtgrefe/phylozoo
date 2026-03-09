@@ -227,8 +227,9 @@ def approximate_tsp_tour(
         - 'simulated_annealing': Simulated annealing heuristic (default)
         - 'greedy': Greedy nearest-neighbor heuristic
         - 'christofides': Christofides algorithm (for metric distances)
+
         By default 'simulated_annealing'.
-    
+
     Returns
     -------
     CircularOrdering
@@ -244,7 +245,7 @@ def approximate_tsp_tour(
     - **simulated_annealing**: Uses simulated annealing with a greedy initialization.
       Generally produces good solutions but is slower than greedy.
     - **greedy**: Simple nearest-neighbor heuristic. Fast but may produce poor solutions.
-    - **christofides**: Provides a 3/2-approximation for metric distances :cite:`Christofides`. Slower than
+    - **christofides**: Provides a 3/2-approximation for metric distances :cite:`Christofides1976`. Slower than
       greedy but guarantees better worst-case performance.
     
     Examples

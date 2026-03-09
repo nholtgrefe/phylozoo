@@ -41,6 +41,7 @@ class DirectedPhyNetwork(IOMixin):
     - **Leaf nodes**: Nodes with out-degree 0, each with in-degree 1 and a taxon label
     - **Tree nodes**: Internal nodes (non-root, non-leaf) with in-degree 1 and out-degree >= 2
     - **Hybrid nodes**: Internal nodes with in-degree >= 2 and out-degree 1
+
     For technical reasons, an empty network or single-node network (where root and leaf are the same node) 
     is also valid. Internal nodes may be unlabeled.
     
@@ -142,21 +143,6 @@ class DirectedPhyNetwork(IOMixin):
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
-    
-    Attributes
-    ----------
-    nodes
-        Cached view of all node IDs (same interface as the underlying graph's ``nodes``).
-    edges
-        Cached view of all directed edges (same interface as the underlying graph's ``edges``).
-    _graph : DirectedMultiGraph[T]
-        Internal graph structure using DirectedMultiGraph.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _node_to_label : dict[T, str]
-        Mapping from node IDs to labels. Only nodes with explicit labels are included.
-        Leaves always have labels (taxa), but internal nodes may be unlabeled.
-    _label_to_node : dict[str, T]
-        Reverse mapping from labels to node IDs (for quick lookup).
     """
     
     # I/O format configuration

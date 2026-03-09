@@ -36,8 +36,9 @@ class DirectedMultiGraph(IOMixin):
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+
         If keys are not provided, they will be auto-generated. By default None.
-    
+
     Notes
     -----
     The underlying graphs (`_graph`, `_combined`) are accessible

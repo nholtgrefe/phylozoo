@@ -49,13 +49,6 @@ class SplitSystem(IOMixin):
     True
     >>> split1 in system
     True
-    
-    Attributes
-    ----------
-    splits : frozenset[Split]
-        Frozen set of splits (read-only after initialization).
-    elements : frozenset
-        Frozen set containing all elements appearing in the splits (read-only).
     """
     
     __slots__ = ('_splits', '_elements', '_initialized')

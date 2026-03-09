@@ -66,7 +66,7 @@ The :meth:`~phylozoo.utils.io.mixin.IOMixin.load` method reads an object from a 
    msa = MSA.load("data.txt", format="fasta")
 
 Serializing to a string
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~phylozoo.utils.io.mixin.IOMixin.to_string` method serializes the object to a string in the given format (default format for the class if not specified).
 
@@ -75,7 +75,7 @@ The :meth:`~phylozoo.utils.io.mixin.IOMixin.to_string` method serializes the obj
    enewick_string = network.to_string(format="enewick")
 
 Parsing from a string
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~phylozoo.utils.io.mixin.IOMixin.from_string` method parses a string and returns an instance. Format must be specified or be the class default.
 
@@ -144,4 +144,4 @@ See Also
 
 - :doc:`File formats <formats/index>` — Supported formats and format families
 - :doc:`Registering a new format <format_registry>` — How to register a format
-- :doc:`API Reference <../../api/utils/io/index>` — The API reference for the I/O module
+- :doc:`API Reference <../../../api/utils/io/index>` — The API reference for the I/O module

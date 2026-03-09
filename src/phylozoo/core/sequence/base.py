@@ -87,17 +87,6 @@ class MSA(IOMixin):
     'ACGTACGT'
     >>> msa.get_sequence("nonexistent")
     None
-    
-    Attributes
-    ----------
-    taxa : frozenset[str]
-        Frozen set of all taxon names (read-only).
-    taxa_order : tuple[str, ...]
-        Tuple of taxon names in canonical order (read-only).
-    sequence_length : int
-        Length of all sequences in the alignment (read-only).
-    num_taxa : int
-        Number of taxa in the alignment (read-only).
     """
     
     # I/O format configuration

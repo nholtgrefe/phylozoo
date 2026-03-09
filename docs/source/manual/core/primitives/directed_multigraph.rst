@@ -289,7 +289,7 @@ The :func:`~phylozoo.core.primitives.d_multigraph.isomorphism.is_isomorphic` fun
    isomorphic_with_edges = is_isomorphic(graph1, graph2, edge_attrs=['weight'])
 
 Graph Transformations
---------------------
+---------------------
 
 The directed multi-graph module provides functions for transforming graph structures.
 

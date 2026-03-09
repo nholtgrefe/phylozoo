@@ -86,7 +86,7 @@ network types (galled, tree-child, tree-based), and structural properties
 like binary resolution.
 
 Basic Network Properties
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Phylogenetic Trees**
 
@@ -327,7 +327,7 @@ probability-weighted average distances across all displayed trees of the network
    distance_matrix = distances(network, mode='average')  # or 'shortest', 'longest'
 
 Partitions and Splits
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 **Partition from Blob**
 

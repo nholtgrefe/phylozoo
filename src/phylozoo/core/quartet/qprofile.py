@@ -40,8 +40,9 @@ class QuartetProfile:
         - A dictionary mapping quartets to weights (must sum to 1.0)
         - A list of quartets (each assigned weight 1/k)
         - A list of (quartet, weight) tuples (weights must sum to 1.0)
+
         Taxa are automatically extracted from the quartets.
-    
+
     Raises
     ------
     PhyloZooValueError
@@ -67,13 +68,6 @@ class QuartetProfile:
     0.5
     >>> profile2.get_weight(q2)
     0.5
-    
-    Attributes
-    ----------
-    taxa : frozenset[str]
-        The 4 taxon labels (extracted from quartets).
-    quartets : Mapping[Quartet, float]
-        Read-only mapping of quartets to their weights.
     """
     
     __slots__ = ('_taxa', '_quartets', '_initialized', '_split_cache', '_circular_orderings_cache')

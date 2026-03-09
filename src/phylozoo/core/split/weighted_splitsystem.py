@@ -27,8 +27,9 @@ class WeightedSplitSystem(SplitSystem):
         - A set or list of splits (each assigned weight 1.0)
         - A dictionary mapping splits to their weights
         - A list of (split, weight) tuples
+
         By default None (empty system).
-    
+
     Raises
     ------
     PhyloZooValueError
@@ -65,17 +66,6 @@ class WeightedSplitSystem(SplitSystem):
     >>> system = WeightedSplitSystem([(split1, 0.8), (split2, 0.2)])
     >>> system.get_weight(split1)
     0.8
-    
-    Attributes
-    ----------
-    splits : frozenset[Split]
-        Frozen set of splits with positive weights (read-only after initialization).
-    elements : frozenset
-        Frozen set containing all elements appearing in the splits (read-only).
-    weights : dict[Split, float]
-        Dictionary mapping splits to their weights (read-only after initialization).
-    total_weight : float
-        Sum of all weights in the system (read-only).
     """
     
     __slots__ = ('_splits', '_elements', '_initialized', '_weights', '_total_weight')

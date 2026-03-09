@@ -47,7 +47,6 @@ Then open `build/html/index.html` in your browser.
   - `tutorials/` - Extended tutorials
   - `api/` - API reference
   - `develop/` - Developer guides
-  - `reference/` - Reference material (bibliography, changelog)
 - `build/` - Built HTML output
 - `source/conf.py` - Sphinx configuration
 - `requirements.txt` - Documentation dependencies

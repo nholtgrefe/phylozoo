@@ -61,15 +61,6 @@ class DistanceMatrix(IOMixin):
     >>> dm2 = DistanceMatrix(matrix)
     >>> dm2.labels
     (0, 1, 2)
-    
-    Attributes
-    ----------
-    np_array : numpy.ndarray
-        Read-only access to the underlying numpy array.
-    labels : tuple[T, ...]
-        Tuple of labels corresponding to the rows/columns (immutable).
-    indices : tuple[int, ...]
-        Tuple of indices `(0, 1, 2, ..., len(self)-1)` (immutable).
     """
     
     # Minimal class-level defaults so static analyzers recognize attributes.

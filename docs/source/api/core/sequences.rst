@@ -22,7 +22,7 @@ Distance Computation
    :show-inheritance:
 
 Bootstrap Functions
-------------------
+-------------------
 
 .. automodule:: phylozoo.core.sequence.bootstrap
    :members:

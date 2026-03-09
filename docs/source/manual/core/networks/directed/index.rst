@@ -1,5 +1,5 @@
 Directed Networks
-================
+=================
 
 .. toctree::
    :maxdepth: 1

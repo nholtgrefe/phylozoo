@@ -138,3 +138,6 @@ sandbox/
 .cursorrules
 .github/
 .ruff_cache/
+
+# Todo file
+TODO.txt

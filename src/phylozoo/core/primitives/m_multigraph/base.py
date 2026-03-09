@@ -43,6 +43,7 @@ class MixedMultiGraph(IOMixin):
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+
         If keys are not provided, they will be auto-generated. By default None.
     undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of undirected edges. Can be:
@@ -50,8 +51,9 @@ class MixedMultiGraph(IOMixin):
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
+
         If keys are not provided, they will be auto-generated. By default None.
-    
+
     Notes
     -----
     The underlying graphs (`_undirected`, `_directed`, `_combined`) are accessible

@@ -28,5 +28,5 @@ Documentation
 See Also
 --------
 
-- :doc:`API Reference <../../../api/core/network>` - Complete function signatures and detailed examples
+- :doc:`API Reference <../../../../api/core/network/index>` - Complete function signatures and detailed examples
 - :doc:`Semi-Directed Networks <../semi_directed/overview>` - Networks with mixed directed and undirected edges 

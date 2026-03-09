@@ -1,8 +1,6 @@
 d_multigraph
 ------------
 
-.. py:module:: phylozoo.viz.d_multigraph
-
 .. automodule:: phylozoo.viz.d_multigraph
    :no-members:
 
