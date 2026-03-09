@@ -15,12 +15,7 @@ from phylozoo.viz._layout_utils import compute_layout_center
 
 from .layout.nx import compute_nx_layout
 from .style import DMGraphStyle, default_style
-from phylozoo.viz._render import (
-    build_parallel_groups,
-    draw_edge,
-    draw_label,
-    draw_node,
-)
+from phylozoo.viz._render import render_layout
 
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
@@ -45,8 +40,9 @@ def plot_dmgraph(
     graph : DirectedMultiGraph
         The graph to plot.
     layout : str, optional
-        Layout algorithm. NetworkX layouts: 'spring', 'circular', 'kamada_kawai', etc.
-        Graphviz layouts: 'dot', 'neato', 'twopi', etc.
+        Layout algorithm. NetworkX: 'spring', 'circular', 'kamada_kawai', 'planar',
+        'random', 'shell', 'spectral', 'spiral', 'bipartite'. Graphviz: 'dot',
+        'neato', 'fdp', 'sfdp', 'twopi', 'circo'.
         By default 'spring'.
     style : DMGraphStyle, optional
         Styling configuration. If None, uses default style.
@@ -90,24 +86,21 @@ def plot_dmgraph(
     positions = computed_layout.positions
     center = compute_layout_center(positions)
 
-    parallel_groups = build_parallel_groups(computed_layout.edge_routes)
+    def get_label(node: Any) -> str | None:
+        if node in graph._graph.nodes:
+            return graph._graph.nodes[node].get('label', str(node))
+        return str(node)
 
-    for (u, v, key), route in computed_layout.edge_routes.items():
-        draw_edge(ax, route, style, parallel_groups, (u, v, key))
-
-    for node, position in positions.items():
-        draw_node(ax, position, 'generic', style)
-
-        if style.with_labels:
-            label = None
-            if node in graph._graph.nodes:
-                node_attrs = graph._graph.nodes[node]
-                label = node_attrs.get('label', str(node))
-            if label:
-                draw_label(ax, position, label, style, 'generic', center=center)
-
-    ax.set_aspect('equal')
-    ax.axis('off')
+    render_layout(
+        ax,
+        computed_layout.edge_routes,
+        positions,
+        style,
+        center,
+        get_node_type=lambda _: 'generic',
+        get_label=get_label,
+        radial_labels_for_leaves=False,
+    )
 
     if show:
         plt.show()

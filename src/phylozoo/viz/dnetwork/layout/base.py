@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
 
 # Positions inherited from DMGraphLayout
-from ...graphs.dmgraph.layout.base import DMGraphLayout
+from ...d_multigraph.layout.base import DMGraphLayout
 
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork

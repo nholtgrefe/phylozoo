@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..dmgraph.style import BaseStyle
+from ..d_multigraph.style import BaseStyle
 
 
 @dataclass

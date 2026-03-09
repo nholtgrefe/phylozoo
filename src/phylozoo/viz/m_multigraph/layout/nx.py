@@ -60,7 +60,7 @@ def compute_nx_layout(
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-    >>> from phylozoo.viz.graphs.mmgraph.layout.nx import compute_nx_layout
+    >>> from phylozoo.viz.m_multigraph.layout.nx import compute_nx_layout
     >>>
     >>> G = MixedMultiGraph(directed_edges=[(1, 2)], undirected_edges=[(2, 3)])
     >>> layout = compute_nx_layout(G, layout='circular')

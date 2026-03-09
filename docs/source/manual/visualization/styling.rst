@@ -1,180 +1,96 @@
 Styling
 =======
 
-Styling controls the visual appearance of network plots, including colors, sizes, 
-and labels. PhyloZoo provides style classes for each network and graph type.
-
-Style Classes
--------------
-
-PhyloZoo uses a hierarchical style system:
-
-* **BaseStyle**: Common styling options for all plots
-* **DMGraphStyle**: Extends BaseStyle for DirectedMultiGraph
-* **MGraphStyle**: Extends BaseStyle for MixedMultiGraph
-* **DNetStyle**: Extends DMGraphStyle for DirectedPhyNetwork
-* **SDNetStyle**: Extends MGraphStyle for SemiDirectedPhyNetwork
-
-BaseStyle Attributes
--------------------
-
-All style classes inherit these common attributes from ``BaseStyle``:
-
-* **node_color** (str, default='lightblue'): Color for nodes
-* **node_size** (float, default=500.0): Size of nodes
-* **edge_color** (str, default='gray'): Color for edges
-* **edge_width** (float, default=2.0): Width of edges
-* **with_labels** (bool, default=True): Whether to show node labels
-* **label_offset** (float, default=0.1): Offset for labels from nodes
-* **label_font_size** (float, default=10.0): Font size for labels
-* **label_color** (str, default='black'): Color for labels
-
-DNetStyle Attributes
---------------------
-
-``DNetStyle`` extends ``DMGraphStyle`` with phylogenetic network-specific options:
-
-* **leaf_color** (str, default='lightgreen'): Color for leaf nodes
-* **hybrid_color** (str, default='salmon'): Color for hybrid nodes
-* **leaf_size** (float, default=600.0): Size of leaf nodes
-* **hybrid_edge_color** (str, default='red'): Color for hybrid edges
-
-SDNetStyle Attributes
---------------------
-
-``SDNetStyle`` extends ``MGraphStyle`` with semi-directed network-specific options:
-
-* **leaf_color** (str, default='lightgreen'): Color for leaf nodes
-* **hybrid_color** (str, default='salmon'): Color for hybrid nodes
-* **leaf_size** (float, default=600.0): Size of leaf nodes
-* **hybrid_edge_color** (str, default='red'): Color for hybrid edges
+The :mod:`phylozoo.viz` module provides style classes for controlling the visual
+appearance of network plots: colors, sizes, and labels.
 
 Using Styles
 ------------
 
-**Get Default Style:**
+Each of the four plottable classes has its own style class:
 
-.. code-block:: python
+* :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` uses :class:`~phylozoo.viz.dnetwork.style.DNetStyle`
+* :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` uses :class:`~phylozoo.viz.sdnetwork.style.SDNetStyle`
+* :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` uses :class:`~phylozoo.viz.d_multigraph.style.DMGraphStyle`
+* :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` uses :class:`~phylozoo.viz.m_multigraph.style.MGraphStyle`
 
-   from phylozoo.viz.dnetwork import default_style
-   
-   style = default_style()
-   style.node_color = "blue"
-   style.edge_color = "gray"
+Styles inherit from a base hierarchy: :class:`~phylozoo.viz.d_multigraph.style.BaseStyle` is the root; :class:`~phylozoo.viz.d_multigraph.style.DMGraphStyle` and :class:`~phylozoo.viz.m_multigraph.style.MGraphStyle` extend it for
+the two graph types; ``DNetStyle`` extends ``DMGraphStyle`` with leaf and hybrid options for directed networks;
+``SDNetStyle`` extends ``MGraphStyle`` with the same options for semi-directed networks.
 
-**Create Custom Style:**
+Import the style from the corresponding viz submodule:
 
 .. code-block:: python
 
    from phylozoo.viz.dnetwork import DNetStyle
    from phylozoo.viz.sdnetwork import SDNetStyle
-   
-   # For directed networks
-   d_style = DNetStyle(
-       node_color="steelblue",
-       leaf_color="lightgreen",
-       hybrid_color="salmon",
-       hybrid_edge_color="red",
-       node_size=150,
-       edge_width=2.0,
-       label_font_size=10
-   )
-   
-   # For semi-directed networks
-   sd_style = SDNetStyle(
-       node_color="lightblue",
-       leaf_color="green",
-       hybrid_color="orange",
-       hybrid_edge_color="orange",
-       node_size=150,
-       edge_width=2.0
-   )
+   from phylozoo.viz.d_multigraph import DMGraphStyle
+   from phylozoo.viz.m_multigraph import MGraphStyle
 
-**Modify Existing Style:**
+Each submodule provides a ``default_style()`` function that returns a style instance with default values.
+If you omit the ``style`` argument when calling :func:`~phylozoo.viz.plot`, the default style for that object type
+is used automatically.
 
-.. code-block:: python
+Styling Parameters
+------------------
 
-   from phylozoo.viz.dnetwork import default_style
-   
-   style = default_style()
-   style.node_color = "blue"
-   style.edge_color = "darkgray"
-   style.node_size = 200
-   style.edge_width = 3.0
+BaseStyle
+^^^^^^^^^
 
-**Use Style in Plotting:**
+The :class:`~phylozoo.viz.d_multigraph.style.BaseStyle` class is the base class for all styles. It defines the common attributes for all styles.
 
-.. code-block:: python
+* **node_color** (str, default='lightblue'): Color for nodes. Any valid matplotlib color string is supported.
+* **node_size** (float, default=500.0): Size of nodes.
+* **edge_color** (str, default='gray'): Color for edges. Any valid matplotlib color string is supported.
+* **edge_width** (float, default=2.0): Width of edges.
+* **with_labels** (bool, default=True): Whether to show node labels.
+* **label_offset** (float, default=0.12): Offset for labels from nodes.
+* **label_font_size** (float, default=10.0): Font size for labels.
+* **label_color** (str, default='black'): Color for labels. Any valid matplotlib color string is supported.
 
-   from phylozoo.viz import plot_dnetwork, DNetStyle
-   
-   style = DNetStyle(
-       node_color="steelblue",
-       hybrid_edge_color="red",
-       node_size=150
-   )
-   
-   plot_dnetwork(network, style=style, show=True)
+DMGraphStyle and MGraphStyle
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Style Inheritance
------------------
+The :class:`~phylozoo.viz.d_multigraph.style.DMGraphStyle` class extends :class:`~phylozoo.viz.d_multigraph.style.BaseStyle` for :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`.
+The :class:`~phylozoo.viz.m_multigraph.style.MGraphStyle` class extends :class:`~phylozoo.viz.d_multigraph.style.BaseStyle` for :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph`.
+The two classes hold the exact same attributes as :class:`~phylozoo.viz.d_multigraph.style.BaseStyle`, but are defined with future extensibility in mind.
 
-Styles follow an inheritance hierarchy:
+DNetStyle
+^^^^^^^^^
 
-* ``BaseStyle``: Common options (node_color, edge_color, etc.)
-* ``DMGraphStyle(BaseStyle)``: For directed multigraphs
-* ``MGraphStyle(BaseStyle)``: For mixed multigraphs
-* ``DNetStyle(DMGraphStyle)``: For directed networks (adds leaf/hybrid options)
-* ``SDNetStyle(MGraphStyle)``: For semi-directed networks (adds leaf/hybrid options)
+Extends DMGraphStyle for :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`.
+Adds phylogenetic network-specific options:
 
-This allows styles to be shared and extended appropriately for each graph/network type.
+* **leaf_color** (str, default='lightblue'): Color for leaf nodes. Any valid matplotlib color string is supported.
+* **hybrid_color** (str, default='lightblue'): Color for hybrid nodes. Any valid matplotlib color string is supported.
+* **leaf_size** (float | None, default=None): Size of leaf nodes; if None, uses node_size
+* **hybrid_edge_color** (str, default='red'): Color for hybrid edges. Any valid matplotlib color string is supported.
 
-Color Options
-------------
+SDNetStyle
+^^^^^^^^^^
 
-Colors can be specified as:
+Extends MGraphStyle for :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
+Adds the same phylogenetic options as DNetStyle:
 
-* **Named colors**: ``'red'``, ``'blue'``, ``'lightgreen'``, etc.
-* **Hex codes**: ``'#FF0000'``, ``'#00FF00'``, etc.
-* **RGB tuples**: ``(1.0, 0.0, 0.0)`` for red (normalized to 0-1)
+* **leaf_color** (str, default='lightblue'): Color for leaf nodes. Any valid matplotlib color string is supported.
+* **hybrid_color** (str, default='lightblue'): Color for hybrid nodes. Any valid matplotlib color string is supported.
+* **leaf_size** (float | None, default=None): Size of leaf nodes; if None, uses node_size
+* **hybrid_edge_color** (str, default='red'): Color for hybrid edges. Any valid matplotlib color string is supported.
 
-Matplotlib color specifications are supported.
+Example
+-------
 
-Node Types
-----------
-
-Different node types can have different colors and sizes:
-
-* **Root nodes**: Use ``node_color`` and ``node_size``
-* **Leaf nodes**: Use ``leaf_color`` and ``leaf_size``
-* **Hybrid nodes**: Use ``hybrid_color`` and ``node_size``
-* **Tree nodes**: Use ``node_color`` and ``node_size``
-
-Edge Types
-----------
-
-Different edge types can have different colors:
-
-* **Tree edges**: Use ``edge_color``
-* **Hybrid edges**: Use ``hybrid_edge_color``
-
-For DirectedPhyNetwork, all edges are directed and use ``edge_color`` or 
-``hybrid_edge_color``. For SemiDirectedPhyNetwork, tree edges are undirected 
-and use ``edge_color``, while hybrid edges are directed and use ``hybrid_edge_color``.
-
-Complete Example
------------------
+The following example loads a network, creates a custom style with several parameters,
+and plots the result:
 
 .. code-block:: python
 
    from phylozoo import DirectedPhyNetwork
-   from phylozoo.viz import plot_dnetwork, DNetStyle
-   import matplotlib.pyplot as plt
-   
-   # Load network
+   from phylozoo.viz import plot
+   from phylozoo.viz.dnetwork import DNetStyle
+
    network = DirectedPhyNetwork.load("network.enewick")
-   
-   # Create custom style
+
    style = DNetStyle(
        node_color="steelblue",
        leaf_color="lightgreen",
@@ -186,14 +102,12 @@ Complete Example
        edge_width=2.5,
        with_labels=True,
        label_font_size=12,
-       label_color="black"
    )
-   
-   # Plot with custom style
-   ax = plot_dnetwork(network, style=style, show=False)
-   ax.figure.savefig("network.png", dpi=300, bbox_inches="tight")
-   plt.close(ax.figure)
 
-.. seealso::
-   For layout options, see :doc:`Layouts <layouts>`. 
-   For plotting functions, see :doc:`Plotting <plotting>`.
+   plot(network, style=style)
+
+See Also
+--------
+
+- :doc:`Plotting <plotting>` — How to plot with a style
+- :doc:`viz API reference <../../api/viz/index>` — Full style class documentation

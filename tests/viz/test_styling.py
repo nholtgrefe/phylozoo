@@ -17,9 +17,23 @@ class TestDNetStyle:
         assert style.node_color == 'lightblue'
         assert style.leaf_color == 'lightblue'
         assert style.hybrid_color == 'lightblue'
+        assert style.leaf_size is None
         assert style.edge_color == 'gray'
         assert style.hybrid_edge_color == 'red'
         assert style.with_labels is True
+
+    def test_leaf_size_default_uses_node_size(self) -> None:
+        """Test that leaf_size=None defaults to node_size for leaves."""
+        from phylozoo.viz import plot
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})],
+        )
+        style = DNetStyle(node_size=1000, leaf_size=None)
+        ax = plot(net, style=style, layout='pz-dag', trials=100)
+        assert ax is not None
 
     def test_custom_values(self) -> None:
         """Test custom style values."""

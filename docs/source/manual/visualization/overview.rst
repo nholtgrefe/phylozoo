@@ -1,72 +1,24 @@
 Overview
 ========
 
-The :mod:`phylozoo.viz` module provides a flexible plotting system for 
-phylogenetic networks and graphs with support for multiple layout algorithms and 
-customizable styling :cite:`PhyloZoo2024`.
+The :mod:`phylozoo.viz` module provides network and graph visualization. It consists of four submodules, each with styles and type-specific plotters:
 
-The visualization system is organized into four main components:
+- :mod:`phylozoo.viz.dnetwork` — :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`
+- :mod:`phylozoo.viz.sdnetwork` — :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`
+- :mod:`phylozoo.viz.d_multigraph` — :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`
+- :mod:`phylozoo.viz.m_multigraph` — :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph`
 
-* **Layout Algorithms**: Position nodes in 2D space
-* **Styling**: Customize colors, sizes, and appearance
-* **Plotting**: Render networks and graphs to matplotlib figures
-* **Graph Support**: Plot underlying graph structures
-
-Architecture
------------
-
-The visualization module uses a modular architecture:
-
-1. **Layout Computation**: Layout algorithms compute node positions and edge routes
-2. **Styling Configuration**: Style classes define visual appearance
-3. **Rendering**: Plotting functions combine layouts and styles to create matplotlib figures
-
-This separation allows for easy customization and extension of the visualization system.
-
-Network Types
--------------
-
-**DirectedPhyNetwork**
-   Fully directed networks with all edges directed. Default layout: ``'pz-dag'``.
-   All edges are displayed with arrows.
-
-**SemiDirectedPhyNetwork**
-   Networks with mixed directed and undirected edges. Default layout: ``'twopi'``.
-   Only hybrid edges (directed edges) are displayed with arrows; undirected tree 
-   edges are displayed without arrows.
-
-Graph Types
------------
-
-**DirectedMultiGraph** and **MixedMultiGraph**
-   Low-level graph structures. Use :func:`plot_dmgraph` and :func:`plot_mmgraph`
-   when working with raw graph objects (e.g. when implementing algorithms or
-   debugging). These do not apply phylogenetic semantics (root, leaf, hybrid)
-   and use only NetworkX/Graphviz layouts. For typical phylogenetic visualization,
-   prefer :func:`plot_dnetwork` or :func:`plot_sdnetwork` with network objects.
-
-Quick Start
------------
+There is a convenience function :func:`~phylozoo.viz.plot` that dispatches by object type, to one of the four submodules. It can be imported
+directly from the :mod:`phylozoo.viz` module.
 
 .. code-block:: python
 
-   from phylozoo.viz import plot_dnetwork, plot_sdnetwork
-   from phylozoo import DirectedPhyNetwork, SemiDirectedPhyNetwork
-   
-   # Plot directed network (default layout: 'pz-dag')
-   dnet = DirectedPhyNetwork.load("network.enewick")
-   plot_dnetwork(dnet, show=True)
-   
-   # Plot semi-directed network (default layout: 'twopi')
-   sdnet = SemiDirectedPhyNetwork.load("network.enewick")
-   plot_sdnetwork(sdnet, show=True)
+   from phylozoo.viz import plot
 
-For more detailed information, see:
+A more in-depth explanation of plotting is available in the :doc:`Plotting <plotting>` documentation.
+Styling options are explained in the :doc:`Styling <styling>` documentation.
 
-* :doc:`Layouts <layouts>`: Available layout algorithms and their parameters
-* :doc:`Styling <styling>`: Customizing visual appearance
-* :doc:`Plotting <plotting>`: How the plotting system works
+See Also
+--------
 
-.. seealso::
-   For complete examples, see :doc:`Visualization Guide <viz>`. 
-   For network analysis workflows, see :doc:`Network Analysis Workflow <../../tutorials/workflow_network_analysis>`.
+- :doc:`API reference <../../api/viz/index>` — Complete function signatures and detailed examples

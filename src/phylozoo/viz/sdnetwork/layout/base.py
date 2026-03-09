@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from phylozoo.viz._types import Positions
-from ...graphs.mmgraph.layout.base import MGraphLayout
+from ...m_multigraph.layout.base import MGraphLayout
 
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork

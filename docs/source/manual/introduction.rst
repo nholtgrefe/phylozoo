@@ -72,7 +72,7 @@ see the corresponding sections in this manual:
    
    * **Layout Algorithms**: Custom PhyloZoo layouts (pz-dag, pz-radial) and access to 
      standard NetworkX and Graphviz layouts for various visualization needs. See 
-     :doc:`Layouts <visualization/layouts>` for details.
+     :doc:`Plotting <visualization/plotting>` for layout options.
 
 **Utilities Module** (:mod:`phylozoo.utils`)
    Supporting functionality. See :doc:`Utils Module <utils/index>` for detailed documentation.

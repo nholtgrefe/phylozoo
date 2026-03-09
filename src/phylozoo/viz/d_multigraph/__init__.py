@@ -1,11 +1,9 @@
 """DirectedMultiGraph plotting module."""
 
 from .layout import DMGraphLayout, compute_nx_layout
-from .plot import plot_dmgraph
 from .style import DMGraphStyle, default_style
 
 __all__ = [
-    'plot_dmgraph',
     'compute_nx_layout',
     'DMGraphLayout',
     'DMGraphStyle',

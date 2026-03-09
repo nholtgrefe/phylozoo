@@ -1,208 +1,140 @@
 Plotting
 ========
 
-The plotting system combines layout computation, styling, and rendering to create 
-matplotlib figures. This page explains how the plotting process works.
+The :mod:`phylozoo.viz` module provides plotting for phylogenetic networks and graphs.
+Plots are rendered using `matplotlib <https://matplotlib.org/stable/>`_ and return
+:class:`matplotlib.axes.Axes` objects.
 
-Plotting Functions
-------------------
+The :func:`~phylozoo.viz.plot` function accepts any of four object types and dispatches by type to the
+appropriate plotter:
 
-PhyloZoo provides four main plotting functions:
+* :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` → :func:`~phylozoo.viz.dnetwork.plot.plot_dnetwork`
+* :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` → :func:`~phylozoo.viz.sdnetwork.plot.plot_sdnetwork`
+* :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` → :func:`~phylozoo.viz.d_multigraph.plot.plot_dmgraph`
+* :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` → :func:`~phylozoo.viz.m_multigraph.plot.plot_mmgraph`
 
-* **plot_dnetwork()**: Plot DirectedPhyNetwork
-* **plot_sdnetwork()**: Plot SemiDirectedPhyNetwork
-* **plot_dmgraph()**: Plot DirectedMultiGraph
-* **plot_mmgraph()**: Plot MixedMultiGraph
-
-All plotting functions follow the same pattern:
-
-1. **Layout Computation**: Compute node positions and edge routes
-2. **Styling**: Apply style configuration
-3. **Rendering**: Draw nodes, edges, and labels
-4. **Display/Save**: Show or return the figure
-
-Basic Usage
+How to Plot
 -----------
 
-.. code-block:: python
+The :func:`~phylozoo.viz.plot` function has the following parameters:
 
-   from phylozoo.viz import plot_dnetwork, plot_sdnetwork
-   from phylozoo import DirectedPhyNetwork, SemiDirectedPhyNetwork
-   
-   # Plot with defaults
-   dnet = DirectedPhyNetwork.load("network.enewick")
-   plot_dnetwork(dnet, show=True)
-   
-   # Plot with custom layout
-   sdnet = SemiDirectedPhyNetwork.load("network.enewick")
-   plot_sdnetwork(sdnet, layout='spring', show=True)
+* **obj** — The object to plot (one of the four supported types).
+* **layout** (str, default='auto') — Layout algorithm. Use ``'auto'`` for the default per type, or specify a name (e.g. ``'pz-dag'``, ``'spring'``, ``'circular'``). See the layout section below for more details.
+* **style** — Style object. See the :doc:`Styling <styling>` documentation for more details. Use ``None`` for the default style for the object type.
+* **ax** — Optional matplotlib axes. Plot on existing axes (e.g. for subplots).
+* **show** (bool, default=False) — If ``True``, display the plot. If ``False``, return the axes for saving or customization.
+* **\*\*kwargs** — Layout-specific parameters (e.g. ``layer_gap=2.0`` for ``'pz-dag'``).
 
-Function Parameters
--------------------
-
-All plotting functions accept these common parameters:
-
-* **network/graph**: The network or graph to plot
-* **layout** (str): Layout algorithm name (default varies by network type)
-* **style** (Style | None): Styling configuration (uses default if None)
-* **ax** (matplotlib.axes.Axes | None): Existing axes to plot on (creates new if None)
-* **show** (bool): If True, automatically display the plot
-* **\*\*layout_kwargs**: Additional parameters for layout computation
-
-Layout Computation
--------------------
-
-The plotting function first computes the layout:
-
-1. **Check Layout Type**: Determine if it's a custom PhyloZoo layout (``pz-*``) or 
-   a NetworkX/Graphviz layout
-2. **Compute Positions**: Run the layout algorithm to get node positions
-3. **Compute Routes**: Calculate edge routes (straight lines or curves)
-4. **Create Layout Object**: Package positions and routes into a Layout object
-
-The Layout object contains:
-
-* **positions**: Dictionary mapping node IDs to (x, y) coordinates
-* **edge_routes**: Dictionary mapping (u, v, key) to EdgeRoute objects
-* **algorithm**: Name of the layout algorithm used
-* **parameters**: Parameters used for layout computation
-
-Rendering Process
------------------
-
-After layout computation, the plotting function renders the network:
-
-1. **Render Edges**: Draw all edges with appropriate colors and styles
-   * For DirectedPhyNetwork: All edges are drawn with arrows
-   * For SemiDirectedPhyNetwork: Only hybrid edges (directed) have arrows
-2. **Render Nodes**: Draw all nodes with appropriate colors and sizes
-   * Different node types (root, leaf, hybrid, tree) use different colors
-3. **Render Labels**: Add node labels if enabled
-4. **Configure Axes**: Set aspect ratio and turn off axes
-
-Edge Rendering
---------------
-
-Edges are rendered based on their type:
-
-* **Tree edges**: Use ``edge_color`` and ``edge_width``
-* **Hybrid edges**: Use ``hybrid_edge_color`` and ``edge_width``
-* **Parallel edges**: Offset slightly to avoid overlap
-
-For DirectedPhyNetwork, all edges are directed and displayed with arrows pointing 
-from parent to child.
-
-For SemiDirectedPhyNetwork, only hybrid edges (which are directed) are displayed 
-with arrows. Tree edges (which are undirected) are displayed as simple lines.
-
-Node Rendering
---------------
-
-Nodes are rendered based on their type:
-
-* **Root nodes**: Use ``node_color`` and ``node_size``
-* **Leaf nodes**: Use ``leaf_color`` and ``leaf_size``
-* **Hybrid nodes**: Use ``hybrid_color`` and ``node_size``
-* **Tree nodes**: Use ``node_color`` and ``node_size``
-
-Node types are determined automatically from the network structure.
-
-Label Rendering
----------------
-
-If ``with_labels=True``, node labels are rendered:
-
-* Labels are positioned with an offset from the node center
-* Font size and color are controlled by style attributes
-* For radial layouts, leaf labels may be positioned radially outward
-
-Saving Figures
---------------
-
-To save a plot to a file:
+For quickly plotting a network, and you don't need to customize the layout or style, you can use the following simple code to plot the network:
 
 .. code-block:: python
 
-   from phylozoo.viz import plot_dnetwork
-   import matplotlib.pyplot as plt
-   
-   # Plot without showing
-   ax = plot_dnetwork(network, show=False)
-   
-   # Save figure
-   ax.figure.savefig("network.png", dpi=300, bbox_inches="tight")
-   plt.close(ax.figure)
-
-The function returns a matplotlib axes object, which provides access to the figure 
-for saving or further customization.
-
-Custom Axes
------------
-
-You can plot on an existing axes object:
-
-.. code-block:: python
-
-   import matplotlib.pyplot as plt
-   from phylozoo.viz import plot_dnetwork
-   
-   # Create figure with subplots
-   fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-   
-   # Plot on first axes
-   plot_dnetwork(network1, ax=ax1, show=False)
-   
-   # Plot on second axes
-   plot_dnetwork(network2, ax=ax2, show=False)
-   
-   plt.tight_layout()
-   plt.savefig("comparison.png", dpi=300)
-   plt.close()
-
-This allows you to create multi-panel figures or combine network plots with other 
-visualizations.
-
-Complete Example
------------------
-
-.. code-block:: python
-
+   from phylozoo.viz import plot
    from phylozoo import DirectedPhyNetwork
-   from phylozoo.viz import plot_dnetwork, DNetStyle
-   import matplotlib.pyplot as plt
-   
-   # Load network
-   network = DirectedPhyNetwork.load("network.enewick")
-   
-   # Create custom style
-   style = DNetStyle(
-       node_color="steelblue",
-       hybrid_edge_color="red",
-       node_size=150
-   )
-   
-   # Plot with custom layout and style
-   ax = plot_dnetwork(
-       network,
-       layout='pz-dag',
-       style=style,
-       layer_gap=2.0,
-       leaf_gap=1.5,
-       show=False
-   )
-   
-   # Save figure
+
+   dnet = DirectedPhyNetwork.load("network.enewick")
+   plot(dnet)
+
+Layouts
+-------
+
+.. _viz-layout:
+
+A layout algorithm determines how nodes are positioned on the canvas. PhyloZoo supports
+three sources of layouts: **NetworkX** (built-in, no extra dependencies), **Graphviz**
+(requires the Graphviz system library and ``pygraphviz``), and **PhyloZoo** (custom layouts
+for directed and semi-directed networks).
+
+Pass the layout name as the ``layout`` argument; layout-specific parameters (e.g. ``layer_gap``
+for ``pz-dag``) go in ``**kwargs``:
+
+.. code-block:: python
+
+   plot(network, layout='spring', k=2.0, iterations=50, show=True)
+   plot(network, layout='pz-dag', layer_gap=2.0, leaf_gap=1.5, show=True)
+
+NetworkX and Graphviz layouts are supported by all four object types. PhyloZoo layouts
+are type-specific (see below).
+
+NetworkX
+^^^^^^^^
+
+NetworkX layouts are built-in and require no extra installation. Common parameters:
+``k`` (optimal distance between nodes), ``iterations``, ``seed``.
+
+* **spring** — Force-directed layout (Fruchterman-Reingold). Well-suited for general networks and graphs.
+* **circular** — Nodes arranged on a circle. Good for compact overviews.
+* **kamada_kawai** — Force-directed layout. Often produces evenly spaced, readable layouts for networks.
+* **planar** — Planar embedding (only for planar graphs).
+* **random** — Random node positions. Useful for testing.
+* **shell** — Nodes in concentric shells.
+* **spectral** — Uses eigenvectors of the graph Laplacian.
+* **spiral** — Spiral arrangement of nodes.
+* **bipartite** — Two-column layout for bipartite graphs.
+
+For full parameter documentation (e.g. ``k``, ``iterations``, ``seed``, ``scale``, ``center``), see the
+`NetworkX layout reference <https://networkx.org/documentation/stable/reference/drawing.html#graph-layout>`_.
+
+Graphviz
+^^^^^^^^
+
+Graphviz layouts produce high-quality layouts and scale well to larger graphs. They require
+the Graphviz system library and the Python package ``pygraphviz``.
+
+* **dot** — Hierarchical (layered) layout. Well-suited for directed acyclic graphs and phylogenetic trees.
+* **twopi** — Radial layout with root at center. Good for trees and semi-directed networks (default for SemiDirectedPhyNetwork).
+* **neato** — Spring-model layout.
+* **fdp** — Force-directed placement.
+* **sfdp** — Scalable force-directed layout for large graphs.
+* **circo** — Circular layout.
+
+For layout program parameters and attributes, see the
+`PyGraphviz documentation <https://pygraphviz.github.io/documentation/stable/>`_ and the
+`Graphviz documentation <https://graphviz.org/documentation/>`_.
+
+.. warning::
+   Install Graphviz first (e.g. ``apt install graphviz graphviz-dev`` on Debian/Ubuntu,
+   ``brew install graphviz`` on macOS), then ``pip install pygraphviz``.
+   See the `PyGraphviz installation guide <https://pygraphviz.github.io/documentation/stable/install.html>`_ for details.
+
+
+PhyloZoo
+^^^^^^^^
+
+Custom layouts optimized for phylogenetic networks. Only available for specific types:
+
+* **pz-dag** (:class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` only) — Tree-backbone layout with crossing minimization.
+  Parameters:
+
+  - ``layer_gap`` (float, default 1.5) — Spacing between hierarchical layers;
+  - ``leaf_gap`` (float, default 1.0) — Spacing between leaves within a layer;
+  - ``trials`` (int, default 2000) — Number of random child orderings to try for crossing minimization;
+  - ``seed`` (int or None) — Random seed for reproducibility;
+  - ``direction`` (str, default ``'TD'``) — Layout direction: ``'TD'`` (top-down) or ``'LR'`` (left-right);
+  - ``x_scale`` (float, default 1.5) — Scaling factor for x coordinates;
+  - ``y_scale`` (float, default 1.0) — Scaling factor for y coordinates.
+* **pz-radial** (:class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` only, trees only) — Radial layout with root at center.
+  Parameters:
+
+  - ``radius`` (float, default 1.0) — Maximum radius for leaf nodes;
+  - ``start_angle`` (float, default 0.0) — Starting angle in radians for the first leaf;
+  - ``angle_direction`` (str, default ``'clockwise'``) — Angle progression: ``'clockwise'`` or ``'counterclockwise'``.
+
+Saving a Figure
+-----------
+
+The :func:`~phylozoo.viz.plot` function returns a matplotlib axes object. Set ``show=False`` and call
+the matplotlib ``savefig`` method on the figure:
+
+.. code-block:: python
+
+   ax = plot(network, show=False)
    ax.figure.savefig("network.png", dpi=300, bbox_inches="tight")
-   plt.close(ax.figure)
 
-The plotting process is:
+Here, ``dpi`` controls the resolution of the saved image and ``bbox_inches='tight'`` crops the figure to the smallest bounding box that contains all plot elements, removing excess whitespace and ensuring labels are not cut off.
 
-1. Layout ``'pz-dag'`` is computed with ``layer_gap=2.0`` and ``leaf_gap=1.5``
-2. Custom style is applied
-3. Network is rendered with the computed layout and style
-4. Figure is saved to file
 
-.. seealso::
-   For layout algorithms, see :doc:`Layouts <layouts>`. 
-   For styling options, see :doc:`Styling <styling>`. 
-   For complete examples, see :doc:`Visualization Guide <viz>`.
+See Also
+--------
+
+- :doc:`Styling <styling>` — Colors, sizes, and appearance

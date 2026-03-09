@@ -21,7 +21,7 @@ Network visualization and plotting.
 .. toctree::
    :maxdepth: 3
    
-   viz
+   viz/index
 
 Utilities
 ---------

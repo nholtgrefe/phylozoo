@@ -173,16 +173,16 @@ Visualize the network:
 
 .. code-block:: python
 
-   from phylozoo.viz.dnetwork import plot_network
+   from phylozoo.viz import plot
    
    # Basic plot
-   plot_network(network, show=True)
+   plot(network, show=True)
    
    # Save to file
-   fig = plot_network(network, show=False)
-   fig.savefig("network.png", dpi=300)
+   ax = plot(network, show=False)
+   ax.figure.savefig("network.png", dpi=300)
 
-See :doc:`Visualization <../manual/viz>` for advanced plotting options.
+See :doc:`Visualization <../manual/visualization/plotting>` for advanced plotting options.
 
 Step 9: Save Results
 --------------------
@@ -211,7 +211,7 @@ Here's the complete workflow in one script:
    from phylozoo.core.dnetwork import (
        classifications, features, transformations, derivations
    )
-   from phylozoo.viz.dnetwork import plot_network
+   from phylozoo.viz import plot
    
    # Load network
    network = DirectedPhyNetwork.load("input.enewick")
@@ -228,7 +228,7 @@ Here's the complete workflow in one script:
    binary_net = transformations.binary_resolution(network)
    
    # Visualize
-   plot_network(network, show=True)
+   plot(network, show=True)
    
    # Save
    network.save("output.enewick")

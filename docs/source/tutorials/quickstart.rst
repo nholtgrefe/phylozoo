@@ -82,10 +82,10 @@ See the :doc:`I/O <manual/io>` page for supported formats.
 
 .. code-block:: python
 
-   from phylozoo.viz.dnetwork import plot_network
+   from phylozoo.viz import plot
    
    # Plot network
-   plot_network(network, show=True)
+   plot(network, show=True)
 
 **Work with Sequences**
 

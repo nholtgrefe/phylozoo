@@ -58,7 +58,7 @@ def compute_nx_layout(
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-    >>> from phylozoo.viz.graphs.dmgraph.layout.nx import compute_nx_layout
+    >>> from phylozoo.viz.d_multigraph.layout.nx import compute_nx_layout
     >>>
     >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
     >>> layout = compute_nx_layout(G, layout='circular')

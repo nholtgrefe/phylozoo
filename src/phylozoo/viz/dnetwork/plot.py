@@ -15,12 +15,7 @@ from phylozoo.viz._layout_utils import compute_layout_center
 
 from .style import DNetStyle, default_style
 from .layout import compute_nx_layout, compute_pz_dag_layout
-from phylozoo.viz._render import (
-    build_parallel_groups,
-    draw_edge,
-    draw_label,
-    draw_node,
-)
+from phylozoo.viz._render import render_layout
 
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
@@ -45,9 +40,9 @@ def plot_dnetwork(
     network : DirectedPhyNetwork
         The network to plot.
     layout : str, optional
-        Layout algorithm. Custom PhyloZoo layouts: 'pz-dag'.
-        NetworkX layouts: 'spring', 'circular', 'kamada_kawai', etc.
-        Graphviz layouts: 'dot', 'neato', 'twopi', etc.
+        Layout algorithm. PhyloZoo: 'pz-dag'. NetworkX: 'spring', 'circular',
+        'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite'.
+        Graphviz: 'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'.
         By default 'pz-dag'.
     style : NetworkStyle, optional
         Styling configuration. If None, uses default style.
@@ -74,13 +69,13 @@ def plot_dnetwork(
     Examples
     --------
     >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-    >>> from phylozoo.viz import plot_dnetwork
+    >>> from phylozoo.viz import plot
     >>>
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> ax = plot_dnetwork(net)
+    >>> ax = plot(net)
     """
     if style is None:
         style = default_style()
@@ -103,35 +98,29 @@ def plot_dnetwork(
     network_obj = computed_layout.network
     positions = computed_layout.positions
     center = compute_layout_center(positions)
-
-    parallel_groups = build_parallel_groups(computed_layout.edge_routes)
-
-    for (u, v, key), route in computed_layout.edge_routes.items():
-        draw_edge(ax, route, style, parallel_groups, (u, v, key))
-
     leaves = network_obj.leaves
     hybrid_nodes = network_obj.hybrid_nodes
     root = network_obj.root_node
 
-    for node, position in positions.items():
+    def get_node_type(node: Any) -> str:
         if node == root:
-            node_type = 'root'
-        elif node in leaves:
-            node_type = 'leaf'
-        elif node in hybrid_nodes:
-            node_type = 'hybrid'
-        else:
-            node_type = 'tree'
+            return 'root'
+        if node in leaves:
+            return 'leaf'
+        if node in hybrid_nodes:
+            return 'hybrid'
+        return 'tree'
 
-        draw_node(ax, position, node_type, style)
-
-        if style.with_labels:
-            label = network_obj.get_label(node)
-            if label:
-                draw_label(ax, position, label, style, node_type, center=center)
-
-    ax.set_aspect('equal')
-    ax.axis('off')
+    render_layout(
+        ax,
+        computed_layout.edge_routes,
+        positions,
+        style,
+        center,
+        get_node_type,
+        network_obj.get_label,
+        radial_labels_for_leaves=False,
+    )
 
     if show:
         plt.show()

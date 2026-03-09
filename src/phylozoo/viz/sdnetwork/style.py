@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..graphs.mmgraph.style import MGraphStyle
+from ..m_multigraph.style import MGraphStyle
 
 
 @dataclass
@@ -29,8 +29,8 @@ class SDNetStyle(MGraphStyle):
         Color for hybrid nodes. Default is 'lightblue' (same as node_color).
     node_size : float
         Size of internal nodes. Default is 500.0.
-    leaf_size : float
-        Size of leaf nodes. Default is 600.0.
+    leaf_size : float | None
+        Size of leaf nodes. If None, uses node_size. Default is None.
     edge_color : str
         Color for tree edges. Default is 'gray'.
     hybrid_edge_color : str
@@ -55,7 +55,7 @@ class SDNetStyle(MGraphStyle):
 
     leaf_color: str = 'lightblue'
     hybrid_color: str = 'lightblue'
-    leaf_size: float = 500.0
+    leaf_size: float | None = None
     hybrid_edge_color: str = 'red'
 
     def copy(self) -> 'SDNetStyle':

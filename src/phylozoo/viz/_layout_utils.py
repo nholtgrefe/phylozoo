@@ -2,7 +2,8 @@
 Shared layout utilities for PhyloZoo visualization.
 
 This module provides common layout computation (NetworkX/Graphviz dispatch)
-and position normalization used by all layout modules.
+and position normalization used by all layout modules. Layouts determine
+only node positions (placement); node sizes come from the style.
 """
 
 from __future__ import annotations

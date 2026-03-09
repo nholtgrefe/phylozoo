@@ -4,11 +4,13 @@ Shared rendering utilities for PhyloZoo visualization.
 This module provides backend-agnostic drawing primitives (edges, nodes, labels)
 used by all plot functions. Styles must have BaseStyle attributes; network
 styles may add leaf_color, hybrid_color, leaf_size, hybrid_edge_color.
+
+Layout algorithms only determine node positions; node sizes come from the style.
 """
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 import matplotlib.patches as mpatches
 from matplotlib.path import Path as MPath
@@ -33,50 +35,6 @@ class RenderStyle(Protocol):
 # Parallel edge offset constants (shared across all plotters)
 BASE_PARALLEL_OFFSET = 0.15
 PARALLEL_OFFSET_STEP = 0.1
-
-
-def draw_edge(
-    ax: Any,
-    route: EdgeRoute,
-    style: RenderStyle,
-    parallel_groups: dict[tuple[Any, Any], list[int]],
-    edge_key: tuple[Any, Any, int],
-) -> None:
-    """
-    Draw a single edge.
-
-    Parameters
-    ----------
-    ax : matplotlib.axes.Axes
-        Axes to draw on.
-    route : EdgeRoute
-        Edge routing information.
-    style : RenderStyle
-        Styling configuration. Must have edge_color, edge_width. Network
-        styles may have hybrid_edge_color for hybrid edges.
-    parallel_groups : dict
-        Mapping of (u, v) to list of edge keys for parallel edge offset.
-    edge_key : tuple
-        (u, v, key) for this edge.
-    """
-    points = route.points
-    if not points:
-        return
-
-    # Edge color: use hybrid_edge_color for hybrid edges if available
-    edge_color = _get_edge_color(route, style)
-
-    # Calculate parallel edge offset if needed
-    u, v, key = edge_key
-    parallel_offset = _compute_parallel_offset(
-        route, parallel_groups, (u, v), key
-    )
-
-    # Draw edge
-    if route.edge_type.is_parallel and parallel_offset != 0.0:
-        _draw_curved_edge(ax, points, edge_color, style, route.edge_type.is_directed)
-    else:
-        _draw_straight_edge(ax, points, edge_color, style, route.edge_type.is_directed)
 
 
 def _get_edge_color(route: EdgeRoute, style: RenderStyle) -> str:
@@ -230,7 +188,8 @@ def draw_node(
     x, y = position
     color = _get_node_color(node_type, style)
     size = _get_node_size(node_type, style)
-    radius = (size / 1000.0) ** 0.5 * 0.03
+    # Linear scaling: size 500 -> ~0.02 radius; size 20000 -> ~0.5 (capped)
+    radius = min(size / 1000.0, 12.0) * 0.042
 
     edgecolor = getattr(style, 'node_edge_color', 'black')
     linewidth = getattr(style, 'node_edge_width', 1.5)
@@ -257,8 +216,11 @@ def _get_node_color(node_type: str, style: RenderStyle) -> str:
 
 
 def _get_node_size(node_type: str, style: RenderStyle) -> float:
-    """Get node size from node type and style."""
-    if node_type == 'leaf' and hasattr(style, 'leaf_size'):
+    """Get node size from node type and style.
+
+    For leaf nodes, uses leaf_size if set; otherwise falls back to node_size.
+    """
+    if node_type == 'leaf' and hasattr(style, 'leaf_size') and style.leaf_size is not None:
         return style.leaf_size
     return style.node_size
 
@@ -396,6 +358,58 @@ def draw_label_radial(
         va=va,
         zorder=4,
     )
+
+
+def render_layout(
+    ax: Any,
+    edge_routes: dict[tuple[Any, Any, int], EdgeRoute],
+    positions: dict[Any, tuple[float, float]],
+    style: RenderStyle,
+    center: tuple[float, float],
+    get_node_type: Callable[[Any], str],
+    get_label: Callable[[Any], str | None],
+    radial_labels_for_leaves: bool = False,
+) -> None:
+    """
+    Shared render loop: draw edges, nodes, and labels.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to draw on.
+    edge_routes : dict
+        (u, v, key) -> EdgeRoute.
+    positions : dict
+        Node ID -> (x, y).
+    style : RenderStyle
+        Styling configuration.
+    center : tuple[float, float]
+        Layout center for label placement.
+    get_node_type : callable
+        node_id -> 'root'|'leaf'|'tree'|'hybrid'|'generic'.
+    get_label : callable
+        node_id -> label string or None.
+    radial_labels_for_leaves : bool, optional
+        If True, use draw_label_radial for leaf nodes. By default False.
+    """
+    parallel_groups = build_parallel_groups(edge_routes)
+
+    for (u, v, key), route in edge_routes.items():
+        draw_edge(ax, route, style, parallel_groups, (u, v, key))
+
+    for node, position in positions.items():
+        node_type = get_node_type(node)
+        draw_node(ax, position, node_type, style)
+        if style.with_labels:
+            label = get_label(node)
+            if label:
+                if radial_labels_for_leaves and node_type == 'leaf':
+                    draw_label_radial(ax, position, label, style)
+                else:
+                    draw_label(ax, position, label, style, node_type, center=center)
+
+    ax.set_aspect('equal')
+    ax.axis('off')
 
 
 def build_parallel_groups(

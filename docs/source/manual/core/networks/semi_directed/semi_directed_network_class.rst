@@ -505,13 +505,13 @@ visualization system supports multiple layout algorithms and styling options.
 
 .. code-block:: python
 
-   from phylozoo.viz import plot_sdnetwork
+   from phylozoo.viz import plot
    
    # Plot network with default layout
-   plot_sdnetwork(network)
+   plot(network)
 
 For more visualization options, including different layout types, styling, and customization,
-see the :doc:`Visualization documentation <../../../visualization/viz>`.
+see the :doc:`Visualization documentation <../../../visualization/overview>`.
 
 See Also
 --------
@@ -522,4 +522,4 @@ See Also
 - :doc:`Directed Networks <../directed/overview>` - Fully directed network representations
 - :doc:`I/O <../../../utils/io/index>` - File I/O operations and formats
 - :doc:`Validation <../../../utils/validation>` - Validation system and disabling validation
-- :doc:`Visualization <../../../visualization/viz>` - Network visualization and plotting
+- :doc:`Visualization <../../../visualization/overview>` - Network visualization and plotting

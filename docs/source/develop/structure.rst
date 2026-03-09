@@ -66,7 +66,7 @@ PhyloZoo follows a consistent import strategy:
       from phylozoo.core.distance import is_kalmanson
       
       # Visualization
-      from phylozoo.viz import plot_dnetwork, plot_sdnetwork
+      from phylozoo.viz import plot
 
 **Network Submodules (Aliases)**
    Network submodules have convenient aliases to avoid deep nesting:

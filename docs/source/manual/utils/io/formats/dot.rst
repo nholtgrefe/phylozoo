@@ -97,4 +97,4 @@ See also
 - :doc:`../../../core/networks/semi_directed/overview` — Semi-directed networks
 - :doc:`../../../core/primitives/directed_multigraph` — Directed multigraphs
 - :doc:`../../../core/primitives/mixed_multigraph` — Mixed multigraphs
-- :doc:`../../../visualization/overview` — Visualization (layouts, plotting)
+- :doc:`../../../visualization/overview` — Visualization (plotting, styling)
