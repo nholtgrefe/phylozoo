@@ -29,13 +29,6 @@ class Quartet:
         Either a 2|2 split on 4 taxa, or a set/frozenset of exactly 4 taxon labels
         for a star tree.
     
-    Attributes
-    ----------
-    taxa : frozenset[str]
-        The 4 taxon labels.
-    split : Split | None
-        The split representing the quartet topology, or None for star tree.
-    
     Raises
     ------
     PhyloZooValueError
@@ -52,6 +45,13 @@ class Quartet:
     >>> star_quartet = Quartet({1, 2, 3, 4})
     >>> star_quartet.is_star()
     True
+    
+    Attributes
+    ----------
+    taxa : frozenset[str]
+        The 4 taxon labels.
+    split : Split | None
+        The split representing the quartet topology, or None for star tree.
     """
     
     __slots__ = ('_taxa', '_split', '_initialized', '_circular_orderings_cache')

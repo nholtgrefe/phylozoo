@@ -19,6 +19,12 @@ class SDNetStyle(MGraphStyle):
     This class extends MGraphStyle with SemiDirectedPhyNetwork-specific options,
     including support for leaves, hybrid nodes, and hybrid edges.
 
+    Examples
+    --------
+    >>> style = SDNetStyle(node_color='blue', leaf_color='green')
+    >>> style.node_color
+    'blue'
+    
     Attributes
     ----------
     node_color : str
@@ -45,12 +51,6 @@ class SDNetStyle(MGraphStyle):
         Font size for labels. Default is 10.0.
     label_color : str
         Color for labels. Default is 'black'.
-
-    Examples
-    --------
-    >>> style = SDNetStyle(node_color='blue', leaf_color='green')
-    >>> style.node_color
-    'blue'
     """
 
     leaf_color: str = 'lightblue'

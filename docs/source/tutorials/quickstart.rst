@@ -1,11 +1,11 @@
 Quickstart
 ==========
 
-Get started with PhyloZoo in minutes! This guide will help you install PhyloZoo and 
-create your first phylogenetic network.
+Get started with PhyloZoo in minutes! This guide walks you through installation,
+creating networks, and working with related data types, at every step referring to the corresponding section in the manual.
 
-Installation
-------------
+Getting Started
+---------------
 
 Install PhyloZoo using pip:
 
@@ -13,25 +13,18 @@ Install PhyloZoo using pip:
 
    pip install phylozoo
 
-For development installation:
+See the
+:doc:`Installation Guide <../manual/installation>` for full details.
 
-.. code-block:: bash
-
-   git clone https://github.com/yourusername/phylozoo.git
-   cd phylozoo
-   pip install -e ".[dev]"
-
-Requirements: Python >= 3.10, NumPy >= 1.20.0, NetworkX >= 3.0.0
-
-Your First Network
-------------------
+Networks
+--------
 
 Let's create a simple phylogenetic network:
 
 .. code-block:: python
 
    from phylozoo import DirectedPhyNetwork
-   
+
    # Create a simple tree network
    network = DirectedPhyNetwork(
        edges=[("root", "A"), ("root", "B"), ("root", "C")],
@@ -41,12 +34,15 @@ Let's create a simple phylogenetic network:
            ("C", {"label": "C"})
        ]
    )
-   
+
    print(f"Network has {network.num_nodes} nodes")
    print(f"Leaves: {network.leaves}")
    print(f"Is tree: {network.is_tree()}")
 
-This creates a simple tree with three leaves. Now let's create a network with a hybrid node:
+This creates a simple tree with three leaves.
+
+Now let's create a network with a hybrid node. Hybrid edges use a ``gamma`` value
+(must sum to 1.0 for edges into the same hybrid):
 
 .. code-block:: python
 
@@ -60,67 +56,116 @@ This creates a simple tree with three leaves. Now let's create a network with a 
        ],
        nodes=[("leaf1", {"label": "A"})]
    )
-   
+
    print(f"Network level: {hybrid_net.level()}")
 
-Basic Operations
-----------------
+PhyloZoo also supports **semi-directed networks**, which allow undirected tree edges
+for modeling root uncertainty. See :doc:`Semi-Directed Networks <../manual/core/networks/semi_directed/overview>` for details.
 
-**Load and Save Networks**
+Load and Save
+~~~~~~~~~~~~~
+
+Networks can be saved and loaded in standard formats:
 
 .. code-block:: python
 
-   # Save network to file
+   # Save network to file (eNewick format)
    network.save("my_network.enewick")
-   
+
    # Load network from file
    loaded_net = DirectedPhyNetwork.load("my_network.enewick")
 
-See the :doc:`I/O <manual/io>` page for supported formats.
+Supported formats include eNewick, NEXUS, and DOT. See the :doc:`I/O overview <../manual/utils/io/index>` for all formats.
 
-**Visualize Networks**
+Visualization
+~~~~~~~~~~~~~
+
+Plot networks with the built-in visualization module:
 
 .. code-block:: python
 
    from phylozoo.viz import plot
-   
-   # Plot network
+
+   # Plot network (opens interactive window)
    plot(network, show=True)
 
-**Work with Sequences**
+   # Save to file instead
+   plot(network, path="network.png")
+
+For layout options and styling, see :doc:`Visualization <../manual/visualization/overview>`.
+
+Related Data Types
+------------------
+
+PhyloZoo provides integrated support for related data types used in phylogenetic
+analysis.
+
+Distance Matrices
+~~~~~~~~~~~~~~~~~
+
+Create distance matrices from NumPy arrays or compute them from sequences:
+
+.. code-block:: python
+
+   import numpy as np
+   from phylozoo.core.distance import DistanceMatrix
+
+   # Create from array
+   matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
+   dm = DistanceMatrix(matrix, labels=["A", "B", "C"])
+
+Sequences
+~~~~~~~~~
+
+Create multiple sequence alignments (MSAs) and compute Hamming distances:
 
 .. code-block:: python
 
    from phylozoo import MSA
-   
-   # Create MSA from sequences
-   sequences = {
-       "taxon1": "ACGTACGT",
-       "taxon2": "ACGTACGT",
-       "taxon3": "ACGTTTAA"
-   }
-   msa = MSA(sequences)
-   
-   # Compute distance matrix
    from phylozoo.core.sequence import hamming_distances
-   distances = hamming_distances(msa)
+
+   sequences = {"taxon1": "ACGTACGT", "taxon2": "TGCAACGT", "taxon3": "ACGTTTAA"}
+   msa = MSA(sequences)
+   dm = hamming_distances(msa)
+
+See :doc:`Distance Matrices <../manual/core/distance>` and :doc:`Sequences <../manual/core/sequences>` for more.
+
+Splits and Quartets
+~~~~~~~~~~~~~~~~~~~
+
+For split-based and quartet-based analyses:
+
+.. code-block:: python
+
+   from phylozoo.core.split import Split, SplitSystem
+   from phylozoo.core.quartet import Quartet, QuartetProfile
+
+   # Create a split (bipartition of taxa)
+   split = Split({"A", "B"}, {"C", "D"})
+   system = SplitSystem([split])
+
+   # Create a quartet
+   quartet = Quartet(split)
+   profile = QuartetProfile([quartet])
+
+Splits represent bipartitions of taxa; quartets are four-taxon unrooted trees.
+See :doc:`Splits <../manual/core/splits/overview>` and :doc:`Quartets <../manual/core/quartets/overview>` for details.
 
 Quick Links
 -----------
 
-* :doc:`Installation Guide <manual/installation>` - Detailed installation instructions
-* :doc:`Introduction <manual/introduction>` - Learn about PhyloZoo's design and features
-* :doc:`Networks (Basic) <manual/core/networks/basic>` - Basic network operations
-* :doc:`Network Analysis Workflow <../tutorials/workflow_network_analysis>` - Complete workflow example
-* :doc:`API Reference <api/index>` - Full API documentation
+* :doc:`Installation Guide <../manual/installation>` — Detailed installation and requirements
+* :doc:`Introduction <../manual/introduction>` — PhyloZoo's design and features
+* :doc:`Networks <../manual/core/networks/overview>` — Directed and semi-directed networks
+* :doc:`Distance Matrices <../manual/core/distance>` — Pairwise distances
+* :doc:`Sequences <../manual/core/sequences>` — Multiple sequence alignments
+* :doc:`I/O <../manual/utils/io/index>` — File formats and operations
+* :doc:`Visualization <../manual/visualization/overview>` — Plotting and styling
 
 Next Steps
 ----------
 
 Ready to dive deeper? Check out:
 
-1. The :doc:`Manual <manual/index>` for comprehensive guides
-2. :doc:`Tutorials <tutorials/index>` for extended examples
-3. The :doc:`API Reference <api/index>` for complete API reference
-
-For help and support, see the :doc:`Guides <guides/index>` section.
+1. The :doc:`Manual <../manual/index>` for comprehensive guides on all modules
+2. The :doc:`API Reference <../api/index>` for complete function signatures and examples

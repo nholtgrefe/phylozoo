@@ -26,7 +26,7 @@ class TestDistanceMatrixIO:
         
         assert '#NEXUS' in nexus_str
         assert 'BEGIN TAXA' in nexus_str
-        assert 'BEGIN Distances' in nexus_str
+        assert 'BEGIN DISTANCES' in nexus_str
         assert 'A' in nexus_str
         assert 'B' in nexus_str
         assert 'C' in nexus_str
@@ -48,7 +48,7 @@ class TestDistanceMatrixIO:
             
             assert '#NEXUS' in content
             assert 'BEGIN TAXA' in content
-            assert 'BEGIN Distances' in content
+            assert 'BEGIN DISTANCES' in content
             assert 'A' in content
             assert 'B' in content
             assert 'C' in content
@@ -200,7 +200,7 @@ class TestDistanceMatrixIO:
             assert np.allclose(dm2._matrix, dm._matrix)
 
     def test_load_from_multi_block_nexus(self) -> None:
-        """DistanceMatrix.load from NEXUS with Distances and SPLITS uses only Distances."""
+        """DistanceMatrix.load from NEXUS with DISTANCES and SPLITS uses only DISTANCES."""
         multi_block_nexus = """#NEXUS
 
 BEGIN TAXA;
@@ -212,7 +212,7 @@ BEGIN TAXA;
     ;
 END;
 
-BEGIN Distances;
+BEGIN DISTANCES;
     DIMENSIONS ntax=3;
     FORMAT triangle=LOWER diagonal LABELS;
     MATRIX
@@ -251,7 +251,7 @@ BEGIN Taxa;
     ;
 END;
 
-BEGIN Distances;
+BEGIN DISTANCES;
     DIMENSIONS ntax=3;
     FORMAT triangle=LOWER diagonal LABELS;
     MATRIX
@@ -331,7 +331,7 @@ END;'''
         """Test that missing Taxa block raises ValueError."""
         nexus_str = '''#NEXUS
 
-BEGIN Distances;
+BEGIN DISTANCES;
     DIMENSIONS ntax=2;
     FORMAT triangle=LOWER diagonal LABELS;
     MATRIX
@@ -345,7 +345,7 @@ END;'''
             DistanceMatrix.from_string(nexus_str)
     
     def test_from_string_missing_distances_block(self) -> None:
-        """Test that missing Distances block raises ValueError."""
+        """Test that missing DISTANCES block raises ValueError."""
         nexus_str = '''#NEXUS
 
 BEGIN Taxa;
@@ -357,7 +357,7 @@ BEGIN Taxa;
 END;'''
         
         from phylozoo.utils.exceptions import PhyloZooParseError
-        with pytest.raises(PhyloZooParseError, match="no Distances block"):
+        with pytest.raises(PhyloZooParseError, match="no DISTANCES block"):
             DistanceMatrix.from_string(nexus_str)
     
     def test_from_string_mismatched_dimensions(self) -> None:
@@ -373,7 +373,7 @@ BEGIN Taxa;
     ;
 END;
 
-BEGIN Distances;
+BEGIN DISTANCES;
     DIMENSIONS ntax=3;
     FORMAT triangle=LOWER diagonal LABELS;
     MATRIX

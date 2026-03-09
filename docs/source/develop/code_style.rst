@@ -3,8 +3,11 @@ Code Style Guide
 
 This guide covers code style guidelines and conventions for PhyloZoo.
 
+Code Conventions
+----------------
+
 Type Hinting
-------------
+~~~~~~~~~~~~
 
 **All functions and classes must use type hints** for parameters, return types, and class 
 attributes. Prefer modern built-in generics and PEP 604 unions (e.g., ``list[int]``, 
@@ -26,7 +29,7 @@ Use ``TypeVar`` for generic types when appropriate. Prefer explicit types over `
 use ``Any`` when absolutely necessary. Use ``-> None`` for functions that don't return values.
 
 Docstrings
-----------
+~~~~~~~~~~
 
 **All public functions, classes, and methods must include NumPy-style docstrings** with 
 detailed parameter descriptions, return values, exceptions, and examples.
@@ -70,26 +73,23 @@ Include all sections that are relevant (Parameters, Returns, Raises, Examples, N
 See Also, etc.). When including an example, also include it in the tests.
 
 Naming Conventions
-------------------
+~~~~~~~~~~~~~~~~~~
 
 * **Classes**: Use ``PascalCase`` (e.g., ``DirectedPhyNetwork``, ``QuartetProfile``)
 * **Functions and methods**: Use ``snake_case`` (e.g., ``compute_layout``, ``is_treechild``)
 * **Constants**: Use ``UPPER_SNAKE_CASE`` (e.g., ``DEFAULT_RADIUS``)
 * **Private/internal**: Use leading underscore (e.g., ``_internal_function``, ``_private_attr``)
 
-Code Formatting
----------------
+Development Tools
+-----------------
 
-Development Dependencies
-------------------------
+PhyloZoo relies on standard tools for code quality checks and automation: Black (formatting),
+Ruff (linting), and mypy (type checking).
 
-For code quality checks and automation PhyloZoo relies on a few standard tools:
+Installation
+~~~~~~~~~~~~
 
-* `Black <https://black.readthedocs.io/>`_ (code formatting)
-* `Ruff <https://docs.astral.sh/ruff/>`_ (linting)
-* `mypy <https://mypy.readthedocs.io/>`_ (static type checking)
-
-Install them directly:
+Install the tools directly:
 
 .. code-block:: bash
 
@@ -101,8 +101,8 @@ or via the development extra:
 
    pip install -e ".[dev]"
 
-Code Formatting
----------------
+Code Formatting (Black)
+~~~~~~~~~~~~~~~~~~~~~~~
 
 PhyloZoo uses **Black** for code formatting with a line length of 100 characters.
 
@@ -112,8 +112,8 @@ Format code before committing:
 
    black src/ tests/
 
-Linting
--------
+Linting (Ruff)
+~~~~~~~~~~~~~~
 
 PhyloZoo uses **Ruff** for linting. Run linting checks:
 
@@ -121,8 +121,8 @@ PhyloZoo uses **Ruff** for linting. Run linting checks:
 
    ruff check src/ tests/
 
-Type Checking
--------------
+Type Checking (mypy)
+~~~~~~~~~~~~~~~~~~~~
 
 PhyloZoo uses **mypy** for static type checking. Run type checks:
 
@@ -132,17 +132,6 @@ PhyloZoo uses **mypy** for static type checking. Run type checks:
 
 Type checking configuration is in ``pyproject.toml``. The project uses Python 3.10+ with 
 modern type hint features.
-
-Code Quality Standards
-----------------------
-
-* **Immutability**: Core data structures should be immutable. Use frozen dataclasses or 
-  similar patterns.
-* **Validation**: Validate inputs early and provide clear error messages.
-* **Error Handling**: Use the custom exception hierarchy from ``phylozoo.utils.exceptions``.
-* **Performance**: Consider using NumPy for numerical operations and Numba for computationally 
-  intensive algorithms when appropriate.
-* **Documentation**: Keep docstrings up to date with code changes.
 
 Example
 -------

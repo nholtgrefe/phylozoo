@@ -66,15 +66,16 @@ def quartet_distance(
     >>> from phylozoo.core.split.base import Split
     >>> from phylozoo.core.quartet.base import Quartet
     >>> from phylozoo.core.quartet.qprofileset import QuartetProfileSet
-    >>> # Create a simple profile set
+
+    >>> # Create profile set and compute distance
     >>> q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
     >>> q2 = Quartet(Split({'A', 'C'}, {'B', 'D'}))
     >>> profileset = QuartetProfileSet(profiles=[q1, q2])
-    >>> # Compute distance matrix with Squirrel rho vector
     >>> dist_matrix = quartet_distance(profileset, rho=(0.5, 1.0, 0.5, 1.0))
+
     >>> # Access distances
-    >>> dist_matrix.get_distance('A', 'B')  # Distance between A and B
-    1.0
+    >>> dist_matrix.get_distance('A', 'B')
+    5.0
     
     Notes
     -----
@@ -279,14 +280,12 @@ def quartet_distance_with_partition(
     >>> from phylozoo.core.quartet.base import Quartet
     >>> from phylozoo.core.quartet.qprofileset import QuartetProfileSet
     >>> from phylozoo.core.primitives.partition import Partition
-    >>> 
-    >>> # Create a simple profile set
+
+    >>> # Create profile set and partition
     >>> q1 = Quartet(Split({'A', 'B'}, {'C', 'D'}))
     >>> profileset = QuartetProfileSet(profiles=[q1])
-    >>> 
-    >>> # Create a partition
     >>> partition = Partition([{'A'}, {'B'}, {'C'}, {'D'}])
-    >>> 
+
     >>> # Compute distance matrix
     >>> dist_matrix = quartet_distance_with_partition(profileset, partition)
     >>> len(dist_matrix)

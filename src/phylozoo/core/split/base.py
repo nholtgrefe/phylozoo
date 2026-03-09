@@ -29,15 +29,6 @@ class Split(Partition):
     set2 : set[T]
         Second set of elements in the split.
     
-    Attributes
-    ----------
-    set1 : set[T]
-        First set of elements in the split.
-    set2 : set[T]
-        Second set of elements in the split.
-    elements : frozenset
-        Set containing all elements from both sides of the split (inherited from Partition).
-    
     Raises
     ------
     PhyloZooValueError
@@ -53,6 +44,15 @@ class Split(Partition):
     >>> split2 = Split({1}, {2, 3, 4})
     >>> split2.is_trivial()
     True
+    
+    Attributes
+    ----------
+    set1 : set[T]
+        First set of elements in the split.
+    set2 : set[T]
+        Second set of elements in the split.
+    elements : frozenset
+        Set containing all elements from both sides of the split (inherited from Partition).
     """
     
     def __init__(self, set1: set[T], set2: set[T]) -> None:

@@ -1,7 +1,7 @@
 Manual
 ======
 
-This manual provides comprehensive guides for using PhyloZoo.
+This manual provides comprehensive guides for using PhyloZoo. For exact specifics of each function and class, see the :doc:`API Reference <../api/index>`.
 
 .. toctree::
    :maxdepth: 3
@@ -12,3 +12,4 @@ This manual provides comprehensive guides for using PhyloZoo.
    core/index
    visualization/index
    utils/index
+   bibliography

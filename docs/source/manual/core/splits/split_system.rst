@@ -28,7 +28,7 @@ Split systems can be created from collections of splits:
    # Create split system
    split_system = SplitSystem(splits)
 
-The constructor validates that all splits cover the same set of elements and that there are no duplicate splits. It raises a :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
+The constructor validates that all splits cover the same set of elements and that there are no duplicate splits. It raises a :class:`~phylozoo.utils.exceptions.general.PhyloZooValueError` if the input is invalid.
 
 Creating Weighted Split Systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -116,7 +116,7 @@ Weighted split systems also support NEXUS format with weights:
    weighted_system.save("output.nexus")
 
 .. seealso::
-   The `SplitSystem` and `WeightedSplitSystem` classes use the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   The `SplitSystem` and `WeightedSplitSystem` classes use the :class:`~phylozoo.utils.io.mixin.IOMixin` interface, providing
    consistent file handling across PhyloZoo classes. For details on the I/O system,
    see the :doc:`I/O manual <../../utils/io/overview>`.
 

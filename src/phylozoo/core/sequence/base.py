@@ -48,23 +48,26 @@ class MSA(IOMixin):
         Dictionary mapping taxon names (sequence identifiers) to sequence strings.
         All sequences must have the same length.
     
-    Attributes
-    ----------
-    taxa : frozenset[str]
-        Frozen set of all taxon names (read-only).
-    taxa_order : tuple[str, ...]
-        Tuple of taxon names in canonical order (read-only).
-    sequence_length : int
-        Length of all sequences in the alignment (read-only).
-    num_taxa : int
-        Number of taxa in the alignment (read-only).
-    
     Raises
     ------
     PhyloZooValueError
         If sequences dictionary is empty, or if sequences have different lengths.
     PhyloZooTypeError
         If sequences is not a dictionary.
+    
+    Notes
+    -----
+    Supported I/O formats:
+
+    - ``fasta`` (default): ``.fasta``, ``.fa``, ``.fas``
+    - ``nexus``: ``.nexus``, ``.nex``, ``.nxs``
+
+    The internal representation uses:
+
+    - Numpy array (`_coded_array`) of shape (num_taxa, sequence_length) with dtype int8
+    - Precomputed lookup table for efficient character encoding
+    - Reverse lookup table for decoding back to strings when needed
+    - Taxa order for consistent indexing
     
     Examples
     --------
@@ -85,14 +88,16 @@ class MSA(IOMixin):
     >>> msa.get_sequence("nonexistent")
     None
     
-    Notes
-    -----
-    The internal representation uses:
-
-    - Numpy array (`_coded_array`) of shape (num_taxa, sequence_length) with dtype int8
-    - Precomputed lookup table for efficient character encoding
-    - Reverse lookup table for decoding back to strings when needed
-    - Taxa order for consistent indexing
+    Attributes
+    ----------
+    taxa : frozenset[str]
+        Frozen set of all taxon names (read-only).
+    taxa_order : tuple[str, ...]
+        Tuple of taxon names in canonical order (read-only).
+    sequence_length : int
+        Length of all sequences in the alignment (read-only).
+    num_taxa : int
+        Number of taxa in the alignment (read-only).
     """
     
     # I/O format configuration

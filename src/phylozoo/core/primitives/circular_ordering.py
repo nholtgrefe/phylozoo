@@ -32,12 +32,14 @@ class CircularSetOrdering(Partition):
     Parameters
     ----------
     setorder : list[set[T]]
-        List of sets in circular order. The sets must be disjoint.
+        List of sets in circular order.         The sets must be disjoint.
     
-    Attributes
-    ----------
-    setorder : tuple
-        Tuple of frozensets representing the circular ordering in canonical form (read-only).
+    Notes
+    -----
+    The circular ordering is immutable and stored in canonical form. Two
+    CircularSetOrderings are considered equal if they are the same up to cyclic
+    permutation or reversal. Since both are canonical, equality is a simple
+    tuple comparison.
     
     Examples
     --------
@@ -49,12 +51,10 @@ class CircularSetOrdering(Partition):
     >>> cso.are_neighbors({1, 2}, {3})
     True
     
-    Notes
-    -----
-    The circular ordering is immutable and stored in canonical form. Two
-    CircularSetOrderings are considered equal if they are the same up to cyclic
-    permutation or reversal. Since both are canonical, equality is a simple
-    tuple comparison.
+    Attributes
+    ----------
+    setorder : tuple
+        Tuple of frozensets representing the circular ordering in canonical form (read-only).
     """
     
     __slots__ = ('_setorder',)
@@ -465,10 +465,12 @@ class CircularOrdering(CircularSetOrdering):
     order : list[T]
         List of elements in circular order.
     
-    Attributes
-    ----------
-    order : tuple
-        Tuple of elements in the circular ordering in canonical form (read-only).
+    Notes
+    -----
+    The circular ordering is immutable and stored in canonical form. Two
+    CircularOrderings are considered equal if they are the same up to cyclic
+    permutation or reversal. Since both are canonical, equality is a simple
+    tuple comparison.
     
     Examples
     --------
@@ -480,12 +482,10 @@ class CircularOrdering(CircularSetOrdering):
     >>> co.are_neighbors(1, 2)
     True
     
-    Notes
-    -----
-    The circular ordering is immutable and stored in canonical form. Two
-    CircularOrderings are considered equal if they are the same up to cyclic
-    permutation or reversal. Since both are canonical, equality is a simple
-    tuple comparison.
+    Attributes
+    ----------
+    order : tuple
+        Tuple of elements in the circular ordering in canonical form (read-only).
     """
     
     __slots__ = ('_order',)

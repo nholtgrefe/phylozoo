@@ -19,6 +19,12 @@ class MGraphStyle(BaseStyle):
     This class extends BaseStyle with MixedMultiGraph-specific options.
     MixedMultiGraphs can have both directed and undirected edges.
 
+    Examples
+    --------
+    >>> style = MGraphStyle(node_color='blue')
+    >>> style.node_color
+    'blue'
+    
     Attributes
     ----------
     node_color : str
@@ -37,12 +43,6 @@ class MGraphStyle(BaseStyle):
         Font size for labels. Default is 10.0.
     label_color : str
         Color for labels. Default is 'black'.
-
-    Examples
-    --------
-    >>> style = MGraphStyle(node_color='blue')
-    >>> style.node_color
-    'blue'
     """
 
     pass

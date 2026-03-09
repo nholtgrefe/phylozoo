@@ -36,7 +36,7 @@ def parse_nexus(nexus_string: str) -> tuple[list[str], dict[str, str]]:
     -------
     tuple[list[str], dict[str, str]]
         (labels, blocks). labels from TAXA block; blocks maps canonical block name
-        (Distances, CHARACTERS, SPLITS) to full block content (including trailing ";").
+        (DISTANCES, CHARACTERS, SPLITS) to full block content (including trailing ";").
 
     Raises
     ------
@@ -45,8 +45,8 @@ def parse_nexus(nexus_string: str) -> tuple[list[str], dict[str, str]]:
 
     Notes
     -----
-    A file may contain multiple data blocks (e.g. Distances and SPLITS).
-    Callers use only the block they need (e.g. DistanceMatrix uses "Distances").
+    A file may contain multiple data blocks (e.g. DISTANCES and SPLITS).
+    Callers use only the block they need (e.g. DistanceMatrix uses "DISTANCES").
     """
     # TAXA block
     taxa_match = _RE_TAXA.search(nexus_string)
@@ -63,10 +63,10 @@ def parse_nexus(nexus_string: str) -> tuple[list[str], dict[str, str]]:
         name = match.group(1)
         if name.upper() == 'TAXA':
             continue
-        # Canonical names: Distances, CHARACTERS, SPLITS
+        # Canonical names: DISTANCES, CHARACTERS, SPLITS
         canonical = (
             name.upper()
-            if name.upper() in ('CHARACTERS', 'SPLITS')
+            if name.upper() in ('DISTANCES', 'CHARACTERS', 'SPLITS')
             else name.capitalize()
         )
         # Include trailing ";" so block content can be parsed with MATRIX\s+(.*?);
@@ -121,7 +121,7 @@ def write_block(block_name: str, body: str) -> str:
     Parameters
     ----------
     block_name : str
-        Block name (e.g. Distances, CHARACTERS, SPLITS).
+        Block name (e.g. DISTANCES, CHARACTERS, SPLITS).
     body : str
         Block body (commands and MATRIX etc.); need not include trailing ";".
 

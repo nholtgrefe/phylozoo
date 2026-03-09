@@ -28,7 +28,7 @@ Splits can be created from any two complementary subsets:
    split2 = Split(["A", "B"], ["C", "D"])
 
 The constructor automatically converts inputs to frozensets and ensures the split
-is properly formed. It raises a :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
+is properly formed. It raises a :class:`~phylozoo.utils.exceptions.general.PhyloZooValueError` if the input is invalid.
 
 Accessing Split Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

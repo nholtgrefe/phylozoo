@@ -45,7 +45,7 @@ Distance matrices can be created from NumPy arrays with optional labels:
    dm2 = DistanceMatrix(matrix)
 
 The matrix must be square and symmetric. The constructor validates these properties
-and raises :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
+and raises :class:`~phylozoo.utils.exceptions.general.PhyloZooValueError` if the input is invalid.
 
 Accessing Distances
 ^^^^^^^^^^^^^^^^^^^
@@ -88,7 +88,7 @@ Distance matrices support reading and writing in multiple phylogenetic formats:
    dm.save("output.csv", format="csv")
 
 .. seealso::   
-   The `DistanceMatrix` class uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   The `DistanceMatrix` class uses the :class:`~phylozoo.utils.io.mixin.IOMixin` interface, providing
    consistent file handling across PhyloZoo classes. For details on the I/O system,
    see the :doc:`I/O manual <../utils/io/overview>`.
 
@@ -230,4 +230,4 @@ See Also
 --------
 
 - :doc:`API Reference <../../api/core/distance>` — Complete function signatures and detailed examples
-- :doc:`Circular Orderings <../primitives/circular_ordering>` — Working with circular orderings
+- :doc:`Circular Orderings <primitives/circular_ordering>` — Working with circular orderings

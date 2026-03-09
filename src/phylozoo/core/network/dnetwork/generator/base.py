@@ -54,7 +54,26 @@ class DirectedGenerator:
     Parameters
     ----------
     graph : DirectedMultiGraph
-        The underlying graph structure of the generator. Should be biconnected.
+        The underlying graph structure of the generator.         Should be biconnected.
+    
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+    
+    >>> # Create a level-1 generator (root with parallel edges to hybrid node)
+    >>> gen_graph = DirectedMultiGraph(edges=[(8, 4), (8, 4)])  # Parallel edges
+    >>> generator = DirectedGenerator(gen_graph)
+    >>> generator.level
+    1
+    >>> generator.hybrid_nodes
+    {4}
+    
+    >>> # Create a level-0 generator (single node)
+    >>> gen_graph0 = DirectedMultiGraph()
+    >>> gen_graph0.add_node(1)
+    >>> generator0 = DirectedGenerator(gen_graph0)
+    >>> generator0.level
+    0
     
     Attributes
     ----------
@@ -63,23 +82,6 @@ class DirectedGenerator:
         **Warning:** Do not modify directly.
     _sides : list[Side] | None
         Cached list of sides (attachment points). Computed lazily.
-    
-    Examples
-    --------
-    >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-    >>> # Create a level-1 generator (root with parallel edges to hybrid node)
-    >>> gen_graph = DirectedMultiGraph(edges=[(8, 4), (8, 4)])  # Parallel edges
-    >>> generator = DirectedGenerator(gen_graph)
-    >>> generator.level
-    1
-    >>> generator.hybrid_nodes
-    {4}
-    >>> # Create a level-0 generator (single node)
-    >>> gen_graph0 = DirectedMultiGraph()
-    >>> gen_graph0.add_node(1)
-    >>> generator0 = DirectedGenerator(gen_graph0)
-    >>> generator0.level
-    0
     """
     
     def __init__(self, graph: DirectedMultiGraph[T]) -> None:

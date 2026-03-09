@@ -37,22 +37,6 @@ class DirectedMultiGraph(IOMixin):
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
         If keys are not provided, they will be auto-generated. By default None.
-
-    Attributes
-    ----------
-    _graph : nx.MultiDiGraph
-        NetworkX MultiDiGraph storing directed edges.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _combined : nx.MultiGraph
-        Combined undirected view of all edges for connectivity analysis.
-        **Warning:** Do not modify directly. Use class methods instead.
-    
-    I/O format configuration
-    ------------------------
-    _default_format : str
-        Default format for I/O operations ('dot').
-    _supported_formats : list[str]
-        List of supported formats (['dot', 'edgelist']).
     
     Notes
     -----
@@ -61,6 +45,11 @@ class DirectedMultiGraph(IOMixin):
     class methods (add_edge, remove_edge, etc.) to ensure state synchronization.
     Direct modification will desynchronize the graphs and cause incorrect behavior.
 
+    Supported I/O formats:
+
+    - ``dot`` (default): ``.dot``, ``.gv``
+    - ``edgelist``: ``.el``
+
     Examples
     --------
     >>> G = DirectedMultiGraph()
@@ -68,15 +57,26 @@ class DirectedMultiGraph(IOMixin):
     >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
     >>> key1 != key2
     True
+    
     >>> from phylozoo.core.primitives.d_multigraph.features import number_of_connected_components
     >>> number_of_connected_components(G)
     1
+    
     >>> # Initialize with edges (including attributes)
     >>> G2 = DirectedMultiGraph(
     ...     edges=[(1, 2), {'u': 2, 'v': 3, 'weight': 5.0}]
     ... )
     >>> G2.number_of_edges()
     2
+    
+    Attributes
+    ----------
+    _graph : nx.MultiDiGraph
+        NetworkX MultiDiGraph storing directed edges.
+        **Warning:** Do not modify directly. Use class methods instead.
+    _combined : nx.MultiGraph
+        Combined undirected view of all edges for connectivity analysis.
+        **Warning:** Do not modify directly. Use class methods instead.
     """
 
     # I/O format configuration

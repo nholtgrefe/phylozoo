@@ -7,4 +7,3 @@ Extended tutorials for using PhyloZoo.
    :maxdepth: 2
    
    quickstart
-   workflows

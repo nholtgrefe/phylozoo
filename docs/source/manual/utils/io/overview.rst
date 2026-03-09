@@ -2,8 +2,8 @@ Overview
 ========
 
 PhyloZoo provides a unified I/O system for reading and writing phylogenetic data.
-All I/O-capable classes use the same interface via :class:`~phylozoo.utils.io.IOMixin`
-and a central :class:`~phylozoo.utils.io.FormatRegistry`.
+All I/O-capable classes use the same interface via :class:`~phylozoo.utils.io.mixin.IOMixin`
+and a central :class:`~phylozoo.utils.io.registry.FormatRegistry`.
 
 This section is organized as follows:
 

@@ -68,7 +68,8 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.io import to_nexus
-    >>> 
+
+    >>> # Basic usage (lower triangular format)
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
     >>> nexus_str = to_nexus(dm)
@@ -76,7 +77,7 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     True
     >>> 'triangle=LOWER' in nexus_str
     True
-    >>> 
+
     >>> # Upper triangular format
     >>> nexus_str_upper = to_nexus(dm, triangle='UPPER')
     >>> 'triangle=UPPER' in nexus_str_upper
@@ -87,7 +88,7 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     The NEXUS format includes:
 
     - Taxa block with label names
-    - Distances block with matrix in specified triangle format
+    - DISTANCES block with matrix in specified triangle format
     - Format options: triangle=LOWER, triangle=UPPER, or triangle=BOTH
     """
     triangle = kwargs.get('triangle', 'LOWER').upper()
@@ -114,7 +115,7 @@ def to_nexus(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     return (
         nexus_fmt.nexus_header()
         + nexus_fmt.write_taxa_block(distance_matrix.labels)
-        + nexus_fmt.write_block("Distances", body)
+        + nexus_fmt.write_block("DISTANCES", body)
     )
 
 
@@ -137,7 +138,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     Raises
     ------
     PhyloZooParseError
-        If the NEXUS string is malformed or cannot be parsed (e.g., missing Taxa or Distances blocks,
+        If the NEXUS string is malformed or cannot be parsed (e.g., missing Taxa or DISTANCES blocks,
         mismatched number of taxa and matrix rows, invalid matrix format, invalid distance values).
     
     Examples
@@ -156,7 +157,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     ...     ;
     ... END;
     ... 
-    ... BEGIN Distances;
+    ... BEGIN DISTANCES;
     ...     DIMENSIONS ntax=3;
     ...     FORMAT triangle=LOWER diagonal LABELS;
     ...     MATRIX
@@ -177,14 +178,14 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     This parser supports:
 
     - A Taxa block with TAXLABELS
-    - A Distances block with FORMAT triangle=LOWER/UPPER/BOTH diagonal LABELS
+    - A DISTANCES block with FORMAT triangle=LOWER/UPPER/BOTH diagonal LABELS
     - Lower triangular, upper triangular, or full matrix formats
     """
     labels, blocks = nexus_fmt.parse_nexus(nexus_string)
-    content = blocks.get("Distances")
+    content = blocks.get("DISTANCES")
     if content is None:
         raise PhyloZooParseError(
-            f"NEXUS file contains no Distances block (found: {list(blocks.keys())})"
+            f"NEXUS file contains no DISTANCES block (found: {list(blocks.keys())})"
         )
 
     n = len(labels)
@@ -206,7 +207,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> DistanceMatrix:
     # Extract MATRIX section from block content
     matrix_match = re.search(r'MATRIX\s+(.*?);', content, re.DOTALL | re.IGNORECASE)
     if not matrix_match:
-        raise PhyloZooParseError("Could not find MATRIX in Distances block")
+        raise PhyloZooParseError("Could not find MATRIX in DISTANCES block")
     matrix_section = matrix_match.group(1)
     matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
     
@@ -317,9 +318,9 @@ def to_phylip(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
     >>> phylip_str = to_phylip(dm)
-    >>> print(phylip_str[:30])
+    >>> print(phylip_str[:31])
     3
-    A          0.00000 1.00000
+    A         0.00000 1.00000 2.0
     
     Notes
     -----
@@ -438,9 +439,9 @@ def to_csv(distance_matrix: DistanceMatrix, **kwargs: Any) -> str:
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix, labels=['A', 'B', 'C'])
     >>> csv_str = to_csv(dm)
-    >>> print(csv_str[:20])
+    >>> print(csv_str[:30])
     ,A,B,C
-    A,0.0,1.0
+    A,0.000000,1.000000,2.0
     
     Notes
     -----

@@ -29,6 +29,43 @@ class WeightedSplitSystem(SplitSystem):
         - A list of (split, weight) tuples
         By default None (empty system).
     
+    Raises
+    ------
+    PhyloZooValueError
+        If not all splits cover the complete set of elements, if any weight
+        is not positive (zero or negative), if duplicate splits are found, or if
+        split elements don't match system elements.
+    
+    Notes
+    -----
+    Supported I/O formats:
+
+    - ``nexus`` (default): ``.nexus``, ``.nex``, ``.nxs``
+
+    Examples
+    --------
+    >>> # From list of splits (weight 1.0 each)
+    >>> split1 = Split({1, 2}, {3, 4})
+    >>> split2 = Split({1, 3}, {2, 4})
+    >>> system = WeightedSplitSystem([split1, split2])
+    >>> system.get_weight(split1)
+    1.0
+    >>> system.get_weight(split2)
+    1.0
+    
+    >>> # From dictionary with weights
+    >>> weights = {split1: 2.5, split2: 1.0}
+    >>> system = WeightedSplitSystem(weights)
+    >>> system.get_weight(split1)
+    2.5
+    >>> system.total_weight
+    3.5
+    
+    >>> # From list of tuples
+    >>> system = WeightedSplitSystem([(split1, 0.8), (split2, 0.2)])
+    >>> system.get_weight(split1)
+    0.8
+    
     Attributes
     ----------
     splits : frozenset[Split]
@@ -39,41 +76,6 @@ class WeightedSplitSystem(SplitSystem):
         Dictionary mapping splits to their weights (read-only after initialization).
     total_weight : float
         Sum of all weights in the system (read-only).
-    
-    Raises
-    ------
-    PhyloZooValueError
-        If not all splits cover the complete set of elements, if any weight
-        is not positive (zero or negative), if duplicate splits are found, or if
-        split elements don't match system elements.
-    
-    Examples
-    --------
-    From list of splits (weight 1.0 each):
-    
-    >>> split1 = Split({1, 2}, {3, 4})
-    >>> split2 = Split({1, 3}, {2, 4})
-    >>> system = WeightedSplitSystem([split1, split2])
-    >>> system.get_weight(split1)
-    1.0
-    >>> system.get_weight(split2)
-    1.0
-    
-    From dictionary with weights:
-    
-    >>> weights = {split1: 2.5, split2: 1.0}
-    >>> system = WeightedSplitSystem(weights)
-    >>> system.get_weight(split1)
-    2.5
-    >>> system.total_weight
-    3.5
-    
-    From list of tuples:
-    
-    >>> system = WeightedSplitSystem([(split1, 0.8), (split2, 0.2)])
-    >>> system.get_weight(split1)
-    0.8
-    
     """
     
     __slots__ = ('_splits', '_elements', '_initialized', '_weights', '_total_weight')

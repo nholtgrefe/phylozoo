@@ -1,12 +1,13 @@
 Development
 ===========
 
-Developer and contributor guides for PhyloZoo.
+Developer and contributor guides for PhyloZoo. The changelog is also included here.
 
 .. toctree::
    :maxdepth: 2
    
-   structure
-   testing
-   code_style
    contributing
+   structure
+   code_style
+   testing
+   changelog

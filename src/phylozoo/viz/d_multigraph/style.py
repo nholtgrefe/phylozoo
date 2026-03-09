@@ -17,6 +17,12 @@ class BaseStyle:
     This class provides the common styling options shared across all
     visualization types.
 
+    Examples
+    --------
+    >>> style = BaseStyle(node_color='blue')
+    >>> style.node_color
+    'blue'
+    
     Attributes
     ----------
     node_color : str
@@ -35,12 +41,6 @@ class BaseStyle:
         Font size for labels. Default is 10.0.
     label_color : str
         Color for labels. Default is 'black'.
-
-    Examples
-    --------
-    >>> style = BaseStyle(node_color='blue')
-    >>> style.node_color
-    'blue'
     """
 
     node_color: str = 'lightblue'
@@ -62,6 +62,12 @@ class DMGraphStyle(BaseStyle):
 
     This class extends BaseStyle with DirectedMultiGraph-specific options.
 
+    Examples
+    --------
+    >>> style = DMGraphStyle(node_color='blue')
+    >>> style.node_color
+    'blue'
+    
     Attributes
     ----------
     node_color : str
@@ -80,12 +86,6 @@ class DMGraphStyle(BaseStyle):
         Font size for labels. Default is 10.0.
     label_color : str
         Color for labels. Default is 'black'.
-
-    Examples
-    --------
-    >>> style = DMGraphStyle(node_color='blue')
-    >>> style.node_color
-    'blue'
     """
 
     pass

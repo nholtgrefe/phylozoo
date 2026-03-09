@@ -26,19 +26,18 @@ class SplitSystem(IOMixin):
         Set or list of splits. If a list is provided, it will be converted
         to a set to ensure uniqueness. By default None (empty set).
     
-    Attributes
-    ----------
-    splits : frozenset[Split]
-        Frozen set of splits (read-only after initialization).
-    elements : frozenset
-        Frozen set containing all elements appearing in the splits (read-only).
-    
     Raises
     ------
     PhyloZooValueError
         If not all splits cover the complete set of elements (i.e., not a set
         of full splits).
     
+    Notes
+    -----
+    Supported I/O formats:
+
+    - ``nexus`` (default): ``.nexus``, ``.nex``, ``.nxs``
+
     Examples
     --------
     >>> split1 = Split({1, 2}, {3, 4})
@@ -51,6 +50,12 @@ class SplitSystem(IOMixin):
     >>> split1 in system
     True
     
+    Attributes
+    ----------
+    splits : frozenset[Split]
+        Frozen set of splits (read-only after initialization).
+    elements : frozenset
+        Frozen set containing all elements appearing in the splits (read-only).
     """
     
     __slots__ = ('_splits', '_elements', '_initialized')

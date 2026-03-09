@@ -49,7 +49,7 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
     
     Examples
     --------
-    >>> # LSA below the root (hybrid node 4 is on all root-to-leaf paths)
+    >>> # LSA below the root (tree node 10 is lowest node on all root-to-leaf paths)
     >>> net = DirectedPhyNetwork(
     ...     edges=[
     ...         (7, 5), (7, 6),                 # root to tree nodes
@@ -61,7 +61,8 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
     >>> lsa_node(net)
-    4
+    10
+
     >>> # In a simple tree, the LSA is just the root
     >>> net2 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> lsa_node(net2)
@@ -198,9 +199,11 @@ def blobs(
     ... )
     >>> sorted([sorted(b) for b in blobs(net)])
     [[1], [2], [3], [4, 5, 6, 8], [7], [9], [10], [11]]
+
     >>> # Filtering: exclude trivial (single-node) blobs
     >>> len([b for b in blobs(net, trivial=False, leaves=False)])
     1
+
     >>> # Filtering: exclude blobs containing only leaves
     >>> len([b for b in blobs(net, leaves=False)])
     2
@@ -434,9 +437,9 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
     ...     ],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> omnians(net)
-    {5, 8, 9}
-    
+    >>> sorted(omnians(net))
+    [5, 8, 9]
+
     >>> # Network with no omnians
     >>> net2 = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],

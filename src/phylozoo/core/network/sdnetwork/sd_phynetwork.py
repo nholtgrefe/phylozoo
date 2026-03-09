@@ -44,13 +44,6 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     A SemiDirectedPhyNetwork is obtained from a directed phylogenetic LSA (Least Stable
     Ancestor) network by undirecting all non-hybrid edges and suppressing degree-2 nodes.
     
-    Notes
-    -----
-    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
-    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
-    ``MixedMultiGraph``, or load from a file. I/O support: eNewick format (default, extensions: 
-    `.nwk`, `.newick`, `.enewick`, `.eNewick`, `.enw`) and PhyloZoo-DOT format (extension: `.pzdot`).
-
     Parameters
     ----------
     directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
@@ -101,17 +94,17 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         like provenance, source file, creation date, etc.
         By default None.
     
-    Attributes
-    ----------
-    _graph : MixedMultiGraph[T]
-        Internal graph structure using MixedMultiGraph.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _node_to_label : dict[T, str]
-        Mapping from node IDs to labels. Only nodes with explicit labels are included.
-        Leaves always have labels (taxa), but internal nodes may be unlabeled.
-    _label_to_node : dict[str, T]
-        Reverse mapping from labels to node IDs (for quick lookup).
-    
+    Notes
+    -----
+    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
+    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
+    ``MixedMultiGraph``, or load from a file.
+
+    Supported I/O formats:
+
+    - ``enewick`` (default): ``.nwk``, ``.newick``, ``.enewick``, ``.eNewick``, ``.enw``
+    - ``phylozoo-dot``: ``.pzdot``
+
     Examples
     --------
     >>> # Initialize with nodes and labels
@@ -121,6 +114,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     ... )
     >>> net.taxa
     {'A', 'B', 'C'}
+    
     >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
@@ -128,6 +122,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     ... )
     >>> net2.taxa  # 2, 4, and 5 are auto-labeled
     {'A', '2', '4', '5'}
+    
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[
@@ -141,6 +136,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     0.5
     >>> net3.get_bootstrap(3, 1)
     0.95
+    
     >>> # Network with hybrid node and gamma values
     >>> net4 = SemiDirectedPhyNetwork(
     ...     directed_edges=[
@@ -154,6 +150,17 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
+    
+    Attributes
+    ----------
+    _graph : MixedMultiGraph[T]
+        Internal graph structure using MixedMultiGraph.
+        **Warning:** Do not modify directly. Use class methods instead.
+    _node_to_label : dict[T, str]
+        Mapping from node IDs to labels. Only nodes with explicit labels are included.
+        Leaves always have labels (taxa), but internal nodes may be unlabeled.
+    _label_to_node : dict[str, T]
+        Reverse mapping from labels to node IDs (for quick lookup).
     """
     
     # I/O format configuration

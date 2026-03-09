@@ -33,14 +33,16 @@ class DistanceMatrix(IOMixin):
         If None, defaults to `[0, 1, 2, ..., n-1]` where n is the matrix size.
         By default None.
     
-    Attributes
-    ----------
-    np_array : numpy.ndarray
-        Read-only access to the underlying numpy array.
-    labels : tuple[T, ...]
-        Tuple of labels corresponding to the rows/columns (immutable).
-    indices : tuple[int, ...]
-        Tuple of indices `(0, 1, 2, ..., len(self)-1)` (immutable).
+    Notes
+    -----
+    The class is immutable after initialization. To create a modified version,
+    create a new DistanceMatrix instance with the modified data.
+
+    Supported I/O formats:
+
+    - ``nexus`` (default): ``.nexus``, ``.nex``, ``.nxs``
+    - ``phylip``: ``.phy``, ``.phylip``
+    - ``csv``: ``.csv``
     
     Examples
     --------
@@ -54,16 +56,20 @@ class DistanceMatrix(IOMixin):
     3
     >>> dm.get_distance('A', 'B')
     1.0
-    >>> 
+    
     >>> # Default labels (0, 1, 2, ...)
     >>> dm2 = DistanceMatrix(matrix)
     >>> dm2.labels
     (0, 1, 2)
     
-    Notes
-    -----
-    The class is immutable after initialization. To create a modified version,
-    create a new DistanceMatrix instance with the modified data.
+    Attributes
+    ----------
+    np_array : numpy.ndarray
+        Read-only access to the underlying numpy array.
+    labels : tuple[T, ...]
+        Tuple of labels corresponding to the rows/columns (immutable).
+    indices : tuple[int, ...]
+        Tuple of indices `(0, 1, 2, ..., len(self)-1)` (immutable).
     """
     
     # Minimal class-level defaults so static analyzers recognize attributes.

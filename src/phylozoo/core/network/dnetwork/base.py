@@ -44,12 +44,6 @@ class DirectedPhyNetwork(IOMixin):
     For technical reasons, an empty network or single-node network (where root and leaf are the same node) 
     is also valid. Internal nodes may be unlabeled.
     
-    Notes
-    -----
-    The class uses composition with ``DirectedMultiGraph`` and is immutable after initialization; 
-    construct via ``nodes``/``edges``, from a prebuilt ``DirectedMultiGraph``, or load from a file/eNewick 
-    string.
-
     Parameters
     ----------
     edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
@@ -87,21 +81,17 @@ class DirectedPhyNetwork(IOMixin):
         like provenance, source file, creation date, etc.
         By default None.
     
-    Attributes
-    ----------
-    nodes
-        Cached view of all node IDs (same interface as the underlying graph's ``nodes``).
-    edges
-        Cached view of all directed edges (same interface as the underlying graph's ``edges``).
-    _graph : DirectedMultiGraph[T]
-        Internal graph structure using DirectedMultiGraph.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _node_to_label : dict[T, str]
-        Mapping from node IDs to labels. Only nodes with explicit labels are included.
-        Leaves always have labels (taxa), but internal nodes may be unlabeled.
-    _label_to_node : dict[str, T]
-        Reverse mapping from labels to node IDs (for quick lookup).
-    
+    Notes
+    -----
+    The class uses composition with ``DirectedMultiGraph`` and is immutable after initialization; 
+    construct via ``nodes``/``edges``, from a prebuilt ``DirectedMultiGraph``, or load from a file/eNewick 
+    string.
+
+    Supported I/O formats:
+
+    - ``enewick`` (default): ``.enewick``, ``.eNewick``, ``.nwk``, ``.newick``
+    - ``dot``: ``.dot``, ``.gv``
+
     Examples
     --------
     >>> # Initialize with nodes and labels
@@ -115,6 +105,7 @@ class DirectedPhyNetwork(IOMixin):
     3
     >>> net.is_tree()
     True
+    
     >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2), (3, 4)],
@@ -122,6 +113,7 @@ class DirectedPhyNetwork(IOMixin):
     ... )
     >>> net2.taxa  # 2 and 4 are auto-labeled
     {'A', '2', '4'}
+    
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = DirectedPhyNetwork(
     ...     edges=[
@@ -134,6 +126,7 @@ class DirectedPhyNetwork(IOMixin):
     0.5
     >>> net3.get_bootstrap(3, 1)
     0.95
+    
     >>> # Network with hybrid node and gamma values
     >>> net4 = DirectedPhyNetwork(
     ...     edges=[
@@ -149,6 +142,21 @@ class DirectedPhyNetwork(IOMixin):
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
+    
+    Attributes
+    ----------
+    nodes
+        Cached view of all node IDs (same interface as the underlying graph's ``nodes``).
+    edges
+        Cached view of all directed edges (same interface as the underlying graph's ``edges``).
+    _graph : DirectedMultiGraph[T]
+        Internal graph structure using DirectedMultiGraph.
+        **Warning:** Do not modify directly. Use class methods instead.
+    _node_to_label : dict[T, str]
+        Mapping from node IDs to labels. Only nodes with explicit labels are included.
+        Leaves always have labels (taxa), but internal nodes may be unlabeled.
+    _label_to_node : dict[str, T]
+        Reverse mapping from labels to node IDs (for quick lookup).
     """
     
     # I/O format configuration

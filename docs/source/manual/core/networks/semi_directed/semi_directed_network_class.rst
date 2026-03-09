@@ -125,7 +125,7 @@ File Input/Output
 
 .. seealso::
    The :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` class uses the
-   :class:`~phylozoo.utils.io.IOMixin` interface, providing consistent file handling across PhyloZoo
+   :class:`~phylozoo.utils.io.mixin.IOMixin` interface, providing consistent file handling across PhyloZoo
    classes. For details on the I/O system, see the :doc:`I/O manual <../../../utils/io/overview>`.
 
 

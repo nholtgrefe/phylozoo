@@ -42,13 +42,6 @@ class QuartetProfile:
         - A list of (quartet, weight) tuples (weights must sum to 1.0)
         Taxa are automatically extracted from the quartets.
     
-    Attributes
-    ----------
-    taxa : frozenset[str]
-        The 4 taxon labels (extracted from quartets).
-    quartets : Mapping[Quartet, float]
-        Read-only mapping of quartets to their weights.
-    
     Raises
     ------
     PhyloZooValueError
@@ -60,18 +53,27 @@ class QuartetProfile:
     >>> from phylozoo.core.split.base import Split
     >>> q1 = Quartet(Split({1, 2}, {3, 4}))
     >>> q2 = Quartet(Split({1, 3}, {2, 4}))
+    
     >>> # From dictionary with weights (already sum to 1.0)
     >>> profile = QuartetProfile({q1: 0.8, q2: 0.2})
     >>> profile.taxa
     frozenset({1, 2, 3, 4})
     >>> profile.get_weight(q1)
     0.8
+    
     >>> # From list of quartets (equal weight 1/k each)
     >>> profile2 = QuartetProfile([q1, q2])
     >>> profile2.get_weight(q1)
     0.5
     >>> profile2.get_weight(q2)
     0.5
+    
+    Attributes
+    ----------
+    taxa : frozenset[str]
+        The 4 taxon labels (extracted from quartets).
+    quartets : Mapping[Quartet, float]
+        Read-only mapping of quartets to their weights.
     """
     
     __slots__ = ('_taxa', '_quartets', '_initialized', '_split_cache', '_circular_orderings_cache')

@@ -37,19 +37,17 @@ class Partition:
         List of sets of elements. The sets must be disjoint (no overlapping
         elements).
     
-    Attributes
-    ----------
-    parts : tuple[frozenset, ...]
-        Tuple of frozen sets representing the partition blocks in canonical form (read-only).
-    elements : frozenset
-        Frozen set containing the union of all elements in the partition (read-only).
-    
     Raises
     ------
     PhyloZooValueError
         If the sets overlap (i.e., the partition is invalid).
     PhyloZooWarning
         If an empty set is added to the partition.
+    
+    Notes
+    -----
+    The partition is immutable after initialization. Attempts to modify attributes
+    will raise AttributeError.
     
     Examples
     --------
@@ -65,10 +63,12 @@ class Partition:
     >>> partition.parts  # Read-only tuple
     (frozenset({1, 2}), frozenset({3, 4}), frozenset({5}))
     
-    Notes
-    -----
-    The partition is immutable after initialization. Attempts to modify attributes
-    will raise AttributeError.
+    Attributes
+    ----------
+    parts : tuple[frozenset, ...]
+        Tuple of frozen sets representing the partition blocks in canonical form (read-only).
+    elements : frozenset
+        Frozen set containing the union of all elements in the partition (read-only).
     """
     
     __slots__ = ('_parts', '_elements', '_initialized')

@@ -3,8 +3,11 @@ Testing Guide
 
 This guide covers testing practices and guidelines for PhyloZoo.
 
+Setup
+-----
+
 Testing Dependencies
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 PhyloZoo uses a small set of testing tools:
 
@@ -23,11 +26,24 @@ or as part of the development extra when working on PhyloZoo itself:
 
    pip install -e ".[dev]"
 
+Test Organization
+-----------------
+
 Test Framework
---------------
+~~~~~~~~~~~~~~
 
 PhyloZoo uses `pytest` as the testing framework. Tests are located in the ``tests/`` directory
 and mirror the source code structure.
+
+Test Structure
+~~~~~~~~~~~~~~
+
+Tests are organized to mirror the source code structure:
+
+* `tests/core/` - Tests for core modules (networks, quartets, splits, sequences, distance)
+* `tests/viz/` - Tests for visualization
+* `tests/utils/` - Tests for utility modules
+* `tests/conftest.py` - Shared fixtures and pytest configuration
 
 Running Tests
 -------------
@@ -74,18 +90,11 @@ Running Tests
 
    pytest -m "not slow"
 
-Test Structure
---------------
-
-Tests are organized to mirror the source code structure:
-
-* `tests/core/` - Tests for core modules (networks, quartets, splits, sequences, distance)
-* `tests/viz/` - Tests for visualization
-* `tests/utils/` - Tests for utility modules
-* `tests/conftest.py` - Shared fixtures and pytest configuration
-
 Writing Tests
 -------------
+
+Guidelines
+~~~~~~~~~~
 
 When adding new tests:
 
@@ -106,7 +115,7 @@ Example:
        assert result == expected_output
 
 Test Classes
-------------
+~~~~~~~~~~~~
 
 Group related tests in test classes:
 
@@ -126,7 +135,7 @@ Group related tests in test classes:
            pass
 
 Test Markers
-------------
+~~~~~~~~~~~~
 
 The following markers are available:
 
@@ -144,7 +153,7 @@ Example:
        pass
 
 Fixtures
-------
+~~~~~~~~
 
 Shared fixtures are defined in `tests/conftest.py`. Use fixtures for common test data:
 
@@ -154,21 +163,8 @@ Shared fixtures are defined in `tests/conftest.py`. Use fixtures for common test
        """Test using a fixture."""
        assert sample_network.num_nodes > 0
 
-Test Coverage
--------------
-
-Aim for good test coverage, especially for:
-
-* Core data structures and classes
-* Network validation and operations
-* Algorithm implementations
-* Error handling and edge cases
-
-Use ``pytest --cov=phylozoo --cov-report=html`` to generate coverage reports and identify 
-untested code.
-
 Best Practices
----------------
+~~~~~~~~~~~~~~
 
 * **Test both success and failure cases**: Test that functions work correctly and handle 
   errors appropriately
@@ -176,5 +172,3 @@ Best Practices
 * **Test edge cases**: Test with empty inputs, single elements, boundary conditions
 * **Keep tests independent**: Each test should be able to run independently
 * **Use fixtures for common setup**: Avoid duplicating test setup code
-* **Test with real data when possible**: Use fixture networks and example data from the 
-  codebase

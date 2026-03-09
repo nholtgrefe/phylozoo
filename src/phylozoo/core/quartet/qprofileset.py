@@ -54,12 +54,6 @@ class QuartetProfileSet:
         profiles. Allows specifying taxa for which no profile exists.
         By default None (computed from profiles).
     
-    Attributes
-    ----------
-    profiles : Mapping[frozenset[str], tuple[QuartetProfile, float]]
-        Read-only mapping of 4-taxon sets to (profile, profile_weight) tuples.
-        Each profile contains multiple quartets with their individual weights.
-    
     Raises
     ------
     PhyloZooValueError
@@ -68,25 +62,30 @@ class QuartetProfileSet:
     
     Examples
     --------
-    From quartets (grouped into profiles):
-    
     >>> from phylozoo.core.split.base import Split
     >>> q1 = Quartet(Split({1, 2}, {3, 4}))
     >>> q2 = Quartet(Split({1, 3}, {2, 4}))
     >>> q3 = Quartet(Split({5, 6}, {7, 8}))
-    >>> profileset = QuartetProfileSet(profiles=[(q1, 0.8), (q2, 0.2), (q3, 1.0)])
+    
+    >>> # From quartets (grouped into profiles, equal weights per profile)
+    >>> profileset = QuartetProfileSet(profiles=[q1, q2, q3])
     >>> len(profileset)
     2
     >>> profileset.get_profile_weight(frozenset({1, 2, 3, 4}))
     1.0
     
-    From QuartetProfile objects (better control):
-    
+    >>> # From QuartetProfile objects (better control)
     >>> profile1 = QuartetProfile({q1: 0.8, q2: 0.2})
     >>> profile2 = QuartetProfile([q3])
     >>> profileset2 = QuartetProfileSet(profiles=[(profile1, 2.0), (profile2, 1.5)])
     >>> profileset2.get_profile_weight(frozenset({1, 2, 3, 4}))
     2.0
+    
+    Attributes
+    ----------
+    profiles : Mapping[frozenset[str], tuple[QuartetProfile, float]]
+        Read-only mapping of 4-taxon sets to (profile, profile_weight) tuples.
+        Each profile contains multiple quartets with their individual weights.
     """
     
     def __init__(

@@ -16,8 +16,8 @@ Classes and extensions
 
 **File extensions:** ``.nexus``, ``.nex``, ``.nxs``
 
-**Classes (by subtype):** :class:`~phylozoo.core.distance.base.DistanceMatrix` (Distances),
-:class:`~phylozoo.core.sequence.base.MSA` (Characters),
+**Classes (by subtype):** :class:`~phylozoo.core.distance.base.DistanceMatrix` (DISTANCES),
+:class:`~phylozoo.core.sequence.base.MSA` (CHARACTERS),
 :class:`~phylozoo.core.split.splitsystem.SplitSystem` and
 :class:`~phylozoo.core.split.weighted_splitsystem.WeightedSplitSystem` (SPLITS).
 
@@ -27,7 +27,7 @@ Structure
 All NEXUS files begin with the ``#NEXUS`` token. Data are organized in blocks.
 Each block has ``BEGIN blockname;``, block-specific commands and a ``MATRIX`` or
 data section, and ``END;``. The **TAXA** block (with ``TAXLABELS``) is shared across
-subtypes to define taxon labels. The data block (Distances, CHARACTERS, or SPLITS)
+subtypes to define taxon labels. The data block (DISTANCES, CHARACTERS, or SPLITS)
 holds the actual data.
 
 .. code-block:: text
@@ -46,10 +46,10 @@ holds the actual data.
        ...
    END;
 
-Distance Matrix NEXUS
-^^^^^^^^^^^^^^^^^^^^
+DISTANCES
+^^^^^^^^^
 
-Blocks: **TAXA** and **Distances**. The Distances block contains a lower or upper
+Blocks: **TAXA** and **DISTANCES**. The DISTANCES block contains a lower or upper
 triangular matrix with optional ``FORMAT triangle=...``.
 
 .. code-block:: text
@@ -65,7 +65,7 @@ triangular matrix with optional ``FORMAT triangle=...``.
        ;
    END;
 
-   BEGIN Distances;
+   BEGIN DISTANCES;
        DIMENSIONS ntax=3;
        FORMAT triangle=LOWER diagonal LABELS;
        MATRIX
@@ -75,8 +75,8 @@ triangular matrix with optional ``FORMAT triangle=...``.
        ;
    END;
 
-MSA NEXUS (Characters)
-^^^^^^^^^^^^^^^^^^^^
+CHARACTERS
+^^^^^^^^^^^
 
 Blocks: **TAXA** and **CHARACTERS**. The Characters block has ``DIMENSIONS nchar=...``,
 ``FORMAT datatype=...``, and a ``MATRIX`` with aligned sequences.
@@ -102,8 +102,8 @@ Blocks: **TAXA** and **CHARACTERS**. The Characters block has ``DIMENSIONS nchar
        ;
    END;
 
-Split System NEXUS
-^^^^^^^^^^^^^^^^^^
+SPLITS
+^^^^^^
 
 Blocks: **TAXA** and **SPLITS**. The SPLITS block has ``FORMAT labels=yes weights=yes``
 and a ``MATRIX`` with splits in ``A B | C D`` notation, optionally with weights.

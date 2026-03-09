@@ -51,18 +51,6 @@ class MixedMultiGraph(IOMixin):
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' keys and optional 'key' and edge attributes
         If keys are not provided, they will be auto-generated. By default None.
-
-    Attributes
-    ----------
-    _undirected : nx.MultiGraph
-        NetworkX MultiGraph storing undirected edges.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _directed : nx.MultiDiGraph
-        NetworkX MultiDiGraph storing directed edges.
-        **Warning:** Do not modify directly. Use class methods instead.
-    _combined : nx.MultiGraph
-        Combined undirected view of all edges for connectivity analysis.
-        **Warning:** Do not modify directly. Use class methods instead.
     
     Notes
     -----
@@ -70,6 +58,10 @@ class MixedMultiGraph(IOMixin):
     but should NOT be modified directly. All modifications must go through the
     class methods (add_edge, remove_edge, etc.) to ensure state synchronization.
     Direct modification will desynchronize the graphs and cause incorrect behavior.
+
+    Supported I/O formats:
+
+    - ``phylozoo-dot`` (default): ``.pzdot``
 
     Examples
     --------
@@ -85,6 +77,7 @@ class MixedMultiGraph(IOMixin):
     >>> from phylozoo.core.primitives.m_multigraph.features import number_of_connected_components
     >>> number_of_connected_components(G)
     1
+    
     >>> # Initialize with edges (including attributes)
     >>> G2 = MixedMultiGraph(
     ...     undirected_edges=[(1, 2), {'u': 2, 'v': 3, 'weight': 5.0}],
@@ -92,6 +85,7 @@ class MixedMultiGraph(IOMixin):
     ... )
     >>> G2.number_of_edges()
     4
+    
     >>> # Create from NetworkX graphs
     >>> import networkx as nx
     >>> from phylozoo.core.primitives.m_multigraph.conversions import graph_to_mixedmultigraph
@@ -100,6 +94,18 @@ class MixedMultiGraph(IOMixin):
     >>> G3 = graph_to_mixedmultigraph(nx_g)
     >>> G3.number_of_edges()
     1
+    
+    Attributes
+    ----------
+    _undirected : nx.MultiGraph
+        NetworkX MultiGraph storing undirected edges.
+        **Warning:** Do not modify directly. Use class methods instead.
+    _directed : nx.MultiDiGraph
+        NetworkX MultiDiGraph storing directed edges.
+        **Warning:** Do not modify directly. Use class methods instead.
+    _combined : nx.MultiGraph
+        Combined undirected view of all edges for connectivity analysis.
+        **Warning:** Do not modify directly. Use class methods instead.
     """
     
     # I/O format configuration

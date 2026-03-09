@@ -27,6 +27,21 @@ class DNetLayout(DMGraphLayout[T]):
     for a DirectedPhyNetwork layout. It is the base layout class for all
     dnetwork layout algorithms.
 
+    Examples
+    --------
+    >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+    >>> from phylozoo.viz.dnetwork.layout import compute_pz_dag_layout
+    >>>
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(3, 1), (3, 2)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ... )
+    >>> layout = compute_pz_dag_layout(net)
+    >>> layout.get_position(1)
+    (0.0, 1.5)
+    >>> layout.algorithm
+    'pz-dag'
+    
     Attributes
     ----------
     network : DirectedPhyNetwork
@@ -43,21 +58,6 @@ class DNetLayout(DMGraphLayout[T]):
         Name of the layout algorithm used (read-only).
     parameters : dict[str, Any]
         Parameters used to generate this layout (read-only).
-
-    Examples
-    --------
-    >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-    >>> from phylozoo.viz.dnetwork.layout import compute_pz_dag_layout
-    >>>
-    >>> net = DirectedPhyNetwork(
-    ...     edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
-    ... )
-    >>> layout = compute_pz_dag_layout(net)
-    >>> layout.get_position(1)
-    (0.0, 1.5)
-    >>> layout.algorithm
-    'pz-dag'
     """
 
     network: 'DirectedPhyNetwork'

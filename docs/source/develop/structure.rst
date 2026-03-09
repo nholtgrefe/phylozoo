@@ -1,10 +1,10 @@
-Package Structure
-================
+Package Principles
+==================
 
 This document describes the package structure, import strategy, and design principles of PhyloZoo.
 
-Package Organization
---------------------
+Package Structure
+-----------------
 
 PhyloZoo is organized into logical modules based on functionality:
 
@@ -31,7 +31,6 @@ PhyloZoo is organized into logical modules based on functionality:
    * **Exceptions**: Custom exception hierarchy
    * **Validation**: Network validation utilities
    * **I/O**: File format support
-   * **Parallelization**: Parallel execution support
 
 Import Strategy
 ---------------
@@ -79,18 +78,6 @@ PhyloZoo follows a consistent import strategy:
       # Instead of: from phylozoo.core.network.sdnetwork import ...
       from phylozoo.core.sdnetwork import SemiDirectedPhyNetwork, classifications, features
 
-**Exceptions (Top-Level)**
-   All custom exceptions are available at the package top-level:
-   
-   .. code-block:: python
-   
-      from phylozoo import (
-          PhyloZooError,
-          PhyloZooValueError,
-          PhyloZooNetworkError,
-          # ... other exceptions
-      )
-
 **Internal Items**
    Items starting with `_` are considered internal and are **not** re-exported at higher levels. 
    They can only be imported directly from their source file.
@@ -132,11 +119,3 @@ PhyloZoo follows several key design principles:
 **No Deep Imports**
    Do not import from deeper levels than submodules (e.g., don't import from `backends` or 
    other internal subdirectories). Use the submodule level instead.
-
-**No Package-Level Namespace Shortcuts**
-   We intentionally do **not** provide convenience module namespaces like `phylozoo.sequence` 
-   or `from phylozoo import sequence`. If you want a module namespace, import it directly 
-   from its location, e.g., `from phylozoo.core import sequence`.
-
-For more details on the import strategy, see the :doc:`Import Strategy <import_strategy>` 
-documentation (if available).

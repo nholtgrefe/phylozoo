@@ -142,7 +142,7 @@ END;"""
             assert loaded_system.elements == system.elements
 
     def test_load_from_multi_block_nexus(self) -> None:
-        """SplitSystem.load from NEXUS with Distances and SPLITS uses only SPLITS."""
+        """SplitSystem.load from NEXUS with DISTANCES and SPLITS uses only SPLITS."""
         multi_block_nexus = """#NEXUS
 
 BEGIN TAXA;
@@ -155,7 +155,7 @@ BEGIN TAXA;
     ;
 END;
 
-BEGIN Distances;
+BEGIN DISTANCES;
     DIMENSIONS ntax=4;
     FORMAT triangle=LOWER;
     MATRIX

@@ -27,19 +27,6 @@ class SDNetLayout(MGraphLayout[T]):
     for a SemiDirectedPhyNetwork layout. It is the base layout class for all
     sdnetwork layout algorithms.
 
-    Attributes
-    ----------
-    network : SemiDirectedPhyNetwork
-        The semi-directed phylogenetic network this layout is for (read-only).
-    positions : dict[T, tuple[float, float]]
-        Node positions mapping node ID to (x, y) coordinates (read-only).
-    edge_routes : dict[tuple[T, T, int], EdgeRoute]
-        Edge routing information mapping (u, v, key) to EdgeRoute (read-only).
-    algorithm : str
-        Name of the layout algorithm used (read-only).
-    parameters : dict[str, Any]
-        Parameters used to generate this layout (read-only).
-
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -54,6 +41,19 @@ class SDNetLayout(MGraphLayout[T]):
     (1.0, 0.0)
     >>> layout.algorithm
     'pz-radial'
+    
+    Attributes
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network this layout is for (read-only).
+    positions : dict[T, tuple[float, float]]
+        Node positions mapping node ID to (x, y) coordinates (read-only).
+    edge_routes : dict[tuple[T, T, int], EdgeRoute]
+        Edge routing information mapping (u, v, key) to EdgeRoute (read-only).
+    algorithm : str
+        Name of the layout algorithm used (read-only).
+    parameters : dict[str, Any]
+        Parameters used to generate this layout (read-only).
     """
 
     network: 'SemiDirectedPhyNetwork'

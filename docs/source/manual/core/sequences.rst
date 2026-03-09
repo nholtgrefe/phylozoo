@@ -39,7 +39,7 @@ MSAs can be created from dictionaries mapping taxon names to sequence strings:
    msa = MSA(sequences)
 
 All sequences must have the same length. The constructor validates these properties
-and raises :class:`~phylozoo.utils.exceptions.PhyloZooValueError` if the input is invalid.
+and raises :class:`~phylozoo.utils.exceptions.general.PhyloZooValueError` if the input is invalid.
 
 For performance-critical applications, you can also create MSAs directly from pre-encoded arrays:
 
@@ -101,7 +101,7 @@ MSAs support reading and writing in multiple phylogenetic formats:
    msa.save("output.fasta")
 
 .. seealso::
-   The `MSA` class uses the :class:`~phylozoo.utils.io.IOMixin` interface, providing
+   The `MSA` class uses the :class:`~phylozoo.utils.io.mixin.IOMixin` interface, providing
    consistent file handling across PhyloZoo classes. For details on the I/O system,
    see the :doc:`I/O manual <../utils/io/overview>`.
 

@@ -205,7 +205,7 @@ the directed/undirected edge distinction:
 
 .. seealso::
    The :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` class uses the
-   :class:`~phylozoo.utils.io.IOMixin` interface, providing consistent file handling across PhyloZoo
+   :class:`~phylozoo.utils.io.mixin.IOMixin` interface, providing consistent file handling across PhyloZoo
    classes. For details on the I/O system, see the :doc:`I/O manual <../../utils/io/overview>`.
 
 Graph Analysis Features

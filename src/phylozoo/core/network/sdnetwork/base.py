@@ -48,12 +48,6 @@ class MixedPhyNetwork:
     hybrid edges for selected hybrid nodes (if one hybrid edge is undirected, all partner 
     hybrid edges are undirected), and suppressing degree-2 nodes.
     
-    Notes
-    -----
-    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
-    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
-    ``MixedMultiGraph``, or load from a file/eNewick string.
-
     Parameters
     ----------
     directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
@@ -104,6 +98,58 @@ class MixedPhyNetwork:
         like provenance, source file, creation date, etc.
         By default None.
     
+    Notes
+    -----
+    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
+    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
+    ``MixedMultiGraph``, or load from a file/eNewick string.
+
+    Examples
+    --------
+    >>> # Initialize with nodes and labels
+    >>> net = MixedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> net.taxa
+    {'A', 'B', 'C'}
+    
+    >>> # Partial labels - uncovered leaves get auto-generated labels
+    >>> net2 = MixedPhyNetwork(
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
+    ...     nodes=[(1, {'label': 'A'})]
+    ... )
+    >>> net2.taxa  # 2, 4, and 5 are auto-labeled
+    {'A', '2', '4', '5'}
+    
+    >>> # Network with branch lengths and bootstrap support
+    >>> net3 = MixedPhyNetwork(
+    ...     undirected_edges=[
+    ...         {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
+    ...         {'u': 3, 'v': 2, 'branch_length': 0.3, 'bootstrap': 0.87},
+    ...         (3, 4)
+    ...     ],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+    ... )
+    >>> net3.get_branch_length(3, 1)
+    0.5
+    >>> net3.get_bootstrap(3, 1)
+    0.95
+    
+    >>> # Network with hybrid node and gamma values
+    >>> net4 = MixedPhyNetwork(
+    ...     directed_edges=[
+    ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
+    ...         {'u': 6, 'v': 4, 'gamma': 0.4}  # Hybrid edge (Sum = 1.0)
+    ...     ],
+    ...     undirected_edges=[(4, 1), (4, 2), (4, 3)],  # Tree edges
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+    ... )
+    >>> net4.get_gamma(5, 4)
+    0.6
+    >>> net4.get_gamma(6, 4)
+    0.4
+    
     Attributes
     ----------
     nodes
@@ -118,49 +164,6 @@ class MixedPhyNetwork:
         Leaves always have labels (taxa), but internal nodes may be unlabeled.
     _label_to_node : dict[str, T]
         Reverse mapping from labels to node IDs (for quick lookup).
-    
-    Examples
-    --------
-    >>> # Initialize with nodes and labels
-    >>> net = MixedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
-    ... )
-    >>> net.taxa
-    {'A', 'B', 'C'}
-    >>> # Partial labels - uncovered leaves get auto-generated labels
-    >>> net2 = MixedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
-    ...     nodes=[(1, {'label': 'A'})]
-    ... )
-    >>> net2.taxa  # 2, 4, and 5 are auto-labeled
-    {'A', '2', '4', '5'}
-    >>> # Network with branch lengths and bootstrap support
-    >>> net3 = MixedPhyNetwork(
-    ...     undirected_edges=[
-    ...         {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
-    ...         {'u': 3, 'v': 2, 'branch_length': 0.3, 'bootstrap': 0.87},
-    ...         (3, 4)
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
-    ... )
-    >>> net3.get_branch_length(3, 1)
-    0.5
-    >>> net3.get_bootstrap(3, 1)
-    0.95
-    >>> # Network with hybrid node and gamma values
-    >>> net4 = MixedPhyNetwork(
-    ...     directed_edges=[
-    ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
-    ...         {'u': 6, 'v': 4, 'gamma': 0.4}  # Hybrid edge (Sum = 1.0)
-    ...     ],
-    ...     undirected_edges=[(4, 1), (4, 2), (4, 3)],  # Tree edges
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
-    ... )
-    >>> net4.get_gamma(5, 4)
-    0.6
-    >>> net4.get_gamma(6, 4)
-    0.4
     """
 
     def __init__(

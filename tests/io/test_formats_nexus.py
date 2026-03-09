@@ -14,7 +14,7 @@ class TestParseNexus:
     """Tests for parse_nexus."""
 
     def test_parse_nexus_single_block(self) -> None:
-        """Parse NEXUS with TAXA and one Distances block."""
+        """Parse NEXUS with TAXA and one DISTANCES block."""
         s = """#NEXUS
 
 BEGIN TAXA;
@@ -26,7 +26,7 @@ BEGIN TAXA;
     ;
 END;
 
-BEGIN Distances;
+BEGIN DISTANCES;
     DIMENSIONS ntax=3;
     FORMAT triangle=LOWER;
     MATRIX
@@ -38,8 +38,8 @@ END;
 """
         labels, blocks = nexus_fmt.parse_nexus(s)
         assert labels == ['A', 'B', 'C']
-        assert 'Distances' in blocks
-        assert 'MATRIX' in blocks['Distances']
+        assert 'DISTANCES' in blocks
+        assert 'MATRIX' in blocks['DISTANCES']
 
     def test_parse_nexus_multi_block(self) -> None:
         """Parse NEXUS with TAXA, Distances, and SPLITS blocks."""
@@ -77,9 +77,9 @@ END;
 """
         labels, blocks = nexus_fmt.parse_nexus(s)
         assert labels == ['1', '2', '3', '4']
-        assert 'Distances' in blocks
+        assert 'DISTANCES' in blocks
         assert 'SPLITS' in blocks
-        assert 'MATRIX' in blocks['Distances']
+        assert 'MATRIX' in blocks['DISTANCES']
         assert 'MATRIX' in blocks['SPLITS']
 
     def test_parse_nexus_no_taxa_raises(self) -> None:
@@ -130,8 +130,8 @@ class TestWriteBlock:
     def test_write_block(self) -> None:
         """write_block produces BEGIN name; body END;."""
         body = "    DIMENSIONS ntax=2;\n    MATRIX\n    "
-        out = nexus_fmt.write_block("Distances", body)
-        assert out.startswith("BEGIN Distances;\n")
+        out = nexus_fmt.write_block("DISTANCES", body)
+        assert out.startswith("BEGIN DISTANCES;\n")
         assert "DIMENSIONS ntax=2" in out
         assert "MATRIX" in out
         assert out.rstrip().endswith("END;")

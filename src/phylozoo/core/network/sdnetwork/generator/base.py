@@ -57,13 +57,7 @@ class SemiDirectedGenerator:
     Parameters
     ----------
     graph : MixedMultiGraph
-        The underlying graph structure of the generator. Should be biconnected.
-    
-    Attributes
-    ----------
-    _graph : MixedMultiGraph[T]
-        Internal graph structure using MixedMultiGraph.
-        **Warning:** Do not modify directly.
+        The underlying graph structure of the generator.         Should be biconnected.
     
     Examples
     --------
@@ -78,6 +72,12 @@ class SemiDirectedGenerator:
     1
     >>> generator.hybrid_nodes
     {1}
+    
+    Attributes
+    ----------
+    _graph : MixedMultiGraph[T]
+        Internal graph structure using MixedMultiGraph.
+        **Warning:** Do not modify directly.
     """
     
     def __init__(self, graph: MixedMultiGraph[T]) -> None:
