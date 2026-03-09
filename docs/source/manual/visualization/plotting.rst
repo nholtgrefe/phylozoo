@@ -8,10 +8,10 @@ Plots are rendered using `matplotlib <https://matplotlib.org/stable/>`_ and retu
 The :func:`~phylozoo.viz.plot` function accepts any of four object types and dispatches by type to the
 appropriate plotter:
 
-* :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` → :func:`~phylozoo.viz.dnetwork.plot.plot_dnetwork`
-* :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` → :func:`~phylozoo.viz.sdnetwork.plot.plot_sdnetwork`
-* :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` → :func:`~phylozoo.viz.d_multigraph.plot.plot_dmgraph`
-* :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` → :func:`~phylozoo.viz.m_multigraph.plot.plot_mmgraph`
+* :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` → :func:`~phylozoo.viz.dnetwork.plot_dnetwork`
+* :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` → :func:`~phylozoo.viz.sdnetwork.plot_sdnetwork`
+* :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` → :func:`~phylozoo.viz.d_multigraph.plot_dmgraph`
+* :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` → :func:`~phylozoo.viz.m_multigraph.plot_mmgraph`
 
 How to Plot
 -----------

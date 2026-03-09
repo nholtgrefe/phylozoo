@@ -1,12 +1,15 @@
 dnetwork
 --------
 
-Plotting and styling for directed phylogenetic networks (DirectedPhyNetwork).
+.. py:module:: phylozoo.viz.dnetwork
+
+.. automodule:: phylozoo.viz.dnetwork
+   :no-members:
 
 Plotting
 ^^^^^^^^
 
-.. autofunction:: phylozoo.viz.dnetwork.plot.plot_dnetwork
+.. autofunction:: phylozoo.viz.dnetwork.plot_dnetwork
 
 Styling
 ^^^^^^^

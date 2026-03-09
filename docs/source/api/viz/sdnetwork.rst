@@ -1,12 +1,15 @@
 sdnetwork
 ---------
 
-Plotting and styling for semi-directed phylogenetic networks (SemiDirectedPhyNetwork).
+.. py:module:: phylozoo.viz.sdnetwork
+
+.. automodule:: phylozoo.viz.sdnetwork
+   :no-members:
 
 Plotting
 ^^^^^^^^
 
-.. autofunction:: phylozoo.viz.sdnetwork.plot.plot_sdnetwork
+.. autofunction:: phylozoo.viz.sdnetwork.plot_sdnetwork
 
 Styling
 ^^^^^^^^

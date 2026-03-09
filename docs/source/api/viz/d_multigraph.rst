@@ -1,12 +1,15 @@
 d_multigraph
 ------------
 
-Plotting and styling for DirectedMultiGraph.
+.. py:module:: phylozoo.viz.d_multigraph
+
+.. automodule:: phylozoo.viz.d_multigraph
+   :no-members:
 
 Plotting
 ^^^^^^^^
 
-.. autofunction:: phylozoo.viz.d_multigraph.plot.plot_dmgraph
+.. autofunction:: phylozoo.viz.d_multigraph.plot_dmgraph
 
 Styling
 ^^^^^^^^

@@ -1,12 +1,15 @@
 m_multigraph
 ------------
 
-Plotting and styling for MixedMultiGraph.
+.. py:module:: phylozoo.viz.m_multigraph
+
+.. automodule:: phylozoo.viz.m_multigraph
+   :no-members:
 
 Plotting
 ^^^^^^^^
 
-.. autofunction:: phylozoo.viz.m_multigraph.plot.plot_mmgraph
+.. autofunction:: phylozoo.viz.m_multigraph.plot_mmgraph
 
 Styling
 ^^^^^^^^

@@ -40,7 +40,7 @@ see the corresponding sections in this manual:
    * **Networks**: ``DirectedPhyNetwork`` and ``SemiDirectedPhyNetwork`` classes for 
      representing phylogenetic networks. Directed networks are fully directed DAGs with 
      explicit root and hybrid nodes, while semi-directed networks allow undirected tree 
-     edges for modelling root uncertainty :cite:`NetworkRepresentation2024`. 
+     edges for modelling root uncertainty. 
      See :doc:`Networks <core/networks/index>` for details.
    
    * **Quartets**: ``Quartet``, ``QuartetProfile``, and ``QuartetProfileSet`` classes for 
