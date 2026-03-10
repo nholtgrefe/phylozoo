@@ -5,11 +5,27 @@ Installing PhyloZoo
 -------------------
 
 PhyloZoo is a Python package that runs on `Python <https://www.python.org/>`_ (>= 3.10).
-You can install PhyloZoo and its dependencies using ``pip`` from `PyPI <https://pypi.org/project/phylozoo/>`_:
+Install PhyloZoo using ``pip`` from `PyPI <https://pypi.org/project/phylozoo/>`_. Choose one of:
 
-.. code-block:: bash
+* **Minimal** — Core only: NumPy, Numba, NetworkX.
 
-   pip install phylozoo
+  .. code-block:: bash
+
+     pip install phylozoo
+
+* **With plotting (recommended)** — Adds Matplotlib for network visualization.
+
+  .. code-block:: bash
+
+     pip install phylozoo[viz]
+
+* **With Graphviz layouts** — Adds Matplotlib and PyGraphviz for additional layout algorithms
+  (dot, neato, fdp, etc.). Requires the Graphviz system library to be installed separately
+  (see troubleshooting below).
+
+  .. code-block:: bash
+
+     pip install phylozoo[graphviz]
 
 For development and contributing to PhyloZoo, install the latest source version in
 editable mode:
@@ -21,17 +37,18 @@ editable mode:
    pip install -e ".[dev]"
 
 Requirements
-------------
+^^^^^^^^^^^^
 
-PhyloZoo is designed to be lightweight and keeps its mandatory dependencies to a small set
-of widely used scientific Python packages. The core requirements are:
+PhyloZoo keeps its core dependencies minimal. The mandatory requirements are:
 
 * `NumPy <https://numpy.org/>`_ >= 1.20.0 (for numerical operations)
 * `NetworkX <https://networkx.org/>`_ >= 3.0.0 (for graph operations)
 * `Numba <https://numba.pydata.org/>`_ >= 0.56.0 (for JIT compilation of computationally intensive algorithms)
-* `Matplotlib <https://matplotlib.org/>`_ >= 3.5.0 (for plotting networks and visualizations)
 
-These are installed automatically when installing PhyloZoo.
+Optional (install via extras):
+
+* `Matplotlib <https://matplotlib.org/>`_ >= 3.5.0 (for plotting; use ``phylozoo[viz]`` or ``phylozoo[graphviz]``)
+* `PyGraphviz <https://pygraphviz.github.io/>`_ (for Graphviz layouts; use ``phylozoo[graphviz]``; requires Graphviz system library)
 
 Verifying Installation
 ----------------------
@@ -85,8 +102,21 @@ Troubleshooting
 
    pip check phylozoo
 
-**Visualization not working**: Install Matplotlib:
+**Visualization not working / ``PhyloZooImportError``**: The viz module requires Matplotlib.
+Install the viz extra:
 
 .. code-block:: bash
 
-   pip install matplotlib
+   pip install phylozoo[viz]
+
+**Graphviz layouts (dot, neato, fdp, etc.) not working**: You need both the Graphviz system
+library and the ``pygraphviz`` Python package. Install the graphviz extra:
+
+.. code-block:: bash
+
+   pip install phylozoo[graphviz]
+
+You must also install the Graphviz system library (e.g. ``apt install graphviz graphviz-dev``
+on Debian/Ubuntu, ``brew install graphviz`` on macOS). See the
+`PyGraphviz installation guide <https://pygraphviz.github.io/documentation/stable/install.html>`_
+for details.

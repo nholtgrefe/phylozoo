@@ -24,24 +24,35 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+viz = [
+    "matplotlib>=3.5.0",
+]
+graphviz = [
+    "matplotlib>=3.5.0",
+    "pygraphviz",
+]
 test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "matplotlib>=3.5.0",
 ]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "matplotlib>=3.5.0",
     "mypy>=1.0.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
-    "numpy>=1.20.0",  # For type checking/linting
-    "numba>=0.56.0",  # For type checking/linting
 ]
 docs = [
     "sphinx>=7.0.0",
     "sphinx-autobuild>=2023.0.0",
     "sphinx-rtd-theme>=2.0.0",
+    "pydata-sphinx-theme>=0.15.0",
     "sphinxcontrib-napoleon>=0.7",
+    "sphinx-copybutton>=0.5.0",
+    "sphinxcontrib-bibtex>=2.6.0",
+    "pybtex>=0.24.0",
 ]
 
 [tool.setuptools]
@@ -65,10 +76,6 @@ filterwarnings = [
     "ignore:Empty network.*no nodes.*:UserWarning",
     "ignore:Single-node network.*:UserWarning",
     "ignore:Validity is not fully checked for MixedPhyNetworks.*:UserWarning",
-]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
 ]
 
 [tool.mypy]

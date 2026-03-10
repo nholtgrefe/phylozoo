@@ -12,9 +12,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Protocol
 
-import matplotlib.patches as mpatches
-from matplotlib.path import Path as MPath
-from matplotlib.patches import Circle
+from phylozoo.viz._matplotlib import Circle, MPath, mpatches
 
 from ._types import EdgeRoute
 

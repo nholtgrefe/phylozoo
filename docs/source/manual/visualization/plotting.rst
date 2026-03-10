@@ -41,9 +41,9 @@ Layouts
 .. _viz-layout:
 
 A layout algorithm determines how nodes are positioned on the canvas. PhyloZoo supports
-three sources of layouts: **NetworkX** (built-in, no extra dependencies), **Graphviz**
-(requires the Graphviz system library and ``pygraphviz``), and **PhyloZoo** (custom layouts
-for directed and semi-directed networks).
+three sources of layouts: **NetworkX** (built-in, no extra dependencies beyond ``phylozoo[viz]``),
+**Graphviz** (requires ``pip install phylozoo[graphviz]`` and the Graphviz system library),
+and **PhyloZoo** (custom layouts for directed and semi-directed networks).
 
 Pass the layout name as the ``layout`` argument; layout-specific parameters (e.g. ``layer_gap``
 for ``pz-dag``) go in ``**kwargs``:
@@ -78,8 +78,16 @@ For full parameter documentation (e.g. ``k``, ``iterations``, ``seed``, ``scale`
 Graphviz
 ^^^^^^^^
 
-Graphviz layouts produce high-quality layouts and scale well to larger graphs. They require
-the Graphviz system library and the Python package ``pygraphviz``.
+Graphviz layouts produce high-quality layouts and scale well to larger graphs. Install with:
+
+.. code-block:: bash
+
+   pip install phylozoo[graphviz]
+
+You must also install the Graphviz system library (e.g. ``apt install graphviz graphviz-dev``
+on Debian/Ubuntu, ``brew install graphviz`` on macOS). See the
+`PyGraphviz installation guide <https://pygraphviz.github.io/documentation/stable/install.html>`_
+for details.
 
 * **dot** — Hierarchical (layered) layout. Well-suited for directed acyclic graphs and phylogenetic trees.
 * **twopi** — Radial layout with root at center. Good for trees and semi-directed networks (default for SemiDirectedPhyNetwork).
@@ -91,11 +99,6 @@ the Graphviz system library and the Python package ``pygraphviz``.
 For layout program parameters and attributes, see the
 `PyGraphviz documentation <https://pygraphviz.github.io/documentation/stable/>`_ and the
 `Graphviz documentation <https://graphviz.org/documentation/>`_.
-
-.. warning::
-   Install Graphviz first (e.g. ``apt install graphviz graphviz-dev`` on Debian/Ubuntu,
-   ``brew install graphviz`` on macOS), then ``pip install pygraphviz``.
-   See the `PyGraphviz installation guide <https://pygraphviz.github.io/documentation/stable/install.html>`_ for details.
 
 
 PhyloZoo

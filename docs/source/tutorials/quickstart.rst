@@ -7,14 +7,14 @@ creating networks, and working with related data types, at every step referring 
 Getting Started
 ---------------
 
-Install PhyloZoo using pip:
+Install PhyloZoo using pip. For most users (including visualization), use:
 
 .. code-block:: bash
 
-   pip install phylozoo
+   pip install phylozoo[viz]
 
-See the
-:doc:`Installation Guide <../manual/installation>` for full details.
+For a minimal install without plotting, use ``pip install phylozoo``.
+See the :doc:`Installation Guide <../manual/installation>` for full details.
 
 Networks
 --------

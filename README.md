@@ -2,110 +2,35 @@
 
 A phylogenetic analysis package for working with phylogenetic networks, trees, and related structures.
 
-## Getting Started
-
-### Installation
-
-Install the package in development mode:
+## Installation
 
 ```bash
-pip install -e .
+pip install phylozoo[viz]
 ```
 
-This will install the package in editable mode, allowing you to make changes to the code without reinstalling.
-
-### Development Installation
-
-For development with all tools (testing, linting, type checking):
+For a minimal install without visualization, use:
 
 ```bash
-pip install -e ".[dev]"
+pip install phylozoo
 ```
 
-Or just for testing:
+For Graphviz-based layouts, use:
 
 ```bash
-pip install -e ".[test]"
+pip install phylozoo[graphviz]
 ```
 
-## Usage
+## Documentation
 
-After installation, you can import the package:
+Full documentation is available on Read the Docs (see the project page for the latest URL).
 
-```python
-import phylozoo
-```
+## Citation
 
-## Testing
+If you use PhyloZoo in your research, please cite:
 
-This project uses pytest for testing.
-
-### Running Tests
-
-To run all tests:
-
-```bash
-pytest
-```
-
-To run tests with coverage:
-
-```bash
-pytest --cov=phylozoo --cov-report=html
-```
-
-To run specific test files:
-
-```bash
-pytest tests/test_splits.py
-```
-
-To run tests matching a pattern:
-
-```bash
-pytest -k "test_split"
-```
-
-To run tests in verbose mode:
-
-```bash
-pytest -v
-```
-
-See `tests/README.md` for more testing information.
-
-
-## Development
-
-### Type Checking
-
-This project uses type hints throughout. To check types:
-
-```bash
-mypy src/phylozoo
-```
-
-### Code Formatting
-
-This project uses Black for code formatting:
-
-```bash
-black src/phylozoo tests
-```
-
-### Linting
-
-This project uses Ruff for linting:
-
-```bash
-ruff check src/phylozoo tests
-```
+> Niels Holtgrefe (2026). *PhyloZoo*. Version 0.1.0. Available at: https://github.com/nholtgrefe/phylozoo
 
 ## License
 
 MIT License
-
-## Authors
-
-- N. Holtgrefe (n.a.l.holtgrefe@tudelft.nl)
 

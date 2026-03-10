@@ -8,10 +8,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import matplotlib.pyplot as plt
-
 from phylozoo.utils.exceptions import PhyloZooLayoutError
 from phylozoo.viz._layout_utils import compute_layout_center
+from phylozoo.viz._matplotlib import plt
 
 from .layout.nx import compute_nx_layout
 from .style import DMGraphStyle, default_style

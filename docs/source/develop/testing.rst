@@ -84,12 +84,6 @@ Running Tests
 
    pytest -v
 
-**Run only fast tests (excluding slow markers):**
-
-.. code-block:: bash
-
-   pytest -m "not slow"
-
 Writing Tests
 -------------
 
@@ -133,24 +127,6 @@ Group related tests in test classes:
            """Test edge case handling."""
            # Test code here
            pass
-
-Test Markers
-~~~~~~~~~~~~
-
-The following markers are available:
-
-* ``@pytest.mark.slow`` - Marks tests as slow (deselect with ``-m "not slow"``)
-* ``@pytest.mark.integration`` - Marks tests as integration tests
-
-Example:
-
-.. code-block:: python
-
-   @pytest.mark.slow
-   def test_large_network() -> None:
-       """Test with a large network (slow test)."""
-       # Test code here
-       pass
 
 Fixtures
 ~~~~~~~~
