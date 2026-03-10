@@ -8,9 +8,10 @@ directed phylogenetic networks (e.g., is_tree, is_binary, level, etc.).
 
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
+import itertools
 
 from ...primitives.d_multigraph.features import has_parallel_edges as graph_has_parallel_edges
-from .features import blobs
+from .features import blobs, omnians
 from ....utils.exceptions import PhyloZooNotImplementedError, PhyloZooValueError, PhyloZooAlgorithmError
 
 
@@ -557,10 +558,65 @@ def is_treechild(network: 'DirectedPhyNetwork') -> bool:
     
     return True
 
-
+@lru_cache(maxsize=128)
 def is_treebased(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_treechild function."""
-    raise PhyloZooNotImplementedError("is_treebased function is not implemented.")
+    """
+    Check if the network is tree-based.
+
+    A network is tree-based if it is a base-tree with additional arcs.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network to check.
+    
+    Returns
+    -------
+    bool
+        True if the network is tree-based, False otherwise.
+    
+    Raises
+    ------
+    PhyloZooNotImplementedError
+        If the network is non-binary or has parallel edges.
+    
+    Notes
+    -----
+    For empty networks or single-node networks, this function returns True.
+    The implementation uses the omnian characterization of tree-based networks :cite:`Jetten2016`.
+
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> is_treebased(net)
+    True
+    """
+
+    if not is_binary(network):
+        raise PhyloZooNotImplementedError("is_treebased function is not implemented for non-binary networks.")
+    if has_parallel_edges(network):
+        raise PhyloZooNotImplementedError("is_treebased function is not implemented for networks with parallel edges.")
+
+    # Let U be the set of all omnians of N. Then N is tree-based
+    # if and only if for every subset S ⊆ U the number of different
+    # children of the vertices in S is greater than or equal to |S|.
+
+    omnian_set = omnians(network)
+    if not omnian_set:
+        return True
+
+    U = sorted(omnian_set)
+    children = {u: set(network.children(u)) for u in U}
+
+    for r in range(1, len(U) + 1):
+        for subset in itertools.combinations(U, r):
+            neigh: set[object] = set()
+            for u in subset:
+                neigh |= children[u]
+            if len(neigh) < len(subset):
+                return False
+
+    return True
 
 
 def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:

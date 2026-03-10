@@ -366,6 +366,47 @@ Properties:
 - Number of hybrid nodes: 2"""
 
 # ============================================================================
+# NON-TREE-BASED
+# ============================================================================
+
+LEVEL_2_DNETWORK_NON_TREEBASED = DirectedPhyNetwork(
+    edges=[
+        (100, 50),
+        (100, 51),
+        (50, 11),
+        (50, 52),
+        (51, 12),
+        (51, 53),
+        (52, 13),
+        (52, 14),
+        (53, 14),
+        (53, 13),
+        (11, 20),
+        (11, 21),
+        (12, 21),
+        (12, 22),
+        (13, 20),
+        (14, 22),
+        (20, 1),
+        (21, 2),
+        (22, 3),
+    ],
+    nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})],
+)
+"""Binary network that is NOT tree-based (violates omnian condition).
+
+6 omnians (11, 12, 13, 14, 52, 53) with only 3 distinct children (20, 21, 22),
+so |children(S)| < |S| for S = all omnians.
+
+Properties:
+- Nodes: 13, Edges: 18
+- Level: 2, Vertex level: 2, Reticulation number: 2
+- Is tree: False, Is binary: True
+- Has parallel edges: False
+- Number of hybrid nodes: 2
+- Is tree-based: False"""
+
+# ============================================================================
 # MULTIPLE BLOBS
 # ============================================================================
 
@@ -1348,6 +1389,18 @@ NETWORK_METADATA: dict[str, dict[str, Any]] = {
         'reticulation_number': 3,
         'is_tree': False,
         'is_binary': False,
+        'has_parallel_edges': False,
+        'num_hybrids': 2,
+    },
+    'LEVEL_2_DNETWORK_NON_TREEBASED': {
+        'category': 'non_treebased',
+        'nodes': 13,
+        'edges': 18,
+        'level': 2,
+        'vertex_level': 2,
+        'reticulation_number': 2,
+        'is_tree': False,
+        'is_binary': True,
         'has_parallel_edges': False,
         'num_hybrids': 2,
     },
