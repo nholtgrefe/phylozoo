@@ -3,9 +3,7 @@
 </p>
 
 PhyloZoo is a Python package for working with phylogenetic networks and related evolutionary
-data types. Phylogenetic networks extend phylogenetic trees by allowing for both divergence
-and merging events, making them suitable for modeling processes like hybridization, horizontal
-gene transfer, and admixture. PhyloZoo aims to provide the foundational infrastructure for
+data types. PhyloZoo aims to provide the foundational infrastructure for
 phylogenetic network analysis in Python — a common framework that other packages can build on.
 
 ## Key Features
