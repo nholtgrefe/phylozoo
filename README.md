@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/github/license/nholtgrefe/phylozoo)](https://github.com/nholtgrefe/phylozoo/blob/main/LICENSE.md)
 [![Docs](https://img.shields.io/badge/docs-stable-blue)](https://nholtgrefe.github.io/phylozoo/)
 
-# PhyloZoo <img src="https://raw.githubusercontent.com/nholtgrefe/phylozoo/main/docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="300" align="right">
+# PhyloZoo <img src="https://github.com/nholtgrefe/phylozoo/blob/master/docs/source/_static/phylozoo_compact.svg" alt="PhyloZoo" width="300" align="right">
 
 PhyloZoo is a Python package for working with phylogenetic networks and related evolutionary
 data types. PhyloZoo aims to provide the foundational infrastructure for
