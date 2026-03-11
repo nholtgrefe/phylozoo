@@ -2,7 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/phylozoo)](https://pypi.org/project/phylozoo/)
 [![License](https://img.shields.io/github/license/nholtgrefe/phylozoo)](https://github.com/nholtgrefe/phylozoo/blob/main/LICENSE.md)
 [![Docs](https://img.shields.io/badge/docs-stable-blue)](https://nholtgrefe.github.io/phylozoo/)
-<img src="https://github.com/nholtgrefe/phylozoo/blob/master/docs/source/_static/phylozoo_compact.svg" alt="PhyloZoo" width="330" align="right">
+<img src="https://github.com/nholtgrefe/phylozoo/blob/master/docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="330" align="right">
 
 
 # PhyloZoo
