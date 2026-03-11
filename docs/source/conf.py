@@ -12,13 +12,16 @@ from pathlib import Path
 project = 'phylozoo'
 copyright = '2026, Niels Holtgrefe'
 author = 'Niels Holtgrefe'
-release = '0.1.0'
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 # Add the src directory to the Python path for autodoc
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+
+import phylozoo  # noqa: E402
+release = phylozoo.__version__
+version = phylozoo.__version__
+
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -80,6 +83,10 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 language = 'en'
+
+rst_epilog = f"""
+.. |version| replace:: {phylozoo.__version__}
+"""
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

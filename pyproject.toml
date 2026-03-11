@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phylozoo"
-version = "0.1.0"
+dynamic = ["version"]
 authors = [
     {name = "Niels Holtgrefe", email = "n.a.l.holtgrefe@tudelft.nl"},
 ]
@@ -57,6 +57,9 @@ docs = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "phylozoo.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

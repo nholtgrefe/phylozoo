@@ -53,13 +53,14 @@ Optional (install via extras):
 Verifying Installation
 ----------------------
 
-To verify that PhyloZoo is installed correctly, you can import it and print the version:
+To verify that PhyloZoo is installed correctly, you can import it and print the version.
+The latest version is |version|.
 
 .. code-block:: python
 
    >>> import phylozoo
    >>> print(phylozoo.__version__)
-   0.1.0
+   x.y.z  # your installed version
 
    >>> from phylozoo import DirectedPhyNetwork
    >>> net = DirectedPhyNetwork(edges=[(1, 2), (1, 3)], nodes=[(2, {'label': 'A'}), (3, {'label': 'B'})])
