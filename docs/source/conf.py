@@ -98,7 +98,7 @@ try:
     # Modern versions don't need html_theme_path - Sphinx finds it automatically
     html_theme_path = []
 except ImportError:
-    # Fallback to Read the Docs theme if PyData theme not available
+    # Fallback to RTD theme if PyData theme not available
     try:
         import sphinx_rtd_theme
         html_theme = 'sphinx_rtd_theme'
@@ -150,9 +150,7 @@ elif html_theme == 'sphinx_rtd_theme':
         'style_nav_header_background': '#2980B9',
     }
 
-# GitHub Pages compatibility (optional, for future migration)
-# Uncomment and update if migrating to GitHub Pages:
-# html_baseurl = 'https://yourusername.github.io/phylozoo/'
+html_baseurl = 'https://nholtgrefe.github.io/phylozoo/'
 
 # GitHub context (used by both themes)
 # Note: PyData theme uses its own html_context above, but we keep this for RTD fallback

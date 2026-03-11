@@ -11,4 +11,4 @@ Test suite for PhyloZoo. Mirrors the source structure.
 - `fixtures/` — Shared test data
 - `conftest.py` — Pytest fixtures and configuration
 
-For how to run and write tests, see the Testing Guide in the development section of the documentation.
+For how to run and write tests, see the Testing Guide in the development section of the documentation, which can be found online at https://nholtgrefe.github.io/phylozoo/.

@@ -8,4 +8,4 @@ Installable PhyloZoo package. Use `import phylozoo`, not `import src.phylozoo`.
 - `phylozoo/viz/` — Visualization (optional, requires matplotlib)
 - `phylozoo/utils/` — Utilities, I/O, exceptions
 
-For API details, see the documentation.
+For API details, see the documentation, which can be found online at https://nholtgrefe.github.io/phylozoo/.

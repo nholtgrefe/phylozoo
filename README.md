@@ -1,33 +1,37 @@
 <p align="left">
-  <img src="docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="500">
+  <img src="https://raw.githubusercontent.com/nholtgrefe/phylozoo/main/docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="500">
 </p>
 
-A phylogenetic analysis package for working with phylogenetic networks, trees, and related structures.
+PhyloZoo is a Python package for working with phylogenetic networks and related evolutionary
+data types. Phylogenetic networks extend phylogenetic trees by allowing for both divergence
+and merging events, making them suitable for modeling processes like hybridization, horizontal
+gene transfer, and admixture. PhyloZoo aims to provide the foundational infrastructure for
+phylogenetic network analysis in Python — a common framework that other packages can build on.
+
+## Key Features
+
+- **Directed & semi-directed networks** — represent phylogenetic networks as fully directed rooted DAGs or as semi-directed/mixed graphs that allow root uncertainty. Both representations are validated on construction to guarantee well-formed phylogenetic objects. Includes a rich library of operations: network classifications, generators, conversions between representations, and much more.
+- **Quartets, splits & distance matrices** — support for quartet systems, split systems, and pairwise distance matrices: the core building blocks for phylogenetic inference and comparison.
+- **Multiple sequence alignments** — store and manipulate sequence data with efficient NumPy-backed arrays, including bootstrapping and site-pattern extraction.
+- **Flexible visualization** — plot networks with different layouts and fine-grained control over styling, labels, and coloring via Matplotlib.
+- **Standard file formats** — read and write common phylogenetic formats including eNewick, DOT, FASTA, and NEXUS, making it easy to integrate with existing workflows.
+- **Performance** — leverages NumPy and optional Numba JIT compilation for computationally intensive algorithms.
+
 
 ## Installation
+
+To install the recommended version that includes vizualization, do:
 
 ```bash
 pip install phylozoo[viz]
 ```
 
-For a minimal install without visualization, use:
-
-```bash
-pip install phylozoo
-```
-
-For Graphviz-based layouts, use:
-
-```bash
-pip install phylozoo[graphviz]
-```
-
 ## Documentation
 
-Full documentation is available on Read the Docs (see the project page for the latest URL).
+For detailed documentation, installation instructions, tutorials, and API reference, visit the **[PhyloZoo docs](https://nholtgrefe.github.io/phylozoo/)**.
 
 ## Citation
 
 If you use PhyloZoo in your research, please cite:
 
-> Niels Holtgrefe (2026). *PhyloZoo*. Version 0.1.0. Available at: https://github.com/nholtgrefe/phylozoo
+> Niels Holtgrefe (2026). *PhyloZoo*. Available at: https://github.com/nholtgrefe/phylozoo

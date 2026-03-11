@@ -136,7 +136,6 @@ sandbox/
 
 # Others
 .cursorrules
-.github/
 .ruff_cache/
 
 # Todo file

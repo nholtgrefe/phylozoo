@@ -8,5 +8,5 @@ Sphinx documentation for PhyloZoo.
 - `build/` — Built HTML output
 - `Makefile` — Build commands
 
-For how to build the documentation and where to find it online, see the Installation page in the manual.
+For instructions on how to build the documentation locally, see the Installation page in the manual, which can be found online at https://nholtgrefe.github.io/phylozoo/.
 
