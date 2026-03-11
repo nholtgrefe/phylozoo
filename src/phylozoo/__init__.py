@@ -5,7 +5,7 @@ This package provides tools for working with phylogenetic networks, trees,
 and related structures.
 """
 
-__version__ = "0.0.0-dev"
+__version__ = "0.1.0"
 
 # Import core classes for convenient access
 from .core import (
