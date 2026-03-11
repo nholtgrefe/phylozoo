@@ -2,6 +2,8 @@
   <img src="https://raw.githubusercontent.com/nholtgrefe/phylozoo/main/docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="500">
 </p>
 
+# PhyloZoo <img src="/docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="200">
+
 PhyloZoo is a Python package for working with phylogenetic networks and related evolutionary
 data types. PhyloZoo aims to provide the foundational infrastructure for
 phylogenetic network analysis in Python — a common framework that other packages can build on.
