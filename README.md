@@ -1,4 +1,4 @@
-<p align="center">
+<p align="left">
   <img src="docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="500">
 </p>
 
