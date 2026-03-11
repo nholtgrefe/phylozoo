@@ -9,6 +9,8 @@ PhyloZoo is a Python package for working with phylogenetic networks and related 
 data types. PhyloZoo aims to provide the foundational infrastructure for
 phylogenetic network analysis in Python — a common framework that other packages can build on.
 
+<br>
+
 ## Key Features
 
 - **Directed & semi-directed networks** — represent phylogenetic networks as fully directed rooted DAGs or as semi-directed/mixed graphs that allow root uncertainty. Both representations are validated on construction to guarantee well-formed phylogenetic objects. Includes a rich library of operations: network classifications, generators, conversions between representations, and much more.
