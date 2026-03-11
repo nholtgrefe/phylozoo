@@ -1,4 +1,6 @@
-# PhyloZoo
+<p align="center">
+  <img src="docs/source/_static/phylozoo_full.svg" alt="PhyloZoo" width="500">
+</p>
 
 A phylogenetic analysis package for working with phylogenetic networks, trees, and related structures.
 

@@ -117,9 +117,9 @@ if html_theme == 'pydata_sphinx_theme':
     html_theme_options = {
         'github_url': 'https://github.com/nholtgrefe/phylozoo',
         'logo': {
-            'image_light': '_static/logo.png',  # Logo for light mode
-            'image_dark': '_static/logo.png',   # Same logo for dark mode (or use different if you have one)
-            'text': 'PhyloZoo',  # Fallback text if image fails to load
+            'image_light': '_static/phylozoo_compact.svg',  # Logo for light mode
+            'image_dark': '_static/phylozoo_compact.svg',   # Same logo for dark mode (or use different if you have one)
+            #'text': 'PhyloZoo',  # Fallback text if image fails to load
         },
         'use_edit_page_button': True,
         'show_toc_level': 2,
