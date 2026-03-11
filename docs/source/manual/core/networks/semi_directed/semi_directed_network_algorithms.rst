@@ -171,9 +171,9 @@ is stack-free, meaning no two hybrid nodes share a common parent.
 **Tree-Child Networks**
 
 The :func:`~phylozoo.core.network.sdnetwork.classifications.is_strongly_treechild` function checks if the
-network is strongly tree-child, meaning each internal node has at least one tree child. The
+network is strongly tree-child (every rooting yields a tree-child directed network). The
 :func:`~phylozoo.core.network.sdnetwork.classifications.is_weakly_treechild` function checks if the
-network is weakly tree-child. These functions are not yet implemented.
+network is weakly tree-child (at least one rooting yields a tree-child directed network).
 
 .. code-block:: python
 
@@ -184,7 +184,8 @@ network is weakly tree-child. These functions are not yet implemented.
 **Tree-Based Networks**
 
 The :func:`~phylozoo.core.network.sdnetwork.classifications.is_strongly_treebased` and :func:`~phylozoo.core.network.sdnetwork.classifications.is_weakly_treebased` functions check if the
-network is strongly tree-based and weakly tree-based, respectively.
+network is strongly tree-based (every rooting yields a tree-based directed network) and weakly tree-based
+(at least one rooting yields a tree-based directed network), respectively.
 
 .. code-block:: python
 

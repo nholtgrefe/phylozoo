@@ -619,11 +619,6 @@ def is_treebased(network: 'DirectedPhyNetwork') -> bool:
     return True
 
 
-def is_strictly_treebased(network: 'DirectedPhyNetwork') -> bool:
-    """Stub for is_treechild function."""
-    raise PhyloZooNotImplementedError("is_strictly_treebased function is not implemented.")
-
-
 @lru_cache(maxsize=128)
 def is_ultrametric(network: 'DirectedPhyNetwork') -> bool:
     """

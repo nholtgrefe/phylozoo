@@ -225,14 +225,18 @@ class TestFixtureConsistency:
         """Test that both modules have networks in all categories."""
         d_categories = set(m['category'] for m in dn.NETWORK_METADATA.values())
         sd_categories = set(m['category'] for m in sdn.NETWORK_METADATA.values())
-        
-        expected_categories = {
+
+        expected_d_categories = {
+            'trees', 'simple_hybrids', 'multiple_blobs',
+            'high_level', 'large_networks', 'parallel_edges', 'special_cases', 'non_lsa', 'non_treebased'
+        }
+        expected_sd_categories = {
             'trees', 'simple_hybrids', 'multiple_blobs',
             'high_level', 'large_networks', 'parallel_edges', 'special_cases', 'non_lsa'
         }
-        
-        assert d_categories == expected_categories
-        assert sd_categories == expected_categories
+
+        assert d_categories == expected_d_categories
+        assert sd_categories == expected_sd_categories
     
     def test_helper_functions_work(self) -> None:
         """Test that helper functions work correctly."""

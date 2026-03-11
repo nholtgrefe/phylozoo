@@ -194,16 +194,15 @@ property ensures that the network has a tree-like structure.
    # Check if network is tree-child
    is_treechild = classifications.is_treechild(network)
 
-**Tree-Based and Strictly Tree-based Networks**
+**Tree-Based Networks**
 
-The :func:`~phylozoo.core.network.dnetwork.classifications.is_treebased` and :func:`~phylozoo.core.network.dnetwork.classifications.is_strictly_treebased` functions check if the
-network is tree-based and strictly tree-based. This is currently a stub function and will be implemented in the future.
+The :func:`~phylozoo.core.network.dnetwork.classifications.is_treebased` function checks if the
+network is tree-based.
 
 .. code-block:: python
 
    # Check if network is tree-based
    is_treebased = classifications.is_treebased(network)
-   is_strictly_treebased = classifications.is_strictly_treebased(network)
 
 **Galled Networks**
 

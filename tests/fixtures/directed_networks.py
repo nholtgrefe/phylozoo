@@ -369,7 +369,7 @@ Properties:
 # NON-TREE-BASED
 # ============================================================================
 
-LEVEL_2_DNETWORK_NON_TREEBASED = DirectedPhyNetwork(
+LEVEL_5_DNETWORK_NON_TREEBASED = DirectedPhyNetwork(
     edges=[
         (100, 50),
         (100, 51),
@@ -399,11 +399,11 @@ LEVEL_2_DNETWORK_NON_TREEBASED = DirectedPhyNetwork(
 so |children(S)| < |S| for S = all omnians.
 
 Properties:
-- Nodes: 13, Edges: 18
-- Level: 2, Vertex level: 2, Reticulation number: 2
+- Nodes: 15, Edges: 19
+- Level: 5, Vertex level: 5, Reticulation number: 5
 - Is tree: False, Is binary: True
 - Has parallel edges: False
-- Number of hybrid nodes: 2
+- Number of hybrid nodes: 5
 - Is tree-based: False"""
 
 # ============================================================================
@@ -1392,17 +1392,17 @@ NETWORK_METADATA: dict[str, dict[str, Any]] = {
         'has_parallel_edges': False,
         'num_hybrids': 2,
     },
-    'LEVEL_2_DNETWORK_NON_TREEBASED': {
+    'LEVEL_5_DNETWORK_NON_TREEBASED': {
         'category': 'non_treebased',
-        'nodes': 13,
-        'edges': 18,
-        'level': 2,
-        'vertex_level': 2,
-        'reticulation_number': 2,
+        'nodes': 15,
+        'edges': 19,
+        'level': 5,
+        'vertex_level': 5,
+        'reticulation_number': 5,
         'is_tree': False,
         'is_binary': True,
         'has_parallel_edges': False,
-        'num_hybrids': 2,
+        'num_hybrids': 5,
     },
     # Multiple Blobs
     'LEVEL_1_DNETWORK_TWO_BLOBS': {

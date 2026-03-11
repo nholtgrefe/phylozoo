@@ -15,11 +15,16 @@ import pytest
 
 from phylozoo.core.network import SemiDirectedPhyNetwork
 from phylozoo.core.network.sdnetwork.classifications import (
+    has_parallel_edges,
     is_binary,
     is_galled,
     is_simple,
     is_stackfree,
+    is_strongly_treebased,
+    is_strongly_treechild,
     is_tree,
+    is_weakly_treebased,
+    is_weakly_treechild,
     level,
     reticulation_number,
     vertex_level,
@@ -489,3 +494,253 @@ class TestIsGalled:
             nodes=[(1, {'label': 'A'}), (10, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'}), (15, {'label': 'G'})]
         )
         assert is_galled(net) is False
+
+
+class TestIsStronglyTreechild:
+    """Test cases for is_strongly_treechild function."""
+
+    def test_strongly_treechild_empty_network(self) -> None:
+        """Empty network is vacuously strongly tree-child."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
+        assert is_strongly_treechild(net) is True
+
+    def test_strongly_treechild_single_node(self) -> None:
+        """Single-node network is vacuously strongly tree-child."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[], undirected_edges=[],
+            nodes=[(1, {'label': 'A'})]
+        )
+        assert is_strongly_treechild(net) is True
+
+    def test_strongly_treechild_tree(self) -> None:
+        """Trees are strongly tree-child (every rooting is tree-child)."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        assert is_strongly_treechild(net) is True
+
+    def test_strongly_treechild_single_hybrid_fixture(self) -> None:
+        """Single-hybrid binary network is strongly tree-child."""
+        from tests.fixtures import sd_networks as sdn
+
+        assert is_strongly_treechild(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY) is True
+
+    def test_strongly_treechild_raises_non_binary(self) -> None:
+        """Raises PhyloZooNotImplementedError for non-binary networks."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (4, {'label': 'C'}), (5, {'label': 'D'})
+            ]
+        )
+        with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
+            is_strongly_treechild(net)
+
+    def test_strongly_treechild_raises_parallel_edges(self) -> None:
+        """Raises PhyloZooNotImplementedError for networks with parallel edges."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+        from tests.fixtures import sd_networks as sdn
+
+        with pytest.raises(PhyloZooNotImplementedError, match="parallel"):
+            is_strongly_treechild(sdn.LEVEL_1_SDNETWORK_PARALLEL_EDGES)
+
+
+class TestIsWeaklyTreechild:
+    """Test cases for is_weakly_treechild function."""
+
+    def test_weakly_treechild_empty_network(self) -> None:
+        """Empty network is vacuously weakly tree-child."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
+        assert is_weakly_treechild(net) is True
+
+    def test_weakly_treechild_tree(self) -> None:
+        """Trees are weakly tree-child."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        assert is_weakly_treechild(net) is True
+
+    def test_weakly_treechild_single_hybrid_fixture(self) -> None:
+        """Single-hybrid binary network is weakly tree-child."""
+        from tests.fixtures import sd_networks as sdn
+
+        assert is_weakly_treechild(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY) is True
+
+    def test_weakly_treechild_raises_non_binary(self) -> None:
+        """Raises PhyloZooNotImplementedError for non-binary networks."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (4, {'label': 'C'}), (5, {'label': 'D'})
+            ]
+        )
+        with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
+            is_weakly_treechild(net)
+
+    def test_weakly_treechild_raises_parallel_edges(self) -> None:
+        """Raises PhyloZooNotImplementedError for networks with parallel edges."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+        from tests.fixtures import sd_networks as sdn
+
+        with pytest.raises(PhyloZooNotImplementedError, match="parallel"):
+            is_weakly_treechild(sdn.LEVEL_1_SDNETWORK_PARALLEL_EDGES)
+
+    def test_strongly_implies_weakly_treechild(self) -> None:
+        """If strongly tree-child then weakly tree-child."""
+        from tests.fixtures import sd_networks as sdn
+
+        for net in [
+            sdn.SDTREE_SMALL_BINARY,
+            sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY,
+            sdn.LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE,
+        ]:
+            if not is_binary(net) or has_parallel_edges(net):
+                continue
+            if is_strongly_treechild(net):
+                assert is_weakly_treechild(net)
+
+
+class TestIsStronglyTreebased:
+    """Test cases for is_strongly_treebased function."""
+
+    def test_strongly_treebased_empty_network(self) -> None:
+        """Empty network is vacuously strongly tree-based."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
+        assert is_strongly_treebased(net) is True
+
+    def test_strongly_treebased_single_node(self) -> None:
+        """Single-node network is vacuously strongly tree-based."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[], undirected_edges=[],
+            nodes=[(1, {'label': 'A'})]
+        )
+        assert is_strongly_treebased(net) is True
+
+    def test_strongly_treebased_tree(self) -> None:
+        """Trees are strongly tree-based (every rooting is tree-based)."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        assert is_strongly_treebased(net) is True
+
+    def test_strongly_treebased_single_hybrid_fixture(self) -> None:
+        """Single-hybrid binary network is strongly tree-based."""
+        from tests.fixtures import sd_networks as sdn
+
+        assert is_strongly_treebased(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY) is True
+
+    def test_strongly_treebased_raises_non_binary(self) -> None:
+        """Raises PhyloZooNotImplementedError for non-binary networks."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (4, {'label': 'C'}), (5, {'label': 'D'})
+            ]
+        )
+        with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
+            is_strongly_treebased(net)
+
+    def test_strongly_treebased_raises_parallel_edges(self) -> None:
+        """Raises PhyloZooNotImplementedError for networks with parallel edges."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+        from tests.fixtures import sd_networks as sdn
+
+        with pytest.raises(PhyloZooNotImplementedError, match="parallel"):
+            is_strongly_treebased(sdn.LEVEL_1_SDNETWORK_PARALLEL_EDGES)
+
+
+class TestIsWeaklyTreebased:
+    """Test cases for is_weakly_treebased function."""
+
+    def test_weakly_treebased_empty_network(self) -> None:
+        """Empty network is vacuously weakly tree-based."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
+        assert is_weakly_treebased(net) is True
+
+    def test_weakly_treebased_tree(self) -> None:
+        """Trees are weakly tree-based."""
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        assert is_weakly_treebased(net) is True
+
+    def test_weakly_treebased_single_hybrid_fixture(self) -> None:
+        """Single-hybrid binary network is weakly tree-based."""
+        from tests.fixtures import sd_networks as sdn
+
+        assert is_weakly_treebased(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY) is True
+
+    def test_weakly_treebased_raises_non_binary(self) -> None:
+        """Raises PhyloZooNotImplementedError for non-binary networks."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (4, {'label': 'C'}), (5, {'label': 'D'})
+            ]
+        )
+        with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
+            is_weakly_treebased(net)
+
+    def test_weakly_treebased_raises_parallel_edges(self) -> None:
+        """Raises PhyloZooNotImplementedError for networks with parallel edges."""
+        from phylozoo.utils.exceptions import PhyloZooNotImplementedError
+        from tests.fixtures import sd_networks as sdn
+
+        with pytest.raises(PhyloZooNotImplementedError, match="parallel"):
+            is_weakly_treebased(sdn.LEVEL_1_SDNETWORK_PARALLEL_EDGES)
+
+    def test_weakly_treebased_uses_to_d_network_and_root_locations(self) -> None:
+        """Verify implementation uses to_d_network and root_locations (edge rootings)."""
+        from phylozoo.core.network.sdnetwork.features import root_locations
+        from phylozoo.core.network.sdnetwork.derivations import to_d_network
+        from phylozoo.core.network.dnetwork.classifications import is_treebased
+
+        net = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        )
+        _, undir_locs, dir_locs = root_locations(net)
+        edge_locs = list(undir_locs) + list(dir_locs)
+        assert len(edge_locs) > 0
+        for loc in edge_locs:
+            d_net = to_d_network(net, root_location=loc)
+            assert is_treebased(d_net)
+        assert is_weakly_treebased(net) is True
+
+    def test_strongly_implies_weakly_treebased(self) -> None:
+        """If strongly tree-based then weakly tree-based."""
+        from tests.fixtures import sd_networks as sdn
+
+        for net in [
+            sdn.SDTREE_SMALL_BINARY,
+            sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY,
+            sdn.LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE,
+        ]:
+            if not is_binary(net) or has_parallel_edges(net):
+                continue
+            if is_strongly_treebased(net):
+                assert is_weakly_treebased(net)

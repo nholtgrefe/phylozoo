@@ -19,7 +19,7 @@ from tests.fixtures.directed_networks import (
     LEVEL_1_DNETWORK_SINGLE_HYBRID_BINARY,
     LEVEL_1_DNETWORK_TWO_BLOBS,
     LEVEL_2_DNETWORK_NESTED_HYBRIDS,
-    LEVEL_2_DNETWORK_NON_TREEBASED,
+    LEVEL_5_DNETWORK_NON_TREEBASED,
     LEVEL_2_DNETWORK_SINGLE_BLOB,
     LEVEL_3_DNETWORK_CHAIN_HYBRIDS,
 )
@@ -120,7 +120,7 @@ class TestIsTreebased:
 
     def test_treebased_returns_false_for_non_treebased_network(self) -> None:
         """A network that violates the omnian condition is not tree-based."""
-        net = LEVEL_2_DNETWORK_NON_TREEBASED
+        net = LEVEL_5_DNETWORK_NON_TREEBASED
         assert is_binary(net)
         assert not has_parallel_edges(net)
         assert omnians(net) == {11, 12, 13, 14, 52, 53}
