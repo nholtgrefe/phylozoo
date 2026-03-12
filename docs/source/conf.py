@@ -132,7 +132,7 @@ if html_theme == 'pydata_sphinx_theme':
     html_context = {
         'github_user': 'nholtgrefe',
         'github_repo': 'phylozoo',
-        'github_version': 'main',
+        'github_version': 'master',
         'doc_path': 'docs/source',
     }
 elif html_theme == 'sphinx_rtd_theme':
@@ -159,7 +159,7 @@ if html_theme != 'pydata_sphinx_theme':
         'display_github': True,  # Enable "Edit on GitHub" link
         'github_user': 'nholtgrefe',  # Update with your GitHub username
         'github_repo': 'phylozoo',
-        'github_version': 'main',
+        'github_version': 'master',
         'conf_py_path': '/docs/source/',
     }
 
