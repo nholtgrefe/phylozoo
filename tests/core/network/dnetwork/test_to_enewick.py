@@ -4,9 +4,20 @@ Tests for DirectedPhyNetwork to eNewick conversion.
 
 import pytest
 
-from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork._enewick import to_enewick
-from phylozoo.core.network.dnetwork._enewick import parse_enewick
+from phylozoo.core.network.dnetwork import DirectedPhyNetwork, isomorphism
+from phylozoo.core.network.dnetwork._enewick import from_enewick, parse_enewick, to_enewick
+
+# Large hybrid eNewick (reticulations, named #H markers); used for round-trip isomorphism.
+_LARGE_SAMPLE_ENEWICK: str = (
+    "((((t17:1.099348922,t12:1.099348922)N1:0.1705515639,(((t15:0.3933582101,((t16:0.1635589659,"
+    "t18:0.1635589659)N2:0.2159864787,(t7:0.04769816128,t6:0.04769816128)N3:0.3318472834)N4:0.01381276542)"
+    "N5:0.1759550544,((t20:0.2141536746,(t1:0.2141536746)N27#H46:0)N7:0.03387300123,t8:0.2480266759)N8:"
+    "0.3212865886)N9:0.6962976373,(((t10:0.07172234796,t9:0.07172234796)N10:0.2797101105,(t13:0.2141536746,"
+    "N27#H46:0)N11:0.1372787838)N12:0.07536269875,N28#H35:-2.220446049e-16)N13:0.8388157445)N14:0.004289584448)"
+    "N15:0.4018792131,((((t19:0.4037150203,N29#H39:0)N16:0.02308013689,((t14:0.4037150203,(t5:0.4037150203)"
+    "N29#H39:0)N18:0.02308013689)N28#H35:0)N20:1.023456361,((t4:0.4223670865,t11:0.4223670865)N21:0.2627193004,"
+    "t2:0.6850863869)N22:0.7651651316)N23:0.1715330931,t3:1.621784612)N24:0.04999508769)N25:0.4803650104)N26;"
+)
 
 
 class TestBasicTrees:
@@ -477,6 +488,19 @@ class TestRoundTrip:
         # Check internal label is preserved
         internal_nodes = [n for n in parsed.nodes if n.get('label') == 'root']
         assert len(internal_nodes) == 1
+
+    def test_large_enewick_roundtrip_isomorphic(self) -> None:
+        """
+        Large sample eNewick: parse → build network → to_enewick → parse again.
+
+        The two :class:`~phylozoo.core.network.dnetwork.DirectedPhyNetwork`
+        instances must be isomorphic including ``branch_length`` on edges.
+        """
+        net_a = from_enewick(_LARGE_SAMPLE_ENEWICK)
+        net_b = from_enewick(to_enewick(net_a))
+        assert net_a.number_of_nodes() == net_b.number_of_nodes()
+        assert net_a.number_of_edges() == net_b.number_of_edges()
+        assert isomorphism.is_isomorphic(net_a, net_b, edge_attrs=["branch_length"])
 
 
 class TestComplexNetworks:

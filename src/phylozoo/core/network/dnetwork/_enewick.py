@@ -35,6 +35,8 @@ The eNewick format extends standard Newick format with the following features:
    - A hybrid node can appear multiple times (once with definition, then one or more references)
    - Each reference creates an additional parent edge to the hybrid node (reticulation)
    - Example: `((A,B)#H1,#H1,#H1);` creates a hybrid with 3 parents
+   - **Parent edge** (to the hybrid's own parent) uses ``#Hk`` **before** ``:length``:
+     e.g. `(A,B)#H1:0.1` or `nodeLabel#H2:0.05`. The ordering ``:length#Hk`` is not accepted.
 
 5. **Comments**: Enclosed in square brackets `[comment]`
    - `A[comment]` - comment attached to node A (after label)
@@ -129,7 +131,9 @@ Notes
 - The parser is case-sensitive for node labels
 - Non-binary nodes (polytomies) are fully supported: `(A,B,C,D)` creates a node with 4 children
 - Hybrid nodes can have multiple parents by appearing multiple times: `((A)#H1,#H1,#H1)` creates 3 parent edges
-- All labels must be unique; duplicate labels raise ``ENewickParseError``
+- All labels must be unique except that the same display name may repeat with the same
+  ``#Hk`` when denoting another parent edge to hybrid ``k`` (equivalent to bare ``#Hk``).
+  Mismatched names for the same ``k`` raise ``ENewickParseError``.
 """
 
 from __future__ import annotations
@@ -318,6 +322,41 @@ class _ENewickParser:
             # Leaf node
             return self._parse_leaf()
     
+    def _parse_post_label_hybrid_and_length(self) -> tuple[int | None, float | None]:
+        """
+        Parse optional ``#Hk`` then optional parent-edge ``:length`` after a node label.
+
+        Phylozoo eNewick requires hybrid markers **before** the branch length to the
+        parent (e.g. ``name#H1:0.2``). A branch length **not** followed by ``#H`` is
+        allowed for non-hybrid nodes (e.g. ``(A,B):0.1``).
+
+        Returns
+        -------
+        tuple[int | None, float | None]
+            ``(hybrid_number, branch_length_to_parent)``.
+
+        Raises
+        ------
+        ENewickParseError
+            If ``:length`` appears immediately before ``#Hk`` (wrong token order).
+        """
+        self._skip_whitespace()
+        peek = self._peek()
+        if peek == "#":
+            hybrid_number = self._parse_hybrid_marker()
+            branch_length = self._parse_branch_length()
+            return hybrid_number, branch_length
+        if peek == ":":
+            branch_length = self._parse_branch_length()
+            hybrid_number = self._parse_hybrid_marker()
+            if hybrid_number is not None:
+                raise ENewickParseError(
+                    "eNewick requires hybrid marker #Hk before parent edge length :L "
+                    f"(found ':…' before #H{hybrid_number} at position {self.pos})"
+                )
+            return None, branch_length
+        return None, None
+    
     def _parse_internal_node(self) -> tuple[Any, float | None]:
         """
         Parse an internal node with children.
@@ -359,11 +398,8 @@ class _ENewickParser:
         # Parse node label and attributes
         node_label, node_attrs = self._parse_node_label_and_attrs()
         
-        # Parse branch length (if present) - this is for edge TO this node from parent
-        parent_branch_length = self._parse_branch_length()
-        
-        # Parse hybrid marker (if present)
-        hybrid_number = self._parse_hybrid_marker()
+        # Optional #Hk then optional :L (edge to parent); :L without hybrid is allowed
+        hybrid_number, parent_branch_length = self._parse_post_label_hybrid_and_length()
         
         # Handle hybrid nodes: reuse existing node ID if hybrid number seen before
         is_hybrid_duplicate = False
@@ -376,9 +412,21 @@ class _ENewickParser:
 
         # Enforce unique labels (for provided labels only)
         if node_label:
-            if node_label in self._labels_seen:
-                raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
-            self._labels_seen.add(node_label)
+            if is_hybrid_duplicate:
+                existing_l = next((n for n in self.nodes if n.get('id') == internal_id), None)
+                if (
+                    existing_l is not None
+                    and existing_l.get('label')
+                    and node_label != existing_l.get('label')
+                ):
+                    raise ENewickParseError(
+                        f"Hybrid node #{hybrid_number} label mismatch: "
+                        f"'{existing_l.get('label')}' vs '{node_label}'"
+                    )
+            else:
+                if node_label in self._labels_seen:
+                    raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
+                self._labels_seen.add(node_label)
 
         # Record node (internal_id stays integer; label stored separately)
         # For duplicate hybrid occurrences, avoid duplicating the node entry
@@ -388,16 +436,6 @@ class _ENewickParser:
                 node_data['label'] = node_label
             node_data.update(node_attrs)
             self.nodes.append(node_data)
-        else:
-            # If duplicate hybrid occurrence has a label/attrs, ensure consistency
-            if node_label:
-                # If label differs from an existing one, raise error
-                existing = next((n for n in self.nodes if n.get('id') == internal_id), None)
-                if existing is not None and existing.get('label') and existing.get('label') != node_label:
-                    raise ENewickParseError(
-                        f"Hybrid node #{hybrid_number} label mismatch: "
-                        f"'{existing.get('label')}' vs '{node_label}'"
-                    )
 
         # Record hybrid node
         if hybrid_number is not None:
@@ -457,23 +495,45 @@ class _ENewickParser:
             node_label = f"leaf_{self.node_counter}"
             self.node_counter += 1
 
-        # Enforce unique labels for leaves
+        self._skip_whitespace()
+        # Named hybrid reference: ``DisplayName#Hk:L`` reuses hybrid ``k`` (same as bare ``#Hk:L``)
+        if self._peek() == '#':
+            hybrid_number = self._parse_hybrid_marker()
+            branch_length = self._parse_branch_length()
+            if hybrid_number in self._hybrid_id_map:
+                node_id = self._hybrid_id_map[hybrid_number]
+                existing = next((n for n in self.nodes if n.get('id') == node_id), None)
+                if (
+                    existing is not None
+                    and existing.get('label')
+                    and node_label != existing.get('label')
+                ):
+                    raise ENewickParseError(
+                        f"Hybrid node #H{hybrid_number} label mismatch: "
+                        f"'{existing.get('label')}' vs '{node_label}'"
+                    )
+                return node_id, branch_length
+
+            if node_label in self._labels_seen:
+                raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
+            self._labels_seen.add(node_label)
+            node_data: dict[str, Any] = {'id': node_label, 'label': node_label}
+            node_data.update(node_attrs)
+            self.nodes.append(node_data)
+            self.hybrid_nodes[node_label] = hybrid_number
+            self._hybrid_id_map[hybrid_number] = node_label
+            return node_label, branch_length
+
         if node_label in self._labels_seen:
             raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
         self._labels_seen.add(node_label)
-        
-        # Parse branch length (if present) - this is for edge TO this leaf from parent
-        branch_length = self._parse_branch_length()
-        
-        # Parse hybrid marker (if present) - leaves can be hybrid nodes
-        hybrid_number = self._parse_hybrid_marker()
-        
-        # Record node (leaves use label as both id and label)
-        node_data: dict[str, Any] = {'id': node_label, 'label': node_label}
+
+        hybrid_number, branch_length = self._parse_post_label_hybrid_and_length()
+
+        node_data = {'id': node_label, 'label': node_label}
         node_data.update(node_attrs)
         self.nodes.append(node_data)
-        
-        # Record hybrid node (first occurrence - define it)
+
         if hybrid_number is not None:
             if hybrid_number in self._hybrid_id_map:
                 raise ENewickParseError(
@@ -481,7 +541,7 @@ class _ENewickParser:
                 )
             self.hybrid_nodes[node_label] = hybrid_number
             self._hybrid_id_map[hybrid_number] = node_label
-        
+
         return node_label, branch_length
     
     def _parse_node_label_and_attrs(self) -> tuple[str | None, dict[str, Any]]:

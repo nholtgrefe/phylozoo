@@ -237,6 +237,19 @@ class TestHybridNodes:
         with pytest.raises(ENewickParseError, match="found before definition"):
             parse_enewick("(#H1,(A,B)#H1);")
 
+    def test_reject_parent_length_before_hybrid_marker(self) -> None:
+        """Parent edge length must not precede #Hk on the same node."""
+        with pytest.raises(ENewickParseError, match="before #H"):
+            parse_enewick("((A,B):0.1#H1,#H1);")
+
+    def test_named_hybrid_reference_reuses_display_label(self) -> None:
+        """A second parent may attach via ``Name#Hk:L`` matching the hybrid's label."""
+        result = parse_enewick("(((A)N27#H46:0),N27#H46:0);")
+        assert len(result.hybrid_nodes) == 1
+        hybrid_id = next(iter(result.hybrid_nodes.keys()))
+        incoming = [e for e in result.edges if e["v"] == hybrid_id]
+        assert len(incoming) == 2
+
 
 class TestComments:
     """Test cases for comment parsing."""
@@ -343,8 +356,8 @@ class TestComplexExamples:
 
     def test_all_features_combined(self) -> None:
         """Parse a complex example with all features."""
-        # Note: Branch length comes before hybrid marker
-        enewick = "((('Leaf A':0.5,'Leaf B':0.3):0.1)#H1,'Leaf C':0.2);"
+        # Hybrid marker #H1 before parent edge length :0.1
+        enewick = "((('Leaf A':0.5,'Leaf B':0.3)#H1:0.1),'Leaf C':0.2);"
         result = parse_enewick(enewick)
         
         # Check structure
@@ -366,8 +379,7 @@ class TestComplexExamples:
 
     def test_deeply_nested_with_features(self) -> None:
         """Deeply nested structure with all features."""
-        # Note: Branch length comes before hybrid marker
-        enewick = "((((A:0.1,B:0.2):0.05)#H1,C:0.3):0.15,D:0.4);"
+        enewick = "((((A:0.1,B:0.2)#H1:0.05),C:0.3):0.15,D:0.4);"
         result = parse_enewick(enewick)
         
         assert len(result.nodes) >= 5
