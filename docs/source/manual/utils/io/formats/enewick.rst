@@ -38,8 +38,9 @@ Structure
 ---------
 
 eNewick uses nested parentheses, commas, node labels, and optional branch lengths
-and comments. Hybrid nodes use ``#H``-style labels; edge attributes (e.g. gamma)
-can appear in comments.
+and comments. Reticulations use ``#H1``, ``#H2``, … markers. Edge attributes such
+as gamma can appear in **comments** in square brackets (e.g. ``[&gamma=0.6]``)
+before the child’s branch length.
 
 .. code-block:: text
 
