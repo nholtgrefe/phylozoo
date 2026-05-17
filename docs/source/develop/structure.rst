@@ -13,6 +13,7 @@ PhyloZoo is organized into logical modules based on functionality:
    
    * **Networks** (`phylozoo.core.network`): ``DirectedPhyNetwork`` and ``SemiDirectedPhyNetwork``
    * **Quartets** (`phylozoo.core.quartet`): ``Quartet``, ``QuartetProfile``, ``QuartetProfileSet``
+   * **Triplets** (`phylozoo.core.triplet`): ``Triplet``, ``TripletProfile``, ``TripletProfileSet``
    * **Splits** (`phylozoo.core.split`): ``Split``, ``SplitSystem``
    * **Sequences** (`phylozoo.core.sequence`): ``MSA`` (Multiple Sequence Alignment)
    * **Distance** (`phylozoo.core.distance`): ``DistanceMatrix``
@@ -48,6 +49,9 @@ PhyloZoo follows a consistent import strategy:
           Quartet,
           QuartetProfile,
           QuartetProfileSet,
+          Triplet,
+          TripletProfile,
+          TripletProfileSet,
           Split,
           SplitSystem,
           DistanceMatrix,

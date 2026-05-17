@@ -7,14 +7,14 @@
 
 PhyloZoo is a Python package for working with phylogenetic networks and related evolutionary
 data types. PhyloZoo aims to provide the foundational infrastructure for
-phylogenetic network analysis in Python — a common framework that other packages can build on.
+phylogenetic network analysis in Python—a common framework that other packages can build on.
 
 <br>
 
 ## Key Features
 
 - **Directed & semi-directed networks** — represent phylogenetic networks as fully directed rooted DAGs or as semi-directed/mixed graphs that allow root uncertainty. Both representations are validated on construction to guarantee well-formed phylogenetic objects. Includes a rich library of operations: network classifications, generators, conversions between representations, and much more.
-- **Quartets, splits & distance matrices** — support for quartet systems, split systems, and pairwise distance matrices: the core building blocks for phylogenetic inference and comparison.
+- **Quartets, triplets, splits & distance matrices** — support for quartet and triplet systems, split systems, and pairwise distance matrices: the core building blocks for phylogenetic inference and comparison.
 - **Multiple sequence alignments** — store and manipulate sequence data with efficient NumPy-backed arrays, including bootstrapping and site-pattern extraction.
 - **Flexible visualization** — plot networks with different layouts and fine-grained control over styling, labels, and coloring via Matplotlib.
 - **Standard file formats** — read and write common phylogenetic formats including eNewick, DOT, FASTA, and NEXUS, making it easy to integrate with existing workflows.

@@ -10,6 +10,7 @@ from .split import Split, SplitSystem, WeightedSplitSystem
 from .distance import DistanceMatrix
 from .sequence import MSA
 from .quartet import Quartet, QuartetProfile, QuartetProfileSet
+from .triplet import Triplet, TripletProfile, TripletProfileSet
 
 __all__ = [
     # Networks
@@ -27,5 +28,9 @@ __all__ = [
     "Quartet",
     "QuartetProfile",
     "QuartetProfileSet",
+    # Triplet
+    "Triplet",
+    "TripletProfile",
+    "TripletProfileSet",
 ]
 

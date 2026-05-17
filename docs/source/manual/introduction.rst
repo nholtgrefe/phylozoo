@@ -18,8 +18,8 @@ you to work with rooted and unrooted phylogenetic analyses. PhyloZoo integrates 
 with the Python scientific computing ecosystem, using NumPy for efficient numerical 
 operations and providing a clean, intuitive API for phylogenetic analysis workflows.
 
-Beyond network representation, PhyloZoo offers native support for quartets, split systems,
-multiple sequence alignments, and distance matrices within a consistent interface.
+Beyond network representation, PhyloZoo offers native support for quartets, rooted triplets,
+split systems, multiple sequence alignments, and distance matrices within a consistent interface.
 Conversions between these representations are supported, allowing analyses to move
 flexibly between data types as required. All core data structures are validated upon
 construction to ensure well-defined phylogenetic objects, improving reliability and
@@ -43,11 +43,15 @@ see the corresponding sections in this manual:
      edges for modelling root uncertainty. 
      See :doc:`Networks <core/networks/index>` for details.
    
-   * **Quartets**: ``Quartet``, ``QuartetProfile``, and ``QuartetProfileSet`` classes for 
-     working with four-taxon relationships, which are fundamental building blocks for 
+   * **Quartets**: ``Quartet``, ``QuartetProfile``, and ``QuartetProfileSet`` classes for
+     working with four-taxon relationships, which are fundamental building blocks for
      network inference. See :doc:`Quartets <core/quartets/index>` for details.
-   
-   * **Splits**: ``Split`` and ``SplitSystem`` classes for representing bipartitions of 
+
+   * **Triplets**: ``Triplet``, ``TripletProfile``, and ``TripletProfileSet`` classes for
+     working with rooted three-taxon relationships, the rooted analogue of quartets.
+     See :doc:`Triplets <core/triplets/index>` for details.
+
+   * **Splits**: ``Split`` and ``SplitSystem`` classes for representing bipartitions of
      taxa, a common way to encode phylogenetic relationships. See :doc:`Splits <core/splits/index>` 
      for details.
    

@@ -438,6 +438,19 @@ profiles from displayed trees. This returns a :class:`~phylozoo.core.quartet.qpr
    # Extract displayed quartets
    quartets = derivations.displayed_quartets(network)
 
+Triplets
+^^^^^^^^
+
+The :func:`~phylozoo.core.network.dnetwork.derivations.displayed_triplets` function extracts rooted-triplet
+profiles from displayed trees. For each 3-taxon set, displayed trees are converted to rooted triplets
+(identifying the outgroup as the leaf that is a direct child of the root, and the cherry as the remaining
+two leaves). This returns a :class:`~phylozoo.core.triplet.tprofileset.TripletProfileSet` object.
+
+.. code-block:: python
+
+   # Extract displayed triplets
+   triplets = derivations.displayed_triplets(network)
+
 
 Isomorphism Checking
 --------------------

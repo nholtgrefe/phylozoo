@@ -23,6 +23,10 @@ from .core import (
     Quartet,
     QuartetProfile,
     QuartetProfileSet,
+    # Triplet
+    Triplet,
+    TripletProfile,
+    TripletProfileSet,
 )
 
 # Import alias modules to register them
@@ -46,4 +50,8 @@ __all__ = [
     "Quartet",
     "QuartetProfile",
     "QuartetProfileSet",
+    # Core - Triplet
+    "Triplet",
+    "TripletProfile",
+    "TripletProfileSet",
 ]

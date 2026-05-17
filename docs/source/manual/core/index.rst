@@ -9,6 +9,7 @@ Core Module
    distance
    splits/index
    quartets/index
+   triplets/index
    networks/index
    primitives/index
 

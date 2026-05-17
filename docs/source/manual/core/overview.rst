@@ -1,9 +1,9 @@
 Overview
 ========
 
-The :mod:`phylozoo.core` module provides fundamental data structures and classes used 
-throughout PhyloZoo for representing and analyzing phylogenetic networks, quartets, splits,
-sequences, distance matrices, and other core phylogenetic concepts.
+The :mod:`phylozoo.core` module provides fundamental data structures and classes used
+throughout PhyloZoo for representing and analyzing phylogenetic networks, quartets, triplets,
+splits, sequences, distance matrices, and other core phylogenetic concepts.
 
 All core data structures are available at the package top-level for convenience, but functions must be imported from the submodules.
 
@@ -15,6 +15,9 @@ All core data structures are available at the package top-level for convenience,
        Quartet,
        QuartetProfile,
        QuartetProfileSet,
+       Triplet,
+       TripletProfile,
+       TripletProfileSet,
        Split,
        SplitSystem,
        DistanceMatrix,
@@ -29,6 +32,7 @@ specific data type or functionality:
 
 - :doc:`Networks <networks/overview>` - Directed and semi-directed phylogenetic network classes
 - :doc:`Quartets <quartets/overview>` - Quartet information
+- :doc:`Triplets <triplets/overview>` - Rooted-triplet information
 - :doc:`Splits <splits/overview>` - Bipartitions of taxa and split systems
 - :doc:`Sequences <sequences>` - Multiple sequence alignment (MSA) handling
 - :doc:`Distance Matrices <distance>` - Distance matrix classes and operations

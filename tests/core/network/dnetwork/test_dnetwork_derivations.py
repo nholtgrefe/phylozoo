@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, tree_of_blobs, distances, induced_splits, split_from_cutedge, partition_from_blob
+from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, displayed_triplets, tree_of_blobs, distances, induced_splits, split_from_cutedge, partition_from_blob
 from phylozoo.core.split.base import Split
 from phylozoo.core.primitives.partition import Partition
 from phylozoo.core.network.dnetwork.features import blobs
@@ -1060,6 +1060,200 @@ class TestDisplayedQuartets:
         # The split should be a 2|2 split (unrooted quartet)
         assert len(quartet.split.set1) == 2
         assert len(quartet.split.set2) == 2
+
+
+class TestDisplayedTriplets:
+    """Test displayed_triplets function for DirectedPhyNetwork."""
+
+    def test_simple_tree_three_taxa(self) -> None:
+        """Test displayed_triplets on a simple binary rooted tree with exactly 3 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        profileset = displayed_triplets(net)
+
+        # Should have exactly one profile (one 3-taxon set)
+        assert len(profileset) == 1
+        assert profileset.taxa == frozenset({'A', 'B', 'C'})
+
+        profile, profile_weight = profileset.profiles[frozenset({'A', 'B', 'C'})]
+        assert abs(profile_weight - 1.0) < 1e-10
+        # Single displayed tree, so single triplet
+        assert len(profile) == 1
+
+        # The triplet should be resolved with A as outgroup
+        triplet = next(iter(profile.triplets.keys()))
+        assert triplet.is_resolved()
+        assert triplet.outgroup == frozenset({'A'})
+        assert triplet.cherry == frozenset({'B', 'C'})
+        # Weight should be 1.0 (single displayed tree with probability 1.0)
+        assert abs(profile.get_weight(triplet) - 1.0) < 1e-10
+
+    def test_star_tree_three_taxa(self) -> None:
+        """Test displayed_triplets on a rooted star tree with 3 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[(4, 1), (4, 2), (4, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        profileset = displayed_triplets(net)
+
+        assert len(profileset) == 1
+        profile, _ = profileset.profiles[frozenset({'A', 'B', 'C'})]
+        assert len(profile) == 1
+        triplet = next(iter(profile.triplets.keys()))
+        assert triplet.is_star()
+
+    def test_network_with_hybrid_four_taxa(self) -> None:
+        """Test displayed_triplets on network with hybrid node and 4 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2),
+                (5, 3), (5, 6), (6, 7)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (7, {'label': 'D'})
+            ]
+        )
+        profileset = displayed_triplets(net)
+
+        # 4 taxa: C(4,3) = 4 profiles
+        assert len(profileset) == 4
+        assert profileset.taxa == net.taxa
+
+        # Each profile's triplet weights sum to 1.0 (displayed-tree probabilities)
+        for profile, profile_weight in profileset.profiles.values():
+            assert abs(profile_weight - 1.0) < 1e-10
+            total_triplet_weight = sum(profile.triplets.values())
+            assert abs(total_triplet_weight - 1.0) < 1e-10
+
+    def test_network_with_hybrid_gamma_weights_split(self) -> None:
+        """Test displayed_triplets distributes gamma weights across triplets for an ambiguous 3-taxon set."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2),
+                (5, 3), (5, 6), (6, 7)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (7, {'label': 'D'})
+            ]
+        )
+        profileset = displayed_triplets(net)
+
+        # On {A, C, D} the two displayed trees produce different rooted topologies,
+        # so the profile should contain two triplets with weights 0.6 and 0.4.
+        acd_profile = profileset.get_profile(frozenset({'A', 'C', 'D'}))
+        assert acd_profile is not None
+        assert len(acd_profile) == 2
+        weights = sorted(acd_profile.triplets.values())
+        assert weights == pytest.approx([0.4, 0.6])
+
+    def test_network_fewer_than_three_taxa(self) -> None:
+        """Test displayed_triplets on network with fewer than 3 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        )
+        profileset = displayed_triplets(net)
+
+        # Should return empty TripletProfileSet
+        assert len(profileset) == 0
+        assert len(profileset.taxa) == 0
+
+    def test_empty_network(self) -> None:
+        """Test displayed_triplets on empty network."""
+        from tests.fixtures.directed_networks import DTREE_EMPTY
+        net = DTREE_EMPTY
+
+        profileset = displayed_triplets(net)
+
+        # Should return empty TripletProfileSet
+        assert len(profileset) == 0
+        assert len(profileset.taxa) == 0
+
+    def test_network_more_than_three_taxa(self) -> None:
+        """Test displayed_triplets on a tree with more than 3 taxa."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (7, 1), (7, 8),
+                (8, 2), (8, 9),
+                (9, 3), (9, 4)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (4, {'label': 'D'})
+            ]
+        )
+        profileset = displayed_triplets(net)
+
+        # For 4 taxa, there are C(4,3) = 4 combinations
+        assert len(profileset) == 4
+        assert profileset.taxa == net.taxa
+
+        # Each profile should have default weight 1.0 and contain at least one triplet
+        for profile, profile_weight in profileset.profiles.values():
+            assert abs(profile_weight - 1.0) < 1e-10
+            assert len(profile) >= 1
+            for triplet in profile.triplets.keys():
+                assert triplet.taxa in profileset.profiles
+
+    def test_weights_sum_correctly(self) -> None:
+        """Test that weights are correctly summed when same triplet appears multiple times."""
+        net = DirectedPhyNetwork(
+            edges=[
+                {'u': 5, 'v': 4, 'gamma': 0.6},
+                {'u': 6, 'v': 4, 'gamma': 0.4},
+                (4, 8), (8, 1), (8, 2),
+                (5, 3), (5, 6), (6, 7)
+            ],
+            nodes=[
+                (1, {'label': 'A'}), (2, {'label': 'B'}),
+                (3, {'label': 'C'}), (7, {'label': 'D'})
+            ]
+        )
+        profileset = displayed_triplets(net)
+
+        # For each profile, total weight should sum to 1.0 across all displayed trees
+        for profile, _ in profileset.profiles.values():
+            total_weight = sum(profile.triplets.values())
+            assert abs(total_weight - 1.0) < 1e-10
+
+    def test_profile_weights_default(self) -> None:
+        """Test that profile weights are default (1.0) as specified."""
+        net = DirectedPhyNetwork(
+            edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        profileset = displayed_triplets(net)
+
+        # All profiles should have default weight 1.0
+        for profile, profile_weight in profileset.profiles.values():
+            assert abs(profile_weight - 1.0) < 1e-10
+
+    def test_rooted_output(self) -> None:
+        """Test that displayed_triplets returns ROOTED triplets (with 1|2 trivial splits)."""
+        net = DirectedPhyNetwork(
+            edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
+            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        )
+        profileset = displayed_triplets(net)
+
+        profile, _ = next(iter(profileset.profiles.values()))
+        triplet = next(iter(profile.triplets.keys()))
+
+        # The triplet should be resolved with a trivial 1|2 split
+        assert triplet.is_resolved()
+        assert triplet.split is not None
+        assert triplet.split.is_trivial
+        # One side is a singleton (outgroup), other has 2 elements (cherry)
+        sizes = sorted((len(triplet.split.set1), len(triplet.split.set2)))
+        assert sizes == [1, 2]
 
 
 class TestPartitionFromBlob:

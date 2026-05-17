@@ -22,6 +22,7 @@ from .transformations import (
 )
 from ...split import Split, SplitSystem, WeightedSplitSystem
 from ...quartet import QuartetProfileSet
+from ...triplet import Triplet, TripletProfile, TripletProfileSet
 from ...primitives.partition import Partition
 from ._utils import _suppress_deg2_nodes as dm_suppress_deg2_nodes
 from ..sdnetwork._utils import _suppress_deg2_nodes as mm_suppress_deg2_nodes
@@ -1072,12 +1073,122 @@ def displayed_quartets(network: DirectedPhyNetwork) -> QuartetProfileSet:
     """
     # Convert to semi-directed network
     sd_network = to_sd_network(network)
-    
+
     # Import here to avoid circular dependency
     from ..sdnetwork.derivations import displayed_quartets as sd_displayed_quartets
-    
+
     # Use the semi-directed displayed_quartets function
     return sd_displayed_quartets(sd_network)
+
+
+def displayed_triplets(network: DirectedPhyNetwork) -> TripletProfileSet:
+    """
+    Compute triplet profile set from all displayed trees of the network.
+
+    For each triplet (3-leaf subnetwork), this function:
+    1. Extracts the subnetwork induced by those 3 taxa
+    2. Gets all displayed trees of that subnetwork (with probabilities)
+    3. Converts each displayed tree to a rooted triplet by identifying the outgroup (the leaf that is a direct child of the root) and the cherry (the two remaining leaves sharing an internal parent below the root); if all three leaves are direct children of the root, the triplet is unresolved (star)
+    4. Creates a triplet profile where each triplet's weight is the probability of the displayed tree that induced it (summing weights if the same triplet appears in multiple displayed trees)
+
+    The profiles are then returned as a TripletProfileSet, where each profile
+    (one per 3-taxon set) has triplet weights that sum to 1.0 (the displayed-tree
+    probabilities). Each profile in the set has default profile weight 1.0.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+
+    Returns
+    -------
+    TripletProfileSet
+        A triplet profile set where each profile corresponds to a 3-taxon set,
+        and contains triplets from displayed trees weighted by their probabilities.
+
+    Examples
+    --------
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+    ... )
+    >>> profileset = displayed_triplets(net)
+    >>> isinstance(profileset, TripletProfileSet)
+    True
+    >>> len(profileset) > 0
+    True
+    """
+    # Handle networks with fewer than 3 taxa
+    taxa_list = sorted(network.taxa)
+    if len(taxa_list) < 3:
+        return TripletProfileSet()
+
+    # Collect profiles for each 3-taxon set
+    profiles: list[TripletProfile] = []
+
+    # Iterate through all combinations of 3 taxa
+    for three_taxa in itertools.combinations(taxa_list, 3):
+        three_taxa_set = frozenset(three_taxa)
+
+        # Get subnetwork induced by these 3 taxa
+        triplet_subnet = subnetwork(network, list(three_taxa))
+
+        # Collect triplets with their weights for this 3-taxon set
+        triplet_weights: dict[Triplet, float] = {}
+
+        # Get all displayed trees of the subnetwork with probabilities
+        for displayed_tree in displayed_trees(triplet_subnet, probability=True):
+            # Get probability of this displayed tree
+            prob = displayed_tree.get_network_attribute('probability')
+            if prob is None:
+                prob = 1.0
+
+            # Find the effective root by walking down past any single-child stem.
+            # The displayed tree may have a single-child path from the topological
+            # root down to the first branching node; the rooted topology of the
+            # triplet is determined by what hangs below that branching node.
+            root = displayed_tree.root_node
+            while displayed_tree.outdegree(root) == 1:
+                root = next(displayed_tree.children(root))
+
+            # A star has all 3 leaves as direct root-children, and a binary
+            # triplet has exactly one leaf as a direct root-child (the outgroup)
+            # and the other two as siblings under an internal node.
+            leaf_nodes = displayed_tree.leaves
+            direct_leaves = [
+                leaf for leaf in leaf_nodes
+                if root in set(displayed_tree.parents(leaf))
+            ]
+
+            if len(direct_leaves) == 3:
+                # Star triplet: all 3 leaves are root children
+                triplet = Triplet(three_taxa_set)
+            elif len(direct_leaves) == 1:
+                # Binary triplet: the direct leaf is the outgroup, others form the cherry
+                outgroup_label = displayed_tree.get_label(direct_leaves[0])
+                cherry_labels = {
+                    displayed_tree.get_label(leaf)
+                    for leaf in leaf_nodes
+                    if leaf != direct_leaves[0]
+                }
+                triplet = Triplet(Split({outgroup_label}, cherry_labels))
+            else:
+                # Unexpected structure for a rooted 3-leaf tree
+                raise PhyloZooAlgorithmError(
+                    f"Displayed tree on 3 taxa has {len(direct_leaves)} leaves as "
+                    "direct root children; expected 1 (binary) or 3 (star)."
+                )
+
+            # Add triplet to profile with its weight (sum if duplicate)
+            triplet_weights[triplet] = triplet_weights.get(triplet, 0.0) + prob
+
+        # Create profile for this 3-taxon set (only if we have triplets)
+        if triplet_weights:
+            profile = TripletProfile(triplet_weights)
+            profiles.append(profile)
+
+    # Create TripletProfileSet (each profile gets default weight 1.0)
+    return TripletProfileSet(profiles=profiles)
 
 
 def partition_from_blob(

@@ -11,6 +11,7 @@ Core data structures and classes for phylogenetic networks and related structure
    network/index
    sequences
    quartets
+   triplets
    splits
    distance
    primitives/index
