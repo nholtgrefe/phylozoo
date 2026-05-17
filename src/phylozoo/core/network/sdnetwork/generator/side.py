@@ -25,7 +25,7 @@ T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class UndirEdgeSide(EdgeSide):
+class UndirEdgeSide(EdgeSide[T]):
     """
     Represents an undirected edge side of a generator.
 
@@ -61,7 +61,7 @@ class UndirEdgeSide(EdgeSide):
 
 
 @dataclass(frozen=True)
-class BidirectedEdgeSide(EdgeSide):
+class BidirectedEdgeSide(EdgeSide[T]):
     """
     Represents the bidirected edge of a level-1 semi-directed generator.
 

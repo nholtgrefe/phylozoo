@@ -4,7 +4,7 @@ Conversion functions for MixedMultiGraph.
 This module provides functions for converting NetworkX graphs to MixedMultiGraph.
 """
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import networkx as nx
 
@@ -43,14 +43,14 @@ def graph_to_mixedmultigraph(graph: nx.Graph) -> "MixedMultiGraph":
     """
     # Copy graph attributes if present
     graph_attrs = graph.graph.copy() if graph.graph else None
-    mg = MixedMultiGraph(attributes=graph_attrs)
+    mg: Any = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
     # Add all edges with attributes
     for u, v, data in graph.edges(data=True):
         mg.add_undirected_edge(u, v, **data)
-    return mg
+    return mg  # type: ignore[no-any-return]
 
 
 def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> "MixedMultiGraph":
@@ -84,14 +84,14 @@ def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> "MixedMultiGraph":
     """
     # Copy graph attributes if present
     graph_attrs = graph.graph.copy() if graph.graph else None
-    mg = MixedMultiGraph(attributes=graph_attrs)
+    mg: Any = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
     # Add all edges with keys and attributes
     for u, v, key, data in graph.edges(keys=True, data=True):
         mg.add_undirected_edge(u, v, key=key, **data)
-    return mg
+    return mg  # type: ignore[no-any-return]
 
 
 def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> "MixedMultiGraph":
@@ -125,7 +125,7 @@ def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> "MixedMultiGraph"
     """
     # Copy graph attributes if present
     graph_attrs = graph.graph.copy() if graph.graph else None
-    mg = MixedMultiGraph(attributes=graph_attrs)
+    mg: Any = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
@@ -133,7 +133,7 @@ def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> "MixedMultiGraph"
     for u, v, key, data in graph.edges(keys=True, data=True):
         mg._directed.add_edge(u, v, key=key, **data)
         mg._combined.add_edge(u, v, key=key, **data)
-    return mg
+    return mg  # type: ignore[no-any-return]
 
 
 def directedmultigraph_to_mixedmultigraph(graph: "DirectedMultiGraph") -> "MixedMultiGraph":
@@ -165,7 +165,7 @@ def directedmultigraph_to_mixedmultigraph(graph: "DirectedMultiGraph") -> "Mixed
     """
     # Copy graph attributes from source DirectedMultiGraph
     graph_attrs = graph._graph.graph.copy() if graph._graph.graph else None
-    mg = MixedMultiGraph(attributes=graph_attrs)
+    mg: Any = MixedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         mg.add_node(node, **data)
@@ -173,4 +173,4 @@ def directedmultigraph_to_mixedmultigraph(graph: "DirectedMultiGraph") -> "Mixed
     for u, v, key, data in graph.edges(keys=True, data=True):
         mg._directed.add_edge(u, v, key=key, **data)
         mg._combined.add_edge(u, v, key=key, **data)
-    return mg
+    return mg  # type: ignore[no-any-return]

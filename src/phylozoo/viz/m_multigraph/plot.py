@@ -84,9 +84,9 @@ def plot_mmgraph(
 
     def get_label(node: Any) -> str | None:
         if node in graph._directed.nodes:
-            return graph._directed.nodes[node].get("label", str(node))
+            return graph._directed.nodes[node].get("label", str(node))  # type: ignore[no-any-return]
         if node in graph._undirected.nodes:
-            return graph._undirected.nodes[node].get("label", str(node))
+            return graph._undirected.nodes[node].get("label", str(node))  # type: ignore[no-any-return]
         return str(node)
 
     render_layout(

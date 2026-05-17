@@ -100,7 +100,7 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
 
     # LSA networks keep the same leaves and labels as the original network
     # Build nodes list with labels in NetworkX-style format
-    new_nodes: list[Any | tuple[Any | dict[str | str]]] = []
+    new_nodes: list[Any | tuple[Any, dict[str, str]]] = []
     for leaf in network.leaves:
         label = network.get_label(leaf)
         if label is not None:
@@ -297,7 +297,7 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     working_graph = network._graph.copy()
 
     # Find all 2-blobs
-    two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
+    two_blobs: Any = k_blobs(network, k=2, trivial=False, leaves=False)
 
     # Get root node for checking
     root = network.root_node

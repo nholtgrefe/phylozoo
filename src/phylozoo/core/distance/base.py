@@ -6,7 +6,7 @@ This module provides the core DistanceMatrix class for working with distance mat
 
 from __future__ import annotations
 
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 
@@ -65,10 +65,10 @@ class DistanceMatrix(IOMixin):
 
     # Minimal class-level defaults so static analyzers recognize attributes.
     # These are immediately replaced in __init__ for each instance.
-    _matrix = np.empty((0, 0))
-    _labels = ()
-    _indices = ()
-    _label_to_index = {}
+    _matrix: np.ndarray = np.empty((0, 0))
+    _labels: tuple[Any, ...] = ()
+    _indices: tuple[int, ...] = ()
+    _label_to_index: dict[Any, int] = {}
 
     # I/O format configuration
     _default_format = "nexus"
@@ -168,13 +168,13 @@ class DistanceMatrix(IOMixin):
         return self._matrix
 
     @property
-    def labels(self) -> tuple[T, ...]:
+    def labels(self) -> tuple[Any, ...]:
         """
         Get the labels corresponding to rows/columns.
 
         Returns
         -------
-        tuple[T, ...]
+        tuple[Any, ...]
             Tuple of labels (immutable).
         """
         return self._labels
@@ -299,7 +299,7 @@ class DistanceMatrix(IOMixin):
         int
             Number of rows/columns.
         """
-        return self._matrix.shape[0]
+        return self._matrix.shape[0]  # type: ignore[no-any-return]
 
     def __contains__(self, label: T) -> bool:
         """

@@ -72,6 +72,13 @@ class QuartetProfile:
 
     __slots__ = ("_taxa", "_quartets", "_initialized", "_split_cache", "_circular_orderings_cache")
 
+    # Slot type annotations (set via object.__setattr__ in __init__).
+    _taxa: frozenset[str]
+    _quartets: Mapping[Quartet, float]
+    _initialized: bool
+    _split_cache: Split | None
+    _circular_orderings_cache: frozenset[CircularOrdering] | None
+
     def __init__(
         self,
         quartets: (
@@ -190,7 +197,7 @@ class QuartetProfile:
                     f"Weight must be positive, got {weight} for quartet {quartet}"
                 )
 
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """
         Prevent modification of attributes after initialization.
 

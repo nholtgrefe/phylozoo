@@ -7,7 +7,7 @@ This module provides classes and functions for working with mixed phylogenetic n
 import math
 import warnings
 from functools import cached_property
-from typing import Any, Iterator, TypeVar
+from typing import Any, Generic, Iterator, TypeVar
 
 from ....utils.exceptions import (
     PhyloZooNetworkDegreeError,
@@ -27,7 +27,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class MixedPhyNetwork:
+class MixedPhyNetwork(Generic[T]):
     """
     A mixed phylogenetic network.
 
@@ -155,7 +155,7 @@ class MixedPhyNetwork:
         self,
         directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
         undirected_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
-        nodes: list[T | tuple[T | dict[str | Any | None]]] = None,
+        nodes: list[T | tuple[T, dict[str, Any] | None]] | None = None,
         attributes: dict[str, Any] | None = None,
     ) -> None:
         """
@@ -296,7 +296,7 @@ class MixedPhyNetwork:
 
     def _add_nodes_to_graph(
         self,
-        nodes: list[T | tuple[T | dict[str | Any | None]]],
+        nodes: list[T | tuple[T, dict[str, Any] | None]],
     ) -> None:
         """
         Add all nodes to the underlying graph with their attributes.

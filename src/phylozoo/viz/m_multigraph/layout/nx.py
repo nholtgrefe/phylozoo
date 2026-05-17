@@ -70,7 +70,7 @@ def compute_nx_layout(
     if graph.number_of_nodes() == 0:
         raise PhyloZooLayoutError("Cannot compute layout for empty graph")
 
-    G_nx = nx.MultiGraph()
+    G_nx: nx.MultiGraph = nx.MultiGraph()
     for node in graph.nodes():
         G_nx.add_node(node)
     for u, v, key in graph._directed.edges(keys=True):

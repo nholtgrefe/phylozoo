@@ -80,7 +80,7 @@ class IOMixin:
                 f"Format '{format}' not supported. " f"Supported formats: {self._supported_formats}"
             )
         writer = FormatRegistry.get_writer(type(self), format)
-        return writer(self, **kwargs)
+        return writer(self, **kwargs)  # type: ignore[no-any-return]
 
     def save(
         self,
@@ -255,4 +255,4 @@ class IOMixin:
             If either format is not supported.
         """
         obj = cls.from_string(content, format=input_format, **kwargs)
-        return obj.to_string(format=output_format, **kwargs)
+        return obj.to_string(format=output_format, **kwargs)  # type: ignore[no-any-return]

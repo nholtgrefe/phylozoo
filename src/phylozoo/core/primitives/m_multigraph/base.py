@@ -4,7 +4,7 @@ Mixed multi-graph module.
 This module provides the MixedMultiGraph class for working with mixed multi-graphs.
 """
 
-from typing import Any, Iterator, TypeVar, TYPE_CHECKING
+from typing import Any, Callable, Generic, Iterator, TypeVar, TYPE_CHECKING
 
 import networkx as nx
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-class MixedMultiGraph(IOMixin):
+class MixedMultiGraph(IOMixin, Generic[T]):
     """
     Mixed multi-graph with undirected and directed edges.
 
@@ -160,17 +160,20 @@ class MixedMultiGraph(IOMixin):
         ... )
         """
         # Initialize graphs with attributes if provided
+        self._undirected: nx.MultiGraph
+        self._directed: nx.MultiDiGraph
+        self._combined: nx.MultiGraph
         if attributes:
             # Warn on Python keyword attribute names
             for attr_key in attributes:
                 warn_on_keyword(attr_key, "Graph attribute key")
-            self._undirected: nx.MultiGraph = nx.MultiGraph(**attributes)
-            self._directed: nx.MultiDiGraph = nx.MultiDiGraph(**attributes)
-            self._combined: nx.MultiGraph = nx.MultiGraph(**attributes)
+            self._undirected = nx.MultiGraph(**attributes)
+            self._directed = nx.MultiDiGraph(**attributes)
+            self._combined = nx.MultiGraph(**attributes)
         else:
-            self._undirected: nx.MultiGraph = nx.MultiGraph()
-            self._directed: nx.MultiDiGraph = nx.MultiDiGraph()
-            self._combined: nx.MultiGraph = nx.MultiGraph()
+            self._undirected = nx.MultiGraph()
+            self._directed = nx.MultiDiGraph()
+            self._combined = nx.MultiGraph()
 
         # Load undirected edges if given (before directed edges to handle mutual exclusivity)
         if undirected_edges:
@@ -284,7 +287,7 @@ class MixedMultiGraph(IOMixin):
         [(1, 2, 0, 1.0)]
         """
         # Return edges from combined graph (has all edges)
-        return self._combined.edges(keys=keys, data=data)
+        return self._combined.edges(keys=keys, data=data)  # type: ignore[no-any-return]
 
     def undirected_edges_iter(
         self, keys: bool = False, data: bool | str = False
@@ -325,7 +328,7 @@ class MixedMultiGraph(IOMixin):
         >>> list(G.undirected_edges_iter(data='weight'))
         [(1, 2, 1.0)]
         """
-        return self._undirected.edges(keys=keys, data=data)
+        return self._undirected.edges(keys=keys, data=data)  # type: ignore[no-any-return]
 
     def directed_edges_iter(
         self, keys: bool = False, data: bool | str = False
@@ -366,7 +369,7 @@ class MixedMultiGraph(IOMixin):
         >>> list(G.directed_edges_iter(data='weight'))
         [(1, 2, 1.0)]
         """
-        return self._directed.edges(keys=keys, data=data)
+        return self._directed.edges(keys=keys, data=data)  # type: ignore[no-any-return]
 
     def neighbors(self, v: T) -> Iterator[T]:
         """
@@ -443,7 +446,7 @@ class MixedMultiGraph(IOMixin):
         >>> list(G.incident_parent_edges(2, data='weight'))
         [(1, 2, 1.0), (3, 2, 2.0)]
         """
-        return self._directed.in_edges(v, keys=keys, data=data)
+        return self._directed.in_edges(v, keys=keys, data=data)  # type: ignore[no-any-return]
 
     def incident_child_edges(
         self, v: T, keys: bool = False, data: bool | str = False
@@ -488,7 +491,7 @@ class MixedMultiGraph(IOMixin):
         >>> list(G.incident_child_edges(1, data='weight'))
         [(1, 2, 1.0), (1, 3, 2.0)]
         """
-        return self._directed.out_edges(v, keys=keys, data=data)
+        return self._directed.out_edges(v, keys=keys, data=data)  # type: ignore[no-any-return]
 
     def incident_undirected_edges(
         self, v: T, keys: bool = False, data: bool | str = False
@@ -533,7 +536,7 @@ class MixedMultiGraph(IOMixin):
         >>> list(G.incident_undirected_edges(2, data='weight'))
         [(1, 2, 1.0), (2, 3, 2.0)]
         """
-        return self._undirected.edges(v, keys=keys, data=data)
+        return self._undirected.edges(v, keys=keys, data=data)  # type: ignore[no-any-return]
 
     def __contains__(self, v: T) -> bool:
         """
@@ -654,7 +657,7 @@ class MixedMultiGraph(IOMixin):
         as a method to get iterators or node data.
         """
 
-        def __init__(self, items: set[T], callable_func: callable):
+        def __init__(self, items: set[T], callable_func: Callable[..., Any]):
             """
             Initialize a node view.
 
@@ -722,7 +725,7 @@ class MixedMultiGraph(IOMixin):
         as a method to get iterators with keys or data.
         """
 
-        def __init__(self, items: list[tuple[T, T]], callable_func: callable):
+        def __init__(self, items: list[tuple[T, T]], callable_func: Callable[..., Any]):
             """
             Initialize an edge view.
 
@@ -1762,11 +1765,11 @@ class MixedMultiGraph(IOMixin):
         """
         # Copy graph attributes
         graph_attrs = self._directed.graph.copy() if self._directed.graph else None
-        new_graph = MixedMultiGraph(attributes=graph_attrs)
+        new_graph: Any = MixedMultiGraph(attributes=graph_attrs)
         new_graph._undirected = self._undirected.copy()
         new_graph._directed = self._directed.copy()
         new_graph._combined = self._combined.copy()
-        return new_graph
+        return new_graph  # type: ignore[no-any-return]
 
     def clear(self) -> None:
         """

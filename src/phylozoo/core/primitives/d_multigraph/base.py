@@ -4,7 +4,7 @@ Directed multi-graph module.
 This module provides the DirectedMultiGraph class for working with directed multi-graphs.
 """
 
-from typing import Any, Iterator, TypeVar
+from typing import Any, Callable, Generic, Iterator, TypeVar
 
 import networkx as nx
 
@@ -15,7 +15,7 @@ from phylozoo.utils.exceptions import PhyloZooValueError
 T = TypeVar("T")
 
 
-class DirectedMultiGraph(IOMixin):
+class DirectedMultiGraph(IOMixin, Generic[T]):
     """
     Directed multi-graph where all edges are directed.
 
@@ -122,15 +122,17 @@ class DirectedMultiGraph(IOMixin):
         ... )
         """
         # Initialize graphs with attributes if provided
+        self._graph: nx.MultiDiGraph
+        self._combined: nx.MultiGraph
         if attributes:
             # Warn on Python keyword attribute names
             for attr_key in attributes:
                 warn_on_keyword(attr_key, "Graph attribute key")
-            self._graph: nx.MultiDiGraph = nx.MultiDiGraph(**attributes)
-            self._combined: nx.MultiGraph = nx.MultiGraph(**attributes)
+            self._graph = nx.MultiDiGraph(**attributes)
+            self._combined = nx.MultiGraph(**attributes)
         else:
-            self._graph: nx.MultiDiGraph = nx.MultiDiGraph()
-            self._combined: nx.MultiGraph = nx.MultiGraph()
+            self._graph = nx.MultiDiGraph()
+            self._combined = nx.MultiGraph()
 
         # Load edges if given
         if edges:
@@ -224,7 +226,7 @@ class DirectedMultiGraph(IOMixin):
         >>> list(G.edges_iter(keys=True, data='weight'))
         [(1, 2, 0, 1.0)]
         """
-        return self._graph.edges(keys=keys, data=data)
+        return self._graph.edges(keys=keys, data=data)  # type: ignore[no-any-return]
 
     def neighbors(self, v: T) -> Iterator[T]:
         """
@@ -355,7 +357,7 @@ class DirectedMultiGraph(IOMixin):
         """
         if v not in self._graph:
             return iter([])
-        return self._graph.in_edges(v, keys=keys, data=data)
+        return self._graph.in_edges(v, keys=keys, data=data)  # type: ignore[no-any-return]
 
     def incident_child_edges(
         self, v: T, keys: bool = False, data: bool | str = False
@@ -402,7 +404,7 @@ class DirectedMultiGraph(IOMixin):
         """
         if v not in self._graph:
             return iter([])
-        return self._graph.out_edges(v, keys=keys, data=data)
+        return self._graph.out_edges(v, keys=keys, data=data)  # type: ignore[no-any-return]
 
     def __contains__(self, v: T) -> bool:
         """
@@ -522,7 +524,7 @@ class DirectedMultiGraph(IOMixin):
         as a method to get iterators or node data.
         """
 
-        def __init__(self, items: set[T], callable_func: callable):
+        def __init__(self, items: set[T], callable_func: Callable[..., Any]):
             """
             Initialize a node view.
 
@@ -590,7 +592,7 @@ class DirectedMultiGraph(IOMixin):
         as a method to get iterators with keys or data.
         """
 
-        def __init__(self, items: list[tuple[T, T]], callable_func: callable):
+        def __init__(self, items: list[tuple[T, T]], callable_func: Callable[..., Any]):
             """
             Initialize an edge view.
 
@@ -1266,10 +1268,10 @@ class DirectedMultiGraph(IOMixin):
         """
         # Copy graph attributes
         graph_attrs = self._graph.graph.copy() if self._graph.graph else None
-        new_graph = DirectedMultiGraph(attributes=graph_attrs)
+        new_graph: Any = DirectedMultiGraph(attributes=graph_attrs)
         new_graph._graph = self._graph.copy()
         new_graph._combined = self._combined.copy()
-        return new_graph
+        return new_graph  # type: ignore[no-any-return]
 
     def clear(self) -> None:
         """

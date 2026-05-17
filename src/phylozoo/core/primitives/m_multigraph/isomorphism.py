@@ -38,7 +38,7 @@ def _to_digraph_for_isomorphism(
         NetworkX MultiDiGraph with all edges as directed. Undirected edges appear
         as bidirectional pairs.
     """
-    result = nx.MultiDiGraph()
+    result: nx.MultiDiGraph = nx.MultiDiGraph()
 
     # Copy graph attributes
     if G._directed.graph:

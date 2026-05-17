@@ -154,12 +154,16 @@ Continuous Integration
 
 Every push to ``master`` and every pull request against ``master`` triggers the
 ``CI`` GitHub Actions workflow defined in ``.github/workflows/ci.yml``. The workflow
-runs three jobs in parallel and all must pass before a pull request can be merged:
+runs three jobs in parallel:
 
-* **Tests** — runs the full ``pytest`` suite (with coverage) on Python 3.10 and
-  Python 3.11, installing the package with the ``dev`` extras.
-* **Lint** — runs ``ruff check src tests`` and ``black --check src tests``.
-* **Type check** — runs ``mypy src``.
+* **Tests** (required) — runs the full ``pytest`` suite (with coverage) on Python
+  3.10 and Python 3.11, installing the package with the ``dev`` extras.
+* **Lint** (required) — runs ``ruff check src tests`` and ``black --check src tests``.
+* **Type check** (advisory) — runs ``mypy src``. The job reports the current mypy
+  error count on every PR so progress can be tracked, but is marked
+  ``continue-on-error: true`` so it does not block merging while the codebase is
+  being cleaned up. Once the error count reaches zero the ``continue-on-error``
+  flag should be removed and the job promoted to "required".
 
 The configuration for each tool is taken from ``pyproject.toml``, so running them
 locally before pushing produces the same result the workflow does:

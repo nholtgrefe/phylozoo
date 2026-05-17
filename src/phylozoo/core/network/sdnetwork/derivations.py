@@ -92,7 +92,7 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     blob_network = suppress_2_blobs_fn(network)
 
     # Find all internal blobs (more than 1 node, not containing only leaves)
-    all_blobs = blobs(blob_network, trivial=False, leaves=False)
+    all_blobs: Any = blobs(blob_network, trivial=False, leaves=False)
 
     # Work on a copy of the internal graph and collapse blobs
     working_graph = blob_network._graph.copy()
@@ -928,11 +928,11 @@ def split_from_cutedge(
         if node in network._node_to_label
     )
 
-    split = Split(taxa_u, taxa_v)
+    split: Any = Split(taxa_u, taxa_v)
 
     if return_node_taxa:
         return (split, (u, taxa_u), (v, taxa_v))
-    return split
+    return split  # type: ignore[no-any-return]
 
 
 def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
@@ -1235,6 +1235,9 @@ def to_d_network(
     """
     # If no root location provided, find one using root_locations
     if root_location is None:
+        node_locs: Any
+        undir_edge_locs: Any
+        dir_edge_locs: Any
         node_locs, undir_edge_locs, dir_edge_locs = root_locations(network)
         all_valid_locations: list[RootLocation] = (
             list(node_locs) + list(undir_edge_locs) + list(dir_edge_locs)
@@ -1377,7 +1380,7 @@ def partition_from_blob(
         raise PhyloZooValueError(f"Blob contains nodes not in network: {missing_nodes}")
 
     # Check that blob is a non-leaf blob (including trivial single-node blobs)
-    non_leaf_blobs = blobs(network, trivial=True, leaves=False)
+    non_leaf_blobs: Any = blobs(network, trivial=True, leaves=False)
     blob_frozen = frozenset(blob)
     if blob_frozen not in {frozenset(b) for b in non_leaf_blobs}:
         raise PhyloZooValueError(

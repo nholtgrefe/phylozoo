@@ -334,7 +334,7 @@ def cut_edges(
 
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
-    result = [] if use_list else set()
+    result: list[Any] | set[Any] = [] if use_list else set()
 
     # Iterate through edges once and check if they're bridges
     # Bridges can't have parallel edges, so we only need to check each edge once
@@ -417,7 +417,7 @@ def cut_vertices(
 
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
-    result = [] if use_list else set()
+    result: list[Any] | set[Any] = [] if use_list else set()
 
     # Access node data directly from NetworkX graph (more efficient)
     nodes_data = graph._graph.nodes

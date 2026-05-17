@@ -5,7 +5,7 @@ This module provides functions to transform MixedMultiGraph instances
 (e.g., identify nodes, orient edges, suppress degree-2 nodes, etc.).
 """
 
-from typing import TYPE_CHECKING, Any, TypeVar, Iterable
+from typing import TYPE_CHECKING, Any, TypeVar, Iterable, cast
 from collections import deque
 
 
@@ -336,7 +336,7 @@ def orient_away_from_vertex(graph: "MixedMultiGraph", root: T) -> "DirectedMulti
     # Create a new DirectedMultiGraph
     from ..d_multigraph import DirectedMultiGraph
 
-    dm = DirectedMultiGraph()
+    dm: Any = DirectedMultiGraph()
 
     # Add all nodes with attributes
     for node in graph.nodes():
@@ -350,7 +350,7 @@ def orient_away_from_vertex(graph: "MixedMultiGraph", root: T) -> "DirectedMulti
 
     # BFS queues: one for undirected exploration, one for directed exploration
     undirected_queue = deque([root])
-    directed_queue = deque()
+    directed_queue: deque[Any] = deque()
     visited = {root}
     processed_undirected_edges = set()  # Track processed undirected edges (u, v, key)
 
@@ -467,7 +467,7 @@ def orient_away_from_vertex(graph: "MixedMultiGraph", root: T) -> "DirectedMulti
             f"or cycles that prevent a valid orientation."
         )
 
-    return dm
+    return dm  # type: ignore[no-any-return]
 
 
 def suppress_degree2_node(
@@ -712,6 +712,9 @@ def identify_parallel_edge(
     has_directed = graph._directed.has_edge(u, v)
     has_undirected = graph._undirected.has_edge(u, v) or graph._undirected.has_edge(v, u)
 
+    # Declared once here; the directed and undirected branches both assign to it.
+    edge_keys: list[int]
+
     if has_directed:
         # Handle parallel directed edges
         edges_dict = graph._directed[u].get(v, {})
@@ -723,8 +726,11 @@ def identify_parallel_edge(
             # No parallel edges, nothing to do
             return
 
-        # Collect all edge keys and data
-        edge_keys = sorted(edges_dict.keys())
+        # Collect all edge keys and data. NetworkX edge keys come back as Any
+        # from the adjacency dict, but PhyloZoo's convention is that they are
+        # always int (assigned by add_*_edge); make that explicit for the type
+        # checker so the int|None signatures below match.
+        edge_keys = sorted(cast("list[int]", list(edges_dict.keys())))
         first_key = edge_keys[0]
         first_data = edges_dict[first_key]
 
@@ -762,8 +768,11 @@ def identify_parallel_edge(
             # No parallel edges, nothing to do
             return
 
-        # Collect all edge keys and data
-        edge_keys = sorted(edges_dict.keys())
+        # Collect all edge keys and data. NetworkX edge keys come back as Any
+        # from the adjacency dict, but PhyloZoo's convention is that they are
+        # always int (assigned by add_*_edge); make that explicit for the type
+        # checker so the int|None signatures below match.
+        edge_keys = sorted(cast("list[int]", list(edges_dict.keys())))
         first_key = edge_keys[0]
         first_data = edges_dict[first_key]
 
@@ -846,7 +855,7 @@ def subgraph(graph: "MixedMultiGraph", nodes: Iterable[T]) -> "MixedMultiGraph":
         if n not in graph.nodes():
             raise PhyloZooValueError(f"Node {n} not found in graph")
 
-    new_graph = MixedMultiGraph()
+    new_graph: Any = MixedMultiGraph()
 
     # Preserve node attributes
     for n in nodes_set:
@@ -872,4 +881,4 @@ def subgraph(graph: "MixedMultiGraph", nodes: Iterable[T]) -> "MixedMultiGraph":
             edge_data = dict(data) if data else {}
             new_graph.add_directed_edge(u, v, key=key, **edge_data)
 
-    return new_graph
+    return new_graph  # type: ignore[no-any-return]

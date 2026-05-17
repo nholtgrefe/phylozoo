@@ -150,7 +150,7 @@ def tree_from_splitsystem(
     splits_list = list(system.splits)
 
     # Initialize the graph as a star tree
-    T = MixedMultiGraph()
+    T: Any = MixedMultiGraph()
 
     # Create center node
     center_node = "_center"
@@ -224,7 +224,7 @@ def tree_from_splitsystem(
 
         # Find a cut-vertex whose partition is a refinement of this split
         found = False
-        cut_vertices_set = cut_vertices(T, data=False)
+        cut_vertices_set: Any = cut_vertices(T, data=False)
 
         for v in cut_vertices_set:
             # Skip if v is a leaf (taxon)

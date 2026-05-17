@@ -449,7 +449,7 @@ def cut_edges(
 
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
-    result = [] if use_list else set()
+    result: list[Any] | set[Any] = [] if use_list else set()
 
     # Track processed normalized edges to avoid duplicates
     processed_edges = set()
@@ -557,7 +557,7 @@ def cut_vertices(
 
     # Use list for results with dicts (unhashable), set otherwise
     use_list = data is True
-    result = [] if use_list else set()
+    result: list[Any] | set[Any] = [] if use_list else set()
 
     # Access node data directly from NetworkX graphs (more efficient)
     directed_nodes = graph._directed.nodes

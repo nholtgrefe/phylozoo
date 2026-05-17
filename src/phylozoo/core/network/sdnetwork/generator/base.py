@@ -12,7 +12,7 @@ Unlike DirectedGenerator, SemiDirectedGenerator allows both directed and undirec
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, TypeVar
+from typing import Any, Generic, TYPE_CHECKING, TypeVar
 
 import networkx as nx
 
@@ -41,7 +41,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class SemiDirectedGenerator:
+class SemiDirectedGenerator(Generic[T]):
     """
     A level-k generator for semi-directed phylogenetic networks.
 
@@ -214,7 +214,7 @@ class SemiDirectedGenerator:
             If bi-edge connected, self-loop, or acyclicity constraints are violated.
         """
         # 1. Check that generator is bi-edge connected
-        bi_edge_comps = list(bi_edge_connected_components(self._graph))
+        bi_edge_comps: Any = list(bi_edge_connected_components(self._graph))
         if len(bi_edge_comps) > 1:
             raise PhyloZooGeneratorStructureError(
                 f"Generator graph must be a single bi-edge connected component (blob), "
@@ -255,7 +255,7 @@ class SemiDirectedGenerator:
             If the generator cannot be rooted on an edge to form a valid DirectedGenerator.
         """
         # Step 1: Find source components
-        components = source_components(self._graph)
+        components: Any = source_components(self._graph)
         if len(components) != 1:
             raise PhyloZooGeneratorStructureError(
                 f"Semi-directed generator must have exactly one source component; found {len(components)}"

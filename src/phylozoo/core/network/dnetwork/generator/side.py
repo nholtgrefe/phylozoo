@@ -8,13 +8,13 @@ attachment points (sides) of generators.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TypeVar
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class Side:
+class Side(Generic[T]):
     """
     Base class for sides (attachment points) of a generator.
 
@@ -34,7 +34,7 @@ class Side:
 
 
 @dataclass(frozen=True)
-class NodeSide(Side):
+class NodeSide(Side[T]):
     """
     Represents a node side of a generator (attachment at a vertex).
 
@@ -60,7 +60,7 @@ class NodeSide(Side):
 
 
 @dataclass(frozen=True)
-class IsolatedNodeSide(NodeSide):
+class IsolatedNodeSide(NodeSide[T]):
     """
     Node side for the single vertex of a level-0 generator.
 
@@ -88,7 +88,7 @@ class IsolatedNodeSide(NodeSide):
 
 
 @dataclass(frozen=True)
-class HybridSide(NodeSide):
+class HybridSide(NodeSide[T]):
     """
     Represents a hybrid node side of a generator.
 
@@ -119,7 +119,7 @@ class HybridSide(NodeSide):
 
 
 @dataclass(frozen=True)
-class EdgeSide(Side):
+class EdgeSide(Side[T]):
     """
     Base class for edge sides (attachment along an edge).
 
@@ -130,7 +130,7 @@ class EdgeSide(Side):
 
 
 @dataclass(frozen=True)
-class DirEdgeSide(EdgeSide):
+class DirEdgeSide(EdgeSide[T]):
     """
     Represents a directed edge side of a generator.
 

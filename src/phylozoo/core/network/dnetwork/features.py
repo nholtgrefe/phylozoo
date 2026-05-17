@@ -8,7 +8,7 @@ phylogenetic networks (e.g., LSA node, blobs, omnians, etc.).
 import warnings
 from collections import deque
 from functools import lru_cache
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import networkx as nx
 
@@ -79,10 +79,10 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
         leaf = next(iter(leaves))
         # If the leaf is the root (shouldn't happen in valid networks, but handle it)
         if network.indegree(leaf) == 0:
-            return leaf
+            return leaf  # type: ignore[no-any-return]
         # Otherwise, return the parent (there should be exactly one parent for a leaf)
         parents = list(network.parents(leaf))
-        return parents[0] if parents else leaf
+        return parents[0] if parents else leaf  # type: ignore[no-any-return]
 
     # Find the LSA: the lowest node through which ALL paths from root to leaves pass
     # This means for each leaf, the LSA must be on ALL simple paths from root to that leaf
@@ -134,7 +134,7 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
                 queue.append(child)
 
     # Return the deepest node among LSA candidates
-    return max(lsa_candidates, key=lambda node: depths.get(node, 0))
+    return max(lsa_candidates, key=lambda node: depths.get(node, 0))  # type: ignore[no-any-return]
 
 
 @lru_cache(maxsize=128)
@@ -220,6 +220,7 @@ def blobs(
     result: list[set[T]] = []
 
     # Process bi-edge connected components directly
+    blob: Any
     for blob in bi_edge_connected_components(network._graph):
         blob_set = set(blob)
 
@@ -309,6 +310,7 @@ def k_blobs(
     result: list[set[T]] = []
 
     # Iterate through blobs
+    blob: Any
     for blob in blobs(network, trivial=trivial, leaves=leaves):
         blob_set = set(blob)
 

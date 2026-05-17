@@ -52,6 +52,11 @@ class Triplet:
 
     __slots__ = ("_taxa", "_split", "_initialized")
 
+    # Slot type annotations (set via object.__setattr__ in __init__).
+    _taxa: frozenset[str]
+    _split: Split | None
+    _initialized: bool
+
     def __init__(
         self,
         split: Split | frozenset[str] | set[str],
@@ -100,7 +105,7 @@ class Triplet:
         object.__setattr__(self, "_split", stored_split)
         object.__setattr__(self, "_initialized", True)
 
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """
         Prevent modification of attributes after initialization.
 

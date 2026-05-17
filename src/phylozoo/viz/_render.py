@@ -39,7 +39,7 @@ PARALLEL_OFFSET_STEP = 0.1
 def _get_edge_color(route: EdgeRoute, style: RenderStyle) -> str:
     """Get edge color from route type and style."""
     if route.edge_type.is_hybrid and hasattr(style, "hybrid_edge_color"):
-        return style.hybrid_edge_color
+        return style.hybrid_edge_color  # type: ignore[no-any-return]
     return style.edge_color
 
 
@@ -210,9 +210,9 @@ def draw_node(
 def _get_node_color(node_type: str, style: RenderStyle) -> str:
     """Get node color from node type and style."""
     if node_type == "leaf" and hasattr(style, "leaf_color"):
-        return style.leaf_color
+        return style.leaf_color  # type: ignore[no-any-return]
     if node_type == "hybrid" and hasattr(style, "hybrid_color"):
-        return style.hybrid_color
+        return style.hybrid_color  # type: ignore[no-any-return]
     return style.node_color
 
 
@@ -222,7 +222,7 @@ def _get_node_size(node_type: str, style: RenderStyle) -> float:
     For leaf nodes, uses leaf_size if set; otherwise falls back to node_size.
     """
     if node_type == "leaf" and hasattr(style, "leaf_size") and style.leaf_size is not None:
-        return style.leaf_size
+        return style.leaf_size  # type: ignore[no-any-return]
     return style.node_size
 
 

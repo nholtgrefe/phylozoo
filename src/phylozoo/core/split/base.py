@@ -15,7 +15,7 @@ from ..primitives.partition import Partition
 T = TypeVar("T")
 
 
-class Split(Partition):
+class Split(Partition[T]):
     """
     Class for 2-partitions of sets, child-class of the general Partition class.
 
@@ -47,13 +47,16 @@ class Split(Partition):
 
     Attributes
     ----------
-    set1 : set[T]
-        First set of elements in the split.
-    set2 : set[T]
-        Second set of elements in the split.
     elements : frozenset
         Set containing all elements from both sides of the split (inherited from Partition).
     """
+
+    # Set in __init__ via object.__setattr__ (bypasses immutability of Partition);
+    # declared here so static type checkers can see them.
+    set1: set[T]
+    """First set of elements in the split."""
+    set2: set[T]
+    """Second set of elements in the split."""
 
     def __init__(self, set1: set[T], set2: set[T]) -> None:
         """

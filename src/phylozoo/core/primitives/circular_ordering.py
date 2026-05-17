@@ -17,7 +17,7 @@ from phylozoo.utils.exceptions import PhyloZooWarning, PhyloZooValueError
 T = TypeVar("T")
 
 
-class CircularSetOrdering(Partition):
+class CircularSetOrdering(Partition[T]):
     """
     A circular ordering of sets that forms a partition.
 
@@ -53,6 +53,9 @@ class CircularSetOrdering(Partition):
     """
 
     __slots__ = ("_setorder",)
+
+    # Slot type annotation (set via object.__setattr__ in __init__).
+    _setorder: tuple[frozenset[T], ...]
 
     def __setattr__(self, name: str, value: Any) -> None:
         """
@@ -207,7 +210,7 @@ class CircularSetOrdering(Partition):
                     element_keys.sort()
                     return tuple(element_keys)
             # For non-frozensets (shouldn't happen in CircularSetOrdering, but handle gracefully)
-            return elt
+            return elt  # type: ignore[no-any-return]
 
         # Find the lexicographically smallest entry
         min_idx = 0
@@ -335,7 +338,7 @@ class CircularSetOrdering(Partition):
         elements = [next(iter(s)) for s in self._setorder]
         return CircularOrdering(elements)
 
-    def are_neighbors(self, set1: set[T, frozenset], set2: set[T, frozenset]) -> bool:
+    def are_neighbors(self, set1: set[T] | frozenset[T], set2: set[T] | frozenset[T]) -> bool:
         """
         Check if two sets are neighbors in the circular ordering.
 
@@ -442,7 +445,7 @@ class CircularSetOrdering(Partition):
             yield CircularOrdering(list(combination))
 
 
-class CircularOrdering(CircularSetOrdering):
+class CircularOrdering(CircularSetOrdering[T]):
     """
     A circular ordering of elements.
 
@@ -477,6 +480,9 @@ class CircularOrdering(CircularSetOrdering):
     """
 
     __slots__ = ("_order",)
+
+    # Slot type annotation (set via object.__setattr__ in __init__).
+    _order: tuple[T, ...]
 
     def __setattr__(self, name: str, value: Any) -> None:
         """

@@ -826,7 +826,7 @@ def to_enewick(network: "DirectedPhyNetwork", **kwargs: Any) -> str:
 
     # Initialize hybrid tracking
     hybrid_nodes_set = set(network.hybrid_nodes)
-    hybrid_to_id: dict[T, int] = {}
+    hybrid_to_id: dict[Any, int] = {}
     hybrid_counter = 1
 
     # Assign IDs to hybrid nodes deterministically
@@ -835,7 +835,7 @@ def to_enewick(network: "DirectedPhyNetwork", **kwargs: Any) -> str:
         hybrid_counter += 1
 
     # Track which hybrids have been defined
-    defined_hybrids: set[T] = set()
+    defined_hybrids: set[Any] = set()
 
     def build_subtree(node: T, parent_edge_data: dict[str, Any] | None = None) -> str:
         """

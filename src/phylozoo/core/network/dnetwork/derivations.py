@@ -130,7 +130,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
             undirected_edges.append(edge_dict)
 
     # 3) Build a mixed graph to allow suppression
-    mixed = MixedMultiGraph(directed_edges=directed_edges, undirected_edges=undirected_edges)
+    mixed: Any = MixedMultiGraph(directed_edges=directed_edges, undirected_edges=undirected_edges)
 
     # Suppress all degree-2 nodes using the mixed graph utility function
     mm_suppress_deg2_nodes(mixed)
@@ -191,7 +191,7 @@ def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     blob_network = suppress_2_blobs_fn(network)
 
     # Find all internal blobs (more than 1 node, not containing only leaves)
-    all_blobs = blobs(blob_network, trivial=False, leaves=False)
+    all_blobs: Any = blobs(blob_network, trivial=False, leaves=False)
 
     # Work on a copy of the internal graph and collapse blobs
     working_graph = blob_network._graph.copy()
@@ -972,11 +972,11 @@ def split_from_cutedge(
         if node in network._node_to_label
     )
 
-    split = Split(taxa_u, taxa_v)
+    split: Any = Split(taxa_u, taxa_v)
 
     if return_node_taxa:
         return (split, (u, taxa_u), (v, taxa_v))
-    return split
+    return split  # type: ignore[no-any-return]
 
 
 def displayed_splits(network: DirectedPhyNetwork) -> WeightedSplitSystem:
@@ -1254,7 +1254,7 @@ def partition_from_blob(
         raise PhyloZooValueError(f"Blob contains nodes not in network: {missing_nodes}")
 
     # Check that blob is a non-leaf blob (including trivial single-node blobs)
-    non_leaf_blobs = blobs(network, trivial=True, leaves=False)
+    non_leaf_blobs: Any = blobs(network, trivial=True, leaves=False)
     blob_frozen = frozenset(blob)
     if blob_frozen not in {frozenset(b) for b in non_leaf_blobs}:
         raise PhyloZooValueError(

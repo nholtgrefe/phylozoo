@@ -53,7 +53,7 @@ def is_lsa_network(network: "DirectedPhyNetwork") -> bool:
     """
     if network.number_of_nodes() == 0:
         return True
-    return network.root_node == network.LSA_node
+    return network.root_node == network.LSA_node  # type: ignore[no-any-return]
 
 
 @lru_cache(maxsize=128)
@@ -116,6 +116,7 @@ def level(network: "DirectedPhyNetwork") -> int:
     hybrid_nodes = network.hybrid_nodes
 
     max_level = 0
+    blob_set: Any
     for blob_set in blobs(network, trivial=False, leaves=False):
         # Count hybrid edges in this blob (both endpoints must be in blob)
         hybrid_edges_in_blob = sum(1 for u, v, _ in hybrid_edges if u in blob_set and v in blob_set)
@@ -161,6 +162,7 @@ def vertex_level(network: "DirectedPhyNetwork") -> int:
     hybrid_nodes = network.hybrid_nodes
 
     max_vertex_level = 0
+    blob_set: Any
     for blob_set in blobs(network, trivial=False, leaves=False):
         hybrid_nodes_in_blob = sum(1 for node in hybrid_nodes if node in blob_set)
         max_vertex_level = max(max_vertex_level, hybrid_nodes_in_blob)
@@ -303,7 +305,7 @@ def is_simple(network: "DirectedPhyNetwork") -> bool:
     if network.number_of_nodes() == 0:
         return True
 
-    non_leaf_blobs = list(blobs(network, leaves=False))
+    non_leaf_blobs: Any = list(blobs(network, leaves=False))
     return len(non_leaf_blobs) <= 1
 
 
@@ -377,7 +379,7 @@ def is_galled(network: "DirectedPhyNetwork") -> bool:
         return True
 
     # Get all blobs
-    blob_list = blobs(network, trivial=False, leaves=False)
+    blob_list: Any = blobs(network, trivial=False, leaves=False)
 
     # Get the underlying NetworkX graph for path checking
     nx_graph = network._graph._graph
@@ -609,7 +611,7 @@ def is_treebased(network: "DirectedPhyNetwork") -> bool:
     # if and only if for every subset S ⊆ U the number of different
     # children of the vertices in S is greater than or equal to |S|.
 
-    omnian_set = omnians(network)
+    omnian_set: Any = omnians(network)
     if not omnian_set:
         return True
 

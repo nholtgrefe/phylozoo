@@ -7,7 +7,7 @@ This module provides the main class for working with directed phylogenetic netwo
 import math
 import warnings
 from functools import cached_property
-from typing import Any, Iterator, TypeVar
+from typing import Any, Generic, Iterator, TypeVar
 
 import networkx as nx
 
@@ -30,7 +30,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class DirectedPhyNetwork(IOMixin):
+class DirectedPhyNetwork(IOMixin, Generic[T]):
     """
     A directed phylogenetic network.
 
@@ -1328,7 +1328,7 @@ class DirectedPhyNetwork(IOMixin):
             raise PhyloZooValueError("Network has no root node")
         if len(roots) > 1:
             raise PhyloZooValueError(f"Network has multiple root nodes: {roots}")
-        return roots[0]
+        return roots[0]  # type: ignore[no-any-return]
 
     @cached_property
     def hybrid_nodes(self) -> set[T]:

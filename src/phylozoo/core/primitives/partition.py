@@ -9,7 +9,7 @@ working with partitions of sets.
 
 import itertools
 import warnings
-from typing import Any, Iterator, TypeVar
+from typing import Any, Generic, Iterator, TypeVar
 
 from phylozoo.utils.exceptions import (
     PhyloZooWarning,
@@ -21,7 +21,7 @@ from phylozoo.utils.exceptions import (
 T = TypeVar("T")
 
 
-class Partition:
+class Partition(Generic[T]):
     """
     General class for partitions of sets.
 
@@ -245,7 +245,7 @@ class Partition:
         """
         return hash(self._parts)
 
-    def __contains__(self, subset: set[T, frozenset]) -> bool:
+    def __contains__(self, subset: set[T] | frozenset[T]) -> bool:
         """
         Check if a subset is one of the parts in the partition.
 
@@ -375,7 +375,7 @@ class Partition:
         """
         for part in self._parts:
             if element in part:
-                return part
+                return part  # type: ignore[no-any-return]
         raise PhyloZooValueError(f"Element {element} not found in partition")
 
     def subpartitions(self, size: int = 4) -> Iterator["Partition"]:

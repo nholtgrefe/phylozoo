@@ -6,7 +6,7 @@ and mixed phylogenetic networks (e.g., blobs, omnians, etc.).
 """
 
 from functools import lru_cache
-from typing import TypeVar, Union
+from typing import Any, TypeVar, Union
 
 from ...primitives.m_multigraph.features import (
     bi_edge_connected_components,
@@ -110,6 +110,7 @@ def blobs(
     result: list[set[T]] = []
 
     # Process bi-edge connected components directly
+    blob: Any
     for blob in bi_edge_connected_components(network._graph):
         blob_set = set(blob)
 
@@ -200,6 +201,7 @@ def k_blobs(
     result: list[set[T]] = []
 
     # Iterate through blobs
+    blob: Any
     for blob in blobs(network, trivial=trivial, leaves=leaves):
         blob_set = set(blob)
 
@@ -361,7 +363,7 @@ def root_locations(
     True
     """
     # Find source components
-    components = source_components(network._graph)
+    components: Any = source_components(network._graph)
     if len(components) != 1:
         raise PhyloZooNetworkStructureError(
             f"Semi-directed network must have exactly one source component; found {len(components)}"

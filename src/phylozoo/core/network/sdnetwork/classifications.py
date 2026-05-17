@@ -6,7 +6,7 @@ semi-directed and mixed phylogenetic networks (e.g., is_tree, is_binary, level, 
 """
 
 from functools import lru_cache
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from ...primitives.m_multigraph.features import has_parallel_edges as graph_has_parallel_edges
 from .features import blobs
@@ -79,6 +79,7 @@ def level(network: "SemiDirectedPhyNetwork") -> int:
     hybrid_nodes = network.hybrid_nodes
 
     max_level = 0
+    blob_set: Any
     for blob_set in blobs(network, trivial=False, leaves=False):
         # Count hybrid edges in this blob (both endpoints must be in blob)
         hybrid_edges_in_blob = sum(1 for u, v, _ in hybrid_edges if u in blob_set and v in blob_set)
@@ -125,6 +126,7 @@ def vertex_level(network: "SemiDirectedPhyNetwork") -> int:
     hybrid_nodes = network.hybrid_nodes
 
     max_vertex_level = 0
+    blob_set: Any
     for blob_set in blobs(network, trivial=False, leaves=False):
         hybrid_nodes_in_blob = sum(1 for node in hybrid_nodes if node in blob_set)
         max_vertex_level = max(max_vertex_level, hybrid_nodes_in_blob)
@@ -260,7 +262,7 @@ def is_simple(network: "SemiDirectedPhyNetwork") -> bool:
     if network.number_of_nodes() == 0:
         return True
 
-    non_leaf_blobs = list(blobs(network, leaves=False))
+    non_leaf_blobs: Any = list(blobs(network, leaves=False))
     return len(non_leaf_blobs) <= 1
 
 
@@ -339,7 +341,7 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
         return True
 
     # Get all blobs
-    blob_list = blobs(network, trivial=False, leaves=False)
+    blob_list: Any = blobs(network, trivial=False, leaves=False)
 
     # Check each blob
     for blob_set in blob_list:
@@ -460,6 +462,9 @@ def _edge_root_locations(network: "SemiDirectedPhyNetwork") -> list[tuple]:
     """
     from .features import root_locations
 
+    node_locs: Any
+    undir_locs: Any
+    dir_locs: Any
     node_locs, undir_locs, dir_locs = root_locations(network)
     return list(undir_locs) + list(dir_locs)
 

@@ -107,7 +107,7 @@ def compute_pz_dag_layout(
     rng = random.Random(seed)
 
     # Convert network to NetworkX DiGraph for layout computation
-    G = nx.DiGraph()
+    G: nx.DiGraph = nx.DiGraph()
     for node in network._graph.nodes:
         G.add_node(node)
     for u, v, key in network._graph.edges(keys=True):
@@ -132,14 +132,14 @@ def compute_pz_dag_layout(
             parent = min(preds, key=lambda p: topo_index[p])
             tree_edges.append((parent, node))
 
-    T = nx.DiGraph(tree_edges)
+    tree_dag = nx.DiGraph(tree_edges)
 
     # --- Step 2: Recursive layout helper (x only) ---
     def layout_tree(
         node: T, depth: int, x_offset: list[float]
     ) -> tuple[dict[T, tuple[float, float]], float]:
         """Recursively layout tree, returning positions and next x offset."""
-        children = list(T.successors(node))
+        children = list(tree_dag.successors(node))
         if not children:
             pos = {node: (x_offset[0], depth)}
             return pos, x_offset[0] + leaf_gap
@@ -172,7 +172,7 @@ def compute_pz_dag_layout(
     # --- Step 4: Optimization loop (for x-ordering) ---
     best_pos: dict[T, tuple[float, float]] | None = None
     best_score = float("inf")
-    node_children: dict[T, list[T]] = {n: list(T.successors(n)) for n in T.nodes}
+    node_children: dict[T, list[T]] = {n: list(tree_dag.successors(n)) for n in tree_dag.nodes}
 
     for _ in range(trials):
         # Shuffle children for this trial
@@ -180,7 +180,7 @@ def compute_pz_dag_layout(
             rng.shuffle(node_children[n])
 
         # Build temporary tree with shuffled children
-        T_tmp = nx.DiGraph()
+        T_tmp: nx.DiGraph = nx.DiGraph()
         for u in node_children:
             for v in node_children[u]:
                 T_tmp.add_edge(u, v)

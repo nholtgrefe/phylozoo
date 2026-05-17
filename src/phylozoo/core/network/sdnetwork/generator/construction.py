@@ -59,7 +59,7 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     """
     # Level-0: single node, no edges
     if d_generator.level == 0:
-        mixed_graph = MixedMultiGraph()
+        mixed_graph: Any = MixedMultiGraph()
         mixed_graph.add_node(d_generator.root_node)
         return SemiDirectedGenerator(mixed_graph)
 

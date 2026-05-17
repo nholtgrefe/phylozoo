@@ -5,7 +5,7 @@ This module provides functions to transform DirectedMultiGraph instances
 (e.g., identify nodes, suppress degree-2 nodes, etc.).
 """
 
-from typing import Any, TypeVar, Iterable
+from typing import Any, TypeVar, Iterable, cast
 
 
 from . import DirectedMultiGraph
@@ -387,8 +387,11 @@ def identify_parallel_edge(
         # No parallel edges, nothing to do
         return
 
-    # Collect all edge keys and data
-    edge_keys = sorted(edges_dict.keys())
+    # Collect all edge keys and data. NetworkX edge keys come back as Any from
+    # the adjacency dict, but PhyloZoo's convention is that they are always int
+    # (assigned by add_edge); make that explicit for the type checker so the
+    # int|None signatures below match.
+    edge_keys: list[int] = sorted(cast("list[int]", list(edges_dict.keys())))
     first_key = edge_keys[0]
     first_data = edges_dict[first_key]
 
@@ -465,7 +468,7 @@ def subgraph(graph: "DirectedMultiGraph", nodes: Iterable[T]) -> "DirectedMultiG
         if n not in graph.nodes():
             raise PhyloZooValueError(f"Node {n} not found in graph")
 
-    new_graph = DirectedMultiGraph()
+    new_graph: Any = DirectedMultiGraph()
 
     # Preserve node attributes
     for n in nodes_set:
@@ -480,4 +483,4 @@ def subgraph(graph: "DirectedMultiGraph", nodes: Iterable[T]) -> "DirectedMultiG
             # Preserve the same key where possible
             new_graph.add_edge(u, v, key=key, **edge_data)
 
-    return new_graph
+    return new_graph  # type: ignore[no-any-return]

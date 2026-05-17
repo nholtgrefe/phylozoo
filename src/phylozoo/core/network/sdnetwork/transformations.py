@@ -224,7 +224,7 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     working_graph = network._graph.copy()
 
     # Find all 2-blobs
-    two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
+    two_blobs: Any = k_blobs(network, k=2, trivial=False, leaves=False)
 
     # Process each 2-blob
     for blob in two_blobs:

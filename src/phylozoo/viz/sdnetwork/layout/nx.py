@@ -73,7 +73,7 @@ def compute_nx_layout(
     if network.number_of_nodes() == 0:
         raise PhyloZooLayoutError("Cannot compute layout for empty network")
 
-    G_nx = nx.MultiGraph()
+    G_nx: nx.MultiGraph = nx.MultiGraph()
     original_nodes = set(network._graph.nodes)
     for node in original_nodes:
         G_nx.add_node(node)
@@ -85,7 +85,7 @@ def compute_nx_layout(
     pos = normalize_positions(pos)
 
     # Filter positions to only include original network nodes
-    filtered_positions: dict[T, tuple[float, float]] = {
+    filtered_positions: dict[Any, tuple[float, float]] = {
         node: pos for node, pos in pos.items() if node in original_nodes
     }
 

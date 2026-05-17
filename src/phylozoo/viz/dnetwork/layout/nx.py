@@ -70,7 +70,7 @@ def compute_nx_layout(
     if network.number_of_nodes() == 0:
         raise PhyloZooLayoutError("Cannot compute layout for empty network")
 
-    G_nx = nx.DiGraph()
+    G_nx: nx.DiGraph = nx.DiGraph()
     for node in network._graph.nodes:
         G_nx.add_node(node)
     for u, v, key in network._graph.edges(keys=True):

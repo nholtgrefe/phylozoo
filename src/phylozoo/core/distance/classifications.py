@@ -71,7 +71,7 @@ def satisfies_triangle_inequality(distance_matrix: DistanceMatrix) -> bool:
                         return False
         return True
 
-    return _check_triangle_inequality_numba(distance_matrix._matrix, len(distance_matrix))
+    return _check_triangle_inequality_numba(distance_matrix._matrix, len(distance_matrix))  # type: ignore[no-any-return]
 
 
 def has_zero_diagonal(distance_matrix: DistanceMatrix) -> bool:
@@ -357,4 +357,4 @@ def is_kalmanson(distance_matrix: DistanceMatrix, circular_order: CircularOrderi
                             return False
         return True
 
-    return _check_kalmanson_conditions(distance_matrix._matrix, ordered_indices, n)
+    return _check_kalmanson_conditions(distance_matrix._matrix, ordered_indices, n)  # type: ignore[no-any-return]

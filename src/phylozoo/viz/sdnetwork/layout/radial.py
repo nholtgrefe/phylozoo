@@ -9,7 +9,7 @@ and leaves on the outer circle.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import networkx as nx
 
@@ -113,17 +113,17 @@ def compute_pz_radial_layout(
     root = d_network.root_node
 
     # Build tree structure from directed network
-    G = nx.DiGraph()
+    G: nx.DiGraph = nx.DiGraph()
     for node in d_network._graph.nodes:
         G.add_node(node)
     for u, v, key in d_network._graph.edges(keys=True):
         G.add_edge(u, v)
 
     # Compute depths from root
-    depths: dict[T, int] = {}
+    depths: dict[Any, int] = {}
     max_depth = 0
 
-    def compute_depth(node: T, depth: int) -> None:
+    def compute_depth(node: Any, depth: int) -> None:
         """Recursively compute depth of nodes."""
         depths[node] = depth
         nonlocal max_depth
@@ -139,8 +139,8 @@ def compute_pz_radial_layout(
 
     if num_leaves == 0:
         # Single node network
-        positions: dict[T, tuple[float, float]] = {root: (0.0, 0.0)}
-        edge_routes: dict[tuple[T, T, int], "EdgeRoute"] = {}
+        positions: dict[Any, tuple[float, float]] = {root: (0.0, 0.0)}
+        edge_routes: dict[tuple[Any, Any, int], "EdgeRoute"] = {}
         return SDNetLayout(
             network=network,
             positions=positions,
@@ -159,10 +159,10 @@ def compute_pz_radial_layout(
 
     # Assign angles to leaves based on their subtree order
     # Use a recursive approach to assign angles based on subtree structure
-    leaf_angles: dict[T, float] = {}
+    leaf_angles: dict[Any, float] = {}
     leaf_index = 0
 
-    def assign_leaf_angles(node: T) -> None:
+    def assign_leaf_angles(node: Any) -> None:
         """Recursively assign angles to leaves based on subtree structure."""
         nonlocal leaf_index
         children = list(G.successors(node))
@@ -179,9 +179,9 @@ def compute_pz_radial_layout(
     assign_leaf_angles(root)
 
     # Compute positions for all nodes
-    positions: dict[T, tuple[float, float]] = {}
+    positions: dict[Any, tuple[float, float]] = {}
 
-    def compute_positions(node: T) -> None:
+    def compute_positions(node: Any) -> None:
         """Recursively compute positions for nodes."""
         if node in positions:
             return
@@ -226,7 +226,7 @@ def compute_pz_radial_layout(
     # Filter positions to only include nodes from the original network
     # (to_d_network may create subdivision nodes that we don't want to position)
     original_nodes = set(network._graph.nodes)
-    filtered_positions: dict[T, tuple[float, float]] = {
+    filtered_positions: dict[Any, tuple[float, float]] = {
         node: pos for node, pos in positions.items() if node in original_nodes
     }
 

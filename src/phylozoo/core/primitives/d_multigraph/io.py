@@ -365,7 +365,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedMultiGraph:
             continue
 
     # Create graph
-    graph = DirectedMultiGraph(attributes=graph_attrs if graph_attrs else None)
+    graph: Any = DirectedMultiGraph(attributes=graph_attrs if graph_attrs else None)
 
     # Add nodes with attributes
     for node_id, attrs in nodes_data.items():
@@ -381,7 +381,7 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedMultiGraph:
 
         graph.add_edge(u, v, key=key, **attrs)
 
-    return graph
+    return graph  # type: ignore[no-any-return]
 
 
 def _parse_dot_attributes(attrs_str: str) -> dict[str, Any]:
@@ -398,7 +398,7 @@ def _parse_dot_attributes(attrs_str: str) -> dict[str, Any]:
     dict[str, Any]
         Dictionary of attributes.
     """
-    attrs = {}
+    attrs: dict[Any, Any] = {}
     if not attrs_str.strip():
         return attrs
 
@@ -604,7 +604,7 @@ def from_edgelist(edgelist_string: str, **kwargs: Any) -> DirectedMultiGraph:
     - Format: `u v` or `u v key` or `u v key attr1=value1 attr2=value2`
     - Uses node_id as the label/name
     """
-    graph = DirectedMultiGraph()
+    graph: Any = DirectedMultiGraph()
 
     for line in edgelist_string.strip().split("\n"):
         line = line.strip()
@@ -659,7 +659,7 @@ def from_edgelist(edgelist_string: str, **kwargs: Any) -> DirectedMultiGraph:
         # Add edge
         graph.add_edge(u, v, key=key, **attrs)
 
-    return graph
+    return graph  # type: ignore[no-any-return]
 
 
 # Register format handlers with FormatRegistry

@@ -84,7 +84,7 @@ def plot_dmgraph(
 
     def get_label(node: Any) -> str | None:
         if node in graph._graph.nodes:
-            return graph._graph.nodes[node].get("label", str(node))
+            return graph._graph.nodes[node].get("label", str(node))  # type: ignore[no-any-return]
         return str(node)
 
     render_layout(

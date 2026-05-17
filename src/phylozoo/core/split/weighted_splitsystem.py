@@ -69,6 +69,10 @@ class WeightedSplitSystem(SplitSystem):
 
     __slots__ = ("_splits", "_elements", "_initialized", "_weights", "_total_weight")
 
+    # Slot type annotations (set via object.__setattr__ in __init__).
+    _weights: dict[Split, float]
+    _total_weight: float
+
     # I/O format configuration (override parent)
     _default_format = "nexus"
     _supported_formats = ["nexus"]

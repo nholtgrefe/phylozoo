@@ -4,6 +4,7 @@ Conversion functions for DirectedMultiGraph.
 This module provides functions for converting NetworkX graphs to DirectedMultiGraph.
 """
 
+from typing import Any
 import networkx as nx
 
 from . import DirectedMultiGraph
@@ -37,14 +38,14 @@ def digraph_to_directedmultigraph(graph: nx.DiGraph) -> "DirectedMultiGraph":
     """
     # Copy graph attributes if present
     graph_attrs = graph.graph.copy() if graph.graph else None
-    dmg = DirectedMultiGraph(attributes=graph_attrs)
+    dmg: Any = DirectedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         dmg.add_node(node, **data)
     # Add all edges with attributes
     for u, v, data in graph.edges(data=True):
         dmg.add_edge(u, v, **data)
-    return dmg
+    return dmg  # type: ignore[no-any-return]
 
 
 def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> "DirectedMultiGraph":
@@ -78,11 +79,11 @@ def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> "DirectedMulti
     """
     # Copy graph attributes if present
     graph_attrs = graph.graph.copy() if graph.graph else None
-    dmg = DirectedMultiGraph(attributes=graph_attrs)
+    dmg: Any = DirectedMultiGraph(attributes=graph_attrs)
     # Add all nodes with attributes
     for node, data in graph.nodes(data=True):
         dmg.add_node(node, **data)
     # Add all edges with keys and attributes
     for u, v, key, data in graph.edges(keys=True, data=True):
         dmg.add_edge(u, v, key=key, **data)
-    return dmg
+    return dmg  # type: ignore[no-any-return]

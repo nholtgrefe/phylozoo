@@ -112,8 +112,8 @@ class Layout(Generic[T]):
     """
 
     network: Any
-    positions: Positions[T]
-    edge_routes: EdgeRoutes[T]
+    positions: dict[T, NodePosition]
+    edge_routes: dict[tuple[T, T, int], EdgeRoute]
     algorithm: str = "unknown"
     parameters: dict[str, Any] = field(default_factory=dict)
 

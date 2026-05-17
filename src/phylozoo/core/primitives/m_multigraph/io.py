@@ -420,7 +420,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> MixedMultiGraph:
             continue
 
     # Create graph
-    graph = MixedMultiGraph(
+    graph: Any = MixedMultiGraph(
         attributes=graph_attrs if graph_attrs else None, directed_edges=None, undirected_edges=None
     )
 
@@ -448,7 +448,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> MixedMultiGraph:
 
         graph.add_directed_edge(u, v, key=key, **attrs)
 
-    return graph
+    return graph  # type: ignore[no-any-return]
 
 
 def _parse_dot_attributes(attrs_str: str) -> dict[str, Any]:
@@ -465,7 +465,7 @@ def _parse_dot_attributes(attrs_str: str) -> dict[str, Any]:
     dict[str, Any]
         Dictionary of attributes.
     """
-    attrs = {}
+    attrs: dict[Any, Any] = {}
     if not attrs_str.strip():
         return attrs
 

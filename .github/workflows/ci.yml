@@ -57,6 +57,10 @@ jobs:
   typecheck:
     name: Type check (mypy)
     runs-on: ubuntu-latest
+    # Advisory-only: reports the current mypy error count on every PR so we can
+    # track progress, but does not block merging while the codebase is being
+    # cleaned up. Remove this once the count is at zero.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 

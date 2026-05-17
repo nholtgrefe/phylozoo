@@ -100,7 +100,7 @@ class SplitSystem(IOMixin):
         self._elements: frozenset = frozenset(elements_set)
         self._initialized: bool = True
 
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """
         Prevent modification of attributes after initialization.
 

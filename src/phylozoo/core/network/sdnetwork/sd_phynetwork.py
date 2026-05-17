@@ -27,7 +27,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
+class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
     """
     A semi-directed phylogenetic network.
 
@@ -171,7 +171,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         self,
         directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
         undirected_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
-        nodes: list[T | tuple[T | dict[str | Any | None]]] = None,
+        nodes: list[T | tuple[T, dict[str, Any] | None]] | None = None,
         attributes: dict[str, Any] | None = None,
     ) -> None:
         """
@@ -308,7 +308,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             return
 
         # Step 1: find source components (do this before imports to fail fast)
-        components = source_components(self._graph)
+        components: Any = source_components(self._graph)
         if len(components) != 1:
             raise PhyloZooNetworkStructureError(
                 f"Semi-directed network must have exactly one source component; found {len(components)}"

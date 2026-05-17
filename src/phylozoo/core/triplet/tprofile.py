@@ -71,6 +71,12 @@ class TripletProfile:
 
     __slots__ = ("_taxa", "_triplets", "_initialized", "_split_cache")
 
+    # Slot type annotations (set via object.__setattr__ in __init__).
+    _taxa: frozenset[str]
+    _triplets: Mapping[Triplet, float]
+    _initialized: bool
+    _split_cache: Split | None
+
     def __init__(
         self,
         triplets: (
@@ -189,7 +195,7 @@ class TripletProfile:
                     f"Weight must be positive, got {weight} for triplet {triplet}"
                 )
 
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """
         Prevent modification of attributes after initialization.
 

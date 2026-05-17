@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import warnings
 from functools import cached_property
-from typing import TYPE_CHECKING, Iterator, TypeVar
+from typing import Any, Generic, Iterator, TYPE_CHECKING, TypeVar
 
 import networkx as nx
 
@@ -42,7 +42,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class DirectedGenerator:
+class DirectedGenerator(Generic[T]):
     """
     A level-k generator for directed phylogenetic networks.
 
@@ -199,7 +199,7 @@ class DirectedGenerator:
             If bi-edge connected, self-loop, or acyclicity constraints are violated.
         """
         # 1. Check that generator is bi-edge connected
-        bi_edge_comps = list(bi_edge_connected_components(self._graph))
+        bi_edge_comps: Any = list(bi_edge_connected_components(self._graph))
         if len(bi_edge_comps) > 1:
             raise PhyloZooGeneratorStructureError(
                 f"Generator graph must be a single bi-edge connected component (blob), "
@@ -299,7 +299,7 @@ class DirectedGenerator:
             raise PhyloZooGeneratorDegreeError("Generator has no root node")
         if len(roots) > 1:
             raise PhyloZooGeneratorDegreeError(f"Generator has multiple root nodes: {roots}")
-        return roots[0]
+        return roots[0]  # type: ignore[no-any-return]
 
     @cached_property
     def parallel_edge_sides(self) -> list[tuple[DirEdgeSide, ...]]:
@@ -529,7 +529,7 @@ def generators_from_network(network: "DirectedPhyNetwork") -> Iterator[DirectedG
         )
 
     # Get all internal blobs (excluding leaves)
-    internal_blobs = blobs(network, trivial=True, leaves=False)
+    internal_blobs: Any = blobs(network, trivial=True, leaves=False)
 
     # Process each blob
     for blob_nodes in internal_blobs:

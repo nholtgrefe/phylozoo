@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from phylozoo.viz._types import EdgeRoutes, Layout, Positions
+from phylozoo.viz._types import EdgeRoute, Layout, NodePosition
 
 if TYPE_CHECKING:
     from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -40,7 +40,7 @@ class MGraphLayout(Layout[T]):
     """
 
     network: "MixedMultiGraph[T]"
-    positions: Positions[T]
-    edge_routes: EdgeRoutes[T]
+    positions: dict[T, NodePosition]
+    edge_routes: dict[tuple[T, T, int], EdgeRoute]
     algorithm: str = "unknown"
     parameters: dict[str, Any] = field(default_factory=dict)

@@ -412,7 +412,7 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     if k == 0:
         # Level-0 generators are single nodes
         # Return set with one generator (single node)
-        gen_graph = DirectedMultiGraph()
+        gen_graph: Any = DirectedMultiGraph()
         gen_graph.add_node(0)  # Use 0 as the node ID
         return {DirectedGenerator(gen_graph)}
 

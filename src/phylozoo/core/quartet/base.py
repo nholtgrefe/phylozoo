@@ -49,6 +49,13 @@ class Quartet:
 
     __slots__ = ("_taxa", "_split", "_initialized", "_circular_orderings_cache")
 
+    # Slot type annotations (the slot values are set via object.__setattr__ in
+    # __init__ to bypass the immutability guard installed by __setattr__).
+    _taxa: frozenset[str]
+    _split: Split | None
+    _initialized: bool
+    _circular_orderings_cache: frozenset[CircularOrdering]
+
     def __init__(
         self,
         split: Split | frozenset[str] | set[str],
@@ -97,7 +104,7 @@ class Quartet:
         object.__setattr__(self, "_split", stored_split)
         object.__setattr__(self, "_initialized", True)
 
-    def __setattr__(self, name: str, value: any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """
         Prevent modification of attributes after initialization.
 
