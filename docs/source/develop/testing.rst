@@ -142,9 +142,45 @@ Shared fixtures are defined in `tests/conftest.py`. Use fixtures for common test
 Best Practices
 ~~~~~~~~~~~~~~
 
-* **Test both success and failure cases**: Test that functions work correctly and handle 
+* **Test both success and failure cases**: Test that functions work correctly and handle
   errors appropriately
 * **Use descriptive assertions**: Include clear error messages in assertions when possible
 * **Test edge cases**: Test with empty inputs, single elements, boundary conditions
 * **Keep tests independent**: Each test should be able to run independently
 * **Use fixtures for common setup**: Avoid duplicating test setup code
+
+Continuous Integration
+----------------------
+
+Every push to ``master`` and every pull request against ``master`` triggers the
+``CI`` GitHub Actions workflow defined in ``.github/workflows/ci.yml``. The workflow
+runs three jobs in parallel and all must pass before a pull request can be merged:
+
+* **Tests** — runs the full ``pytest`` suite (with coverage) on Python 3.10 and
+  Python 3.11, installing the package with the ``dev`` extras.
+* **Lint** — runs ``ruff check src tests`` and ``black --check src tests``.
+* **Type check** — runs ``mypy src``.
+
+The configuration for each tool is taken from ``pyproject.toml``, so running them
+locally before pushing produces the same result the workflow does:
+
+.. code-block:: bash
+
+   pytest --cov=phylozoo --cov-report=term
+   ruff check src tests
+   black --check src tests
+   mypy src
+
+Concurrent runs on the same branch are cancelled automatically, so only the most
+recent commit in a pull request is checked.
+
+The CI badge in the project README links to the most recent workflow runs on
+``master``.
+
+In addition to ``ci.yml`` (which gates merges to ``master``), the
+``.github/workflows/`` directory also contains:
+
+* ``docs.yml`` — builds and deploys the Sphinx documentation to GitHub Pages on
+  every version tag.
+* ``release.yml`` — builds the source distribution and wheel, and publishes them
+  to PyPI on every version tag.
