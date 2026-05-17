@@ -1,4 +1,3 @@
 """
 Network module tests.
 """
-

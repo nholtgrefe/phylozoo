@@ -8,9 +8,9 @@ layout base classes, and other visualization primitives.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -114,7 +114,7 @@ class Layout(Generic[T]):
     network: Any
     positions: Positions[T]
     edge_routes: EdgeRoutes[T]
-    algorithm: str = 'unknown'
+    algorithm: str = "unknown"
     parameters: dict[str, Any] = field(default_factory=dict)
 
     def get_position(self, node: T) -> tuple[float, float]:
@@ -145,9 +145,7 @@ class Layout(Generic[T]):
         """
         return self.positions[node]
 
-    def get_edge_route(
-        self, u: T, v: T, key: int = 0
-    ) -> EdgeRoute | None:
+    def get_edge_route(self, u: T, v: T, key: int = 0) -> EdgeRoute | None:
         """
         Get routing information for an edge.
 

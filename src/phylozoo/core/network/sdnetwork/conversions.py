@@ -18,13 +18,13 @@ from ...primitives.m_multigraph.conversions import (
     graph_to_mixedmultigraph,
     multigraph_to_mixedmultigraph,
 )
-from ....utils.exceptions import PhyloZooValueError, PhyloZooTypeError
-T = TypeVar('T')
+from ....utils.exceptions import PhyloZooTypeError
+
+T = TypeVar("T")
 
 
 def _sdnetwork_from_mmgraph(
-    graph: MixedMultiGraph[T],
-    network_type: Literal['semi-directed', 'mixed'] = 'semi-directed'
+    graph: MixedMultiGraph[T], network_type: Literal["semi-directed", "mixed"] = "semi-directed"
 ) -> SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]:
     """
     Internal helper to create a SemiDirectedPhyNetwork or MixedPhyNetwork from a MixedMultiGraph.
@@ -45,9 +45,9 @@ def _sdnetwork_from_mmgraph(
     # Extract directed edges
     directed_edges: list[dict[str, Any]] = []
     for u, v, key, data in graph.directed_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        edge_dict: dict[str, Any] = {"u": u, "v": v}
         if key != 0:
-            edge_dict['key'] = key
+            edge_dict["key"] = key
         if data:
             edge_dict.update(data)
         directed_edges.append(edge_dict)
@@ -55,9 +55,9 @@ def _sdnetwork_from_mmgraph(
     # Extract undirected edges
     undirected_edges: list[dict[str, Any]] = []
     for u, v, key, data in graph.undirected_edges_iter(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        edge_dict: dict[str, Any] = {"u": u, "v": v}
         if key != 0:
-            edge_dict['key'] = key
+            edge_dict["key"] = key
         if data:
             edge_dict.update(data)
         undirected_edges.append(edge_dict)
@@ -72,34 +72,34 @@ def _sdnetwork_from_mmgraph(
     graph_attributes = graph._directed.graph.copy()
 
     # Create and return new network
-    if network_type == 'semi-directed':
+    if network_type == "semi-directed":
         return SemiDirectedPhyNetwork(
             directed_edges=directed_edges,
             undirected_edges=undirected_edges,
             nodes=nodes if nodes else None,
-            attributes=graph_attributes if graph_attributes else None
+            attributes=graph_attributes if graph_attributes else None,
         )
     else:  # network_type == 'mixed'
         return MixedPhyNetwork(
             directed_edges=directed_edges,
             undirected_edges=undirected_edges,
             nodes=nodes if nodes else None,
-            attributes=graph_attributes if graph_attributes else None
+            attributes=graph_attributes if graph_attributes else None,
         )
 
 
 def sdnetwork_from_graph(
     graph: nx.Graph | nx.MultiGraph | MixedMultiGraph[T],
-    network_type: Literal['semi-directed', 'mixed'] = 'semi-directed'
+    network_type: Literal["semi-directed", "mixed"] = "semi-directed",
 ) -> SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]:
     """
     Create a SemiDirectedPhyNetwork or MixedPhyNetwork from a NetworkX Graph, MultiGraph, or phylozoo
     MixedMultiGraph.
-    
+
     For NetworkX graphs, all edges are treated as undirected edges. Edge attributes,
     node attributes, and graph-level attributes are preserved and passed through to
     the resulting network.
-    
+
     Parameters
     ----------
     graph : nx.Graph | nx.MultiGraph | MixedMultiGraph[T]
@@ -108,19 +108,19 @@ def sdnetwork_from_graph(
     network_type : Literal['semi-directed', 'mixed'], default='semi-directed'
         Type of network to create. 'semi-directed' creates a SemiDirectedPhyNetwork,
         'mixed' creates a MixedPhyNetwork.
-    
+
     Returns
     -------
     SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]
         A new phylogenetic network with edges and labels from the graph.
-    
+
     Raises
     ------
     PhyloZooValueError
         If the resulting network is invalid according to SemiDirectedPhyNetwork or
         MixedPhyNetwork validation rules (e.g., invalid node degrees, undirected
         cycles in semi-directed networks, etc.).
-    
+
     Notes
     -----
 
@@ -133,7 +133,7 @@ def sdnetwork_from_graph(
     - **Validation**: The network is validated upon creation. If the graph structure
       does not meet network requirements (e.g., leaves must have no outgoing edges,
       internal nodes must have appropriate degrees, etc.), a ValueError is raised.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -163,10 +163,8 @@ def sdnetwork_from_graph(
         mmgraph = graph
     else:
         raise PhyloZooTypeError(
-            f"Expected nx.Graph, nx.MultiGraph, or MixedMultiGraph, "
-            f"got {type(graph)}"
+            f"Expected nx.Graph, nx.MultiGraph, or MixedMultiGraph, " f"got {type(graph)}"
         )
-    
+
     # Convert MixedMultiGraph to network
     return _sdnetwork_from_mmgraph(mmgraph, network_type=network_type)
-

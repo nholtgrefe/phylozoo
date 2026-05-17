@@ -7,10 +7,6 @@ This module tests:
 - Cached property behavior on copy
 """
 
-import warnings
-
-import pytest
-
 from phylozoo.core.network import DirectedPhyNetwork
 
 
@@ -19,9 +15,11 @@ class TestCopy:
 
     def test_copy_independent_objects(self) -> None:
         """Test that copy creates independent objects."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+        net1 = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         net2 = net1.copy()
-        
+
         # Should be different objects
         assert net1 is not net2
         assert net1._graph is not net2._graph
@@ -32,10 +30,10 @@ class TestCopy:
         """Test that labels are copied."""
         net1 = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
         net2 = net1.copy()
-        
+
         # Labels should be copied
         assert net2.get_label(1) == "A"
         assert net2.get_label(2) == "B"
@@ -43,9 +41,11 @@ class TestCopy:
 
     def test_copy_graph_structure_copied(self) -> None:
         """Test that graph structure is copied."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+        net1 = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         net2 = net1.copy()
-        
+
         # Graph structure should be copied
         assert net2.number_of_nodes() == net1.number_of_nodes()
         assert net2.number_of_edges() == net1.number_of_edges()
@@ -56,10 +56,10 @@ class TestCopy:
         """Test that copied network has equal properties."""
         net1 = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
+            nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         net2 = net1.copy()
-        
+
         # All properties should be equal
         assert net1.leaves == net2.leaves
         assert net1.taxa == net2.taxa
@@ -72,13 +72,15 @@ class TestCopy:
 
     def test_copy_cached_properties_recomputed(self) -> None:
         """Test that cached properties are recomputed on copy."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+        net1 = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         # Access to cache
         _ = net1.leaves
         _ = net1.taxa
-        
+
         net2 = net1.copy()
-        
+
         # Properties should be equal but may be different objects (recomputed)
         assert net1.leaves == net2.leaves
         assert net1.taxa == net2.taxa
@@ -87,13 +89,13 @@ class TestCopy:
         """Test copy with edge attributes."""
         net1 = DirectedPhyNetwork(
             edges=[
-                {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
-                {'u': 3, 'v': 2, 'branch_length': 0.3}
+                {"u": 3, "v": 1, "branch_length": 0.5, "bootstrap": 0.95},
+                {"u": 3, "v": 2, "branch_length": 0.3},
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
         )
         net2 = net1.copy()
-        
+
         # Edge attributes should be copied
         assert net2.get_branch_length(3, 1) == 0.5
         assert net2.get_bootstrap(3, 1) == 0.95
@@ -103,17 +105,18 @@ class TestCopy:
         """Test copy with hybrid nodes and gamma values."""
         net1 = DirectedPhyNetwork(
             edges=[
-                (7, 5), (7, 6),  # Root to tree nodes
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 5, 'v': 8},  # Tree node 5 also has another child
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                {'u': 6, 'v': 9},  # Tree node 6 also has another child
-                {'u': 4, 'v': 1}
+                (7, 5),
+                (7, 6),  # Root to tree nodes
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 5, "v": 8},  # Tree node 5 also has another child
+                {"u": 6, "v": 4, "gamma": 0.4},
+                {"u": 6, "v": 9},  # Tree node 6 also has another child
+                {"u": 4, "v": 1},
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         net2 = net1.copy()
-        
+
         # Gamma values should be copied
         assert net2.get_gamma(5, 4) == 0.6
         assert net2.get_gamma(6, 4) == 0.4
@@ -125,8 +128,8 @@ class TestImmutability:
 
     def test_no_mutation_methods(self) -> None:
         """Test that mutation methods don't exist."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
-        
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
+
         # Verify mutation methods don't exist
         assert not hasattr(net, "add_node")
         assert not hasattr(net, "add_edge")
@@ -140,14 +143,14 @@ class TestImmutability:
 
     def test_graph_not_directly_modifiable(self) -> None:
         """Test that _graph is not directly modifiable (should raise error if tried)."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
-        
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
+
         # _graph exists but should not be modified directly
         # Attempting to modify would require accessing private attributes
         # which is discouraged, but we can verify the structure is immutable
         original_nodes = set(net._graph.nodes)
         original_edges = list(net._graph.edges())
-        
+
         # Create copy to verify original unchanged
         net2 = net.copy()
         assert set(net._graph.nodes) == original_nodes
@@ -157,23 +160,25 @@ class TestImmutability:
         """Test that label mappings are not directly modifiable."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
-        
+
         original_labels = net._node_to_label.copy()
         original_label_to_node = net._label_to_node.copy()
-        
+
         # Create copy
         net2 = net.copy()
-        
+
         # Original should be unchanged
         assert net._node_to_label == original_labels
         assert net._label_to_node == original_label_to_node
 
     def test_immutability_after_operations(self) -> None:
         """Test that network remains immutable after operations."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-        
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
+
         # Perform various read operations
         _ = net.number_of_nodes()
         _ = net.number_of_edges()
@@ -184,17 +189,16 @@ class TestImmutability:
         _ = net.degree(3)
         _ = list(net.parents(1))
         _ = list(net.children(3))
-        
+
         # Network should still be immutable
         assert not hasattr(net, "add_node")
         assert not hasattr(net, "add_edge")
 
     def test_copy_immutability_preserved(self) -> None:
         """Test that copy preserves immutability."""
-        net1 = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
+        net1 = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         net2 = net1.copy()
-        
+
         # Copy should also be immutable
         assert not hasattr(net2, "add_node")
         assert not hasattr(net2, "add_edge")
-

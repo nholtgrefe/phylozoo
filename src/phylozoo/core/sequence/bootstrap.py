@@ -23,11 +23,11 @@ def bootstrap(
 ) -> Iterator[MSA]:
     """
     Generate bootstrap replicates of an MSA.
-    
+
     This function yields bootstrapped versions of the input MSA by sampling
     columns with replacement. Each bootstrap replicate has the same number
     of taxa and the same sequence length (or specified length).
-    
+
     Parameters
     ----------
     msa : MSA
@@ -40,12 +40,12 @@ def bootstrap(
     seed : int | None, optional
         Random seed for reproducibility. If None, uses random state.
         By default None.
-    
+
     Yields
     ------
     MSA
         A bootstrapped MSA replicate.
-    
+
     Examples
     --------
     >>> sequences = {
@@ -59,7 +59,7 @@ def bootstrap(
     True
     >>> bootstrapped.num_taxa == msa.num_taxa
     True
-    
+
     Notes
     -----
     Bootstrap sampling is done by sampling column indices with replacement
@@ -70,36 +70,36 @@ def bootstrap(
     """
     if length is None:
         length = msa.sequence_length
-    
+
     if length <= 0:
         raise PhyloZooValueError(f"Bootstrap length must be positive, got {length}")
-    
+
     if n_bootstrap <= 0:
         raise PhyloZooValueError(f"n_bootstrap must be positive, got {n_bootstrap}")
-    
+
     # Set up random number generator
     rng = np.random.default_rng(seed)
-    
+
     # Get coded array (shape: num_taxa, sequence_length)
     coded_array = msa.coded_array
-    
+
     # Efficiency: Create MSA objects directly from coded arrays without encoding/decoding
     # We use __new__ to bypass __init__ and manually set attributes
     for _ in range(n_bootstrap):
         # Sample column indices with replacement
         column_indices = rng.integers(0, msa.sequence_length, size=length)
-        
+
         # Extract bootstrapped columns using advanced indexing
         # Shape: (num_taxa, length)
         bootstrapped_array = coded_array[:, column_indices]
-        
+
         # Efficiency optimization: Create MSA directly from coded array
         # This avoids encoding/decoding cycles
         bootstrapped_msa = MSA.from_coded_array(
             coded_array=bootstrapped_array,
             taxa_order=msa.taxa_order,
         )
-        
+
         yield bootstrapped_msa
 
 
@@ -111,11 +111,11 @@ def bootstrap_per_gene(
 ) -> Iterator[MSA]:
     """
     Generate bootstrap replicates of an MSA with per-gene bootstrapping.
-    
+
     This function bootstraps each gene separately, maintaining the structure
     of gene boundaries. For each gene, columns are sampled with replacement
     only from within that gene's boundaries.
-    
+
     Parameters
     ----------
     msa : MSA
@@ -128,18 +128,18 @@ def bootstrap_per_gene(
     seed : int | None, optional
         Random seed for reproducibility. If None, uses random state.
         By default None.
-    
+
     Yields
     ------
     MSA
         A bootstrapped MSA replicate with per-gene bootstrapping.
-    
+
     Raises
     ------
     PhyloZooValueError
         If gene_lengths is empty, contains non-positive values, or if
         the sum of gene lengths does not equal the MSA sequence length.
-    
+
     Examples
     --------
     >>> sequences = {
@@ -152,7 +152,7 @@ def bootstrap_per_gene(
     >>> bootstrapped = next(bootstrap_per_gene(msa, gene_lengths, n_bootstrap=1, seed=42))
     >>> bootstrapped.sequence_length == msa.sequence_length
     True
-    
+
     Notes
     -----
     Per-gene bootstrapping preserves gene boundaries by sampling columns
@@ -163,28 +163,26 @@ def bootstrap_per_gene(
     """
     if not gene_lengths:
         raise PhyloZooValueError("gene_lengths cannot be empty")
-    
+
     if any(length <= 0 for length in gene_lengths):
-        raise PhyloZooValueError(
-            f"All gene lengths must be positive, got {gene_lengths}"
-        )
-    
+        raise PhyloZooValueError(f"All gene lengths must be positive, got {gene_lengths}")
+
     total_length = sum(gene_lengths)
     if total_length != msa.sequence_length:
         raise PhyloZooValueError(
             f"Sum of gene lengths ({total_length}) must equal MSA sequence length "
             f"({msa.sequence_length})"
         )
-    
+
     if n_bootstrap <= 0:
         raise PhyloZooValueError(f"n_bootstrap must be positive, got {n_bootstrap}")
-    
+
     # Set up random number generator
     rng = np.random.default_rng(seed)
-    
+
     # Get coded array (shape: num_taxa, sequence_length)
     coded_array = msa.coded_array
-    
+
     # Build gene boundaries
     gene_boundaries: list[tuple[int, int]] = []
     pos = 0
@@ -193,30 +191,30 @@ def bootstrap_per_gene(
         end = pos + gene_len
         gene_boundaries.append((start, end))
         pos = end
-    
+
     # Efficiency: Create MSA objects directly from coded arrays without encoding/decoding
     for _ in range(n_bootstrap):
         # Sample columns per gene
         column_indices_list: list[np.ndarray] = []
-        
+
         for start, end in gene_boundaries:
             gene_len = end - start
             # Sample indices within this gene's boundaries
             gene_indices = rng.integers(start, end, size=gene_len)
             column_indices_list.append(gene_indices)
-        
+
         # Concatenate all gene indices
         column_indices = np.concatenate(column_indices_list)
-        
+
         # Extract bootstrapped columns using advanced indexing
         # Shape: (num_taxa, sequence_length)
         bootstrapped_array = coded_array[:, column_indices]
-        
+
         # Efficiency optimization: Create MSA directly from coded array
         # This avoids encoding/decoding cycles
         bootstrapped_msa = MSA.from_coded_array(
             coded_array=bootstrapped_array,
             taxa_order=msa.taxa_order,
         )
-        
+
         yield bootstrapped_msa

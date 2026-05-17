@@ -9,7 +9,11 @@ import itertools
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.classifications import has_parallel_edges, is_binary, is_treebased
+from phylozoo.core.network.dnetwork.classifications import (
+    has_parallel_edges,
+    is_binary,
+    is_treebased,
+)
 from phylozoo.core.network.dnetwork.features import omnians
 
 from tests.fixtures.directed_networks import (
@@ -145,7 +149,12 @@ class TestIsTreebased:
                 (7, 4),
                 (4, 8),
             ],
-            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (8, {"label": "D"})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+            ],
         )
         assert not is_binary(net)
         with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
@@ -162,4 +171,3 @@ class TestIsTreebased:
         assert has_parallel_edges(net)
         with pytest.raises(PhyloZooNotImplementedError, match="parallel"):
             is_treebased(net)
-

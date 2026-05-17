@@ -14,7 +14,7 @@ from phylozoo.viz._types import EdgeRoutes, Layout, Positions
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -39,8 +39,8 @@ class DMGraphLayout(Layout[T]):
         Parameters used to generate this layout (read-only).
     """
 
-    network: 'DirectedMultiGraph[T]'
+    network: "DirectedMultiGraph[T]"
     positions: Positions[T]
     edge_routes: EdgeRoutes[T]
-    algorithm: str = 'unknown'
+    algorithm: str = "unknown"
     parameters: dict[str, Any] = field(default_factory=dict)

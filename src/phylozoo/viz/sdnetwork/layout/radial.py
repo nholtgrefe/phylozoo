@@ -26,18 +26,18 @@ from .routes import compute_radial_routes
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_pz_radial_layout(
-    network: 'SemiDirectedPhyNetwork',
+    network: "SemiDirectedPhyNetwork",
     radius: float = 1.0,
     start_angle: float = 0.0,
-    angle_direction: str = 'clockwise',
+    angle_direction: str = "clockwise",
 ) -> SDNetLayout:
     """
     Compute a radial (circular) layout for a SemiDirectedPhyNetwork tree.
-    
+
     This is a custom PhyloZoo layout algorithm (pz-radial).
 
     This function positions nodes in a circular arrangement:
@@ -92,7 +92,7 @@ def compute_pz_radial_layout(
             "Use is_tree() to check if the network is a tree."
         )
 
-    if angle_direction not in ('clockwise', 'counterclockwise'):
+    if angle_direction not in ("clockwise", "counterclockwise"):
         raise PhyloZooValueError(
             f"angle_direction must be 'clockwise' or 'counterclockwise', got '{angle_direction}'"
         )
@@ -104,9 +104,10 @@ def compute_pz_radial_layout(
         PhyloZooEmptyNetworkWarning,
         PhyloZooSingleNodeNetworkWarning,
     )
+
     with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=PhyloZooEmptyNetworkWarning)
-        warnings.filterwarnings('ignore', category=PhyloZooSingleNodeNetworkWarning)
+        warnings.filterwarnings("ignore", category=PhyloZooEmptyNetworkWarning)
+        warnings.filterwarnings("ignore", category=PhyloZooSingleNodeNetworkWarning)
         d_network = to_d_network(network)
     root = d_network.root_node
 
@@ -138,22 +139,22 @@ def compute_pz_radial_layout(
     if num_leaves == 0:
         # Single node network
         positions: dict[T, tuple[float, float]] = {root: (0.0, 0.0)}
-        edge_routes: dict[tuple[T, T, int], 'EdgeRoute'] = {}
+        edge_routes: dict[tuple[T, T, int], "EdgeRoute"] = {}
         return SDNetLayout(
             network=network,
             positions=positions,
             edge_routes=edge_routes,
-            algorithm='pz-radial',
+            algorithm="pz-radial",
             parameters={
-                'radius': radius,
-                'start_angle': start_angle,
-                'angle_direction': angle_direction,
+                "radius": radius,
+                "start_angle": start_angle,
+                "angle_direction": angle_direction,
             },
         )
 
     # Compute angles for leaves (evenly distributed around circle)
     angle_step = 2 * math.pi / num_leaves
-    direction_mult = 1.0 if angle_direction == 'clockwise' else -1.0
+    direction_mult = 1.0 if angle_direction == "clockwise" else -1.0
 
     # Assign angles to leaves based on their subtree order
     # Use a recursive approach to assign angles based on subtree structure
@@ -196,18 +197,16 @@ def compute_pz_radial_layout(
             # Internal node - first compute positions of all children
             for child in children:
                 compute_positions(child)
-            
+
             # Then position this node based on children
             child_positions = [positions[child] for child in children]
-            
+
             # Compute average angle of children
-            child_angles = [
-                math.atan2(y, x) for x, y in child_positions
-            ]
+            child_angles = [math.atan2(y, x) for x, y in child_positions]
             # Normalize angles to [0, 2π)
             child_angles = [a if a >= 0 else a + 2 * math.pi for a in child_angles]
             avg_angle = sum(child_angles) / len(child_angles)
-            
+
             # Position at radius proportional to depth
             # Root (depth 0) stays at center
             if node == root:
@@ -222,7 +221,7 @@ def compute_pz_radial_layout(
 
     # Compute positions for all nodes starting from root
     compute_positions(root)
-    
+
     # Filter positions to only include nodes from the original network
     # (to_d_network may create subdivision nodes that we don't want to position)
     original_nodes = set(network._graph.nodes)
@@ -237,10 +236,10 @@ def compute_pz_radial_layout(
         network=network,
         positions=filtered_positions,
         edge_routes=edge_routes,
-        algorithm='pz-radial',
+        algorithm="pz-radial",
         parameters={
-            'radius': radius,
-            'start_angle': start_angle,
-            'angle_direction': angle_direction,
+            "radius": radius,
+            "start_angle": start_angle,
+            "angle_direction": angle_direction,
         },
     )

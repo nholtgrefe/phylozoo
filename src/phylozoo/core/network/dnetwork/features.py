@@ -8,7 +8,7 @@ phylogenetic networks (e.g., LSA node, blobs, omnians, etc.).
 import warnings
 from collections import deque
 from functools import lru_cache
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import networkx as nx
 
@@ -19,34 +19,35 @@ from ...primitives.d_multigraph.features import (
 )
 from .base import DirectedPhyNetwork
 from ....utils.exceptions import PhyloZooValueError, PhyloZooAlgorithmError, PhyloZooWarning
-T = TypeVar('T')
+
+T = TypeVar("T")
 
 
 def lsa_node(network: DirectedPhyNetwork) -> T:
     """
     Find the Least Stable Ancestor (LSA) node of a directed phylogenetic network.
-    
+
     The LSA is the lowest node through which all paths from the root to the leaves pass.
     In other words, it is the unique node that is an ancestor of all leaves and is
     the lowest such node (has maximum depth from the root).
-    
+
     Parameters
     ----------
     network : DirectedPhyNetwork[T]
         The directed phylogenetic network.
-    
+
     Returns
     -------
     T
         The LSA node identifier.
-    
+
     Raises
     ------
     PhyloZooValueError
         If the network is empty or has no leaves.
     PhyloZooAlgorithmError
         If there is no path from root to leaf.
-    
+
     Examples
     --------
     >>> # LSA below the root (tree node 10 is lowest node on all root-to-leaf paths)
@@ -70,9 +71,9 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
     """
     if network.number_of_nodes() == 0:
         raise PhyloZooValueError("Cannot find LSA node in empty network")
-    
+
     leaves = network.leaves
-    
+
     # If there's only one leaf, the LSA is that leaf's parent (or the leaf itself if it's the root)
     if len(leaves) == 1:
         leaf = next(iter(leaves))
@@ -82,56 +83,56 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
         # Otherwise, return the parent (there should be exactly one parent for a leaf)
         parents = list(network.parents(leaf))
         return parents[0] if parents else leaf
-    
+
     # Find the LSA: the lowest node through which ALL paths from root to leaves pass
     # This means for each leaf, the LSA must be on ALL simple paths from root to that leaf
     root = network.root_node
     dag = network._graph._graph
-    
+
     # For each leaf, find all nodes that appear on ALL simple paths from root to that leaf
     # The LSA must be in the intersection of all these sets
     nodes_on_all_paths_to_each_leaf = []
-    
+
     for leaf in leaves:
         # Find all simple paths from root to this leaf
         try:
             all_paths = list(nx.all_simple_paths(dag, root, leaf))
         except nx.NetworkXNoPath:
             raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
-        
+
         if not all_paths:
             raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
-        
+
         # Find nodes that appear on ALL paths to this leaf
         # Start with nodes from the first path
         nodes_on_all_paths = set(all_paths[0])
         # Intersect with nodes from each subsequent path
         for path in all_paths[1:]:
             nodes_on_all_paths &= set(path)
-        
+
         nodes_on_all_paths_to_each_leaf.append(nodes_on_all_paths)
-    
+
     # Find intersection: nodes that are on ALL paths to ALL leaves
     lsa_candidates = nodes_on_all_paths_to_each_leaf[0]
     for node_set in nodes_on_all_paths_to_each_leaf[1:]:
         lsa_candidates &= node_set
-    
+
     if not lsa_candidates:
         raise PhyloZooAlgorithmError("No node found on all paths from root to all leaves")
-    
+
     # Find the deepest node (maximum depth from root) among candidates
     # Compute depths using BFS from root (use deque for O(1) popleft)
     depths: dict[T, int] = {}
     queue = deque([root])
     depths[root] = 0
-    
+
     while queue:
         current = queue.popleft()
         for child in network.children(current):
             if child not in depths:
                 depths[child] = depths[current] + 1
                 queue.append(child)
-    
+
     # Return the deepest node among LSA candidates
     return max(lsa_candidates, key=lambda node: depths.get(node, 0))
 
@@ -144,10 +145,10 @@ def blobs(
 ) -> list[set[T]]:
     """
     Get blobs of the network.
-    
+
     A blob is a maximal subgraph without any cut-edges. This function provides
     filtering options to control which blobs are returned.
-    
+
     Parameters
     ----------
     network : DirectedPhyNetwork
@@ -156,26 +157,26 @@ def blobs(
         Whether to include trivial (single-node) blobs. By default True.
     leaves : bool, optional
         Whether to include blobs that contain only leaves. By default True.
-    
+
     Returns
     -------
     list[set[T]]
         List of sets of nodes forming each blob.
-    
+
     Raises
     ------
     PhyloZooValueError
         If `trivial=False` and `leaves=True` (this combination is not possible
         since leaves are single-node components).
-    
+
     Notes
     -----
     Blobs are computed as bi-edge connected components (2-edge-connected components).
     A bi-edge connected component is a maximal subgraph that remains connected
     after removing any single edge (i.e., has no cut-edges/bridges).
-    
+
     Results are cached using LRU cache with maxsize=128.
-    
+
     Examples
     --------
     >>> # Network with hybrid node creating a non-trivial blob (cycle)
@@ -214,14 +215,14 @@ def blobs(
             "Cannot have trivial=False and leaves=True: leaves are single-node "
             "components, so excluding trivial components would exclude all leaves."
         )
-    
+
     leaves_set = network.leaves
     result: list[set[T]] = []
-    
+
     # Process bi-edge connected components directly
     for blob in bi_edge_connected_components(network._graph):
         blob_set = set(blob)
-        
+
         # Filter single-node components based on parameters
         if len(blob_set) == 1:
             node = next(iter(blob_set))
@@ -235,7 +236,7 @@ def blobs(
         else:
             # Multi-node components: always include (cannot consist entirely of leaves)
             result.append(blob_set)
-    
+
     return result
 
 
@@ -248,11 +249,11 @@ def k_blobs(
 ) -> list[set[T]]:
     """
     Get k-blobs of the network.
-    
+
     A k-blob is a blob with exactly k edges incident to it. An incident edge
     is any edge that connects a node inside the blob to a node outside the blob.
     Parallel edges are counted separately.
-    
+
     Parameters
     ----------
     network : DirectedPhyNetwork
@@ -263,27 +264,27 @@ def k_blobs(
         Whether to include trivial (single-node) blobs. By default True.
     leaves : bool, optional
         Whether to include blobs that contain only leaves. By default True.
-    
+
     Returns
     -------
     list[set[T]]
         List of sets of nodes forming each k-blob.
-    
+
     Raises
     ------
     PhyloZooValueError
         If `trivial=False` and `leaves=True` (this combination is not possible
         since leaves are single-node components).
-    
+
     Notes
     -----
     This function identifies blobs and then filters
     them based on the number of incident edges. Parallel edges are counted
     separately, so if there are two parallel edges crossing the blob boundary,
     they count as two incident edges.
-    
+
     Results are cached using LRU cache with maxsize=128.
-    
+
     Examples
     --------
     >>> # Tree network: leaves are 1-blobs, internal nodes are 2-blobs or more
@@ -302,35 +303,35 @@ def k_blobs(
             "Cannot have trivial=False and leaves=True: leaves are single-node "
             "components, so excluding trivial components would exclude all leaves."
         )
-    
+
     # Get the underlying graph for edge access
     graph = network._graph
     result: list[set[T]] = []
-    
+
     # Iterate through blobs
     for blob in blobs(network, trivial=trivial, leaves=leaves):
         blob_set = set(blob)
-        
+
         # Count edges incident to this blob
         # An incident edge has exactly one endpoint in the blob
         incident_edge_count = 0
-        
+
         # Check all edges incident to nodes in the blob
         for node in blob_set:
             # Check incoming edges (parent edges)
             for u, v, key in graph.incident_parent_edges(node, keys=True):
                 if u not in blob_set:  # Edge crosses blob boundary
                     incident_edge_count += 1
-            
+
             # Check outgoing edges (child edges)
             for u, v, key in graph.incident_child_edges(node, keys=True):
                 if v not in blob_set:  # Edge crosses blob boundary
                     incident_edge_count += 1
-        
+
         # Add blob if it has exactly k incident edges
         if incident_edge_count == k:
             result.append(blob_set)
-    
+
     return result
 
 
@@ -338,27 +339,27 @@ def k_blobs(
 def cut_edges(network: DirectedPhyNetwork) -> set[tuple[T, T, int]]:
     """
     Find all cut-edges (bridges) in the network.
-    
+
     A cut-edge is an edge whose removal increases the number of
     weakly connected components. Results are cached per network instance.
-    
+
     Parameters
     ----------
     network : DirectedPhyNetwork
         The directed phylogenetic network.
-    
+
     Returns
     -------
     set[tuple[T, T, int]]
         Set of cut-edges as 3-tuples (u, v, key).
-    
+
     Examples
     --------
     >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3)], nodes=[(3, {'label': 'A'})])
     >>> edges = cut_edges(net)
     >>> (1, 2, 0) in edges and (2, 3, 0) in edges
     True
-    
+
     Notes
     -----
     Results are cached using LRU cache with maxsize=128.
@@ -370,20 +371,20 @@ def cut_edges(network: DirectedPhyNetwork) -> set[tuple[T, T, int]]:
 def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
     """
     Find all cut-vertices (articulation points) in the network.
-    
+
     A cut-vertex is a vertex whose removal increases the number of
     weakly connected components. Results are cached per network instance.
-    
+
     Parameters
     ----------
     network : DirectedPhyNetwork
         The directed phylogenetic network.
-    
+
     Returns
     -------
     set[T]
         Set of cut-vertices.
-    
+
     Examples
     --------
     >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3), (2, 4)], nodes=[(3, {'label': 'A'}), (4, {'label': 'B'})])
@@ -392,7 +393,7 @@ def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
     True
     >>> 1 in vertices
     False
-    
+
     Notes
     -----
     Results are cached using LRU cache with maxsize=128.
@@ -404,20 +405,20 @@ def cut_vertices(network: DirectedPhyNetwork) -> set[T]:
 def omnians(network: DirectedPhyNetwork) -> set[T]:
     """
     Find all omnian nodes in a directed phylogenetic network.
-    
+
     An omnian is an internal node (non-leaf) where all of its children are hybrid nodes.
     See :cite:`Jetten2016` for more details.
-    
+
     Parameters
     ----------
     network : DirectedPhyNetwork[T]
         The directed phylogenetic network.
-    
+
     Returns
     -------
     set[T]
         Set of omnian node identifiers.
-    
+
     Warns
     -----
     PhyloZooWarning
@@ -450,11 +451,11 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
     """
     # Check for parallel edges and warn (import here to avoid circular import)
     from .classifications import has_parallel_edges
-    
+
     # Single-node network has no omnians
     if network.number_of_nodes() == 1:
         return set()
-    
+
     # Parallel edges warn
     if has_parallel_edges(network):
         warnings.warn(
@@ -462,23 +463,22 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
             "with parallel edges in the original paper (Jetten & van Iersel, 2016). "
             "Behavior may be unexpected. Proceed with care.",
             PhyloZooWarning,
-            stacklevel=2
+            stacklevel=2,
         )
-    
+
     # Get sets of leaves and hybrid nodes
     leaves = network.leaves
     hybrid_nodes = network.hybrid_nodes
-    
+
     # Find omnians: internal nodes (not leaves) where all children are hybrid nodes
     omnian_set: set[T] = set()
-    
-    for node in network.internal_nodes:      
+
+    for node in network.internal_nodes:
         # Get all children of this node
         children = list(network.children(node))
 
         # Check if all children are hybrid nodes
         if all(child in hybrid_nodes for child in children):
             omnian_set.add(node)
-    
-    return omnian_set
 
+    return omnian_set

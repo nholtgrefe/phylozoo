@@ -9,9 +9,6 @@ This module tests all aspects of label handling including:
 - Edge cases with special characters
 """
 
-import warnings
-from typing import Optional
-
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork
@@ -22,35 +19,33 @@ class TestGetLabel:
 
     def test_get_label_existing_leaf(self) -> None:
         """Test getting label for existing leaf."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_label(1) == "A"
 
     def test_get_label_existing_internal(self) -> None:
         """Test getting label for existing internal node."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
         assert net.get_label(3) == "root"
 
     def test_get_label_missing_label(self) -> None:
         """Test getting label for unlabeled internal node."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         assert net.get_label(3) is None
 
     def test_get_label_nonexistent_node(self) -> None:
         """Test getting label for non-existent node."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_label(999) is None
 
     def test_get_label_all_leaves_have_labels(self) -> None:
         """Test that all leaves always have labels."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'})]  # Only one labeled
+            edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {"label": "A"})]  # Only one labeled
         )
         # All leaves should have labels (some auto-generated)
         assert net.get_label(1) == "A"
@@ -61,7 +56,13 @@ class TestGetLabel:
         """Test getting labels for multiple internal nodes."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2), (4, 5)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (3, {'label': 'internal'}), (4, {'label': 'root'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (5, {"label": "C"}),
+                (3, {"label": "internal"}),
+                (4, {"label": "root"}),
+            ],
         )
         assert net.get_label(3) == "internal"
         assert net.get_label(4) == "root"
@@ -72,27 +73,26 @@ class TestGetNodeId:
 
     def test_get_node_id_existing_label(self) -> None:
         """Test getting node ID for existing label."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_node_id("A") == 1
 
     def test_get_node_id_internal_label(self) -> None:
         """Test getting node ID for internal node label."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
         assert net.get_node_id("root") == 3
 
     def test_get_node_id_missing_label(self) -> None:
         """Test getting node ID for non-existent label."""
-        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         assert net.get_node_id("Nonexistent") is None
 
     def test_get_node_id_auto_labeled(self) -> None:
         """Test getting node ID for auto-labeled leaf."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'})]  # Only one labeled
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"})]  # Only one labeled
         )
         # Leaf 2 should be auto-labeled
         label_2 = net.get_label(2)
@@ -103,13 +103,13 @@ class TestGetNodeId:
         """Test that get_label and get_node_id are bidirectional."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
         # Test leaf
         node_id = net.get_node_id("A")
         assert node_id == 1
         assert net.get_label(node_id) == "A"
-        
+
         # Test internal
         node_id = net.get_node_id("root")
         assert node_id == 3
@@ -122,8 +122,7 @@ class TestAutoLabeling:
     def test_auto_label_uncovered_leaves(self) -> None:
         """Test that uncovered leaves get auto-labeled."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'})]  # Only one labeled
+            edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {"label": "A"})]  # Only one labeled
         )
         # Leaves 2 and 4 should be auto-labeled
         assert net.get_label(2) is not None
@@ -132,10 +131,7 @@ class TestAutoLabeling:
 
     def test_auto_label_uses_node_id(self) -> None:
         """Test that auto-labeling uses node ID as base."""
-        net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'})]
-        )
+        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"})])
         # Leaf 2 should be auto-labeled as "2" (string of node ID)
         label_2 = net.get_label(2)
         assert label_2 == "2"
@@ -144,8 +140,7 @@ class TestAutoLabeling:
         """Test that auto-labeling resolves conflicts."""
         # If we label leaf 1 as "2", then leaf 2 can't be "2"
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': '2'})]  # Conflicts with node ID 2
+            edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {"label": "2"})]  # Conflicts with node ID 2
         )
         label_2 = net.get_label(2)
         assert label_2 is not None
@@ -157,7 +152,7 @@ class TestAutoLabeling:
         """Test auto-labeling with multiple conflicts."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': '2'}), (2, {'label': '2_1'})]  # Create conflicts
+            nodes=[(1, {"label": "2"}), (2, {"label": "2_1"})],  # Create conflicts
         )
         # Leaf 4 should get auto-label that doesn't conflict
         label_4 = net.get_label(4)
@@ -166,19 +161,13 @@ class TestAutoLabeling:
 
     def test_auto_label_numeric_node_ids(self) -> None:
         """Test auto-labeling with numeric node IDs."""
-        net = DirectedPhyNetwork(
-            edges=[(100, 50), (100, 51)],
-            nodes=None
-        )
+        net = DirectedPhyNetwork(edges=[(100, 50), (100, 51)], nodes=None)
         # Should auto-label as strings
         assert "50" in net.taxa or "51" in net.taxa
 
     def test_auto_label_string_node_ids(self) -> None:
         """Test auto-labeling with string node IDs."""
-        net = DirectedPhyNetwork(
-            edges=[("root", "leaf1"), ("root", "leaf2")],
-            nodes=None
-        )
+        net = DirectedPhyNetwork(edges=[("root", "leaf1"), ("root", "leaf2")], nodes=None)
         # Should auto-label using string representation
         assert "leaf1" in net.taxa or "leaf2" in net.taxa
 
@@ -199,7 +188,7 @@ class TestLabelUniqueness:
         with pytest.raises(ValueError, match="already used"):
             DirectedPhyNetwork(
                 edges=[(3, 1), (3, 2)],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'A'})]  # Duplicate
+                nodes=[(1, {"label": "A"}), (2, {"label": "A"})],  # Duplicate
             )
 
     def test_duplicate_internal_labels(self) -> None:
@@ -207,7 +196,12 @@ class TestLabelUniqueness:
         with pytest.raises(ValueError, match="already used"):
             DirectedPhyNetwork(
                 edges=[(4, 3), (3, 1), (3, 2)],
-nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'label'}), (4, {'label': 'label'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "label"}),
+                    (4, {"label": "label"}),
+                ],
             )
 
     def test_duplicate_taxa_and_internal_labels(self) -> None:
@@ -215,16 +209,13 @@ nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'label'}), (4, {'
         with pytest.raises(ValueError, match="already used"):
             DirectedPhyNetwork(
                 edges=[(3, 1), (3, 2)],
-nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'A'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "A"})],
             )
 
     def test_same_node_same_label_allowed(self) -> None:
         """Test that same node can have same label (no-op)."""
         # This should not raise an error (though it's a no-op)
-        net = DirectedPhyNetwork(
-            edges=[(3, 1)],
-            nodes=[(1, {'label': 'A'})]
-        )
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": "A"})])
         # Setting same label again should be fine (handled internally)
         assert net.get_label(1) == "A"
 
@@ -234,18 +225,14 @@ class TestLabelEdgeCases:
 
     def test_empty_string_label(self) -> None:
         """Test that empty string can be a label."""
-        net = DirectedPhyNetwork(
-            edges=[(3, 1)],
-            nodes=[(1, {'label': ''})]  # Empty string label
-        )
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": ""})])  # Empty string label
         assert net.get_label(1) == ""
         assert net.get_node_id("") == 1
 
     def test_special_characters_in_labels(self) -> None:
         """Test labels with special characters."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'Taxon_1'}), (2, {'label': 'Taxon-2'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "Taxon_1"}), (2, {"label": "Taxon-2"})]
         )
         assert net.get_label(1) == "Taxon_1"
         assert net.get_label(2) == "Taxon-2"
@@ -253,8 +240,7 @@ class TestLabelEdgeCases:
     def test_unicode_labels(self) -> None:
         """Test labels with unicode characters."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'Taxonα'}), (2, {'label': 'Taxonβ'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "Taxonα"}), (2, {"label": "Taxonβ"})]
         )
         assert net.get_label(1) == "Taxonα"
         assert net.get_label(2) == "Taxonβ"
@@ -263,18 +249,14 @@ class TestLabelEdgeCases:
     def test_very_long_labels(self) -> None:
         """Test labels with very long strings."""
         long_label = "A" * 1000
-        net = DirectedPhyNetwork(
-            edges=[(3, 1)],
-            nodes=[(1, {"label": long_label})]
-        )
+        net = DirectedPhyNetwork(edges=[(3, 1)], nodes=[(1, {"label": long_label})])
         assert net.get_label(1) == long_label
         assert len(net.get_label(1)) == 1000
 
     def test_numeric_labels(self) -> None:
         """Test labels that are numeric strings."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': '123'}), (2, {'label': '456'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "123"}), (2, {"label": "456"})]
         )
         assert net.get_label(1) == "123"
         assert net.get_node_id("123") == 1
@@ -282,8 +264,7 @@ class TestLabelEdgeCases:
     def test_whitespace_in_labels(self) -> None:
         """Test labels with whitespace."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'Taxon 1'}), (2, {'label': 'Taxon\t2'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "Taxon 1"}), (2, {"label": "Taxon\t2"})]
         )
         assert net.get_label(1) == "Taxon 1"
         assert net.get_label(2) == "Taxon\t2"
@@ -291,8 +272,7 @@ class TestLabelEdgeCases:
     def test_labels_with_quotes(self) -> None:
         """Test labels with quotes."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': "Taxon'1"}), (2, {'label': 'Taxon"2'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "Taxon'1"}), (2, {"label": 'Taxon"2'})]
         )
         assert net.get_label(1) == "Taxon'1"
         assert net.get_label(2) == 'Taxon"2'
@@ -305,7 +285,7 @@ class TestLabelRetrievalAllNodeTypes:
         """Test getting label for root node."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
         assert net.get_label(3) == "root"
 
@@ -313,7 +293,13 @@ class TestLabelRetrievalAllNodeTypes:
         """Test getting labels for tree nodes."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2), (4, 5)],
-nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (3, {'label': 'tree_node'}), (4, {'label': 'root'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (5, {"label": "C"}),
+                (3, {"label": "tree_node"}),
+                (4, {"label": "root"}),
+            ],
         )
         assert net.get_label(3) == "tree_node"
 
@@ -321,7 +307,14 @@ nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'}), (3, {'labe
         """Test getting labels for hybrid nodes."""
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 4), (5, 8), (6, 4), (6, 9), (4, 2)],
-nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (4, {'label': 'hybrid'}), (5, {'label': 'tree1'}), (6, {'label': 'tree2'})],
+            nodes=[
+                (2, {"label": "A"}),
+                (8, {"label": "B"}),
+                (9, {"label": "C"}),
+                (4, {"label": "hybrid"}),
+                (5, {"label": "tree1"}),
+                (6, {"label": "tree2"}),
+            ],
         )
         assert net.get_label(4) == "hybrid"
 
@@ -329,7 +322,7 @@ nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (4, {'labe
         """Test that all leaves have labels."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert net.get_label(1) == "A"
         assert net.get_label(2) == "B"
@@ -339,7 +332,7 @@ nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (4, {'labe
         """Test that internal nodes can be unlabeled."""
         net = DirectedPhyNetwork(
             edges=[(4, 3), (3, 1), (3, 2), (4, 5)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (5, {"label": "C"})],
             # No internal_node_labels
         )
         assert net.get_label(3) is None
@@ -352,8 +345,7 @@ class TestLabelConsistency:
     def test_all_leaves_in_taxa(self) -> None:
         """Test that all leaves appear in taxa set."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'})]  # Partial labeling
+            edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {"label": "A"})]  # Partial labeling
         )
         # All leaves should be in taxa
         for leaf in net.leaves:
@@ -365,7 +357,7 @@ class TestLabelConsistency:
         """Test that taxa set matches leaf labels."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         # All taxa should correspond to leaf labels
         for taxon in net.taxa:
@@ -378,11 +370,10 @@ class TestLabelConsistency:
         """Test consistency between labels and node IDs."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'root'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "root"})],
         )
         # For each labeled node, get_node_id(get_label(node)) == node
         for node in [1, 2, 3]:
             label = net.get_label(node)
             if label is not None:
                 assert net.get_node_id(label) == node
-

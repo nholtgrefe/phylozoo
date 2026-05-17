@@ -1,4 +1,3 @@
 """
 Utils module tests.
 """
-

@@ -6,13 +6,22 @@ import numpy as np
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-from phylozoo.core.network.dnetwork.derivations import _switchings, displayed_trees, displayed_splits, displayed_quartets, displayed_triplets, tree_of_blobs, distances, induced_splits, split_from_cutedge, partition_from_blob
+from phylozoo.core.network.dnetwork.derivations import (
+    _switchings,
+    displayed_trees,
+    displayed_splits,
+    displayed_quartets,
+    displayed_triplets,
+    tree_of_blobs,
+    distances,
+    induced_splits,
+    split_from_cutedge,
+    partition_from_blob,
+)
 from phylozoo.core.split.base import Split
 from phylozoo.core.primitives.partition import Partition
 from phylozoo.core.network.dnetwork.features import blobs
-from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
 from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
-from phylozoo.utils.validation import no_validation
 
 
 class TestTreeOfBlobs:
@@ -21,36 +30,35 @@ class TestTreeOfBlobs:
     def test_simple_tree_unchanged(self) -> None:
         """Tree with no blobs should remain unchanged."""
         dnet = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         result = tree_of_blobs(dnet)
         assert isinstance(result, DirectedPhyNetwork)
         assert result.number_of_nodes() == 3
         assert result.number_of_edges() == 2
-        assert result.get_label(1) == 'A'
-        assert result.get_label(2) == 'B'
+        assert result.get_label(1) == "A"
+        assert result.get_label(2) == "B"
 
     def test_basic_functionality(self) -> None:
         """Test that tree_of_blobs runs without errors and returns correct type."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         result = tree_of_blobs(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         assert isinstance(result, DirectedPhyNetwork)
         assert result is not LEVEL_1_DNETWORK_SINGLE_HYBRID  # Should return a new network
 
     def test_single_node_network(self) -> None:
         """Single node network should remain unchanged."""
-        dnet = DirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
+        dnet = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
         result = tree_of_blobs(dnet)
         assert isinstance(result, DirectedPhyNetwork)
         assert result.number_of_nodes() == 1
-        assert result.get_label(1) == 'A'
+        assert result.get_label(1) == "A"
 
     def test_result_is_copy(self) -> None:
         """Function should return a new network, not modify the original."""
         dnet = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         original_nodes = dnet.number_of_nodes()
         original_edges = dnet.number_of_edges()
@@ -66,15 +74,17 @@ class TestTreeOfBlobs:
     def test_preserves_labels(self) -> None:
         """Leaf labels should be preserved."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         result = tree_of_blobs(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         # Check that some label is preserved
-        all_labels = [result.get_label(node) for node in result._graph.nodes() if result.get_label(node)]
+        all_labels = [
+            result.get_label(node) for node in result._graph.nodes() if result.get_label(node)
+        ]
         assert len(all_labels) > 0
 
     def test_no_2_blobs_preserves_internal_blob_count(self) -> None:
         """When there are no 2-blobs, suppress_2_blobs doesn't change internal blob count."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
-        from phylozoo.core.network.dnetwork.transformations import suppress_2_blobs
 
         # Count internal blobs before suppress_2_blobs
         initial_blobs = blobs(LEVEL_1_DNETWORK_SINGLE_HYBRID, trivial=False, leaves=False)
@@ -103,31 +113,31 @@ class TestSwitchings:
     def test_tree_network_single_switching(self) -> None:
         """Tree network (no hybrid nodes) should yield exactly one switching."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         switchings = list(_switchings(net))
         assert len(switchings) == 1
         assert switchings[0].number_of_edges() == 2
-        
+
         # With probability=True, should have probability 1.0 in all underlying graphs
         switchings_with_prob = list(_switchings(net, probability=True))
         assert len(switchings_with_prob) == 1
-        assert switchings_with_prob[0]._graph.graph.get('probability') == 1.0
-        assert switchings_with_prob[0]._combined.graph.get('probability') == 1.0
+        assert switchings_with_prob[0]._graph.graph.get("probability") == 1.0
+        assert switchings_with_prob[0]._combined.graph.get("probability") == 1.0
 
     def test_single_hybrid_two_parents(self) -> None:
         """Network with one hybrid node and two parent edges should yield two switchings."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
         switchings = list(_switchings(net))
         assert len(switchings) == 2
-        
+
         # Find the hybrid node
         hybrid_nodes = net.hybrid_nodes
         assert len(hybrid_nodes) == 1
         hybrid = next(iter(hybrid_nodes))
-        
+
         # Each switching should have exactly one parent edge for the hybrid node
         for sw in switchings:
             parent_edges = list(sw.incident_parent_edges(hybrid, keys=True))
@@ -138,16 +148,27 @@ class TestSwitchings:
         # Create a valid network with one hybrid and three parents
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6), (10, 7),  # Root to tree nodes
-                (5, 4), (6, 4), (7, 4),  # Three parents to hybrid 4
+                (10, 5),
+                (10, 6),
+                (10, 7),  # Root to tree nodes
+                (5, 4),
+                (6, 4),
+                (7, 4),  # Three parents to hybrid 4
                 (4, 1),  # Hybrid to leaf
-                (5, 8), (6, 9), (7, 11),  # Other children for tree nodes
+                (5, 8),
+                (6, 9),
+                (7, 11),  # Other children for tree nodes
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (11, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (8, {"label": "B"}),
+                (9, {"label": "C"}),
+                (11, {"label": "D"}),
+            ],
         )
         switchings = list(_switchings(net))
         assert len(switchings) == 3
-        
+
         # Each switching should have exactly one parent edge for the hybrid node
         hybrid = 4
         for sw in switchings:
@@ -159,18 +180,39 @@ class TestSwitchings:
         # Create a valid network with two hybrids - ensure all tree nodes have out-degree >= 2
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),  # Root to tree nodes
-                (5, 4), (5, 17), (6, 4), (6, 18), (4, 11), (11, 1), (11, 12),  # Hybrid 4 with 2 parents, tree node 11
-                (10, 8), (10, 9),  # Root to more tree nodes (8 and 9 are tree nodes)
-                (8, 7), (8, 15),  # Tree node 8: one to hybrid 7, one to leaf
-                (9, 7), (9, 16),  # Tree node 9: one to hybrid 7, one to leaf
-                (7, 13), (13, 2), (13, 14),  # Hybrid 7 with 2 parents, tree node 13
+                (10, 5),
+                (10, 6),  # Root to tree nodes
+                (5, 4),
+                (5, 17),
+                (6, 4),
+                (6, 18),
+                (4, 11),
+                (11, 1),
+                (11, 12),  # Hybrid 4 with 2 parents, tree node 11
+                (10, 8),
+                (10, 9),  # Root to more tree nodes (8 and 9 are tree nodes)
+                (8, 7),
+                (8, 15),  # Tree node 8: one to hybrid 7, one to leaf
+                (9, 7),
+                (9, 16),  # Tree node 9: one to hybrid 7, one to leaf
+                (7, 13),
+                (13, 2),
+                (13, 14),  # Hybrid 7 with 2 parents, tree node 13
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}), (14, {'label': 'D'}), (15, {'label': 'E'}), (16, {'label': 'F'}), (17, {'label': 'G'}), (18, {'label': 'H'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (12, {"label": "C"}),
+                (14, {"label": "D"}),
+                (15, {"label": "E"}),
+                (16, {"label": "F"}),
+                (17, {"label": "G"}),
+                (18, {"label": "H"}),
+            ],
         )
         switchings = list(_switchings(net))
         assert len(switchings) == 4  # 2 * 2 = 4
-        
+
         # Each switching should have exactly one parent edge per hybrid
         for sw in switchings:
             parent_edges_4 = list(sw.incident_parent_edges(4, keys=True))
@@ -184,15 +226,28 @@ class TestSwitchings:
         # Ensure all tree nodes have out-degree >= 2
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),  # Root to tree nodes
-                (5, 4), (5, 17), (6, 4), (6, 18), (4, 1),  # Hybrid 4, tree nodes 5 and 6 have out-degree 2
-                (10, 3), (3, 2), (3, 15),  # Non-hybrid tree node 3 with out-degree 2
+                (10, 5),
+                (10, 6),  # Root to tree nodes
+                (5, 4),
+                (5, 17),
+                (6, 4),
+                (6, 18),
+                (4, 1),  # Hybrid 4, tree nodes 5 and 6 have out-degree 2
+                (10, 3),
+                (3, 2),
+                (3, 15),  # Non-hybrid tree node 3 with out-degree 2
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (15, {'label': 'C'}), (17, {'label': 'D'}), (18, {'label': 'E'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (15, {"label": "C"}),
+                (17, {"label": "D"}),
+                (18, {"label": "E"}),
+            ],
         )
         switchings = list(_switchings(net))
         assert len(switchings) == 2
-        
+
         # All switchings should have the non-hybrid edge (3, 2)
         for sw in switchings:
             assert sw.has_edge(3, 2)
@@ -200,9 +255,10 @@ class TestSwitchings:
     def test_switchings_are_copies(self) -> None:
         """Switchings should be independent copies, not references."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
         switchings = list(_switchings(net))
-        
+
         # Modify one switching and verify others are unchanged
         if len(switchings) > 0:
             original_edge_count = switchings[0].number_of_edges()
@@ -219,98 +275,147 @@ class TestSwitchings:
         """Test probability calculation when gamma values are present."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         switchings = list(_switchings(net, probability=True))
         assert len(switchings) == 2
-        
+
         # Check probabilities in all underlying graphs
-        probs = [sw._graph.graph.get('probability') for sw in switchings]
+        probs = [sw._graph.graph.get("probability") for sw in switchings]
         assert 0.6 in probs
         assert 0.4 in probs
         # Probabilities should sum to 1.0
         assert abs(sum(probs) - 1.0) < 1e-10
-        
+
         # Check that probability is set in all underlying graphs
         for sw in switchings:
-            prob = sw._graph.graph.get('probability')
+            prob = sw._graph.graph.get("probability")
             assert prob is not None
-            assert sw._combined.graph.get('probability') == prob
+            assert sw._combined.graph.get("probability") == prob
 
     def test_probability_without_gamma_values(self) -> None:
         """Test probability calculation when no gamma values are present."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),  # No gamma values
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                (5, 4),
+                (6, 4),  # No gamma values
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         switchings = list(_switchings(net, probability=True))
         assert len(switchings) == 2
-        
+
         # Without gamma, each edge should have probability 1/2 (indegree is 2)
         for sw in switchings:
-            prob = sw._graph.graph.get('probability')
+            prob = sw._graph.graph.get("probability")
             assert prob is not None
             assert abs(prob - 0.5) < 1e-10
             # Check that probability is set in all underlying graphs
-            assert sw._combined.graph.get('probability') == prob
+            assert sw._combined.graph.get("probability") == prob
         # Probabilities should sum to 1.0
-        total_prob = sum(sw._graph.graph.get('probability') for sw in switchings)
+        total_prob = sum(sw._graph.graph.get("probability") for sw in switchings)
         assert abs(total_prob - 1.0) < 1e-10
 
     def test_probability_with_multiple_hybrids(self) -> None:
         """Test probability calculation with multiple hybrid nodes."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6), (10, 8), (10, 9),
-                (5, 4), (5, 17), (6, 4), (6, 18),  # Hybrid 4 with 2 parents
-                (8, 7), (8, 15), (9, 7), (9, 16),  # Hybrid 7 with 2 parents
-                (4, 11), (11, 1), (11, 12),
-                (7, 13), (13, 2), (13, 14)
+                (10, 5),
+                (10, 6),
+                (10, 8),
+                (10, 9),
+                (5, 4),
+                (5, 17),
+                (6, 4),
+                (6, 18),  # Hybrid 4 with 2 parents
+                (8, 7),
+                (8, 15),
+                (9, 7),
+                (9, 16),  # Hybrid 7 with 2 parents
+                (4, 11),
+                (11, 1),
+                (11, 12),
+                (7, 13),
+                (13, 2),
+                (13, 14),
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}),
-                (14, {'label': 'D'}), (15, {'label': 'E'}), (16, {'label': 'F'}),
-                (17, {'label': 'G'}), (18, {'label': 'H'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (12, {"label": "C"}),
+                (14, {"label": "D"}),
+                (15, {"label": "E"}),
+                (16, {"label": "F"}),
+                (17, {"label": "G"}),
+                (18, {"label": "H"}),
+            ],
         )
         switchings = list(_switchings(net, probability=True))
         assert len(switchings) == 4  # 2 * 2 = 4
-        
+
         # Each switching should have a probability
         for sw in switchings:
-            prob = sw._graph.graph.get('probability')
+            prob = sw._graph.graph.get("probability")
             assert prob is not None
             assert 0.0 < prob <= 1.0
-        
+
         # Probabilities should sum to 1.0
-        total_prob = sum(sw._graph.graph.get('probability') for sw in switchings)
+        total_prob = sum(sw._graph.graph.get("probability") for sw in switchings)
         assert abs(total_prob - 1.0) < 1e-10
 
     def test_probability_false_no_attribute(self) -> None:
         """Test that probability=False does not add probability attribute."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         switchings = list(_switchings(net, probability=False))
-        
+
         # No probability attribute should be present
         for sw in switchings:
-            assert 'probability' not in sw._graph.graph
+            assert "probability" not in sw._graph.graph
 
 
 class TestDisplayedTrees:
@@ -319,8 +424,7 @@ class TestDisplayedTrees:
     def test_tree_network_single_displayed_tree(self) -> None:
         """A tree network should yield exactly one displayed tree."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         trees = list(displayed_trees(net))
         assert len(trees) == 1
@@ -330,10 +434,11 @@ class TestDisplayedTrees:
     def test_single_hybrid_two_displayed_trees(self) -> None:
         """Network with one hybrid node should yield two displayed trees."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
         trees = list(displayed_trees(net))
         assert len(trees) == 2
-        
+
         # Each tree should be a valid tree (no hybrid nodes)
         for tree in trees:
             assert len(tree.hybrid_nodes) == 0
@@ -341,15 +446,16 @@ class TestDisplayedTrees:
     def test_displayed_trees_are_trees(self) -> None:
         """All displayed trees should be trees (no hybrid nodes)."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
         trees = list(displayed_trees(net))
-        
+
         for tree in trees:
             assert len(tree.hybrid_nodes) == 0
 
@@ -357,18 +463,28 @@ class TestDisplayedTrees:
         """Test probability calculation when gamma values are present."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         trees = list(displayed_trees(net, probability=True))
         assert len(trees) == 2
-        
+
         # Check probabilities
-        probs = [tree.get_network_attribute('probability') for tree in trees]
+        probs = [tree.get_network_attribute("probability") for tree in trees]
         assert 0.6 in probs
         assert 0.4 in probs
         # Probabilities should sum to 1.0
@@ -378,93 +494,110 @@ class TestDisplayedTrees:
         """Test probability calculation when no gamma values are present."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),  # No gamma values
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                (5, 4),
+                (6, 4),  # No gamma values
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         trees = list(displayed_trees(net, probability=True))
         assert len(trees) == 2
-        
+
         # Without gamma, each tree should have probability 1/2 (indegree is 2)
         for tree in trees:
-            prob = tree.get_network_attribute('probability')
+            prob = tree.get_network_attribute("probability")
             assert prob is not None
             assert abs(prob - 0.5) < 1e-10
         # Probabilities should sum to 1.0
-        total_prob = sum(tree.get_network_attribute('probability') for tree in trees)
+        total_prob = sum(tree.get_network_attribute("probability") for tree in trees)
         assert abs(total_prob - 1.0) < 1e-10
 
     def test_probability_tree_network(self) -> None:
         """Tree network (no hybrid nodes) should have probability 1.0."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         trees = list(displayed_trees(net, probability=True))
         assert len(trees) == 1
-        assert trees[0].get_network_attribute('probability') == 1.0
+        assert trees[0].get_network_attribute("probability") == 1.0
 
     def test_probability_false_no_attribute(self) -> None:
         """Test that probability=False does not add probability attribute."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         trees = list(displayed_trees(net, probability=False))
-        
+
         # No probability attribute should be present
         for tree in trees:
-            assert tree.get_network_attribute('probability') is None
+            assert tree.get_network_attribute("probability") is None
 
 
 class TestDistances:
     """Test distances function for DirectedPhyNetwork."""
-    
+
     def test_simple_tree_no_branch_lengths(self) -> None:
         """Test distances for a simple tree without branch lengths."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
-        dm = distances(net, mode='shortest')
+        dm = distances(net, mode="shortest")
         assert len(dm) == 2
-        assert dm.get_distance('A', 'B') == 2.0  # Two edges, each with default length 1.0
-        assert dm.get_distance('A', 'A') == 0.0
-        assert dm.get_distance('B', 'B') == 0.0
-    
+        assert dm.get_distance("A", "B") == 2.0  # Two edges, each with default length 1.0
+        assert dm.get_distance("A", "A") == 0.0
+        assert dm.get_distance("B", "B") == 0.0
+
     def test_simple_tree_with_branch_lengths(self) -> None:
         """Test distances for a simple tree with branch lengths."""
         net = DirectedPhyNetwork(
-            edges=[
-                {'u': 3, 'v': 1, 'branch_length': 0.5},
-                {'u': 3, 'v': 2, 'branch_length': 0.3}
-            ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[{"u": 3, "v": 1, "branch_length": 0.5}, {"u": 3, "v": 2, "branch_length": 0.3}],
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
         )
-        dm = distances(net, mode='shortest')
+        dm = distances(net, mode="shortest")
         assert len(dm) == 2
-        assert dm.get_distance('A', 'B') == 0.8  # 0.5 + 0.3
-        assert dm.get_distance('A', 'A') == 0.0
-        assert dm.get_distance('B', 'B') == 0.0
-    
+        assert dm.get_distance("A", "B") == 0.8  # 0.5 + 0.3
+        assert dm.get_distance("A", "A") == 0.0
+        assert dm.get_distance("B", "B") == 0.0
+
     def test_network_with_hybrid_shortest(self) -> None:
         """Test shortest distances for a network with hybrid node."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
-        dm = distances(net, mode='shortest')
+        dm = distances(net, mode="shortest")
         assert len(dm) == 4
         # All distances should be finite
         for i, taxon1 in enumerate(dm.labels):
@@ -474,44 +607,57 @@ class TestDistances:
                     assert dm.get_distance(taxon1, taxon2) < np.inf
                 else:
                     assert dm.get_distance(taxon1, taxon2) == 0.0
-    
+
     def test_network_with_hybrid_longest(self) -> None:
         """Test longest distances for a network with hybrid node."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
-        dm = distances(net, mode='longest')
+        dm = distances(net, mode="longest")
         assert len(dm) == 4
         # All distances should be finite and >= shortest
-        shortest_dm = distances(net, mode='shortest')
+        shortest_dm = distances(net, mode="shortest")
         for i, taxon1 in enumerate(dm.labels):
             for j, taxon2 in enumerate(dm.labels):
                 if i != j:
-                    assert dm.get_distance(taxon1, taxon2) >= shortest_dm.get_distance(taxon1, taxon2)
+                    assert dm.get_distance(taxon1, taxon2) >= shortest_dm.get_distance(
+                        taxon1, taxon2
+                    )
                 else:
                     assert dm.get_distance(taxon1, taxon2) == 0.0
-    
+
     def test_network_with_hybrid_average(self) -> None:
         """Test average distances for a network with hybrid node."""
         net = DirectedPhyNetwork(
             edges=[
-                (10, 5), (10, 6),
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+                (10, 5),
+                (10, 6),
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (6, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
-        dm = distances(net, mode='average')
+        dm = distances(net, mode="average")
         assert len(dm) == 4
         # All distances should be finite and between shortest and longest
-        shortest_dm = distances(net, mode='shortest')
-        longest_dm = distances(net, mode='longest')
+        shortest_dm = distances(net, mode="shortest")
+        longest_dm = distances(net, mode="longest")
         for i, taxon1 in enumerate(dm.labels):
             for j, taxon2 in enumerate(dm.labels):
                 if i != j:
@@ -521,36 +667,34 @@ class TestDistances:
                     assert shortest <= avg <= longest
                 else:
                     assert dm.get_distance(taxon1, taxon2) == 0.0
-    
+
     def test_single_taxon(self) -> None:
         """Test distances for a network with a single taxon."""
-        net = DirectedPhyNetwork(
-            nodes=[(1, {'label': 'A'})]
-        )
-        dm = distances(net, mode='shortest')
+        net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
+        dm = distances(net, mode="shortest")
         assert len(dm) == 1
-        assert dm.get_distance('A', 'A') == 0.0
-    
+        assert dm.get_distance("A", "A") == 0.0
+
     def test_symmetric_matrix(self) -> None:
         """Test that the distance matrix is symmetric."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
-        dm = distances(net, mode='shortest')
-        assert dm.get_distance('A', 'B') == dm.get_distance('B', 'A')
-    
+        dm = distances(net, mode="shortest")
+        assert dm.get_distance("A", "B") == dm.get_distance("B", "A")
+
     def test_all_modes_produce_valid_matrices(self) -> None:
         """Test that all modes produce valid distance matrices."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
-        for mode in ['shortest', 'longest', 'average']:
+        for mode in ["shortest", "longest", "average"]:
             dm = distances(net, mode=mode)
             assert len(dm) == 4
             # Check symmetry
@@ -567,8 +711,7 @@ class TestInducedSplits:
     def test_simple_tree(self) -> None:
         """Test induced_splits on a simple tree."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         splits = induced_splits(net)
         assert len(splits) >= 1
@@ -578,7 +721,7 @@ class TestInducedSplits:
         """Test induced_splits on a tree with three leaves."""
         net = DirectedPhyNetwork(
             edges=[(4, 1), (4, 2), (4, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         splits = induced_splits(net)
         # Should have splits for each cut-edge
@@ -587,6 +730,7 @@ class TestInducedSplits:
     def test_network_with_hybrid(self) -> None:
         """Test induced_splits on a network with hybrid node."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         assert len(splits) >= 1
         # Check that all splits cover all taxa
@@ -602,10 +746,7 @@ class TestInducedSplits:
 
     def test_single_taxon_network(self) -> None:
         """Test induced_splits on network with single taxon."""
-        net = DirectedPhyNetwork(
-            edges=[(2, 1)],
-            nodes=[(1, {'label': 'A'})]
-        )
+        net = DirectedPhyNetwork(edges=[(2, 1)], nodes=[(1, {"label": "A"})])
         splits = induced_splits(net)
         # Need at least 2 taxa for splits
         assert len(splits) == 0
@@ -613,10 +754,11 @@ class TestInducedSplits:
     def test_tree_of_blobs_same_splits(self) -> None:
         """Test that tree-of-blobs has the same split system as original network."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         original_splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         blob_tree = tree_of_blobs(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         blob_tree_splits = induced_splits(blob_tree)
-        
+
         # Split systems should be equal
         assert original_splits.splits == blob_tree_splits.splits
 
@@ -624,29 +766,31 @@ class TestInducedSplits:
         """Test that tree-of-blobs preserves splits for a simple tree."""
         net = DirectedPhyNetwork(
             edges=[(4, 1), (4, 2), (4, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         original_splits = induced_splits(net)
         blob_tree = tree_of_blobs(net)
         blob_tree_splits = induced_splits(blob_tree)
-        
+
         # Split systems should be equal
         assert original_splits.splits == blob_tree_splits.splits
 
     def test_splits_cover_all_taxa(self) -> None:
         """Test that all splits cover all taxa."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         all_taxa = set(LEVEL_1_DNETWORK_SINGLE_HYBRID.taxa)
-        
+
         for split in splits:
             assert split.elements == all_taxa
 
     def test_splits_are_valid(self) -> None:
         """Test that all returned splits are valid (non-empty sets)."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         splits = induced_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
-        
+
         for split in splits:
             assert len(split.set1) > 0
             assert len(split.set2) > 0
@@ -655,146 +799,153 @@ class TestInducedSplits:
     def test_tree_of_blobs_same_splits_multiple_blobs_level2(self) -> None:
         """Test that tree-of-blobs preserves splits for a level 2 network with multiple blobs."""
         from tests.fixtures.directed_networks import LEVEL_2_DNETWORK_MULTIPLE_BLOBS
+
         original_splits = induced_splits(LEVEL_2_DNETWORK_MULTIPLE_BLOBS)
         blob_tree = tree_of_blobs(LEVEL_2_DNETWORK_MULTIPLE_BLOBS)
         blob_tree_splits = induced_splits(blob_tree)
-        
+
         # Split systems should be equal
         assert original_splits.splits == blob_tree_splits.splits
 
 
 class TestDisplayedSplits:
     """Test displayed_splits function for DirectedPhyNetwork."""
-    
+
     def test_simple_tree(self) -> None:
         """Test displayed_splits on a simple tree."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         splits = displayed_splits(net)
         from phylozoo.core.split import WeightedSplitSystem
+
         assert isinstance(splits, WeightedSplitSystem)
         # Tree has one displayed tree (itself) with probability 1.0
         assert len(splits) >= 0  # May have splits or be empty for small trees
-    
+
     def test_single_hybrid_network(self) -> None:
         """Test displayed_splits on a network with a single hybrid."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         splits = displayed_splits(LEVEL_1_DNETWORK_SINGLE_HYBRID)
         from phylozoo.core.split import WeightedSplitSystem
+
         assert isinstance(splits, WeightedSplitSystem)
         # Should have splits from displayed trees
         assert len(splits) > 0
-    
+
     def test_weights_sum_to_one(self) -> None:
         """Test that weights in displayed_splits sum appropriately."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
         splits = displayed_splits(net)
         # Get all displayed trees to verify probabilities
         trees = list(displayed_trees(net, probability=True))
-        total_prob = sum(tree.get_network_attribute('probability') or 1.0 for tree in trees)
+        total_prob = sum(tree.get_network_attribute("probability") or 1.0 for tree in trees)
         # Total probability should be 1.0 (or close due to floating point)
         assert abs(total_prob - 1.0) < 1e-10
-    
+
     def test_splits_from_displayed_trees(self) -> None:
         """Test that displayed_splits contains splits from all displayed trees."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
         splits = displayed_splits(net)
-        
+
         # Get all displayed trees and their splits
         all_tree_splits = set()
         for tree in displayed_trees(net, probability=True):
             tree_splits = induced_splits(tree)
             all_tree_splits.update(tree_splits.splits)
-        
+
         # All splits from displayed trees should be in displayed_splits
         assert splits.splits.issuperset(all_tree_splits)
-    
+
     def test_weights_accumulate(self) -> None:
         """Test that weights accumulate when splits appear in multiple trees."""
         net = DirectedPhyNetwork(
-            edges=[
-                (10, 5), (10, 6),
-                (5, 4), (6, 4),
-                (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)
+            edges=[(10, 5), (10, 6), (5, 4), (6, 4), (4, 8), (8, 1), (8, 2), (5, 3), (6, 7)],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
         )
         splits = displayed_splits(net)
-        
+
         # Check that if a split appears in multiple trees, its weight is the sum
         # This is verified by checking that weights are positive and reasonable
         for split in splits.splits:
             weight = splits.get_weight(split)
             assert weight > 0
             assert weight <= 1.0  # Should not exceed 1.0
-    
+
     def test_empty_network(self) -> None:
         """Test displayed_splits on empty network."""
         net = DirectedPhyNetwork()
         splits = displayed_splits(net)
         from phylozoo.core.split import WeightedSplitSystem
+
         assert isinstance(splits, WeightedSplitSystem)
         assert len(splits) == 0
 
 
 class TestSplitFromCutedge:
     """Test split_from_cutedge function for DirectedPhyNetwork."""
-    
+
     def test_simple_tree_cutedge(self) -> None:
         """Test split_from_cutedge on a simple tree."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         split = split_from_cutedge(net, 3, 1)
         assert isinstance(split, Split)
         # The split should separate A from B and C
-        assert 'A' in split.set1 or 'A' in split.set2
-        assert {'B', 'C'} == (split.set1 | split.set2) - {'A'}
-    
+        assert "A" in split.set1 or "A" in split.set2
+        assert {"B", "C"} == (split.set1 | split.set2) - {"A"}
+
     def test_cutedge_with_key(self) -> None:
         """Test split_from_cutedge with explicit key."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         split = split_from_cutedge(net, 3, 1, key=0)
         assert isinstance(split, Split)
-        assert 'A' in split.set1 or 'A' in split.set2
-        assert 'B' in split.set1 or 'B' in split.set2
-    
+        assert "A" in split.set1 or "A" in split.set2
+        assert "B" in split.set1 or "B" in split.set2
+
     def test_nonexistent_edge(self) -> None:
         """Test split_from_cutedge raises error for nonexistent edge."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         with pytest.raises(ValueError, match="does not exist"):
             split_from_cutedge(net, 1, 2)
-    
+
     def test_non_cutedge(self) -> None:
         """Test split_from_cutedge raises error for non-cut-edge."""
         # Use a fixture network with a blob (non-cut-edges exist)
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
         # Find a non-cut-edge (edge in a blob)
         from phylozoo.core.network.dnetwork.features import cut_edges
+
         cut_edges_set = cut_edges(net)
         all_edges = set()
         for u, v, key in net._graph.edges(keys=True):
@@ -806,36 +957,42 @@ class TestSplitFromCutedge:
         u, v, key = next(iter(non_cut_edges))
         with pytest.raises(ValueError, match="is not a cut-edge"):
             split_from_cutedge(net, u, v, key=key)
-    
+
     def test_split_covers_all_taxa(self) -> None:
         """Test that split covers all taxa in the network."""
         net = DirectedPhyNetwork(
             edges=[(5, 1), (5, 2), (5, 3), (5, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         split = split_from_cutedge(net, 5, 1)
         all_taxa = split.set1 | split.set2
-        assert all_taxa == {'A', 'B', 'C', 'D'}
-    
+        assert all_taxa == {"A", "B", "C", "D"}
+
     def test_split_set1_on_u_side(self) -> None:
         """Test that set1 contains taxa on the side of u."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         split = split_from_cutedge(net, 3, 1)
         # A should be on the side of node 1
-        assert 'A' in split.set1 or 'A' in split.set2
+        assert "A" in split.set1 or "A" in split.set2
         # B should be on the side of node 3
-        assert 'B' in split.set1 or 'B' in split.set2
+        assert "B" in split.set1 or "B" in split.set2
         # They should be in different sets
-        assert ('A' in split.set1 and 'B' in split.set2) or ('A' in split.set2 and 'B' in split.set1)
-    
+        assert ("A" in split.set1 and "B" in split.set2) or (
+            "A" in split.set2 and "B" in split.set1
+        )
+
     def test_return_node_taxa(self) -> None:
         """Test split_from_cutedge with return_node_taxa parameter."""
         net = DirectedPhyNetwork(
             edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         result = split_from_cutedge(net, 3, 1, return_node_taxa=True)
         split, (u_node, u_taxa), (v_node, v_taxa) = result
@@ -850,14 +1007,16 @@ class TestSplitFromCutedge:
         # Check that u_taxa and v_taxa are complementary
         assert u_taxa | v_taxa == split.set1 | split.set2
         assert u_taxa & v_taxa == set()
-    
+
     def test_hybrid_edge_cutedge(self) -> None:
         """Test split_from_cutedge on a hybrid edge."""
         # Use a fixture network that's known to be valid
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
         # Find a cut-edge in the network
         from phylozoo.core.network.dnetwork.features import cut_edges
+
         cut_edges_set = cut_edges(net)
         if cut_edges_set:
             u, v, key = next(iter(cut_edges_set))
@@ -869,129 +1028,143 @@ class TestSplitFromCutedge:
 
 class TestDisplayedQuartets:
     """Test displayed_quartets function for DirectedPhyNetwork."""
-    
+
     def test_simple_tree_four_taxa(self) -> None:
         """Test displayed_quartets on a simple tree with exactly 4 taxa."""
         net = DirectedPhyNetwork(
             edges=[(5, 1), (5, 2), (5, 6), (6, 3), (6, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         profileset = displayed_quartets(net)
-        
+
         # Should have exactly one profile (one 4-taxon set)
         assert len(profileset) == 1
-        assert profileset.taxa == frozenset({'A', 'B', 'C', 'D'})
-        
+        assert profileset.taxa == frozenset({"A", "B", "C", "D"})
+
         # Get the profile
-        profile, profile_weight = profileset.profiles[frozenset({'A', 'B', 'C', 'D'})]
+        profile, profile_weight = profileset.profiles[frozenset({"A", "B", "C", "D"})]
         # Profile should have default weight 1.0
         assert abs(profile_weight - 1.0) < 1e-10
         # Should have exactly one quartet (tree has one displayed tree)
         assert len(profile) == 1
-        
+
         # The quartet should be resolved (not a star tree)
         quartet = next(iter(profile.quartets.keys()))
         assert quartet.is_resolved()
         assert not quartet.is_star()
         # Weight should be 1.0 (single displayed tree with probability 1.0)
         assert abs(profile.get_weight(quartet) - 1.0) < 1e-10
-    
+
     def test_network_with_hybrid_four_taxa(self) -> None:
         """Test displayed_quartets on network with hybrid node and 4 taxa."""
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID
+
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
-        
+
         # Check if network has at least 4 taxa
         if len(net.taxa) >= 4:
             profileset = displayed_quartets(net)
-            
+
             # Should have at least one profile
             assert len(profileset) >= 1
             assert profileset.taxa == net.taxa
-            
+
             # Get the profile
             profile, profile_weight = next(iter(profileset.profiles.values()))
             # Profile should have default weight 1.0
             assert abs(profile_weight - 1.0) < 1e-10
-            
+
             # Network has multiple displayed trees, weights should sum to 1.0
             total_quartet_weight = sum(profile.quartets.values())
             assert abs(total_quartet_weight - 1.0) < 1e-10
-    
+
     def test_network_with_hybrid_gamma_values(self) -> None:
         """Test displayed_quartets with explicit gamma values."""
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2),
-                (5, 3), (5, 6), (6, 7)
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (5, 6),
+                (6, 7),
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (7, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         profileset = displayed_quartets(net)
-        
+
         # Should have exactly one profile
         assert len(profileset) == 1
-        
+
         # Get the profile
         profile, _ = next(iter(profileset.profiles.values()))
-        
+
         # Network has 2 displayed trees with probabilities 0.6 and 0.4
         # Total weight should be 1.0
         total_quartet_weight = sum(profile.quartets.values())
         assert abs(total_quartet_weight - 1.0) < 1e-10
-        
+
         # Check that individual weights match probabilities
         for quartet, weight in profile.quartets.items():
             assert weight > 0.0
             assert weight <= 1.0
-    
+
     def test_network_fewer_than_four_taxa(self) -> None:
         """Test displayed_quartets on network with fewer than 4 taxa."""
         from tests.fixtures.directed_networks import DTREE_SMALL_BINARY
+
         net = DTREE_SMALL_BINARY
-        
+
         profileset = displayed_quartets(net)
-        
+
         # Should return empty QuartetProfileSet
         assert len(profileset) == 0
         assert len(profileset.taxa) == 0
-    
+
     def test_empty_network(self) -> None:
         """Test displayed_quartets on empty network."""
         from tests.fixtures.directed_networks import DTREE_EMPTY
+
         net = DTREE_EMPTY
-        
+
         profileset = displayed_quartets(net)
-        
+
         # Should return empty QuartetProfileSet
         assert len(profileset) == 0
         assert len(profileset.taxa) == 0
-    
+
     def test_network_more_than_four_taxa(self) -> None:
         """Test displayed_quartets on network with more than 4 taxa."""
         net = DirectedPhyNetwork(
-            edges=[
-                (7, 1), (7, 2), (7, 8),
-                (8, 3), (8, 4), (8, 5), (8, 6)
-            ],
+            edges=[(7, 1), (7, 2), (7, 8), (8, 3), (8, 4), (8, 5), (8, 6)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (4, {'label': 'D'}),
-                (5, {'label': 'E'}), (6, {'label': 'F'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+                (5, {"label": "E"}),
+                (6, {"label": "F"}),
+            ],
         )
         profileset = displayed_quartets(net)
-        
+
         # Should have multiple profiles (one for each 4-taxon combination)
         # For 6 taxa, there are C(6,4) = 15 combinations
         assert len(profileset) == 15
         assert profileset.taxa == net.taxa
-        
+
         # Each profile should have default weight 1.0
         for profile, profile_weight in profileset.profiles.values():
             assert abs(profile_weight - 1.0) < 1e-10
@@ -1000,59 +1173,75 @@ class TestDisplayedQuartets:
             # All quartets in a profile should have the same 4 taxa
             for quartet in profile.quartets.keys():
                 assert quartet.taxa in profileset.profiles
-    
+
     def test_weights_sum_correctly(self) -> None:
         """Test that weights are correctly summed when same quartet appears multiple times."""
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2),
-                (5, 3), (5, 6), (6, 7)
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (5, 6),
+                (6, 7),
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (7, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         profileset = displayed_quartets(net)
-        
+
         # Get the profile
         profile, _ = next(iter(profileset.profiles.values()))
-        
+
         # Total weight of all quartets should sum to 1.0
         # (sum of probabilities of all displayed trees)
         total_weight = sum(profile.quartets.values())
         assert abs(total_weight - 1.0) < 1e-10
-    
+
     def test_profile_weights_default(self) -> None:
         """Test that profile weights are default (1.0) as specified."""
         net = DirectedPhyNetwork(
             edges=[(5, 1), (5, 2), (5, 6), (6, 3), (6, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         profileset = displayed_quartets(net)
-        
+
         # All profiles should have default weight 1.0
         for profile, profile_weight in profileset.profiles.values():
             assert abs(profile_weight - 1.0) < 1e-10
-    
+
     def test_uses_sd_network_conversion(self) -> None:
         """Test that displayed_quartets uses to_sd_network conversion (unrooted quartets)."""
         # Create a directed network with a root
         net = DirectedPhyNetwork(
             edges=[(5, 1), (5, 2), (5, 6), (6, 3), (6, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         profileset = displayed_quartets(net)
-        
+
         # Should have one profile
         assert len(profileset) == 1
-        
+
         # Get the quartet
         profile, _ = next(iter(profileset.profiles.values()))
         quartet = next(iter(profile.quartets.keys()))
-        
+
         # The quartet should be unrooted (not rooted)
         # This is verified by the fact that it's a resolved quartet with a 2|2 split
         assert quartet.is_resolved()
@@ -1069,15 +1258,15 @@ class TestDisplayedTriplets:
         """Test displayed_triplets on a simple binary rooted tree with exactly 3 taxa."""
         net = DirectedPhyNetwork(
             edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         profileset = displayed_triplets(net)
 
         # Should have exactly one profile (one 3-taxon set)
         assert len(profileset) == 1
-        assert profileset.taxa == frozenset({'A', 'B', 'C'})
+        assert profileset.taxa == frozenset({"A", "B", "C"})
 
-        profile, profile_weight = profileset.profiles[frozenset({'A', 'B', 'C'})]
+        profile, profile_weight = profileset.profiles[frozenset({"A", "B", "C"})]
         assert abs(profile_weight - 1.0) < 1e-10
         # Single displayed tree, so single triplet
         assert len(profile) == 1
@@ -1085,8 +1274,8 @@ class TestDisplayedTriplets:
         # The triplet should be resolved with A as outgroup
         triplet = next(iter(profile.triplets.keys()))
         assert triplet.is_resolved()
-        assert triplet.outgroup == frozenset({'A'})
-        assert triplet.cherry == frozenset({'B', 'C'})
+        assert triplet.outgroup == frozenset({"A"})
+        assert triplet.cherry == frozenset({"B", "C"})
         # Weight should be 1.0 (single displayed tree with probability 1.0)
         assert abs(profile.get_weight(triplet) - 1.0) < 1e-10
 
@@ -1094,12 +1283,12 @@ class TestDisplayedTriplets:
         """Test displayed_triplets on a rooted star tree with 3 taxa."""
         net = DirectedPhyNetwork(
             edges=[(4, 1), (4, 2), (4, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         profileset = displayed_triplets(net)
 
         assert len(profileset) == 1
-        profile, _ = profileset.profiles[frozenset({'A', 'B', 'C'})]
+        profile, _ = profileset.profiles[frozenset({"A", "B", "C"})]
         assert len(profile) == 1
         triplet = next(iter(profile.triplets.keys()))
         assert triplet.is_star()
@@ -1108,15 +1297,21 @@ class TestDisplayedTriplets:
         """Test displayed_triplets on network with hybrid node and 4 taxa."""
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2),
-                (5, 3), (5, 6), (6, 7)
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (5, 6),
+                (6, 7),
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (7, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         profileset = displayed_triplets(net)
 
@@ -1134,21 +1329,27 @@ class TestDisplayedTriplets:
         """Test displayed_triplets distributes gamma weights across triplets for an ambiguous 3-taxon set."""
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2),
-                (5, 3), (5, 6), (6, 7)
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (5, 6),
+                (6, 7),
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (7, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         profileset = displayed_triplets(net)
 
         # On {A, C, D} the two displayed trees produce different rooted topologies,
         # so the profile should contain two triplets with weights 0.6 and 0.4.
-        acd_profile = profileset.get_profile(frozenset({'A', 'C', 'D'}))
+        acd_profile = profileset.get_profile(frozenset({"A", "C", "D"}))
         assert acd_profile is not None
         assert len(acd_profile) == 2
         weights = sorted(acd_profile.triplets.values())
@@ -1157,8 +1358,7 @@ class TestDisplayedTriplets:
     def test_network_fewer_than_three_taxa(self) -> None:
         """Test displayed_triplets on network with fewer than 3 taxa."""
         net = DirectedPhyNetwork(
-            edges=[(3, 1), (3, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
         )
         profileset = displayed_triplets(net)
 
@@ -1169,6 +1369,7 @@ class TestDisplayedTriplets:
     def test_empty_network(self) -> None:
         """Test displayed_triplets on empty network."""
         from tests.fixtures.directed_networks import DTREE_EMPTY
+
         net = DTREE_EMPTY
 
         profileset = displayed_triplets(net)
@@ -1180,15 +1381,13 @@ class TestDisplayedTriplets:
     def test_network_more_than_three_taxa(self) -> None:
         """Test displayed_triplets on a tree with more than 3 taxa."""
         net = DirectedPhyNetwork(
-            edges=[
-                (7, 1), (7, 8),
-                (8, 2), (8, 9),
-                (9, 3), (9, 4)
-            ],
+            edges=[(7, 1), (7, 8), (8, 2), (8, 9), (9, 3), (9, 4)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (4, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         profileset = displayed_triplets(net)
 
@@ -1207,15 +1406,21 @@ class TestDisplayedTriplets:
         """Test that weights are correctly summed when same triplet appears multiple times."""
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.6},
-                {'u': 6, 'v': 4, 'gamma': 0.4},
-                (4, 8), (8, 1), (8, 2),
-                (5, 3), (5, 6), (6, 7)
+                {"u": 5, "v": 4, "gamma": 0.6},
+                {"u": 6, "v": 4, "gamma": 0.4},
+                (4, 8),
+                (8, 1),
+                (8, 2),
+                (5, 3),
+                (5, 6),
+                (6, 7),
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (7, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         profileset = displayed_triplets(net)
 
@@ -1228,7 +1433,7 @@ class TestDisplayedTriplets:
         """Test that profile weights are default (1.0) as specified."""
         net = DirectedPhyNetwork(
             edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         profileset = displayed_triplets(net)
 
@@ -1240,7 +1445,7 @@ class TestDisplayedTriplets:
         """Test that displayed_triplets returns ROOTED triplets (with 1|2 trivial splits)."""
         net = DirectedPhyNetwork(
             edges=[(4, 1), (4, 5), (5, 2), (5, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         profileset = displayed_triplets(net)
 
@@ -1264,85 +1469,108 @@ class TestPartitionFromBlob:
         # Network with hybrid node creating non-leaf blob
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),  # Hybrid node 4
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),  # Hybrid node 4
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         # Non-leaf blob is {4, 5, 6, 8}
         partition = partition_from_blob(net, {4, 5, 6, 8})
-        
+
         assert isinstance(partition, Partition)
         assert len(partition) == 5
         # Leaves E and F are in the same component (both connected via node 7)
-        assert {'A'} in partition
-        assert {'B'} in partition
-        assert {'C'} in partition
-        assert {'D'} in partition
-        assert {'E', 'F'} in partition
+        assert {"A"} in partition
+        assert {"B"} in partition
+        assert {"C"} in partition
+        assert {"D"} in partition
+        assert {"E", "F"} in partition
 
     def test_partition_with_edge_taxa(self) -> None:
         """Test partition_from_blob with return_edge_taxa=True."""
         # Network with hybrid node creating non-leaf blob
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),  # Hybrid node 4
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),  # Hybrid node 4
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         # Non-leaf blob is {4, 5, 6, 8}
         partition, edge_taxa = partition_from_blob(net, {4, 5, 6, 8}, return_edge_taxa=True)
-        
+
         assert isinstance(partition, Partition)
         assert len(partition) == 5
         assert isinstance(edge_taxa, list)
         assert len(edge_taxa) == 5
-        
+
         # Check that each tuple has the correct format
         for u, v, taxa_set in edge_taxa:
             assert isinstance(u, (int, str))
             assert isinstance(v, (int, str))
             assert isinstance(taxa_set, frozenset)
             assert v in {4, 5, 6, 8}  # All should connect to blob nodes
-        
+
         # Check that all taxa are covered
         all_taxa = {taxon for _, _, taxa_set in edge_taxa for taxon in taxa_set}
-        assert all_taxa == {'A', 'B', 'C', 'D', 'E', 'F'}
+        assert all_taxa == {"A", "B", "C", "D", "E", "F"}
 
     def test_empty_blob_raises_error(self) -> None:
         """Test that empty blob raises ValueError."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
-                (4, 7), (7, 10), (7, 11),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
+                (4, 7),
+                (7, 10),
+                (7, 11),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
+            ],
         )
         with pytest.raises(ValueError, match="Blob cannot be empty"):
             partition_from_blob(net, set())
@@ -1351,13 +1579,26 @@ class TestPartitionFromBlob:
         """Test that blob with nodes not in network raises ValueError."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
-                (4, 7), (7, 10), (7, 11),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
+                (4, 7),
+                (7, 10),
+                (7, 11),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
+            ],
         )
         with pytest.raises(ValueError, match="Blob contains nodes not in network"):
             partition_from_blob(net, {99})  # Node 99 not in network
@@ -1366,13 +1607,26 @@ class TestPartitionFromBlob:
         """Test that a leaf blob (single leaf node) raises ValueError."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
-                (4, 7), (7, 10), (7, 11),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
+                (4, 7),
+                (7, 10),
+                (7, 11),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
+            ],
         )
         with pytest.raises(ValueError, match="is not a non-leaf blob"):
             partition_from_blob(net, {1})  # Leaf node blob
@@ -1382,30 +1636,35 @@ class TestPartitionFromBlob:
         # Network with hybrid node creating non-leaf blob
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),  # Hybrid node 4
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),  # Hybrid node 4
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         # Non-leaf blob is {4, 5, 6, 8}
         partition = partition_from_blob(net, {4, 5, 6, 8})
-        
+
         assert isinstance(partition, Partition)
         assert len(partition) == 5
         # Leaves E and F are in the same component (both connected via node 7)
-        assert {'A'} in partition
-        assert {'B'} in partition
-        assert {'C'} in partition
-        assert {'D'} in partition
-        assert {'E', 'F'} in partition
+        assert {"A"} in partition
+        assert {"B"} in partition
+        assert {"C"} in partition
+        assert {"D"} in partition
+        assert {"E", "F"} in partition

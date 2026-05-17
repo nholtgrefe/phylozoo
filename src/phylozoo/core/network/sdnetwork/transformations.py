@@ -23,35 +23,35 @@ from ...primitives.m_multigraph.transformations import (
     identify_vertices as mm_identify_vertices,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     """
     Identify all parallel edges and suppress all degree-2 nodes exhaustively.
-    
+
     This function iteratively:
     1. Identifies all parallel edges
     2. Suppresses all degree-2 nodes
-    
+
     The process continues until no more changes occur, as suppression may create
     new parallel edges, and identification may create new degree-2 nodes.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network to transform.
-    
+
     Returns
     -------
     SemiDirectedPhyNetwork
         A new network with all parallel edges identified and all degree-2 nodes suppressed.
-    
+
     Raises
     ------
     PhyloZooAlgorithmError
         If the algorithm exceeds the maximum number of iterations.
-        
+
     Notes
     -----
 
@@ -63,7 +63,7 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
     - Node labels and other node attributes are preserved.
     - Leaves are never suppressed.
     - Handles both directed and undirected parallel edges separately.
-    
+
     Examples
     --------
     >>> net = SemiDirectedPhyNetwork(
@@ -87,119 +87,119 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
     # Handle empty and single-node networks
     if network.number_of_nodes() == 0:
         return network.copy()
-    
+
     if network.number_of_nodes() == 1:
         return network.copy()
-    
+
     # Create a working graph copy (preserves all node and edge attributes)
     working_graph = network._graph.copy()
-    
+
     # Get original leaves (these should never be suppressed)
     original_leaves = network.leaves
-    
+
     # Iterate until no more changes occur
     max_iterations = 1000  # Safety limit
     iteration = 0
-    
+
     while iteration < max_iterations:
         iteration += 1
         changes_made = False
-        
+
         # Step 1: Find and identify all parallel directed edges
         parallel_directed: list[tuple[Any, Any]] = []
         for u, v in working_graph._directed.edges():
             if working_graph._directed.number_of_edges(u, v) > 1:
                 parallel_directed.append((u, v))
-        
+
         for u, v in parallel_directed:
             # Skip if nodes no longer exist
             if u not in working_graph.nodes() or v not in working_graph.nodes():
                 continue
-            
+
             # Skip if no longer parallel
             if working_graph._directed.number_of_edges(u, v) <= 1:
                 continue
-            
+
             # Collect edge data for all parallel edges
             edges_dict = working_graph._directed[u].get(v, {})
             if len(edges_dict) <= 1:
                 continue
-            
+
             edges_data = [edges_dict[key] for key in sorted(edges_dict.keys())]
-            
+
             # Merge attributes using helper function
             merged_attrs = _merge_attrs_for_parallel_identification_mixed(edges_data)
-            
+
             # Identify parallel edges
             mm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
             changes_made = True
-        
+
         # Step 2: Find and identify all parallel undirected edges
         parallel_undirected: list[tuple[Any, Any]] = []
         for u, v in working_graph._undirected.edges():
             if working_graph._undirected.number_of_edges(u, v) > 1:
                 parallel_undirected.append((u, v))
-        
+
         for u, v in parallel_undirected:
             # Skip if nodes no longer exist
             if u not in working_graph.nodes() or v not in working_graph.nodes():
                 continue
-            
+
             # Skip if no longer parallel
             if working_graph._undirected.number_of_edges(u, v) <= 1:
                 continue
-            
+
             # Collect edge data for all parallel edges (check both directions)
             edges_dict = working_graph._undirected[u].get(v, {})
             if not edges_dict:
                 edges_dict = working_graph._undirected[v].get(u, {})
-            
+
             if len(edges_dict) <= 1:
                 continue
-            
+
             edges_data = [edges_dict[key] for key in sorted(edges_dict.keys())]
-            
+
             # Merge attributes using helper function
             merged_attrs = _merge_attrs_for_parallel_identification_mixed(edges_data)
-            
+
             # Identify parallel edges
             mm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
             changes_made = True
-        
+
         # Step 3: Suppress all degree-2 nodes (excluding leaves)
         nodes_before = set(working_graph.nodes())
         _suppress_deg2_nodes(working_graph)
         if set(working_graph.nodes()) != nodes_before:
             changes_made = True
-        
+
         # If no changes were made, we're done
         if not changes_made:
             break
-    
+
     if iteration >= max_iterations:
         raise PhyloZooAlgorithmError(
             "identify_parallel_edges exceeded maximum iterations. "
             "This may indicate an infinite loop or a bug."
         )
-    
+
     # Create and return new network from the modified graph
-    return sdnetwork_from_graph(working_graph, network_type='semi-directed')
+    return sdnetwork_from_graph(working_graph, network_type="semi-directed")
 
 
 def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     """
     Suppress all 2-blobs in the network.
-    
+
     A 2-blob is a blob with exactly 2 incident edges. This function:
     1. Finds all 2-blobs using k_blobs
     2. For each 2-blob, identifies all vertices in the blob with the first vertex (creating a degree-2 node), then suppresses the degree-2 node using proper attribute merging
     3. Returns a new validated network
-    
+
     Parameters
     ----------
     network : MixedPhyNetwork
         The mixed phylogenetic network to transform.
-    
+
     Returns
     -------
     MixedPhyNetwork
@@ -212,7 +212,7 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     - Edge attributes (branch_length, gamma) are properly merged during suppression
     - The function works on a copy of the graph, so the original network is not modified
     - For mixed networks, incident edges can be directed or undirected, and the suppression handles both types correctly
-    
+
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -225,56 +225,64 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     """
     # Work on a copy of the graph to avoid modifying the original
     working_graph = network._graph.copy()
-    
+
     # Find all 2-blobs
     two_blobs = k_blobs(network, k=2, trivial=False, leaves=False)
-    
+
     # Process each 2-blob
     for blob in two_blobs:
         # Convert blob set to sorted list, keep first vertex
         blob_list = sorted(blob)
         if len(blob_list) < 2:
             continue  # Skip trivial blobs (shouldn't happen with trivial=False)
-        
+
         first_vertex = blob_list[0]
-        
+
         # Identify all vertices in blob with the first vertex
         # This modifies working_graph in place
         mm_identify_vertices(working_graph, blob_list)
-        
+
         # After identification, the first_vertex should be degree-2
         # (since 2-blobs have exactly 2 incident edges)
         if working_graph.degree(first_vertex) != 2:
             # This shouldn't happen, but skip if it does
             continue
-        
+
         # Collect incident edges to merge attributes
         # Order: directed_in first, then undirected, then directed_out
         edges_info: list[dict[str, Any]] = []
-        
+
         # Collect in order: directed_in, undirected, directed_out
-        for u, v, key, data in working_graph.incident_parent_edges(first_vertex, keys=True, data=True):
+        for u, v, key, data in working_graph.incident_parent_edges(
+            first_vertex, keys=True, data=True
+        ):
             edges_info.append(data or {})
-        for u, v, key, data in working_graph.incident_undirected_edges(first_vertex, keys=True, data=True):
+        for u, v, key, data in working_graph.incident_undirected_edges(
+            first_vertex, keys=True, data=True
+        ):
             edges_info.append(data or {})
-        for u, v, key, data in working_graph.incident_child_edges(first_vertex, keys=True, data=True):
+        for u, v, key, data in working_graph.incident_child_edges(
+            first_vertex, keys=True, data=True
+        ):
             edges_info.append(data or {})
-        
+
         # We should have exactly 2 incident edges
         if len(edges_info) != 2:
             # Invalid configuration, skip
             continue
-        
+
         # Merge attributes using the helper function
         merged_attrs = _merge_attrs_for_degree2_suppression_mixed(edges_info[0], edges_info[1])
-        
+
         # Suppress the degree-2 node with merged attributes
         # Note: We suppress a single specific node here, not all degree-2 nodes
-        from ...primitives.m_multigraph.transformations import suppress_degree2_node as mm_suppress_degree2_node
+        from ...primitives.m_multigraph.transformations import (
+            suppress_degree2_node as mm_suppress_degree2_node,
+        )
+
         mm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
-    
+
     # Create and return new network from the modified graph (will be validated)
     # Return same type as input
-    network_type = 'semi-directed' if isinstance(network, SemiDirectedPhyNetwork) else 'mixed'
+    network_type = "semi-directed" if isinstance(network, SemiDirectedPhyNetwork) else "mixed"
     return sdnetwork_from_graph(working_graph, network_type=network_type)
-

@@ -21,12 +21,12 @@ from .routes import compute_radial_routes
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_nx_layout(
-    network: 'SemiDirectedPhyNetwork',
-    layout: str = 'spring',
+    network: "SemiDirectedPhyNetwork",
+    layout: str = "spring",
     **kwargs: Any,
 ) -> SDNetLayout:
     """

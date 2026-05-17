@@ -46,12 +46,12 @@ Using with combinations/iterables:
 
     >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend
     >>> import itertools
-    >>> 
+    >>>
     >>> def process_quartet(indices):
     ...     i, j, k, l = indices
     ...     # Process quartet...
     ...     return result
-    >>> 
+    >>>
     >>> combinations = list(itertools.combinations(range(20), 4))
     >>> config = ParallelConfig(
     ...     backend=ParallelBackend.MULTIPROCESSING,
@@ -70,8 +70,8 @@ from typing import Any, Callable, Iterator, Protocol, TypeVar
 
 from .exceptions import PhyloZooValueError
 
-T = TypeVar('T')
-R = TypeVar('R')
+T = TypeVar("T")
+R = TypeVar("R")
 
 
 class ParallelBackend(Enum):
@@ -97,11 +97,11 @@ class ParallelBackend(Enum):
 class ParallelExecutor(Protocol):
     """
     Protocol for parallel execution backends.
-    
+
     All executors must implement `map` and `starmap` methods that
     apply a function to items in an iterable, potentially in parallel.
     """
-    
+
     def map(
         self,
         func: Callable[[T], R],
@@ -110,7 +110,7 @@ class ParallelExecutor(Protocol):
     ) -> Iterator[R]:
         """
         Apply function to each item in iterable, potentially in parallel.
-        
+
         Parameters
         ----------
         func : Callable[[T], R]
@@ -120,14 +120,14 @@ class ParallelExecutor(Protocol):
         chunksize : int | None, optional
             Number of items to process per worker (backend-dependent).
             By default None (backend chooses).
-        
+
         Yields
         ------
         R
             Results from applying func to each item.
         """
         ...
-    
+
     def starmap(
         self,
         func: Callable[..., R],
@@ -136,7 +136,7 @@ class ParallelExecutor(Protocol):
     ) -> Iterator[R]:
         """
         Apply function to unpacked arguments from iterable, potentially in parallel.
-        
+
         Parameters
         ----------
         func : Callable[..., R]
@@ -146,7 +146,7 @@ class ParallelExecutor(Protocol):
         chunksize : int | None, optional
             Number of items to process per worker (backend-dependent).
             By default None (backend chooses).
-        
+
         Yields
         ------
         R
@@ -158,11 +158,11 @@ class ParallelExecutor(Protocol):
 class SequentialExecutor:
     """
     Sequential (no parallelization) executor.
-    
+
     Executes operations in order, one at a time. Useful for debugging
     or when parallelization overhead is not worth it.
     """
-    
+
     def map(
         self,
         func: Callable[[T], R],
@@ -171,7 +171,7 @@ class SequentialExecutor:
     ) -> Iterator[R]:
         """
         Apply function sequentially to each item.
-        
+
         Parameters
         ----------
         func : Callable[[T], R]
@@ -180,14 +180,14 @@ class SequentialExecutor:
             Items to process.
         chunksize : int | None, optional
             Ignored for sequential execution. By default None.
-        
+
         Yields
         ------
         R
             Results from applying func to each item.
         """
         return map(func, iterable)
-    
+
     def starmap(
         self,
         func: Callable[..., R],
@@ -196,7 +196,7 @@ class SequentialExecutor:
     ) -> Iterator[R]:
         """
         Apply function sequentially to unpacked arguments.
-        
+
         Parameters
         ----------
         func : Callable[..., R]
@@ -205,7 +205,7 @@ class SequentialExecutor:
             Tuples of arguments to unpack.
         chunksize : int | None, optional
             Ignored for sequential execution. By default None.
-        
+
         Yields
         ------
         R
@@ -217,16 +217,16 @@ class SequentialExecutor:
 class ThreadingExecutor:
     """
     Thread-based parallel executor.
-    
+
     Uses Python's threading module. Good for I/O-bound operations or
     when sharing memory is important. Limited by Python's Global Interpreter
     Lock (GIL) for CPU-bound tasks.
     """
-    
+
     def __init__(self, n_jobs: int | None = None) -> None:
         """
         Initialize threading executor.
-        
+
         Parameters
         ----------
         n_jobs : int | None, optional
@@ -235,15 +235,15 @@ class ThreadingExecutor:
             By default None.
         """
         from concurrent.futures import ThreadPoolExecutor
-        
+
         if n_jobs is None or n_jobs == -1:
             n_jobs = 1  # Threading typically not beneficial for CPU-bound
         elif n_jobs <= 0:
             raise PhyloZooValueError(f"n_jobs must be positive, got {n_jobs}")
-        
+
         self.n_jobs = n_jobs
         self._executor = ThreadPoolExecutor(max_workers=n_jobs)
-    
+
     def map(
         self,
         func: Callable[[T], R],
@@ -252,7 +252,7 @@ class ThreadingExecutor:
     ) -> Iterator[R]:
         """
         Apply function to items using thread pool.
-        
+
         Parameters
         ----------
         func : Callable[[T], R]
@@ -261,14 +261,14 @@ class ThreadingExecutor:
             Items to process.
         chunksize : int | None, optional
             Ignored for threading executor. By default None.
-        
+
         Yields
         ------
         R
             Results from applying func to each item.
         """
         return self._executor.map(func, iterable)
-    
+
     def starmap(
         self,
         func: Callable[..., R],
@@ -277,7 +277,7 @@ class ThreadingExecutor:
     ) -> Iterator[R]:
         """
         Apply function to unpacked arguments using thread pool.
-        
+
         Parameters
         ----------
         func : Callable[..., R]
@@ -286,54 +286,54 @@ class ThreadingExecutor:
             Tuples of arguments to unpack.
         chunksize : int | None, optional
             Ignored for threading executor. By default None.
-        
+
         Yields
         ------
         R
             Results from applying func to unpacked arguments.
         """
         return self._executor.map(lambda args: func(*args), iterable)
-    
+
     def __del__(self) -> None:
         """Clean up thread pool executor."""
-        if hasattr(self, '_executor'):
+        if hasattr(self, "_executor"):
             self._executor.shutdown(wait=False)
 
 
 class MultiprocessingExecutor:
     """
     Process-based parallel executor.
-    
+
     Uses Python's multiprocessing module. Best for CPU-bound tasks as it
     bypasses Python's Global Interpreter Lock (GIL). Each worker is a
     separate process with its own memory space.
     """
-    
+
     def __init__(self, n_jobs: int | None = None) -> None:
         """
         Initialize multiprocessing executor.
-        
+
         Parameters
         ----------
         n_jobs : int | None, optional
             Number of worker processes. If None or -1, uses all available
             CPU cores (os.cpu_count()). Must be positive. By default None.
-        
+
         Raises
         ------
         PhyloZooValueError
             If n_jobs is 0 or negative (except -1).
         """
         from multiprocessing import Pool
-        
+
         if n_jobs is None or n_jobs == -1:
             n_jobs = os.cpu_count() or 1
         elif n_jobs <= 0:
             raise PhyloZooValueError(f"n_jobs must be positive, got {n_jobs}")
-        
+
         self.n_jobs = n_jobs
         self._pool = Pool(processes=n_jobs)
-    
+
     def map(
         self,
         func: Callable[[T], R],
@@ -342,7 +342,7 @@ class MultiprocessingExecutor:
     ) -> Iterator[R]:
         """
         Apply function to items using process pool.
-        
+
         Parameters
         ----------
         func : Callable[[T], R]
@@ -352,14 +352,14 @@ class MultiprocessingExecutor:
         chunksize : int | None, optional
             Number of items to send to each worker at once. If None,
             multiprocessing chooses an appropriate value. By default None.
-        
+
         Yields
         ------
         R
             Results from applying func to each item.
         """
         return iter(self._pool.map(func, iterable, chunksize=chunksize))
-    
+
     def starmap(
         self,
         func: Callable[..., R],
@@ -368,7 +368,7 @@ class MultiprocessingExecutor:
     ) -> Iterator[R]:
         """
         Apply function to unpacked arguments using process pool.
-        
+
         Parameters
         ----------
         func : Callable[..., R]
@@ -377,17 +377,17 @@ class MultiprocessingExecutor:
             Tuples of arguments to unpack. Must be picklable.
         chunksize : int | None, optional
             Number of items to send to each worker at once. By default None.
-        
+
         Yields
         ------
         R
             Results from applying func to unpacked arguments.
         """
         return iter(self._pool.starmap(func, iterable, chunksize=chunksize))
-    
+
     def __del__(self) -> None:
         """Clean up process pool."""
-        if hasattr(self, '_pool'):
+        if hasattr(self, "_pool"):
             self._pool.close()
             self._pool.join()
 
@@ -395,11 +395,11 @@ class MultiprocessingExecutor:
 class ParallelConfig:
     """
     Configuration for parallel execution.
-    
+
     This class encapsulates all settings needed for parallel execution,
     including backend selection and worker count. Use this as a function
     parameter (Pattern A) to enable parallelization in PhyloZoo functions.
-    
+
     Parameters
     ----------
     backend : ParallelBackend | str, optional
@@ -415,27 +415,27 @@ class ParallelConfig:
     chunksize : int | None, optional
         Number of items to process per worker batch. Backend-dependent.
         By default None (backend chooses).
-    
+
     Examples
     --------
     >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend
-    >>> 
+    >>>
     >>> # Use 4 CPU cores
     >>> config = ParallelConfig(
     ...     backend=ParallelBackend.MULTIPROCESSING,
     ...     n_jobs=4
     ... )
-    >>> 
+    >>>
     >>> # Use all available cores
     >>> config = ParallelConfig(
     ...     backend=ParallelBackend.MULTIPROCESSING,
     ...     n_jobs=None  # or -1
     ... )
-    >>> 
+    >>>
     >>> # Sequential execution
     >>> config = ParallelConfig(backend=ParallelBackend.SEQUENTIAL)
     """
-    
+
     def __init__(
         self,
         backend: ParallelBackend | str = ParallelBackend.SEQUENTIAL,
@@ -452,19 +452,19 @@ class ParallelConfig:
                 )
         else:
             self.backend = backend
-        
+
         self.n_jobs = n_jobs
         self.chunksize = chunksize
-    
+
     def get_executor(self) -> ParallelExecutor:
         """
         Get executor instance based on backend configuration.
-        
+
         Returns
         -------
         ParallelExecutor
             Executor instance ready to use.
-        
+
         Raises
         ------
         PhyloZooValueError
@@ -478,7 +478,7 @@ class ParallelConfig:
             return MultiprocessingExecutor(n_jobs=self.n_jobs)
         else:
             raise PhyloZooValueError(f"Unknown backend: {self.backend}")
-    
+
     def __repr__(self) -> str:
         """String representation of configuration."""
         return (

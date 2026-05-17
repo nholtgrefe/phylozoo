@@ -5,8 +5,6 @@ This module tests that the validation_aware decorator works correctly
 on DirectedPhyNetwork, MixedPhyNetwork, and SemiDirectedPhyNetwork.
 """
 
-import warnings
-
 import pytest
 
 from phylozoo.core.network import DirectedPhyNetwork, SemiDirectedPhyNetwork
@@ -23,7 +21,12 @@ class TestDirectedPhyNetworkValidationSuppression:
         with pytest.raises(ValueError, match="not connected"):
             DirectedPhyNetwork(
                 edges=[(1, 2), (3, 4)],
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
 
     def test_validate_suppressed_during_init(self) -> None:
@@ -32,30 +35,39 @@ class TestDirectedPhyNetworkValidationSuppression:
         with no_validation():
             net = DirectedPhyNetwork(
                 edges=[(1, 2), (3, 4)],  # Disconnected, would normally fail
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
         # Network was created despite being invalid
         assert net.number_of_nodes() == 4
 
     def test_validate_suppressed_explicitly(self) -> None:
         """Validation can be suppressed explicitly for validate method."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         # Modify to make invalid (add disconnected component)
         net._graph.add_edge(5, 6)
         net._graph.add_node(5)
         net._graph.add_node(6)
-        
+
         # Should raise error normally
         with pytest.raises(ValueError, match="not connected"):
             net.validate()
-        
+
         # Should not raise when suppressed
         with no_validation(methods=["validate"]):
             net.validate()  # Should return None silently
 
     def test_helper_methods_can_be_suppressed(self) -> None:
         """Helper validation methods (_validate_*) can be suppressed independently."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         # Add disconnected component - this would normally be caught by _validate_structural_constraints
         net._graph.add_edge(5, 6)
         net._graph.add_node(5)
@@ -65,11 +77,11 @@ class TestDirectedPhyNetworkValidationSuppression:
         net._node_to_label[6] = "F"
         net._label_to_node["E"] = 5
         net._label_to_node["F"] = 6
-        
+
         # When not suppressed, should fail on connectivity
         with pytest.raises(ValueError, match="not connected"):
             net.validate()
-        
+
         # When structural constraints are suppressed, connectivity check is skipped
         # The network structure is invalid but validation passes because structural checks are suppressed
         with no_validation(methods=["_validate_structural_constraints"]):
@@ -86,7 +98,12 @@ class TestMixedPhyNetworkValidationSuppression:
             MixedPhyNetwork(
                 directed_edges=[],
                 undirected_edges=[(1, 2), (3, 4)],
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
 
     def test_validate_suppressed_during_init(self) -> None:
@@ -96,12 +113,19 @@ class TestMixedPhyNetworkValidationSuppression:
             net = MixedPhyNetwork(
                 directed_edges=[],
                 undirected_edges=[(1, 2), (3, 4)],  # Disconnected, would normally fail
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
         # Network was created despite being invalid
         assert net.number_of_nodes() == 4
 
-    @pytest.mark.filterwarnings("ignore:Validity is not fully checked.*MixedPhyNetworks:UserWarning")
+    @pytest.mark.filterwarnings(
+        "ignore:Validity is not fully checked.*MixedPhyNetworks:UserWarning"
+    )
     def test_validate_suppressed_explicitly(self) -> None:
         """Validation can be suppressed explicitly for validate method."""
         # Create valid network first (internal node needs degree >= 3)
@@ -111,11 +135,11 @@ class TestMixedPhyNetworkValidationSuppression:
         )
         # Modify to make invalid (add self-loop which violates structural constraints)
         net._graph._undirected.add_edge(1, 1)
-        
+
         # Should raise error normally (before reaching mixed-network constraint check)
         with pytest.raises(ValueError, match="Self-loops"):
             net.validate()
-        
+
         # Should not raise when suppressed
         with no_validation(methods=["validate"]):
             net.validate()  # Should return None silently
@@ -131,7 +155,12 @@ class TestSemiDirectedPhyNetworkValidationSuppression:
             SemiDirectedPhyNetwork(
                 directed_edges=[],
                 undirected_edges=[(1, 2), (3, 4)],
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
 
     def test_validate_suppressed_during_init(self) -> None:
@@ -141,7 +170,12 @@ class TestSemiDirectedPhyNetworkValidationSuppression:
             net = SemiDirectedPhyNetwork(
                 directed_edges=[],
                 undirected_edges=[(1, 2), (3, 4)],  # Disconnected, would normally fail
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
         # Network was created despite being invalid
         assert net.number_of_nodes() == 4
@@ -155,11 +189,11 @@ class TestSemiDirectedPhyNetworkValidationSuppression:
         )
         # Modify to make invalid (add self-loop which violates structural constraints)
         net._graph._undirected.add_edge(1, 1)
-        
+
         # Should raise error normally
         with pytest.raises(ValueError, match="Self-loops"):
             net.validate()
-        
+
         # Should not raise when suppressed
         with no_validation(methods=["validate"]):
             net.validate()  # Should return None silently
@@ -174,13 +208,23 @@ class TestNestedValidationSuppression:
         with no_validation():
             net1 = DirectedPhyNetwork(
                 edges=[(1, 2), (3, 4)],  # Disconnected
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
             # Inner context also suppresses
             with no_validation():
                 net2 = DirectedPhyNetwork(
                     edges=[(5, 6), (7, 8)],  # Also disconnected
-                    nodes=[(5, {"label": "E"}), (6, {"label": "F"}), (7, {"label": "G"}), (8, {"label": "H"})],
+                    nodes=[
+                        (5, {"label": "E"}),
+                        (6, {"label": "F"}),
+                        (7, {"label": "G"}),
+                        (8, {"label": "H"}),
+                    ],
                 )
             # Still in outer context
             net3 = DirectedPhyNetwork(
@@ -198,9 +242,14 @@ class TestNestedValidationSuppression:
         with no_validation():
             net = DirectedPhyNetwork(
                 edges=[(1, 2), (3, 4)],  # Disconnected
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
-        
+
         # After context, validation should work normally
         with pytest.raises(ValueError, match="not connected"):
             net.validate()
@@ -211,7 +260,9 @@ class TestWildcardPatterns:
 
     def test_wildcard_suppresses_helpers(self) -> None:
         """Wildcard pattern _validate_struct* suppresses structural constraint methods."""
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         # Add disconnected component - this would normally be caught by _validate_structural_constraints
         net._graph.add_edge(5, 6)
         net._graph.add_node(5)
@@ -221,11 +272,11 @@ class TestWildcardPatterns:
         net._node_to_label[6] = "F"
         net._label_to_node["E"] = 5
         net._label_to_node["F"] = 6
-        
+
         # When not suppressed, should fail on connectivity
         with pytest.raises(ValueError, match="not connected"):
             net.validate()
-        
+
         # When suppressed using wildcard pattern _validate_struct*, connectivity check is skipped
         # The disconnected nodes have valid degrees (5 has in-degree 1, out-degree 0; 6 has in-degree 1, out-degree 0)
         # So validate() should succeed when structural constraints are suppressed
@@ -242,12 +293,16 @@ class TestDefaultSuppression:
         with no_validation():
             net = DirectedPhyNetwork(
                 edges=[(1, 2), (3, 4)],  # Disconnected
-                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (4, {"label": "D"})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (4, {"label": "D"}),
+                ],
             )
         # Should succeed
         assert net.number_of_nodes() == 4
-        
+
         # But validate should still work when called explicitly outside context
         with pytest.raises(ValueError, match="not connected"):
             net.validate()
-

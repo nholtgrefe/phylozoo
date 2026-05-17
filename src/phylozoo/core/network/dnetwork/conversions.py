@@ -19,7 +19,7 @@ from ...primitives.d_multigraph.conversions import (
     multidigraph_to_directedmultigraph,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def _dnetwork_from_dmgraph(graph: DirectedMultiGraph[T]) -> DirectedPhyNetwork[T]:
@@ -39,9 +39,9 @@ def _dnetwork_from_dmgraph(graph: DirectedMultiGraph[T]) -> DirectedPhyNetwork[T
     # Extract edges
     edges: list[dict[str, Any]] = []
     for u, v, key, data in graph.edges(keys=True, data=True):
-        edge_dict: dict[str, Any] = {'u': u, 'v': v}
+        edge_dict: dict[str, Any] = {"u": u, "v": v}
         if key != 0:
-            edge_dict['key'] = key
+            edge_dict["key"] = key
         if data:
             edge_dict.update(data)
         edges.append(edge_dict)
@@ -57,9 +57,7 @@ def _dnetwork_from_dmgraph(graph: DirectedMultiGraph[T]) -> DirectedPhyNetwork[T
 
     # Create and return new network
     return DirectedPhyNetwork(
-        edges=edges,
-        nodes=nodes,
-        attributes=graph_attributes if graph_attributes else None
+        edges=edges, nodes=nodes, attributes=graph_attributes if graph_attributes else None
     )
 
 
@@ -69,22 +67,22 @@ def dnetwork_from_graph(
     """
     Create a DirectedPhyNetwork from a NetworkX DiGraph, MultiDiGraph, or phylozoo
     DirectedMultiGraph.
-    
+
     All edges from the input graph are treated as directed edges. Edge attributes,
     node attributes, and graph-level attributes are preserved and passed through to
     the resulting network.
-    
+
     Parameters
     ----------
     graph : nx.DiGraph | nx.MultiDiGraph | DirectedMultiGraph[T]
         The graph to convert. Can be a NetworkX DiGraph, MultiDiGraph, or a
         DirectedMultiGraph from the primitives module.
-    
+
     Returns
     -------
     DirectedPhyNetwork[T]
         A new directed phylogenetic network with edges and labels from the graph.
-    
+
     Raises
     ------
     PhyloZooTypeError
@@ -92,7 +90,7 @@ def dnetwork_from_graph(
     PhyloZooValueError
         If the resulting network is invalid according to DirectedPhyNetwork validation
         rules (e.g., not a DAG, invalid node degrees, etc.).
-    
+
     Notes
     -----
 
@@ -105,7 +103,7 @@ def dnetwork_from_graph(
     - **Validation**: The network is validated upon creation. If the graph structure
       does not meet DirectedPhyNetwork requirements (e.g., must be a DAG, leaves
       must have in-degree 1, etc.), a ValueError is raised.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -135,10 +133,8 @@ def dnetwork_from_graph(
         dmgraph = graph
     else:
         raise PhyloZooTypeError(
-            f"Expected nx.DiGraph, nx.MultiDiGraph, or DirectedMultiGraph, "
-            f"got {type(graph)}"
+            f"Expected nx.DiGraph, nx.MultiDiGraph, or DirectedMultiGraph, " f"got {type(graph)}"
         )
-    
+
     # Convert DirectedMultiGraph to network
     return _dnetwork_from_dmgraph(dmgraph)
-

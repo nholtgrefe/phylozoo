@@ -45,7 +45,7 @@ class TestLevel:
         """Test level in tree (no hybrids)."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert level(net) == 0
 
@@ -59,21 +59,24 @@ class TestLevel:
         # Level = 2 - 1 = 1
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
+            ],
         )
         assert level(net) == 1
 
@@ -83,19 +86,35 @@ class TestLevel:
         # With bi-edge connectivity, bridge edges separate the blobs
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.5}, {'u': 6, 'v': 4, 'gamma': 0.5},  # Hybrid node 4
-                {'u': 8, 'v': 7, 'gamma': 0.5}, {'u': 9, 'v': 7, 'gamma': 0.5},  # Hybrid node 7
+                {"u": 5, "v": 4, "gamma": 0.5},
+                {"u": 6, "v": 4, "gamma": 0.5},  # Hybrid node 4
+                {"u": 8, "v": 7, "gamma": 0.5},
+                {"u": 9, "v": 7, "gamma": 0.5},  # Hybrid node 7
             ],
             undirected_edges=[
-                (4, 1), (5, 2), (5, 6), (6, 3),  # Blob around hybrid 4
-                (7, 10), (8, 11), (8, 12), (9, 13), (9, 12),  # Blob around hybrid 7
-                (6, 14), (12, 14), (14, 15),  # Bridge edges connecting via node 14
+                (4, 1),
+                (5, 2),
+                (5, 6),
+                (6, 3),  # Blob around hybrid 4
+                (7, 10),
+                (8, 11),
+                (8, 12),
+                (9, 13),
+                (9, 12),  # Blob around hybrid 7
+                (6, 14),
+                (12, 14),
+                (14, 15),  # Bridge edges connecting via node 14
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                (10, {'label': 'D'}), (11, {'label': 'E'}), (13, {'label': 'F'}),
-                (14, {'label': 'G'}), (15, {'label': 'H'}),
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (10, {"label": "D"}),
+                (11, {"label": "E"}),
+                (13, {"label": "F"}),
+                (14, {"label": "G"}),
+                (15, {"label": "H"}),
+            ],
         )
         # With bi-edge connectivity, edges (6,14) and (12,14) are bridges,
         # so we get separate blobs. Each blob should have level 1 (2 edges - 1 node)
@@ -116,7 +135,7 @@ class TestVertexLevel:
         """Test vertex_level in tree (no hybrids)."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert vertex_level(net) == 0
 
@@ -124,21 +143,24 @@ class TestVertexLevel:
         """Test vertex_level with single hybrid node."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
+            ],
         )
         # Blob contains hybrid node 5
         assert vertex_level(net) == 1
@@ -148,20 +170,41 @@ class TestVertexLevel:
         # Network with nested hybrids in same blob - need to connect them properly
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 7, 'v': 5, 'gamma': 0.5}, {'u': 8, 'v': 5, 'gamma': 0.5},  # Hybrid node 5
-                {'u': 5, 'v': 4, 'gamma': 0.5}, {'u': 6, 'v': 4, 'gamma': 0.5},  # Hybrid node 4
+                {"u": 7, "v": 5, "gamma": 0.5},
+                {"u": 8, "v": 5, "gamma": 0.5},  # Hybrid node 5
+                {"u": 5, "v": 4, "gamma": 0.5},
+                {"u": 6, "v": 4, "gamma": 0.5},  # Hybrid node 4
             ],
             undirected_edges=[
-                (4, 1), (6, 2), (6, 3), (6, 9),  # Connect 6 to blob
-                (7, 10), (7, 11), (8, 12), (8, 13),  # Connect 7, 8
-                (9, 10), (9, 14), (10, 15), (11, 12), (11, 16), (12, 18),  # Connect components to form single blob
+                (4, 1),
+                (6, 2),
+                (6, 3),
+                (6, 9),  # Connect 6 to blob
+                (7, 10),
+                (7, 11),
+                (8, 12),
+                (8, 13),  # Connect 7, 8
+                (9, 10),
+                (9, 14),
+                (10, 15),
+                (11, 12),
+                (11, 16),
+                (12, 18),  # Connect components to form single blob
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'}),
-                (12, {'label': 'G'}), (13, {'label': 'H'}), (14, {'label': 'I'}),
-                (15, {'label': 'J'}), (16, {'label': 'K'}), (18, {'label': 'M'}),
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
+                (12, {"label": "G"}),
+                (13, {"label": "H"}),
+                (14, {"label": "I"}),
+                (15, {"label": "J"}),
+                (16, {"label": "K"}),
+                (18, {"label": "M"}),
+            ],
         )
         # Blob contains hybrid nodes 4 and 5
         assert vertex_level(net) == 2
@@ -181,19 +224,22 @@ class TestReticulationNumber:
         """Test reticulation_number in tree (no hybrids)."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert reticulation_number(net) == 0
 
     def test_reticulation_number_single_hybrid(self) -> None:
         """Test reticulation_number with single hybrid node."""
         net = SemiDirectedPhyNetwork(
-            directed_edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.5}, {'u': 6, 'v': 4, 'gamma': 0.5}
-            ],
+            directed_edges=[{"u": 5, "v": 4, "gamma": 0.5}, {"u": 6, "v": 4, "gamma": 0.5}],
             undirected_edges=[(4, 1), (5, 2), (5, 7), (6, 3), (6, 7), (7, 8)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                   (7, {'label': 'D'}), (8, {'label': 'E'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+                (8, {"label": "E"}),
+            ],
         )
         # 2 hybrid edges - 1 hybrid node = 1
         assert reticulation_number(net) == 1
@@ -203,19 +249,35 @@ class TestReticulationNumber:
         # Two separate hybrid nodes, not nested
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.5}, {'u': 6, 'v': 4, 'gamma': 0.5},  # Hybrid node 4
-                {'u': 8, 'v': 7, 'gamma': 0.5}, {'u': 9, 'v': 7, 'gamma': 0.5},  # Hybrid node 7
+                {"u": 5, "v": 4, "gamma": 0.5},
+                {"u": 6, "v": 4, "gamma": 0.5},  # Hybrid node 4
+                {"u": 8, "v": 7, "gamma": 0.5},
+                {"u": 9, "v": 7, "gamma": 0.5},  # Hybrid node 7
             ],
             undirected_edges=[
-                (4, 1), (5, 2), (5, 6), (6, 3),  # Blob around hybrid 4
-                (7, 10), (8, 11), (8, 12), (9, 13), (9, 12),  # Blob around hybrid 7
-                (6, 14), (12, 14), (14, 15),  # Connect via bridge node 14
+                (4, 1),
+                (5, 2),
+                (5, 6),
+                (6, 3),  # Blob around hybrid 4
+                (7, 10),
+                (8, 11),
+                (8, 12),
+                (9, 13),
+                (9, 12),  # Blob around hybrid 7
+                (6, 14),
+                (12, 14),
+                (14, 15),  # Connect via bridge node 14
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                (10, {'label': 'D'}), (11, {'label': 'E'}), (13, {'label': 'F'}),
-                (14, {'label': 'G'}), (15, {'label': 'H'}),
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (10, {"label": "D"}),
+                (11, {"label": "E"}),
+                (13, {"label": "F"}),
+                (14, {"label": "G"}),
+                (15, {"label": "H"}),
+            ],
         )
         # 4 hybrid edges - 2 hybrid nodes = 2
         assert reticulation_number(net) == 2
@@ -236,7 +298,7 @@ class TestIsBinary:
         # Internal node 3 has degree 3
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_binary(net) is True
 
@@ -246,9 +308,11 @@ class TestIsBinary:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (4, {'label': 'C'}), (5, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
+                (5, {"label": "D"}),
+            ],
         )
         assert is_binary(net) is False
 
@@ -257,20 +321,22 @@ class TestIsBinary:
         # Hybrid node 4 has degree 3 (in-degree 2, undirected degree 1)
         # Tree nodes 5, 6 have degree 3
         net = SemiDirectedPhyNetwork(
-            directed_edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.5}, {'u': 6, 'v': 4, 'gamma': 0.5}
-            ],
+            directed_edges=[{"u": 5, "v": 4, "gamma": 0.5}, {"u": 6, "v": 4, "gamma": 0.5}],
             undirected_edges=[(4, 1), (5, 2), (5, 7), (6, 3), (6, 7), (7, 8)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                   (7, {'label': 'D'}), (8, {'label': 'E'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+                (8, {"label": "E"}),
+            ],
         )
         assert is_binary(net) is True
 
     def test_is_binary_single_node(self) -> None:
         """Test is_binary in single-node network."""
         net = SemiDirectedPhyNetwork(
-            directed_edges=[], undirected_edges=[],
-            nodes=[(1, {'label': 'A'})]
+            directed_edges=[], undirected_edges=[], nodes=[(1, {"label": "A"})]
         )
         assert is_binary(net) is True
 
@@ -289,34 +355,36 @@ class TestIsTree:
         """Test is_tree in simple tree."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_tree(net) is True
 
     def test_is_tree_with_hybrids(self) -> None:
         """Test is_tree in network with hybrid nodes."""
         net = SemiDirectedPhyNetwork(
-            directed_edges=[
-                {'u': 5, 'v': 4, 'gamma': 0.5}, {'u': 6, 'v': 4, 'gamma': 0.5}
-            ],
+            directed_edges=[{"u": 5, "v": 4, "gamma": 0.5}, {"u": 6, "v": 4, "gamma": 0.5}],
             undirected_edges=[(4, 1), (5, 2), (5, 7), (6, 3), (6, 7), (7, 8)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                   (7, {'label': 'D'}), (8, {'label': 'E'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (7, {"label": "D"}),
+                (8, {"label": "E"}),
+            ],
         )
         assert is_tree(net) is False
 
     def test_is_tree_large_tree(self) -> None:
         """Test is_tree in large binary tree."""
         net = SemiDirectedPhyNetwork(
-            undirected_edges=[
-                (7, 5), (7, 6), (7, 8),
-                (5, 3), (5, 4),
-                (6, 1), (6, 2)
-            ],
+            undirected_edges=[(7, 5), (7, 6), (7, 8), (5, 3), (5, 4), (6, 1), (6, 2)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (3, {'label': 'C'}), (4, {'label': 'D'}), (8, {'label': 'E'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+                (8, {"label": "E"}),
+            ],
         )
         assert is_tree(net) is True
 
@@ -336,7 +404,7 @@ class TestIsSimple:
         # Semi-directed networks require internal nodes to have degree >= 3
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         # Tree with one internal node has one non-leaf blob, so it is simple
         assert is_simple(net) is True
@@ -346,13 +414,20 @@ class TestIsSimple:
         # Semi-directed networks require internal nodes to have degree >= 3
         net = SemiDirectedPhyNetwork(
             undirected_edges=[
-                (5, 3), (5, 4), (5, 6),  # Node 5 has degree 3
-                (3, 1), (3, 2), (3, 7)  # Node 3 has degree 3
+                (5, 3),
+                (5, 4),
+                (5, 6),  # Node 5 has degree 3
+                (3, 1),
+                (3, 2),
+                (3, 7),  # Node 3 has degree 3
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}),
-                (6, {'label': 'D'}), (7, {'label': 'E'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
+                (6, {"label": "D"}),
+                (7, {"label": "E"}),
+            ],
         )
         # Tree with multiple internal nodes has multiple non-leaf blobs, so it is not simple
         assert is_simple(net) is False
@@ -362,18 +437,24 @@ class TestIsSimple:
         # Network with single hybrid
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),  # Hybrid node 5: in-degree 2, total degree 3
-                (6, 2), (6, 3), (6, 7),  # Tree node 6
-                (7, 8), (7, 9),  # Tree node 7
+                (6, 2),
+                (6, 3),
+                (6, 7),  # Tree node 6
+                (7, 8),
+                (7, 9),  # Tree node 7
             ],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}),
-                (8, {'label': 'D'}), (9, {'label': 'E'}),
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
+            ],
         )
         # Single hybrid creates one non-leaf blob
         assert is_simple(net) is True
@@ -382,6 +463,7 @@ class TestIsSimple:
         """Test is_simple with multiple non-leaf blobs."""
         # Use a fixture network that has multiple blobs
         from tests.fixtures import sd_networks as sdn
+
         # Networks with multiple blobs should not be simple
         assert is_simple(sdn.LEVEL_1_SDNETWORK_TWO_BLOBS) is False
         assert is_simple(sdn.LEVEL_2_SDNETWORK_THREE_BLOBS) is False
@@ -389,36 +471,36 @@ class TestIsSimple:
 
 class TestIsStackfreeWithFixtures:
     """Test cases for is_stackfree() function using fixture networks."""
-    
+
     def test_is_stackfree_tree_fixtures(self) -> None:
         """Test is_stackfree on tree fixtures (should all be stack-free)."""
         from tests.fixtures import sd_networks as sdn
-        
+
         # Trees have no hybrids, so they are stack-free
         assert is_stackfree(sdn.SDTREE_EMPTY)
         assert is_stackfree(sdn.SDTREE_SINGLE_NODE)
         assert is_stackfree(sdn.SDTREE_SMALL_BINARY)
         assert is_stackfree(sdn.SDTREE_NON_BINARY_SMALL)
-    
+
     def test_is_stackfree_single_hybrid_fixtures(self) -> None:
         """Test is_stackfree on networks with single hybrid (should be stack-free)."""
         from tests.fixtures import sd_networks as sdn
-        
+
         # Single hybrid networks have no stacked hybrids
         assert is_stackfree(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID)
         assert is_stackfree(sdn.LEVEL_1_SDNETWORK_SINGLE_HYBRID_BINARY)
-    
+
     def test_is_stackfree_multiple_hybrids_separate_fixtures(self) -> None:
         """Test is_stackfree on networks with multiple hybrids in separate blobs."""
         from tests.fixtures import sd_networks as sdn
-        
+
         # Hybrids in separate blobs don't stack
         assert is_stackfree(sdn.LEVEL_1_SDNETWORK_TWO_HYBRIDS_SEPARATE)
 
 
 class TestIsStackfreeNotStackfree:
     """Test cases for is_stackfree() function on networks with stacked hybrids."""
-    
+
     def test_is_stackfree_stacked_hybrids_simple(self) -> None:
         """Test is_stackfree on network with simple stacked hybrids."""
         # Network: hybrid 4 -> hybrid 7 -> leaf
@@ -427,71 +509,115 @@ class TestIsStackfreeNotStackfree:
         # Need to ensure single source component and all internal nodes have degree >= 3
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                (5, 4), (6, 4),  # Both lead to hybrid 4
-                (4, 7), (8, 7)  # Hybrid 4 and tree node 8 lead to hybrid 7
+                (5, 4),
+                (6, 4),  # Both lead to hybrid 4
+                (4, 7),
+                (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
             ],
             undirected_edges=[
-                (9, 5), (9, 6), (9, 8),  # Root to tree nodes (node 9 has degree 3, connects to 5, 6, 8)
-                (5, 10), (5, 11),  # Tree node 5 has additional edges (degree 3)
-                (6, 12), (6, 13),  # Tree node 6 has additional edges (degree 3)
+                (9, 5),
+                (9, 6),
+                (9, 8),  # Root to tree nodes (node 9 has degree 3, connects to 5, 6, 8)
+                (5, 10),
+                (5, 11),  # Tree node 5 has additional edges (degree 3)
+                (6, 12),
+                (6, 13),  # Tree node 6 has additional edges (degree 3)
                 (7, 1),  # Hybrid 7 to leaf (hybrid 7 has degree 3: in-degree 2, out-degree 1)
-                (8, 14), (8, 15)  # Tree node 8 to leaves (node 8 has degree 3)
+                (8, 14),
+                (8, 15),  # Tree node 8 to leaves (node 8 has degree 3)
             ],
-            nodes=[(1, {'label': 'A'}), (10, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'}), (15, {'label': 'G'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (10, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+                (13, {"label": "E"}),
+                (14, {"label": "F"}),
+                (15, {"label": "G"}),
+            ],
         )
         assert not is_stackfree(net)
 
 
 class TestIsGalled:
     """Test cases for is_galled function."""
-    
+
     def test_is_galled_empty_network(self) -> None:
         """Test is_galled with empty network."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = SemiDirectedPhyNetwork(directed_edges=[], undirected_edges=[])
         assert is_galled(net) is True
-    
+
     def test_is_galled_tree(self) -> None:
         """Test is_galled with tree (galled)."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_galled(net) is True
-    
+
     def test_is_galled_single_hybrid(self) -> None:
         """Test is_galled with single hybrid in its own blob (galled)."""
         net = SemiDirectedPhyNetwork(
-            directed_edges=[
-                (5, 4), (6, 4)  # Both lead to hybrid 4
-            ],
+            directed_edges=[(5, 4), (6, 4)],  # Both lead to hybrid 4
             undirected_edges=[
-                (7, 5), (7, 6), (7, 9),  # Root to tree nodes
+                (7, 5),
+                (7, 6),
+                (7, 9),  # Root to tree nodes
                 (4, 8),  # Hybrid to tree node
-                (5, 10), (5, 11),  # Tree node 5 has additional edges
-                (6, 12), (6, 13),  # Tree node 6 has additional edges
-                (8, 1), (8, 2), (9, 14), (9, 15)  # Tree nodes to leaves
+                (5, 10),
+                (5, 11),  # Tree node 5 has additional edges
+                (6, 12),
+                (6, 13),  # Tree node 6 has additional edges
+                (8, 1),
+                (8, 2),
+                (9, 14),
+                (9, 15),  # Tree nodes to leaves
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (10, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'}), (14, {'label': 'G'}), (15, {'label': 'H'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (10, {"label": "C"}),
+                (11, {"label": "D"}),
+                (12, {"label": "E"}),
+                (13, {"label": "F"}),
+                (14, {"label": "G"}),
+                (15, {"label": "H"}),
+            ],
         )
         assert is_galled(net) is True
-    
+
     def test_is_galled_stacked_hybrids(self) -> None:
         """Test is_galled with stacked hybrids (not galled)."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                (5, 4), (6, 4),  # Both lead to hybrid 4
-                (4, 7), (8, 7)  # Hybrid 4 and tree node 8 lead to hybrid 7
+                (5, 4),
+                (6, 4),  # Both lead to hybrid 4
+                (4, 7),
+                (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
             ],
             undirected_edges=[
-                (9, 5), (9, 6), (9, 8),  # Root to tree nodes
-                (5, 10), (5, 11),  # Tree node 5 has additional edges
-                (6, 12), (6, 13),  # Tree node 6 has additional edges
+                (9, 5),
+                (9, 6),
+                (9, 8),  # Root to tree nodes
+                (5, 10),
+                (5, 11),  # Tree node 5 has additional edges
+                (6, 12),
+                (6, 13),  # Tree node 6 has additional edges
                 (7, 1),  # Hybrid 7 to leaf
-                (8, 14), (8, 15)  # Tree node 8 to leaves
+                (8, 14),
+                (8, 15),  # Tree node 8 to leaves
             ],
-            nodes=[(1, {'label': 'A'}), (10, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'}), (14, {'label': 'F'}), (15, {'label': 'G'})]
+            nodes=[
+                (1, {"label": "A"}),
+                (10, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+                (13, {"label": "E"}),
+                (14, {"label": "F"}),
+                (15, {"label": "G"}),
+            ],
         )
         assert is_galled(net) is False
 
@@ -509,8 +635,7 @@ class TestIsStronglyTreechild:
     def test_strongly_treechild_single_node(self) -> None:
         """Single-node network is vacuously strongly tree-child."""
         net = SemiDirectedPhyNetwork(
-            directed_edges=[], undirected_edges=[],
-            nodes=[(1, {'label': 'A'})]
+            directed_edges=[], undirected_edges=[], nodes=[(1, {"label": "A"})]
         )
         assert is_strongly_treechild(net) is True
 
@@ -518,7 +643,7 @@ class TestIsStronglyTreechild:
         """Trees are strongly tree-child (every rooting is tree-child)."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_strongly_treechild(net) is True
 
@@ -535,9 +660,11 @@ class TestIsStronglyTreechild:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (4, {'label': 'C'}), (5, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
+                (5, {"label": "D"}),
+            ],
         )
         with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
             is_strongly_treechild(net)
@@ -565,7 +692,7 @@ class TestIsWeaklyTreechild:
         """Trees are weakly tree-child."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_weakly_treechild(net) is True
 
@@ -582,9 +709,11 @@ class TestIsWeaklyTreechild:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (4, {'label': 'C'}), (5, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
+                (5, {"label": "D"}),
+            ],
         )
         with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
             is_weakly_treechild(net)
@@ -625,8 +754,7 @@ class TestIsStronglyTreebased:
     def test_strongly_treebased_single_node(self) -> None:
         """Single-node network is vacuously strongly tree-based."""
         net = SemiDirectedPhyNetwork(
-            directed_edges=[], undirected_edges=[],
-            nodes=[(1, {'label': 'A'})]
+            directed_edges=[], undirected_edges=[], nodes=[(1, {"label": "A"})]
         )
         assert is_strongly_treebased(net) is True
 
@@ -634,7 +762,7 @@ class TestIsStronglyTreebased:
         """Trees are strongly tree-based (every rooting is tree-based)."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_strongly_treebased(net) is True
 
@@ -651,9 +779,11 @@ class TestIsStronglyTreebased:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (4, {'label': 'C'}), (5, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
+                (5, {"label": "D"}),
+            ],
         )
         with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
             is_strongly_treebased(net)
@@ -681,7 +811,7 @@ class TestIsWeaklyTreebased:
         """Trees are weakly tree-based."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         assert is_weakly_treebased(net) is True
 
@@ -698,9 +828,11 @@ class TestIsWeaklyTreebased:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
             nodes=[
-                (1, {'label': 'A'}), (2, {'label': 'B'}),
-                (4, {'label': 'C'}), (5, {'label': 'D'})
-            ]
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
+                (5, {"label": "D"}),
+            ],
         )
         with pytest.raises(PhyloZooNotImplementedError, match="non-binary"):
             is_weakly_treebased(net)
@@ -721,7 +853,7 @@ class TestIsWeaklyTreebased:
 
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
         )
         _, undir_locs, dir_locs = root_locations(net)
         edge_locs = list(undir_locs) + list(dir_locs)

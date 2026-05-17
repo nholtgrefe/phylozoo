@@ -9,22 +9,22 @@ import networkx as nx
 from . import DirectedMultiGraph
 
 
-def digraph_to_directedmultigraph(graph: nx.DiGraph) -> 'DirectedMultiGraph':
+def digraph_to_directedmultigraph(graph: nx.DiGraph) -> "DirectedMultiGraph":
     """
     Create a DirectedMultiGraph from a NetworkX DiGraph.
-    
+
     All edges from the DiGraph are added as directed edges.
-    
+
     Parameters
     ----------
     graph : nx.DiGraph
         NetworkX DiGraph to convert.
-    
+
     Returns
     -------
     DirectedMultiGraph
         New DirectedMultiGraph instance with all edges as directed.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -47,23 +47,23 @@ def digraph_to_directedmultigraph(graph: nx.DiGraph) -> 'DirectedMultiGraph':
     return dmg
 
 
-def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> 'DirectedMultiGraph':
+def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> "DirectedMultiGraph":
     """
     Create a DirectedMultiGraph from a NetworkX MultiDiGraph.
-    
+
     All edges from the MultiDiGraph are added as directed edges, preserving
     parallel edges and their keys.
-    
+
     Parameters
     ----------
     graph : nx.MultiDiGraph
         NetworkX MultiDiGraph to convert.
-    
+
     Returns
     -------
     DirectedMultiGraph
         New DirectedMultiGraph instance with all edges as directed.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -86,4 +86,3 @@ def multidigraph_to_directedmultigraph(graph: nx.MultiDiGraph) -> 'DirectedMulti
     for u, v, key, data in graph.edges(keys=True, data=True):
         dmg.add_edge(u, v, key=key, **data)
     return dmg
-

@@ -8,7 +8,6 @@ including edge cases, parallel edges, edge attributes, and larger graphs.
 import warnings
 
 import pytest
-from typing import Dict, List, Set, Tuple
 
 from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 from phylozoo.core.primitives.d_multigraph.features import (
@@ -102,8 +101,8 @@ class TestInitialization:
         G = DirectedMultiGraph(
             edges=[
                 (1, 2),  # No attributes
-                {'u': 2, 'v': 3, 'weight': 5.0, 'label': 'test'},  # Dict format
-                {'u': 3, 'v': 4, 'key': 10, 'weight': 10.0}  # With key
+                {"u": 2, "v": 3, "weight": 5.0, "label": "test"},  # Dict format
+                {"u": 3, "v": 4, "key": 10, "weight": 10.0},  # With key
             ]
         )
         assert count_edges(G, 1, 2) == 1
@@ -111,10 +110,10 @@ class TestInitialization:
         assert count_edges(G, 3, 4) == 1
         # Check attributes
         edge_data = G._graph[2][3][0]
-        assert edge_data['weight'] == 5.0
-        assert edge_data['label'] == 'test'
+        assert edge_data["weight"] == 5.0
+        assert edge_data["label"] == "test"
         edge_data = G._graph[3][4][10]
-        assert edge_data['weight'] == 10.0
+        assert edge_data["weight"] == 10.0
 
     def test_repr_counts(self) -> None:
         """__repr__ reports node and edge counts."""
@@ -128,11 +127,12 @@ class TestFactoryMethods:
     def test_digraph_to_directedmultigraph(self) -> None:
         """Test digraph_to_directedmultigraph factory method."""
         import networkx as nx
+
         G = nx.DiGraph()
-        G.add_node(1, label='node1')
+        G.add_node(1, label="node1")
         G.add_edge(1, 2, weight=5.0)
         G.add_edge(2, 3)
-        
+
         M = digraph_to_directedmultigraph(G)
         assert M.number_of_nodes() == 3
         assert M.number_of_edges() == 2
@@ -147,7 +147,7 @@ class TestIncidentEdges:
         G.add_edge(1, 2)
         G.add_edge(3, 2)
         G.add_edge(4, 2)
-        
+
         parent_edges = list(G.incident_parent_edges(2))
         assert len(parent_edges) == 3
         assert (1, 2) in parent_edges
@@ -159,7 +159,7 @@ class TestIncidentEdges:
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2, weight=1.0)
         key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
-        
+
         parent_edges = list(G.incident_parent_edges(2, keys=True))
         assert len(parent_edges) == 2
         assert (1, 2, key1) in parent_edges
@@ -170,21 +170,21 @@ class TestIncidentEdges:
         G = DirectedMultiGraph()
         G.add_edge(1, 2, weight=1.0, label="test")
         G.add_edge(3, 2, weight=2.0)
-        
+
         parent_edges = list(G.incident_parent_edges(2, data=True))
         assert len(parent_edges) == 2
         # Check that data is included
         edge_dict = {edge[0]: edge[2] for edge in parent_edges if len(edge) == 3}
         assert 1 in edge_dict
-        assert edge_dict[1]['weight'] == 1.0
-        assert edge_dict[1]['label'] == "test"
+        assert edge_dict[1]["weight"] == 1.0
+        assert edge_dict[1]["label"] == "test"
 
     def test_incident_parent_edges_with_keys_and_data(self) -> None:
         """Test incident_parent_edges with keys and data."""
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2, weight=1.0)
         key2 = G.add_edge(1, 2, weight=2.0)
-        
+
         parent_edges = list(G.incident_parent_edges(2, keys=True, data=True))
         assert len(parent_edges) == 2
         # Check structure: (u, v, key, data)
@@ -194,13 +194,13 @@ class TestIncidentEdges:
             assert u == 1
             assert v == 2
             assert key in [key1, key2]
-            assert 'weight' in data
+            assert "weight" in data
 
     def test_incident_parent_edges_empty(self) -> None:
         """Test incident_parent_edges for node with no incoming edges."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
-        
+
         parent_edges = list(G.incident_parent_edges(1))
         assert len(parent_edges) == 0
 
@@ -210,7 +210,7 @@ class TestIncidentEdges:
         G.add_edge(1, 2)
         G.add_edge(1, 3)
         G.add_edge(1, 4)
-        
+
         child_edges = list(G.incident_child_edges(1))
         assert len(child_edges) == 3
         assert (1, 2) in child_edges
@@ -222,7 +222,7 @@ class TestIncidentEdges:
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2, weight=1.0)
         key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
-        
+
         child_edges = list(G.incident_child_edges(1, keys=True))
         assert len(child_edges) == 2
         assert (1, 2, key1) in child_edges
@@ -233,21 +233,21 @@ class TestIncidentEdges:
         G = DirectedMultiGraph()
         G.add_edge(1, 2, weight=1.0, label="test")
         G.add_edge(1, 3, weight=2.0)
-        
+
         child_edges = list(G.incident_child_edges(1, data=True))
         assert len(child_edges) == 2
         # Check that data is included
         edge_dict = {edge[1]: edge[2] for edge in child_edges if len(edge) == 3}
         assert 2 in edge_dict
-        assert edge_dict[2]['weight'] == 1.0
-        assert edge_dict[2]['label'] == "test"
+        assert edge_dict[2]["weight"] == 1.0
+        assert edge_dict[2]["label"] == "test"
 
     def test_incident_child_edges_with_keys_and_data(self) -> None:
         """Test incident_child_edges with keys and data."""
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2, weight=1.0)
         key2 = G.add_edge(1, 2, weight=2.0)
-        
+
         child_edges = list(G.incident_child_edges(1, keys=True, data=True))
         assert len(child_edges) == 2
         # Check structure: (u, v, key, data)
@@ -257,13 +257,13 @@ class TestIncidentEdges:
             assert u == 1
             assert v == 2
             assert key in [key1, key2]
-            assert 'weight' in data
+            assert "weight" in data
 
     def test_incident_child_edges_empty(self) -> None:
         """Test incident_child_edges for node with no outgoing edges."""
         G = DirectedMultiGraph()
         G.add_edge(1, 2)
-        
+
         child_edges = list(G.incident_child_edges(2))
         assert len(child_edges) == 0
 
@@ -273,7 +273,7 @@ class TestIncidentEdges:
         G.add_edge(1, 2, weight=1.0)
         G.add_edge(2, 3, weight=2.0)
         G.add_edge(3, 4, weight=3.0)
-        
+
         # Node 2: incoming from 1, outgoing to 3
         parent_edges_2 = list(G.incident_parent_edges(2))
         child_edges_2 = list(G.incident_child_edges(2))
@@ -281,7 +281,7 @@ class TestIncidentEdges:
         assert len(child_edges_2) == 1
         assert (1, 2) in parent_edges_2
         assert (2, 3) in child_edges_2
-        
+
         # Node 3: incoming from 2, outgoing to 4
         parent_edges_3 = list(G.incident_parent_edges(3))
         child_edges_3 = list(G.incident_child_edges(3))
@@ -293,12 +293,13 @@ class TestIncidentEdges:
     def test_multidigraph_to_directedmultigraph(self) -> None:
         """Test multidigraph_to_directedmultigraph factory method."""
         import networkx as nx
+
         G = nx.MultiDiGraph()
-        G.add_node(1, label='node1')
+        G.add_node(1, label="node1")
         G.add_edge(1, 2, key=0, weight=10.0)
         G.add_edge(1, 2, key=1, weight=20.0)  # Parallel edge
         G.add_edge(2, 3, key=0, weight=30.0)
-        
+
         M = multidigraph_to_directedmultigraph(G)
         assert M.number_of_nodes() == 3
         assert M.number_of_edges() == 3
@@ -309,27 +310,28 @@ class TestIncidentEdges:
         assert M._graph.has_edge(1, 2, key=0)
         assert M._graph.has_edge(1, 2, key=1)
         # Attributes preserved
-        assert M._graph[1][2][0]['weight'] == 10.0
-        assert M._graph[1][2][1]['weight'] == 20.0
-    
+        assert M._graph[1][2][0]["weight"] == 10.0
+        assert M._graph[1][2][1]["weight"] == 20.0
+
     def test_digraph_to_directedmultigraph_with_attributes(self) -> None:
         """Test conversion from DiGraph with node and edge attributes."""
         import networkx as nx
+
         G = nx.DiGraph()
-        G.add_node(1, type='A', value=10)
-        G.add_node(2, type='B', value=20)
-        G.add_edge(1, 2, weight=5.0, label='edge1')
+        G.add_node(1, type="A", value=10)
+        G.add_node(2, type="B", value=20)
+        G.add_edge(1, 2, weight=5.0, label="edge1")
         G.add_edge(2, 3, weight=10.0)
-        
+
         M = digraph_to_directedmultigraph(G)
         # Check node attributes
-        assert M._graph.nodes[1].get('type') == 'A'
-        assert M._graph.nodes[1].get('value') == 10
-        assert M._graph.nodes[2].get('type') == 'B'
+        assert M._graph.nodes[1].get("type") == "A"
+        assert M._graph.nodes[1].get("value") == 10
+        assert M._graph.nodes[2].get("type") == "B"
         # Check edge attributes
-        assert M._graph[1][2][0]['weight'] == 5.0
-        assert M._graph[1][2][0]['label'] == 'edge1'
-        assert M._graph[2][3][0]['weight'] == 10.0
+        assert M._graph[1][2][0]["weight"] == 5.0
+        assert M._graph[1][2][0]["label"] == "edge1"
+        assert M._graph[2][3][0]["weight"] == 10.0
 
 
 class TestNodeOperations:
@@ -345,11 +347,11 @@ class TestNodeOperations:
     def test_add_node_with_attributes(self) -> None:
         """Test adding a node with attributes."""
         G = DirectedMultiGraph()
-        G.add_node(1, label='node1', weight=5.0)
+        G.add_node(1, label="node1", weight=5.0)
         assert 1 in G
         # Check if attributes are stored (access via underlying graph)
-        assert G._graph.nodes[1].get('label') == 'node1'
-        assert G._graph.nodes[1].get('weight') == 5.0
+        assert G._graph.nodes[1].get("label") == "node1"
+        assert G._graph.nodes[1].get("weight") == 5.0
 
     def test_add_nodes_from(self) -> None:
         """Test adding multiple nodes."""
@@ -361,10 +363,10 @@ class TestNodeOperations:
     def test_add_nodes_from_with_attributes(self) -> None:
         """Test adding multiple nodes with attributes."""
         G = DirectedMultiGraph()
-        G.add_nodes_from([1, 2, 3], label='test', type='A')
+        G.add_nodes_from([1, 2, 3], label="test", type="A")
         for n in [1, 2, 3]:
-            assert G._graph.nodes[n].get('label') == 'test'
-            assert G._graph.nodes[n].get('type') == 'A'
+            assert G._graph.nodes[n].get("label") == "test"
+            assert G._graph.nodes[n].get("type") == "A"
 
     def test_remove_node(self) -> None:
         """Test removing a node."""
@@ -403,12 +405,12 @@ class TestEdgeOperations:
     def test_add_edge_with_attributes(self) -> None:
         """Test adding edge with attributes."""
         G = DirectedMultiGraph()
-        key = G.add_edge(1, 2, weight=10.0, label='dir', direction='forward')
+        key = G.add_edge(1, 2, weight=10.0, label="dir", direction="forward")
         assert G.has_edge(1, 2)
         edge_data = G._graph[1][2][key]
-        assert edge_data['weight'] == 10.0
-        assert edge_data['label'] == 'dir'
-        assert edge_data['direction'] == 'forward'
+        assert edge_data["weight"] == 10.0
+        assert edge_data["label"] == "dir"
+        assert edge_data["direction"] == "forward"
 
     def test_parallel_edges(self) -> None:
         """Test adding parallel edges."""
@@ -418,7 +420,7 @@ class TestEdgeOperations:
         key3 = G.add_edge(1, 2, weight=3.0)
         assert key1 != key2 != key3
         assert count_edges(G, 1, 2) == 3
-        weights = {G._graph[1][2][k]['weight'] for k in [key1, key2, key3]}
+        weights = {G._graph[1][2][k]["weight"] for k in [key1, key2, key3]}
         assert weights == {1.0, 2.0, 3.0}
 
     def test_parallel_edges_with_explicit_keys(self) -> None:
@@ -443,12 +445,12 @@ class TestEdgeOperations:
     def test_add_edges_from_with_attributes(self) -> None:
         """Test adding multiple edges with shared attributes."""
         G = DirectedMultiGraph()
-        G.add_edges_from([(1, 2), (2, 3)], weight=5.0, type='test')
+        G.add_edges_from([(1, 2), (2, 3)], weight=5.0, type="test")
         for u, v in [(1, 2), (2, 3)]:
             keys = list(G[u][v].keys())
             assert len(keys) > 0
-            assert G[u][v][keys[0]]['weight'] == 5.0
-            assert G[u][v][keys[0]]['type'] == 'test'
+            assert G[u][v][keys[0]]["weight"] == 5.0
+            assert G[u][v][keys[0]]["type"] == "test"
 
     def test_remove_edge(self) -> None:
         """Test removing an edge."""
@@ -585,11 +587,11 @@ class TestProperties:
     def test_nodes_property_with_data(self) -> None:
         """Test nodes property with data=True."""
         G = DirectedMultiGraph()
-        G.add_node(1, label='node1')
+        G.add_node(1, label="node1")
         G.add_node(2, weight=5.0)
         nodes_data = dict(G.nodes(data=True))
-        assert 'label' in nodes_data[1]
-        assert 'weight' in nodes_data[2]
+        assert "label" in nodes_data[1]
+        assert "weight" in nodes_data[2]
 
     def test_edges_property(self) -> None:
         """Test edges property."""
@@ -612,7 +614,7 @@ class TestProperties:
         # Find the edge and check data
         for u, v, data in edges_data:
             if (u, v) == (1, 2):
-                assert data['weight'] == 5.0
+                assert data["weight"] == 5.0
                 break
 
     def test_edges_property_with_keys(self) -> None:
@@ -649,14 +651,14 @@ class TestIterators:
     def test_nodes_iter_with_data(self) -> None:
         """Test nodes_iter with data=True."""
         G = DirectedMultiGraph()
-        G.add_node(1, label='test')
+        G.add_node(1, label="test")
         nodes_data = list(G.nodes_iter(data=True))
         assert len(nodes_data) >= 1
         # Check format
         if isinstance(nodes_data[0], tuple):
             node, data = nodes_data[0]
             assert node == 1
-            assert data.get('label') == 'test'
+            assert data.get("label") == "test"
 
     def test_edges_iter(self) -> None:
         """Test edges_iter method."""
@@ -679,50 +681,50 @@ class TestIterators:
     def test_nodes_iter_with_attribute(self) -> None:
         """Test nodes_iter with data='attribute'."""
         G = DirectedMultiGraph()
-        G.add_node(1, weight=2.0, label='A')
-        G.add_node(2, weight=3.5, label='B')
+        G.add_node(1, weight=2.0, label="A")
+        G.add_node(2, weight=3.5, label="B")
         G.add_node(3, weight=1.0)  # No label
-        
+
         # Test with data='weight'
-        nodes_weight = list(G.nodes_iter(data='weight'))
+        nodes_weight = list(G.nodes_iter(data="weight"))
         assert isinstance(nodes_weight[0], tuple)
         assert len(nodes_weight[0]) == 2
-        
+
         weight_dict = dict(nodes_weight)
         assert weight_dict[1] == 2.0
         assert weight_dict[2] == 3.5
         assert weight_dict[3] == 1.0
-        
+
         # Test with data='label'
-        nodes_label = list(G.nodes_iter(data='label'))
+        nodes_label = list(G.nodes_iter(data="label"))
         label_dict = dict(nodes_label)
-        assert label_dict[1] == 'A'
-        assert label_dict[2] == 'B'
+        assert label_dict[1] == "A"
+        assert label_dict[2] == "B"
         assert label_dict[3] is None  # Missing attribute returns None
 
     def test_edges_iter_with_attribute(self) -> None:
         """Test edges_iter with data='attribute'."""
         G = DirectedMultiGraph()
-        G.add_edge(1, 2, weight=1.5, color='red')
-        G.add_edge(2, 3, weight=2.5, color='blue')
+        G.add_edge(1, 2, weight=1.5, color="red")
+        G.add_edge(2, 3, weight=2.5, color="blue")
         G.add_edge(3, 4, weight=3.0)  # No color
-        
+
         # Test with data='weight'
-        edges_weight = list(G.edges_iter(data='weight'))
+        edges_weight = list(G.edges_iter(data="weight"))
         assert isinstance(edges_weight[0], tuple)
         assert len(edges_weight[0]) == 3  # (u, v, weight)
-        
+
         # Check values
         edge_weights = {(u, v): w for u, v, w in edges_weight}
         assert edge_weights[(1, 2)] == 1.5
         assert edge_weights[(2, 3)] == 2.5
         assert edge_weights[(3, 4)] == 3.0
-        
+
         # Test with data='color'
-        edges_color = list(G.edges_iter(data='color'))
+        edges_color = list(G.edges_iter(data="color"))
         edge_colors = {(u, v): c for u, v, c in edges_color}
-        assert edge_colors[(1, 2)] == 'red'
-        assert edge_colors[(2, 3)] == 'blue'
+        assert edge_colors[(1, 2)] == "red"
+        assert edge_colors[(2, 3)] == "blue"
         assert edge_colors[(3, 4)] is None  # Missing attribute returns None
 
     def test_edges_iter_with_keys_and_attribute(self) -> None:
@@ -731,16 +733,16 @@ class TestIterators:
         key1 = G.add_edge(1, 2, weight=1.5)
         key2 = G.add_edge(1, 2, weight=2.5)  # Parallel edge
         G.add_edge(2, 3, weight=3.0)
-        
+
         # Test with keys=True and data='weight'
-        edges = list(G.edges_iter(keys=True, data='weight'))
+        edges = list(G.edges_iter(keys=True, data="weight"))
         assert isinstance(edges[0], tuple)
         assert len(edges[0]) == 4  # (u, v, key, weight)
-        
+
         # Find the parallel edges
         parallel_edges = [(k, w) for u, v, k, w in edges if (u, v) == (1, 2)]
         assert len(parallel_edges) == 2
-        
+
         weights = {k: w for k, w in parallel_edges}
         assert weights[key1] == 1.5
         assert weights[key2] == 2.5
@@ -750,13 +752,13 @@ class TestIterators:
         G = DirectedMultiGraph()
         G.add_edge(1, 3, weight=1.0)
         G.add_edge(2, 3, weight=2.0)
-        
+
         # Test with data='weight'
-        parent_edges = list(G.incident_parent_edges(3, data='weight'))
+        parent_edges = list(G.incident_parent_edges(3, data="weight"))
         assert len(parent_edges) == 2
         assert isinstance(parent_edges[0], tuple)
         assert len(parent_edges[0]) == 3  # (u, v, weight)
-        
+
         edge_weights = {u: w for u, v, w in parent_edges}
         assert edge_weights[1] == 1.0
         assert edge_weights[2] == 2.0
@@ -766,13 +768,13 @@ class TestIterators:
         G = DirectedMultiGraph()
         G.add_edge(1, 2, weight=1.0)
         G.add_edge(1, 3, weight=2.0)
-        
+
         # Test with data='weight'
-        child_edges = list(G.incident_child_edges(1, data='weight'))
+        child_edges = list(G.incident_child_edges(1, data="weight"))
         assert len(child_edges) == 2
         assert isinstance(child_edges[0], tuple)
         assert len(child_edges[0]) == 3  # (u, v, weight)
-        
+
         edge_weights = {v: w for u, v, w in child_edges}
         assert edge_weights[2] == 1.0
         assert edge_weights[3] == 2.0
@@ -782,9 +784,9 @@ class TestIterators:
         G = DirectedMultiGraph()
         G.add_node(1, weight=2.0)
         G.add_node(2, weight=3.0)
-        
+
         # Test via property
-        nodes_weight = list(G.nodes(data='weight'))
+        nodes_weight = list(G.nodes(data="weight"))
         assert isinstance(nodes_weight[0], tuple)
         weight_dict = dict(nodes_weight)
         assert weight_dict[1] == 2.0
@@ -795,12 +797,12 @@ class TestIterators:
         G = DirectedMultiGraph()
         G.add_edge(1, 2, weight=1.5)
         G.add_edge(2, 3, weight=2.5)
-        
+
         # Test via property
-        edges_weight = list(G.edges(data='weight'))
+        edges_weight = list(G.edges(data="weight"))
         assert isinstance(edges_weight[0], tuple)
         assert len(edges_weight[0]) == 3
-        
+
         edge_weights = {(u, v): w for u, v, w in edges_weight}
         assert edge_weights[(1, 2)] == 1.5
         assert edge_weights[(2, 3)] == 2.5
@@ -860,13 +862,12 @@ class TestSpecialMethods:
         G.add_edge(1, 2, weight=1.0)
         adj = G[1]
         # Should return adjacency view (NetworkX behavior)
-        import networkx as nx
         # Check it's an AdjacencyView-like object
-        assert hasattr(adj, '__getitem__')
+        assert hasattr(adj, "__getitem__")
         assert 2 in adj
         # Check edge data
         edge_data = adj[2][0]
-        assert edge_data['weight'] == 1.0
+        assert edge_data["weight"] == 1.0
 
 
 class TestConnectivity:
@@ -885,7 +886,7 @@ class TestConnectivity:
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         assert is_connected(G)
-        
+
         G2 = DirectedMultiGraph()
         G2.add_edge(1, 2)
         G2.add_edge(3, 4)
@@ -928,7 +929,7 @@ class TestConnectivity:
         # Parallel edges don't change biconnected component structure
         assert {1, 2, 3} in comp_sets
         assert len(comps) == 1
-        
+
         # Test with parallel edges on bridge
         G2 = DirectedMultiGraph()
         # Cycle 1: 1-2-3-1
@@ -1018,7 +1019,7 @@ class TestConnectivity:
         # Parallel edges don't create bridges, so cycle remains one component
         assert {1, 2, 3} in comp_sets
         assert len(comps) == 1
-        
+
         # Test with parallel edges on what would be a bridge
         G2 = DirectedMultiGraph()
         # Cycle 1: 1-2-3-1
@@ -1037,7 +1038,7 @@ class TestConnectivity:
         # Parallel edges make 3-4 non-bridge, so all nodes are in one component
         assert {1, 2, 3, 4, 5, 6} in comp_sets2
         assert len(comps2) == 1
-        
+
         # Test path graph with parallel edges in the middle: 1-2-3-4 where 2-3 has parallel edges
         G3 = DirectedMultiGraph()
         _ = G3.add_edge(1, 2)
@@ -1089,7 +1090,7 @@ class TestConnectivity:
         edges_with_data = cut_edges(G, keys=True, data=True)
         assert any(u == 1 and v == 2 and k == 0 for u, v, k, _ in edges_with_data)
         # Test with data='weight'
-        edges_with_weight = cut_edges(G, keys=True, data='weight')
+        edges_with_weight = cut_edges(G, keys=True, data="weight")
         assert (1, 2, 0, 5.0) in edges_with_weight
         assert (2, 3, 0, 3.0) in edges_with_weight
 
@@ -1107,30 +1108,30 @@ class TestConnectivity:
     def test_cut_vertices_with_data(self) -> None:
         """Test cut_vertices with data parameter."""
         G = DirectedMultiGraph()
-        G.add_node(1, label='A')
-        G.add_node(2, label='B')
-        G.add_node(3, label='C')
+        G.add_node(1, label="A")
+        G.add_node(2, label="B")
+        G.add_node(3, label="C")
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         # Test with data=True
         vertices_with_data = cut_vertices(G, data=True)
-        assert (2, {'label': 'B'}) in vertices_with_data
+        assert (2, {"label": "B"}) in vertices_with_data
         # Test with data='label'
-        vertices_with_label = cut_vertices(G, data='label')
-        assert (2, 'B') in vertices_with_label
+        vertices_with_label = cut_vertices(G, data="label")
+        assert (2, "B") in vertices_with_label
 
     def test_cut_edges_large_tree(self) -> None:
         """Test cut_edges on a larger tree structure."""
         G = DirectedMultiGraph()
         # Build a binary tree: depth 4, 15 nodes
         for i in range(1, 8):
-            G.add_edge(i, 2*i)      # Left child
-            G.add_edge(i, 2*i + 1)  # Right child
-        
+            G.add_edge(i, 2 * i)  # Left child
+            G.add_edge(i, 2 * i + 1)  # Right child
+
         edges = cut_edges(G, keys=True)
         # In a tree, all edges are bridges
         assert len(edges) == 14  # 7 internal nodes, each with 2 children
-        
+
         # Verify no parallel edges are reported as bridges
         for u, v, k in edges:
             assert k == 0, "Only single edges should be bridges"
@@ -1143,7 +1144,7 @@ class TestConnectivity:
             for j in range(1, 6):
                 if i != j:
                     G.add_edge(i, j)
-        
+
         edges = cut_edges(G, keys=True)
         # Complete graph has no bridges
         assert len(edges) == 0
@@ -1157,16 +1158,16 @@ class TestConnectivity:
             for j in [1, 2, 3]:
                 if i != j:
                     G.add_edge(i, j)
-        
+
         # Bridge
         G.add_edge(3, 4)
-        
+
         # Clique 2: nodes 4, 5, 6
         for i in [4, 5, 6]:
             for j in [4, 5, 6]:
                 if i != j:
                     G.add_edge(i, j)
-        
+
         edges = cut_edges(G, keys=True)
         # Only the bridge edge should be a cut edge
         assert len(edges) == 1
@@ -1179,7 +1180,7 @@ class TestConnectivity:
         center = 0
         for i in range(1, 21):  # 20 leaf nodes
             G.add_edge(center, i)
-        
+
         vertices = cut_vertices(G)
         # Only the center should be a cut vertex
         assert len(vertices) == 1
@@ -1194,25 +1195,25 @@ class TestConnectivity:
             for j in [1, 2, 3]:
                 if i != j:
                     G.add_edge(i, j)
-        
+
         # Connection 1: node 3 connects to node 4
         G.add_edge(3, 4)
-        
+
         # Clique 2: 4, 5, 6
         for i in [4, 5, 6]:
             for j in [4, 5, 6]:
                 if i != j:
                     G.add_edge(i, j)
-        
+
         # Connection 2: node 6 connects to node 7
         G.add_edge(6, 7)
-        
+
         # Clique 3: 7, 8, 9
         for i in [7, 8, 9]:
             for j in [7, 8, 9]:
                 if i != j:
                     G.add_edge(i, j)
-        
+
         vertices = cut_vertices(G)
         # Nodes 3, 4, 6, 7 should be cut vertices
         assert 3 in vertices or 4 in vertices  # At least one connection point
@@ -1226,7 +1227,7 @@ class TestConnectivity:
         G.add_edge(1, 2)  # Parallel
         G.add_edge(2, 3)
         G.add_edge(3, 4)
-        
+
         edges = cut_edges(G, keys=True)
         # Only edges 2→3 and 3→4 should be bridges
         assert (2, 3, 0) in edges
@@ -1295,7 +1296,7 @@ class TestGraphOperations:
         G.add_edge(1, 2)
         G.add_edge(2, 3)
         assert G._validate_synchronization()
-        
+
         # Direct modification (should fail validation)
         G._graph.add_edge(99, 100)
         assert not G._validate_synchronization()
@@ -1311,6 +1312,7 @@ class TestEdgeCases:
         assert G.number_of_edges() == 0
         # NetworkX raises NetworkXPointlessConcept for connectivity on null graph
         import networkx as nx
+
         with pytest.raises(nx.NetworkXPointlessConcept):
             is_connected(G)
         assert number_of_connected_components(G) == 0
@@ -1346,8 +1348,8 @@ class TestEdgeCases:
         key1 = G.add_edge(1, 2, weight=5.0)
         key2 = G.add_edge(1, 2, weight=5.0)  # Same weight
         assert key1 != key2
-        assert G._graph[1][2][key1]['weight'] == 5.0
-        assert G._graph[1][2][key2]['weight'] == 5.0
+        assert G._graph[1][2][key1]["weight"] == 5.0
+        assert G._graph[1][2][key2]["weight"] == 5.0
 
     def test_large_graph(self) -> None:
         """Test operations on larger graph."""
@@ -1601,14 +1603,14 @@ class TestGenerateNodeIds:
         """Test that string nodes are ignored when finding max integer."""
         G = DirectedMultiGraph()
         G.add_node(1)
-        G.add_node('a')
+        G.add_node("a")
         G.add_node(5)
-        G.add_node('b')
+        G.add_node("b")
         node_ids = list(G.generate_node_ids(3))
         assert node_ids == [6, 7, 8]
         # Verify string nodes are still in graph
-        assert 'a' in G
-        assert 'b' in G
+        assert "a" in G
+        assert "b" in G
 
     def test_zero_count(self) -> None:
         """Test generating zero node IDs."""
@@ -1649,4 +1651,3 @@ class TestGenerateNodeIds:
         assert node_ids[0] == 101
         assert node_ids[-1] == 1100
         assert node_ids == list(range(101, 1101))
-

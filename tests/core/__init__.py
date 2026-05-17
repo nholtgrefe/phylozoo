@@ -1,4 +1,3 @@
 """
 Core module tests.
 """
-

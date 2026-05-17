@@ -5,8 +5,7 @@ This module provides classes and functions for working with semi-directed phylog
 """
 
 import warnings
-from functools import cached_property
-from typing import Any, Iterator, TypeVar
+from typing import Any, TypeVar
 
 from ....utils.exceptions import (
     PhyloZooNetworkStructureError,
@@ -24,26 +23,27 @@ from ....utils.validation import no_validation, validation_aware
 from phylozoo.utils.io import IOMixin
 from .base import MixedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
 class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     """
     A semi-directed phylogenetic network.
-    
-    A SemiDirectedPhyNetwork is a weakly connected, mixed multigraph (with both directed and 
-    undirected edges) representing a phylogenetic network structure. It is a subclass of 
-    MixedPhyNetwork with additional constraints: exactly the non-hybrid edges are undirected, 
+
+    A SemiDirectedPhyNetwork is a weakly connected, mixed multigraph (with both directed and
+    undirected edges) representing a phylogenetic network structure. It is a subclass of
+    MixedPhyNetwork with additional constraints: exactly the non-hybrid edges are undirected,
     and all hybrid edges remain directed. This ensures the network does not have undirected cycles.
-    
+
     It consists of:
     - **Leaf nodes**: Nodes with no outgoing directed edges, each with a taxon label
     - **Tree nodes**: Internal nodes with in-degree 0 and total degree >= 3
     - **Hybrid nodes**: Internal nodes with in-degree >= 2 and total degree = in-degree + 1
-    
+
     A SemiDirectedPhyNetwork is obtained from a directed phylogenetic LSA (Least Stable
     Ancestor) network by undirecting all non-hybrid edges and suppressing degree-2 nodes.
-    
+
     Parameters
     ----------
     directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
@@ -51,37 +51,37 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
-        
+
         Edge attributes (validated):
         - branch_length (float)
         - bootstrap (float in [0.0, 1.0])
-        - gamma (float in [0.0, 1.0], hybrid edges only; for each hybrid node, all 
-        incoming gammas must sum to 1.0) 
+        - gamma (float in [0.0, 1.0], hybrid edges only; for each hybrid node, all
+        incoming gammas must sum to 1.0)
         Use a different attribute name (e.g., 'gamma2') for non-validated and/or additional
         attributes.
-        
+
         Can be empty or None for empty/single-node networks. By default None.
     undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
         List of undirected edges (non-hybrid edges only). Formats:
         - (u, v) tuples (key auto-generated)
         - (u, v, key) tuples (explicit key)
         - Dict with 'u', 'v' and optional 'key' (for parallel edges) plus edge attributes
-        
+
         Edge attributes (validated):
         - branch_length (float)
         - bootstrap (float in [0.0, 1.0])
-        
+
         Note: Undirected edges cannot have gamma values.
-        
+
         Can be empty or None for empty/single-node networks. By default None.
     nodes : list[T | tuple[T | dict[str | Any | None]]], optional
         List of nodes. Formats:
         - Simple node IDs: `1`, `"node1"`, etc.
         - Tuples: `(node_id, {'label': '...','attr': ...})`
-        
+
         Node attributes (validated):
         - label: string, unique across all nodes; use another key for non-string data.
-        
+
         Leaves without labels are auto-labeled. Leaf-labels are referred to as `taxa`.
         Use a different attribute name (e.g., 'label2') for non-validated and/or additional
         attributes.
@@ -93,11 +93,11 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         and are preserved through copy operations. Can be used to store metadata
         like provenance, source file, creation date, etc.
         By default None.
-    
+
     Notes
     -----
-    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization; 
-    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt 
+    The class uses composition with ``MixedMultiGraph`` and is immutable after initialization;
+    construct via ``nodes``/``directed_edges``/``undirected_edges``, from a prebuilt
     ``MixedMultiGraph``, or load from a file.
 
     Supported I/O formats:
@@ -114,7 +114,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     ... )
     >>> net.taxa
     {'A', 'B', 'C'}
-    
+
     >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
@@ -122,7 +122,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     ... )
     >>> net2.taxa  # 2, 4, and 5 are auto-labeled
     {'A', '2', '4', '5'}
-    
+
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[
@@ -136,7 +136,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     0.5
     >>> net3.get_bootstrap(3, 1)
     0.95
-    
+
     >>> # Network with hybrid node and gamma values
     >>> net4 = SemiDirectedPhyNetwork(
     ...     directed_edges=[
@@ -150,7 +150,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     0.6
     >>> net4.get_gamma(6, 4)
     0.4
-    
+
     Attributes
     ----------
     _graph : MixedMultiGraph[T]
@@ -162,11 +162,11 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     _label_to_node : dict[str, T]
         Reverse mapping from labels to node IDs (for quick lookup).
     """
-    
+
     # I/O format configuration
-    _default_format: str = 'enewick'
-    _supported_formats: list[str] = ['enewick', 'phylozoo-dot']
-    
+    _default_format: str = "enewick"
+    _supported_formats: list[str] = ["enewick", "phylozoo-dot"]
+
     def __init__(
         self,
         directed_edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
@@ -176,7 +176,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
     ) -> None:
         """
         Initialize a semi-directed phylogenetic network.
-        
+
         Parameters
         ----------
         directed_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
@@ -184,33 +184,33 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' and optional 'key' plus edge attributes
-            
+
             Edge attributes (validated):
             - branch_length (float)
             - bootstrap (float in [0.0, 1.0])
             - gamma (float in [0.0, 1.0], hybrid edges only; all incoming gammas must sum to 1.0)
               Use a different attribute name (e.g., 'gamma2') for non-validated values.
-            
+
             Can be empty list or None for empty/single-node networks. By default None.
         undirected_edges : list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None, optional
             List of undirected edges. Formats:
             - (u, v) tuples (key auto-generated)
             - (u, v, key) tuples (explicit key)
             - Dict with 'u', 'v' and optional 'key' plus edge attributes
-            
+
             Edge attributes (validated):
             - branch_length (float)
             - bootstrap (float in [0.0, 1.0])
-            
+
             Can be empty list or None for empty/single-node networks. By default None.
         nodes : list[T | tuple[T | dict[str | Any | None]]], optional
             List of nodes. Formats:
             - Simple node IDs: `1`, `"node1"`, etc.
             - Tuples: `(node_id, {'label': '...','attr': ...})` (NetworkX-style)
-            
+
             Node attributes (validated):
             - label: string, unique across all nodes; use another key for non-string data.
-            
+
             Leaves without labels will get auto-generated labels. Can be empty list or None.
             By default None.
         attributes : dict[str, Any] | None, optional
@@ -219,7 +219,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             and are preserved through copy operations. Can be used to store metadata
             like provenance, source file, creation date, etc.
             By default None.
-        
+
         Examples
         --------
         >>> # Simple network with labels
@@ -242,15 +242,15 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             directed_edges=directed_edges,
             undirected_edges=undirected_edges,
             nodes=nodes,
-            attributes=attributes
+            attributes=attributes,
         )
-    
+
     def _validate_semidir_constraint(self) -> None:
         """
         Validate semi-directed network constraint.
-        
+
         The validation proceeds via round-trip conversion:
-        
+
         1. Compute source components of the mixed graph; there must be exactly one.
         2. Pick one non-leaf node from that source component as a root.
         3. Orient all edges away from the root (using ``orient_away_from_vertex``).
@@ -259,15 +259,15 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         6. Convert it back to a semi-directed network with ``to_sd_network``.
         7. Assert that the resulting semi-directed network matches the original
            (same nodes, same directed edges, same undirected edges).
-           
+
         Note: Any non-leaf node in the source component should yield the same result
         (becomes the LSA when oriented). We only need to check one.
-        
+
         Raises
         ------
         PhyloZooNetworkStructureError
             If the network does not satisfy semi-directed network constraints.
-        
+
         Notes
         -----
         This method validates that:
@@ -280,33 +280,33 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         n_nodes = self.number_of_nodes()
         if n_nodes <= 1:
             return
-        
+
         # Handle two-node case: only valid if it's an undirected edge with two leaves
         if n_nodes == 2:
             nodes_list = list(self._graph.nodes())
             u, v = nodes_list[0], nodes_list[1]
-            
+
             # Check if both are leaves (outdegree 0)
             if self._graph.outdegree(u) != 0 or self._graph.outdegree(v) != 0:
                 raise PhyloZooNetworkStructureError(
                     "Two-node semi-directed network must have two leaves connected by an undirected edge"
                 )
-            
+
             # Check if there's exactly one undirected edge between them
             undirected_count = len(list(self._graph._undirected.edges(u, v, keys=True)))
             if undirected_count != 1:
                 raise PhyloZooNetworkStructureError(
                     "Two-node semi-directed network must have exactly one undirected edge"
                 )
-            
+
             # Check no directed edges
             if len(list(self._graph._directed.edges(u, v, keys=True))) > 0:
                 raise PhyloZooNetworkStructureError(
                     "Two-node semi-directed network cannot have directed edges"
                 )
-            
+
             return
-        
+
         # Step 1: find source components (do this before imports to fail fast)
         components = source_components(self._graph)
         if len(components) != 1:
@@ -316,12 +316,12 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         nodes_in_component, _, _ = components[0]
         if not nodes_in_component:
             raise PhyloZooNetworkStructureError("Source component is empty")
-        
+
         # Local imports to avoid circular dependencies
         from ...network.dnetwork.derivations import to_sd_network
         from ...network.dnetwork import DirectedPhyNetwork
         from ...network.dnetwork.classifications import is_lsa_network
-        
+
         # Step 2: Pick a non-leaf vertex r from the source component
         internal_in_component = [node for node in nodes_in_component if node in self.internal_nodes]
         if not internal_in_component:
@@ -330,7 +330,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                 "source component contains only leaf nodes."
             )
         root = internal_in_component[0]
-        
+
         # Step 3: Orient away from r
         try:
             oriented_dm = orient_away_from_vertex(self._graph, root)
@@ -339,7 +339,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                 f"Semi-directed network constraint validation failed: "
                 f"orienting away from root location {root} failed: {e}"
             )
-        
+
         # Step 4: Build a DirectedPhyNetwork from the oriented graph
         directed_edges: list[dict[str, Any]] = []
         for u, v, key, data in oriented_dm.edges(keys=True, data=True):
@@ -349,18 +349,21 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             if data:
                 edge_dict.update(data)
             directed_edges.append(edge_dict)
-        
+
         oriented_leaves: set[Any] = {
             node for node in oriented_dm.nodes() if oriented_dm.outdegree(node) == 0
         }
         taxa_mapping: dict[Any, str] = {
-            leaf: self.get_label(leaf) or str(leaf)
-            for leaf in oriented_leaves
+            leaf: self.get_label(leaf) or str(leaf) for leaf in oriented_leaves
         }
-        
+
         with no_validation(methods=["validate", "_validate_*"]):
             try:
-                nodes = [(leaf, {"label": label}) for leaf, label in taxa_mapping.items()] if taxa_mapping else None
+                nodes = (
+                    [(leaf, {"label": label}) for leaf, label in taxa_mapping.items()]
+                    if taxa_mapping
+                    else None
+                )
                 d_network = DirectedPhyNetwork(
                     edges=directed_edges,
                     nodes=nodes,
@@ -370,7 +373,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                     f"Semi-directed network constraint validation failed: "
                     f"oriented network is not a valid DirectedPhyNetwork: {e}"
                 )
-            
+
             # Step 5: Check if r is the LSA of the DirectedPhyNetwork
             # If not, raise error immediately
             if not is_lsa_network(d_network):
@@ -378,7 +381,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                     "Semi-directed network constraint validation failed: "
                     "the chosen root is not the LSA node of the oriented network."
                 )
-            
+
             # Step 6: Convert back to semi-directed using to_sd_network
             try:
                 sd_roundtrip = to_sd_network(d_network)
@@ -394,7 +397,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                 "Semi-directed network constraint validation failed: "
                 "nodes do not match after round-trip conversion"
             )
-        
+
         orig_directed = {
             (u, v, key if key is not None else 0)
             for u, v, key in self._graph.directed_edges_iter(keys=True)
@@ -408,7 +411,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                 "Semi-directed network constraint validation failed: "
                 "directed edges do not match after round-trip conversion"
             )
-        
+
         orig_undirected = {
             ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
             for u, v, key in self._graph.undirected_edges_iter(keys=True)
@@ -423,15 +426,15 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
                 "undirected edges do not match after round-trip conversion"
             )
         # All checks passed (return None)
-    
+
     def validate(self) -> None:
         """
         Validate the network structure and edge attributes.
-        
+
         Checks all constraints from MixedPhyNetwork plus additional semi-directed network constraints:
         - All hybrid edges are directed
         - All non-hybrid edges are undirected
-        
+
         Raises
         ------
         PhyloZooNetworkStructureError
@@ -444,7 +447,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             If empty network is detected.
         PhyloZooSingleNodeNetworkWarning
             If single-node network is detected.
-        
+
         Notes
         -----
         This method performs the same validation checks as MixedPhyNetwork, but replaces
@@ -455,39 +458,41 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             warnings.warn(
                 "Empty network (no nodes) detected. While valid, this may not be useful for phylogenetic analysis.",
                 PhyloZooEmptyNetworkWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             return
 
         # Single-node networks are valid only if they have no self-loops
         if self.number_of_nodes() == 1:
             if has_self_loops(self._graph):
-                raise PhyloZooNetworkStructureError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
+                raise PhyloZooNetworkStructureError(
+                    "Self-loops are not allowed in SemiDirectedPhyNetwork."
+                )
             warnings.warn(
                 "Single-node network detected. While valid, this may not be useful for phylogenetic analysis.",
                 PhyloZooSingleNodeNetworkWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             return
 
         self._validate_structural_constraints()
-        
+
         # 3. Validate degree constraints
         self._validate_degree_constraints()
-        
+
         # 4. Validate semi-directed network constraint (replaces mixed network constraint)
         self._validate_semidir_constraint()
-        
+
         # 5. Validate bootstrap constraints
         self._validate_bootstrap_constraints()
-        
+
         # 6. Validate gamma constraints
         self._validate_gamma_constraints()
-    
+
     def _validate_structural_constraints(self) -> None:
         """
         Validate structural constraints (emptiness, connectivity, self-loops).
-        
+
         Raises
         ------
         PhyloZooNetworkStructureError
@@ -498,23 +503,25 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
             raise PhyloZooNetworkStructureError(
                 "Network is not connected. All nodes must be in a single connected component."
             )
-        
+
         # 2. Disallow self-loops
         if has_self_loops(self._graph):
-            raise PhyloZooNetworkStructureError("Self-loops are not allowed in SemiDirectedPhyNetwork.")
-    
-    def copy(self) -> 'SemiDirectedPhyNetwork':
+            raise PhyloZooNetworkStructureError(
+                "Self-loops are not allowed in SemiDirectedPhyNetwork."
+            )
+
+    def copy(self) -> "SemiDirectedPhyNetwork":
         """
         Create a copy of the network.
-        
+
         Returns a shallow copy of the network. Cached properties are not
         copied but will be recomputed on first access.
-        
+
         Returns
         -------
         SemiDirectedPhyNetwork
             A copy of the network.
-        
+
         Examples
         --------
         >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
@@ -532,16 +539,16 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         new_net._node_to_label = self._node_to_label.copy()
         new_net._label_to_node = self._label_to_node.copy()
         return new_net
-    
+
     def __repr__(self) -> str:
         """
         Return string representation of the network.
-        
+
         Returns
         -------
         str
             String representation showing nodes, edges, taxa count, and taxon list.
-        
+
         Examples
         --------
         >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
@@ -550,17 +557,16 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork, IOMixin):
         """
         sorted_taxa = sorted(self.taxa)
         n_taxa = len(sorted_taxa)
-        
+
         # Truncate taxon list at 10, add dots if longer
         if n_taxa <= 10:
             taxa_list_str = ", ".join(sorted_taxa)
         else:
             taxa_list_str = ", ".join(sorted_taxa[:10]) + ", ..."
-        
+
         return (
             f"SemiDirectedPhyNetwork(nodes={self.number_of_nodes()}, "
             f"edges={self.number_of_edges()}, "
             f"taxa={n_taxa}, "
             f"taxa_list=[{taxa_list_str}])"
         )
-

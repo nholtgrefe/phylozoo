@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from phylozoo.utils.exceptions import PhyloZooLayoutError
 from phylozoo.viz._layout_utils import compute_layout_center
 from phylozoo.viz._matplotlib import plt
 
@@ -21,8 +20,8 @@ if TYPE_CHECKING:
 
 
 def plot_dmgraph(
-    graph: 'DirectedMultiGraph',
-    layout: str = 'spring',
+    graph: "DirectedMultiGraph",
+    layout: str = "spring",
     style: DMGraphStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -87,7 +86,7 @@ def plot_dmgraph(
 
     def get_label(node: Any) -> str | None:
         if node in graph._graph.nodes:
-            return graph._graph.nodes[node].get('label', str(node))
+            return graph._graph.nodes[node].get("label", str(node))
         return str(node)
 
     render_layout(
@@ -96,7 +95,7 @@ def plot_dmgraph(
         positions,
         style,
         center,
-        get_node_type=lambda _: 'generic',
+        get_node_type=lambda _: "generic",
         get_label=get_label,
         radial_labels_for_leaves=False,
     )

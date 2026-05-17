@@ -1,4 +1,3 @@
 """
 Structure module tests.
 """
-

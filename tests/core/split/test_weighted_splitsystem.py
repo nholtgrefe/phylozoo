@@ -111,7 +111,7 @@ class TestWeightedSplitSystem:
         weights = {split1: -1.0}
         with pytest.raises(ValueError, match="Weight must be positive"):
             WeightedSplitSystem(weights)
-    
+
     def test_weighted_split_system_duplicate_split_in_list_raises_error(self) -> None:
         """Test that duplicate splits in list raise ValueError."""
         split1 = Split({1, 2}, {3, 4})
@@ -119,7 +119,7 @@ class TestWeightedSplitSystem:
         # Duplicate split1 in list
         with pytest.raises(ValueError, match="Duplicate split found"):
             WeightedSplitSystem([split1, split2, split1])
-    
+
     def test_weighted_split_system_duplicate_split_in_tuples_raises_error(self) -> None:
         """Test that duplicate splits in list of tuples raise ValueError."""
         split1 = Split({1, 2}, {3, 4})
@@ -184,14 +184,14 @@ class TestWeightedSplitSystem:
         split2 = Split({1, 3}, {2, 4})
         weights = {split1: 2.5, split2: 1.0}
         system = WeightedSplitSystem(weights)
-        
+
         # Try to modify attributes
         with pytest.raises(AttributeError, match="Cannot modify attribute"):
             system.splits = set()
-        
+
         with pytest.raises(AttributeError, match="Cannot modify attribute"):
             system.elements = set()
-        
+
         with pytest.raises(AttributeError, match="Cannot modify attribute"):
             system.weights = {}
 
@@ -267,4 +267,3 @@ class TestToWeightedSplitSystem:
         system = SplitSystem([split1, split2])
         weighted = to_weightedsplitsystem(system)
         assert weighted.elements == {1, 2, 3, 4}
-

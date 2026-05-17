@@ -5,10 +5,10 @@ from .plot import plot_sdnetwork
 from .style import SDNetStyle, default_style
 
 __all__ = [
-    'compute_nx_layout',
-    'compute_pz_radial_layout',
-    'plot_sdnetwork',
-    'SDNetLayout',
-    'SDNetStyle',
-    'default_style',
+    "compute_nx_layout",
+    "compute_pz_radial_layout",
+    "plot_sdnetwork",
+    "SDNetLayout",
+    "SDNetStyle",
+    "default_style",
 ]

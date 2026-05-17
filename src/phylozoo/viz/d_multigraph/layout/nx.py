@@ -19,12 +19,12 @@ from .routes import compute_dmgraph_routes
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_nx_layout(
-    graph: 'DirectedMultiGraph[T]',
-    layout: str = 'spring',
+    graph: "DirectedMultiGraph[T]",
+    layout: str = "spring",
     **kwargs: Any,
 ) -> DMGraphLayout[T]:
     """

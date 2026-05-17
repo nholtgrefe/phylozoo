@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 
 def plot_dnetwork(
-    network: 'DirectedPhyNetwork',
-    layout: str = 'pz-dag',
+    network: "DirectedPhyNetwork",
+    layout: str = "pz-dag",
     style: DNetStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -84,12 +84,11 @@ def plot_dnetwork(
     else:
         fig = ax.figure
 
-    if layout == 'pz-dag':
+    if layout == "pz-dag":
         computed_layout = compute_pz_dag_layout(network, **layout_kwargs)
-    elif layout.startswith('pz-'):
+    elif layout.startswith("pz-"):
         raise PhyloZooLayoutError(
-            f"Unknown PhyloZoo layout: '{layout}'. "
-            "Supported PhyloZoo layouts: 'pz-dag'"
+            f"Unknown PhyloZoo layout: '{layout}'. " "Supported PhyloZoo layouts: 'pz-dag'"
         )
     else:
         computed_layout = compute_nx_layout(network, layout=layout, **layout_kwargs)
@@ -103,12 +102,12 @@ def plot_dnetwork(
 
     def get_node_type(node: Any) -> str:
         if node == root:
-            return 'root'
+            return "root"
         if node in leaves:
-            return 'leaf'
+            return "leaf"
         if node in hybrid_nodes:
-            return 'hybrid'
-        return 'tree'
+            return "hybrid"
+        return "tree"
 
     render_layout(
         ax,

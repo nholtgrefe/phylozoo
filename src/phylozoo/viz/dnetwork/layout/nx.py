@@ -21,12 +21,12 @@ from .routes import compute_backbone_routes, compute_hybrid_routes
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_nx_layout(
-    network: 'DirectedPhyNetwork',
-    layout: str = 'spring',
+    network: "DirectedPhyNetwork",
+    layout: str = "spring",
     **kwargs: Any,
 ) -> DNetLayout:
     """
@@ -83,9 +83,7 @@ def compute_nx_layout(
     # All edges are directed in DirectedPhyNetwork
     all_edges = set(network._graph.edges(keys=True))
     hybrid_edges = set(
-        (u, v, key)
-        for u, v, key in network._graph.edges(keys=True)
-        if v in network.hybrid_nodes
+        (u, v, key) for u, v, key in network._graph.edges(keys=True) if v in network.hybrid_nodes
     )
     backbone_edges = all_edges - hybrid_edges
 

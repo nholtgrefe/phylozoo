@@ -15,11 +15,11 @@ from phylozoo.viz._types import EdgeRoute, EdgeType
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_backbone_routes(
-    network: 'DirectedPhyNetwork',
+    network: "DirectedPhyNetwork",
     positions: dict[T, tuple[float, float]],
     backbone_edges: set[tuple[T, T, int]],
 ) -> dict[tuple[T, T, int], EdgeRoute]:
@@ -78,7 +78,7 @@ def compute_backbone_routes(
 
 
 def compute_hybrid_routes(
-    network: 'DirectedPhyNetwork',
+    network: "DirectedPhyNetwork",
     positions: dict[T, tuple[float, float]],
     reticulate_edges: set[tuple[T, T, int]],
 ) -> dict[tuple[T, T, int], EdgeRoute]:

@@ -14,11 +14,11 @@ from phylozoo.viz._types import EdgeRoute, EdgeType
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_radial_routes(
-    network: 'SemiDirectedPhyNetwork',
+    network: "SemiDirectedPhyNetwork",
     positions: dict[T, tuple[float, float]],
 ) -> dict[tuple[T, T, int], EdgeRoute]:
     """
@@ -49,7 +49,7 @@ def compute_radial_routes(
     2
     """
     edge_routes: dict[tuple[T, T, int], EdgeRoute] = {}
-    
+
     # Only route edges between nodes that are in the original network
     # (to avoid routing to/from subdivision nodes created during conversion)
     original_nodes = set(network._graph.nodes)
@@ -69,7 +69,7 @@ def compute_radial_routes(
         # Skip edges where positions aren't available
         if u not in positions or v not in positions:
             continue
-            
+
         is_parallel = parallel_counts[(u, v)] > 1
         is_directed = network._graph._directed.has_edge(u, v, key=key)
         is_hybrid = v in network.hybrid_nodes if is_directed else False

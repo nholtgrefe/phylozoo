@@ -17,26 +17,26 @@ from phylozoo.utils.exceptions import (
     PhyloZooLayoutError,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
-GRAPHVIZ_LAYOUTS = ('dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo')
+GRAPHVIZ_LAYOUTS = ("dot", "neato", "fdp", "sfdp", "twopi", "circo")
 
 NETWORKX_LAYOUTS = {
-    'spring': nx.spring_layout,
-    'circular': nx.circular_layout,
-    'kamada_kawai': nx.kamada_kawai_layout,
-    'planar': nx.planar_layout,
-    'random': nx.random_layout,
-    'shell': nx.shell_layout,
-    'spectral': nx.spectral_layout,
-    'spiral': nx.spiral_layout,
-    'bipartite': nx.bipartite_layout,
+    "spring": nx.spring_layout,
+    "circular": nx.circular_layout,
+    "kamada_kawai": nx.kamada_kawai_layout,
+    "planar": nx.planar_layout,
+    "random": nx.random_layout,
+    "shell": nx.shell_layout,
+    "spectral": nx.spectral_layout,
+    "spiral": nx.spiral_layout,
+    "bipartite": nx.bipartite_layout,
 }
 
 
 def compute_nx_positions(
     G: nx.Graph,
-    layout: str = 'spring',
+    layout: str = "spring",
     **kwargs: Any,
 ) -> dict[Any, tuple[float, float]]:
     """
@@ -77,18 +77,13 @@ def compute_nx_positions(
                 "Install with: pip install pygraphviz"
             )
         except Exception as e:
-            raise PhyloZooLayoutError(
-                f"Graphviz layout '{layout}' failed: {e}"
-            ) from e
+            raise PhyloZooLayoutError(f"Graphviz layout '{layout}' failed: {e}") from e
     elif layout in NETWORKX_LAYOUTS:
         pos = NETWORKX_LAYOUTS[layout](G, **kwargs)
     else:
-        supported = ', '.join(
-            sorted(NETWORKX_LAYOUTS.keys()) + list(GRAPHVIZ_LAYOUTS)
-        )
+        supported = ", ".join(sorted(NETWORKX_LAYOUTS.keys()) + list(GRAPHVIZ_LAYOUTS))
         raise PhyloZooLayoutError(
-            f"Unsupported layout algorithm: '{layout}'. "
-            f"Supported: {supported}"
+            f"Unsupported layout algorithm: '{layout}'. " f"Supported: {supported}"
         )
 
     return pos
@@ -126,10 +121,7 @@ def normalize_positions(
     center_y = (min_y + max_y) / 2
     scale = 1.0 / max(width, height) if max(width, height) > 0 else 1.0
 
-    return {
-        node: ((x - center_x) * scale, (y - center_y) * scale)
-        for node, (x, y) in pos.items()
-    }
+    return {node: ((x - center_x) * scale, (y - center_y) * scale) for node, (x, y) in pos.items()}
 
 
 def compute_layout_center(

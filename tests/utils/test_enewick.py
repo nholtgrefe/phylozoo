@@ -8,7 +8,7 @@ various edge cases.
 
 import pytest
 
-from phylozoo.core.network.dnetwork._enewick import ENewickParseError, ParsedENewick, parse_enewick
+from phylozoo.core.network.dnetwork._enewick import ENewickParseError, parse_enewick
 
 
 class TestBasicTreeParsing:
@@ -123,11 +123,11 @@ class TestBranchLengths:
         result = parse_enewick("((A:0.5,B:0.3):0.1,C:0.2);")
         edges_with_bl = [e for e in result.edges if "branch_length" in e]
         assert len(edges_with_bl) == 4
-        
+
         # Check specific edges
         edge_to_a = next(e for e in result.edges if e["v"] == "A")
         assert edge_to_a["branch_length"] == 0.5
-        
+
         edge_to_internal = next(e for e in result.edges if isinstance(e["v"], int))
         assert edge_to_internal["branch_length"] == 0.1
 
@@ -178,10 +178,10 @@ class TestHybridNodes:
         assert len(result.hybrid_nodes) == 1
         assert 1 in result.hybrid_nodes
         assert result.hybrid_nodes[1] == 1
-        
+
         # Verify hybrid node has 2 incoming edges
         hybrid_id = 1
-        incoming_edges = [e for e in result.edges if e['v'] == hybrid_id]
+        incoming_edges = [e for e in result.edges if e["v"] == hybrid_id]
         assert len(incoming_edges) == 2
 
     def test_multiple_hybrid_nodes(self) -> None:
@@ -190,10 +190,10 @@ class TestHybridNodes:
         assert len(result.hybrid_nodes) == 2
         assert 1 in result.hybrid_nodes.values()
         assert 2 in result.hybrid_nodes.values()
-        
+
         # Verify each hybrid node has 2 incoming edges
         for hybrid_id, hybrid_num in result.hybrid_nodes.items():
-            incoming_edges = [e for e in result.edges if e['v'] == hybrid_id]
+            incoming_edges = [e for e in result.edges if e["v"] == hybrid_id]
             assert len(incoming_edges) == 2, f"Hybrid #H{hybrid_num} should have 2 incoming edges"
 
     def test_hybrid_node_on_leaf(self) -> None:
@@ -209,7 +209,7 @@ class TestHybridNodes:
         # Branch lengths are on edges to children and on reference
         result = parse_enewick("((A:0.5,B:0.3)#H1,#H1:0.4);")
         assert len(result.hybrid_nodes) == 1
-        
+
         # Check that branch lengths are on edges to children of hybrid
         hybrid_id = list(result.hybrid_nodes.keys())[0]
         edges_from_hybrid = [e for e in result.edges if e["u"] == hybrid_id]
@@ -217,7 +217,7 @@ class TestHybridNodes:
         assert all("branch_length" in e for e in edges_from_hybrid)
         assert edges_from_hybrid[0]["branch_length"] == 0.5
         assert edges_from_hybrid[1]["branch_length"] == 0.3
-        
+
         # Check that hybrid node has 2 incoming edges (one with branch length)
         edges_to_hybrid = [e for e in result.edges if e["v"] == hybrid_id]
         assert len(edges_to_hybrid) == 2
@@ -231,7 +231,7 @@ class TestHybridNodes:
         result = parse_enewick("(((A,B)#H1,#H1)#H2,#H2);")
         hybrid_numbers = sorted(result.hybrid_nodes.values())
         assert hybrid_numbers == [1, 2]
-    
+
     def test_hybrid_reference_before_definition_error(self) -> None:
         """Hybrid reference before definition should raise error."""
         with pytest.raises(ENewickParseError, match="found before definition"):
@@ -298,56 +298,56 @@ class TestNonBinaryNodes:
         result = parse_enewick("(A,B,C,D);")
         assert len(result.nodes) == 5
         assert len(result.edges) == 4
-        
+
         # Root should have 4 children
         root_id = result.root
-        children = [e for e in result.edges if e['u'] == root_id]
+        children = [e for e in result.edges if e["u"] == root_id]
         assert len(children) == 4
 
     def test_polytomy_internal(self) -> None:
         """Parse a tree with non-binary internal node."""
         result = parse_enewick("((A,B,C)int1,D);")
         assert len(result.nodes) == 6
-        
+
         # Find the labeled internal node
-        int_node = next(n for n in result.nodes if n.get('label') == 'int1')
-        children = [e for e in result.edges if e['u'] == int_node['id']]
+        int_node = next(n for n in result.nodes if n.get("label") == "int1")
+        children = [e for e in result.edges if e["u"] == int_node["id"]]
         assert len(children) == 3
 
     def test_hybrid_with_three_parents(self) -> None:
         """Parse a hybrid node with 3 parents (Extended Newick)."""
         result = parse_enewick("((A,B)#H1,#H1,#H1);")
         assert len(result.hybrid_nodes) == 1
-        
+
         # Hybrid should have 3 incoming edges
         hybrid_id = list(result.hybrid_nodes.keys())[0]
-        parents = [e for e in result.edges if e['v'] == hybrid_id]
+        parents = [e for e in result.edges if e["v"] == hybrid_id]
         assert len(parents) == 3
 
     def test_hybrid_with_four_parents(self) -> None:
         """Parse a hybrid node with 4 parents."""
         result = parse_enewick("((A,B)#H1,#H1,#H1,#H1);")
         assert len(result.hybrid_nodes) == 1
-        
+
         # Hybrid should have 4 incoming edges
         hybrid_id = list(result.hybrid_nodes.keys())[0]
-        parents = [e for e in result.edges if e['v'] == hybrid_id]
+        parents = [e for e in result.edges if e["v"] == hybrid_id]
         assert len(parents) == 4
 
     def test_polytomy_and_hybrid_combined(self) -> None:
         """Parse a network with both polytomy and hybrid nodes."""
         result = parse_enewick("((A,B,C)#H1,#H1,D);")
-        
+
         # Should have one hybrid node
         assert len(result.hybrid_nodes) == 1
         hybrid_id = list(result.hybrid_nodes.keys())[0]
-        
+
         # Hybrid should have 2 parents
-        parents = [e for e in result.edges if e['v'] == hybrid_id]
+        parents = [e for e in result.edges if e["v"] == hybrid_id]
         assert len(parents) == 2
-        
+
         # Hybrid should have 3 children
-        children = [e for e in result.edges if e['u'] == hybrid_id]
+        children = [e for e in result.edges if e["u"] == hybrid_id]
         assert len(children) == 3
 
 
@@ -359,18 +359,18 @@ class TestComplexExamples:
         # Hybrid marker #H1 before parent edge length :0.1
         enewick = "((('Leaf A':0.5,'Leaf B':0.3)#H1:0.1),'Leaf C':0.2);"
         result = parse_enewick(enewick)
-        
+
         # Check structure
         assert len(result.nodes) >= 4
         assert len(result.edges) >= 4
-        
+
         # Check hybrid node
         assert len(result.hybrid_nodes) == 1
-        
+
         # Check branch lengths (at least some edges should have them)
         edges_with_bl = [e for e in result.edges if "branch_length" in e]
         assert len(edges_with_bl) >= 3
-        
+
         # Check labels
         labels = [n.get("label") for n in result.nodes if "label" in n]
         assert "Leaf A" in labels
@@ -381,11 +381,11 @@ class TestComplexExamples:
         """Deeply nested structure with all features."""
         enewick = "((((A:0.1,B:0.2)#H1:0.05),C:0.3):0.15,D:0.4);"
         result = parse_enewick(enewick)
-        
+
         assert len(result.nodes) >= 5
         assert len(result.edges) >= 5
         assert len(result.hybrid_nodes) == 1
-        
+
         # Most edges should have branch lengths
         edges_with_bl = [e for e in result.edges if "branch_length" in e]
         assert len(edges_with_bl) >= 4
@@ -394,7 +394,7 @@ class TestComplexExamples:
         """Multiple hybrid nodes in complex structure."""
         enewick = "((((A,B)#H1,C)#H2,D),E);"
         result = parse_enewick(enewick)
-        
+
         assert len(result.hybrid_nodes) == 2
         assert 1 in result.hybrid_nodes.values()
         assert 2 in result.hybrid_nodes.values()
@@ -570,12 +570,12 @@ class TestRealWorldExamples:
         """Parse a simple phylogenetic tree."""
         enewick = "((Human:0.1,Chimp:0.1):0.05,Gorilla:0.15);"
         result = parse_enewick(enewick)
-        
+
         labels = [n.get("label") for n in result.nodes if "label" in n]
         assert "Human" in labels
         assert "Chimp" in labels
         assert "Gorilla" in labels
-        
+
         # All edges should have branch lengths (4 edges: 2 to leaves, 1 to internal, 1 to Gorilla)
         edges_with_bl = [e for e in result.edges if "branch_length" in e]
         assert len(edges_with_bl) == 4
@@ -584,11 +584,11 @@ class TestRealWorldExamples:
         """Parse a network with reticulation event (Extended Newick format)."""
         enewick = "((A,B)#H1,(#H1,C));"
         result = parse_enewick(enewick)
-        
+
         assert len(result.hybrid_nodes) == 1
         # Verify hybrid has 2 incoming edges (reticulation)
         hybrid_id = list(result.hybrid_nodes.keys())[0]
-        incoming_edges = [e for e in result.edges if e['v'] == hybrid_id]
+        incoming_edges = [e for e in result.edges if e["v"] == hybrid_id]
         assert len(incoming_edges) == 2
 
     def test_tree_with_internal_labels(self) -> None:
@@ -596,8 +596,7 @@ class TestRealWorldExamples:
         # Note: Internal nodes without explicit labels get auto-generated IDs
         enewick = "((A,B),C);"
         result = parse_enewick(enewick)
-        
+
         # Should have A, B, C as labeled nodes
         labeled_nodes = [n for n in result.nodes if "label" in n]
         assert len(labeled_nodes) >= 3
-

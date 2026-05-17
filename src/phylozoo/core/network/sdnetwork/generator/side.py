@@ -13,12 +13,7 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from ...dnetwork.generator.side import (
-    DirEdgeSide,
     EdgeSide,
-    HybridSide,
-    IsolatedNodeSide,
-    NodeSide,
-    Side,
 )
 
 T = TypeVar("T")
@@ -51,6 +46,7 @@ class UndirEdgeSide(EdgeSide):
     >>> edge_side.key
     0
     """
+
     u: T
     v: T
     key: int
@@ -84,6 +80,7 @@ class BidirectedEdgeSide(EdgeSide):
     >>> side.key
     0
     """
+
     node: T
     key: int
 

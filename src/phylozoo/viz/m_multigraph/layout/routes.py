@@ -14,11 +14,11 @@ from phylozoo.viz._types import EdgeRoute, EdgeType
 if TYPE_CHECKING:
     from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_mmgraph_routes(
-    graph: 'MixedMultiGraph[T]',
+    graph: "MixedMultiGraph[T]",
     positions: dict[T, tuple[float, float]],
 ) -> dict[tuple[T, T, int], EdgeRoute]:
     """
@@ -66,7 +66,7 @@ def compute_mmgraph_routes(
     # Compute routes for each edge
     for (u, v), edge_list in edge_groups.items():
         num_parallel = len(edge_list)
-        
+
         for idx, (u_edge, v_edge, key, directed) in enumerate(edge_list):
             if u_edge not in positions or v_edge not in positions:
                 continue

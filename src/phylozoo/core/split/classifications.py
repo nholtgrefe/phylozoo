@@ -12,7 +12,7 @@ from ...utils.exceptions import PhyloZooValueError
 from .base import Split
 from .splitsystem import SplitSystem
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 if TYPE_CHECKING:
     pass
@@ -85,7 +85,6 @@ def is_compatible(split1: Split, split2: Split) -> bool:
     return False
 
 
-
 def is_subsplit(split1: Split, split2: Split) -> bool:
     """
     Check if one split is a subsplit of another split.
@@ -129,31 +128,28 @@ def is_subsplit(split1: Split, split2: Split) -> bool:
     # Check subsplit condition
     # split1 is a subsplit of split2 if each side of split1 is a subset of
     # one of the sides of split2.
-    return (
-        (split1.set1.issubset(split2.set1) and split1.set2.issubset(split2.set2)) or
-        (split1.set1.issubset(split2.set2) and split1.set2.issubset(split2.set1))
+    return (split1.set1.issubset(split2.set1) and split1.set2.issubset(split2.set2)) or (
+        split1.set1.issubset(split2.set2) and split1.set2.issubset(split2.set1)
     )
-
-
 
 
 def is_pairwise_compatible(system: SplitSystem) -> bool:
     """
     Check if all pairs of splits in the system are compatible.
-    
+
     A split system is pairwise compatible if every pair of splits in the system
     is compatible with each other.
-    
+
     Parameters
     ----------
     system : SplitSystem
         The split system to check.
-    
+
     Returns
     -------
     bool
         True if all pairs of splits are compatible, False otherwise.
-    
+
     Examples
     --------
     >>> from phylozoo.core.split import Split, SplitSystem
@@ -172,28 +168,28 @@ def is_pairwise_compatible(system: SplitSystem) -> bool:
     for split1, split2 in itertools.combinations(system, 2):
         if not is_compatible(split1, split2):
             return False
-    
+
     return True
 
 
 def has_all_trivial_splits(system: SplitSystem) -> bool:
     """
     Check if the split system contains all trivial splits.
-    
+
     For a split system with n elements, there should be n trivial splits,
     where each trivial split has one element in one set and all other n-1
     elements in the other set.
-    
+
     Parameters
     ----------
     system : SplitSystem
         The split system to check.
-    
+
     Returns
     -------
     bool
         True if all trivial splits are present, False otherwise.
-    
+
     Examples
     --------
     >>> from phylozoo.core.split import Split, SplitSystem
@@ -211,10 +207,10 @@ def has_all_trivial_splits(system: SplitSystem) -> bool:
     """
     if len(system.elements) == 0:
         return True  # Empty system has all trivial splits (trivially)
-    
+
     # Count trivial splits in the system
     trivial_count = sum(1 for split in system if split.is_trivial)
-    
+
     # For n elements, there should be exactly n trivial splits
     return trivial_count == len(system.elements)
 
@@ -222,21 +218,21 @@ def has_all_trivial_splits(system: SplitSystem) -> bool:
 def is_tree_compatible(system: SplitSystem) -> bool:
     """
     Check if a split system is compatible with a tree.
-    
+
     A split system is tree-compatible if:
     1. All pairs of splits are compatible (pairwise compatible)
     2. All trivial splits are present in the system
-    
+
     Parameters
     ----------
     system : SplitSystem
         The split system to check.
-    
+
     Returns
     -------
     bool
         True if the system is compatible with a tree, False otherwise.
-    
+
     Examples
     --------
     >>> from phylozoo.core.split import Split, SplitSystem
@@ -256,4 +252,3 @@ def is_tree_compatible(system: SplitSystem) -> bool:
     False
     """
     return is_pairwise_compatible(system) and has_all_trivial_splits(system)
-

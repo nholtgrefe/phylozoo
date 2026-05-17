@@ -5,20 +5,19 @@ This module provides classes for working with weighted split systems. A weighted
 split system assigns positive weights to each split in the system.
 """
 
-from typing import TYPE_CHECKING
-
 from ...utils.exceptions import PhyloZooValueError
 from .base import Split
 from .splitsystem import SplitSystem
 
+
 class WeightedSplitSystem(SplitSystem):
     """
     Class for a weighted split system: set of full splits with positive weights.
-    
+
     A weighted split system is a function that maps each possible split on a set
     of elements to a weight. This implementation inherits from SplitSystem and only
     stores splits with positive weights. Zero-weight splits are not allowed.
-    
+
     Parameters
     ----------
     splits : set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None, optional
@@ -36,7 +35,7 @@ class WeightedSplitSystem(SplitSystem):
         If not all splits cover the complete set of elements, if any weight
         is not positive (zero or negative), if duplicate splits are found, or if
         split elements don't match system elements.
-    
+
     Notes
     -----
     Supported I/O formats:
@@ -53,7 +52,7 @@ class WeightedSplitSystem(SplitSystem):
     1.0
     >>> system.get_weight(split2)
     1.0
-    
+
     >>> # From dictionary with weights
     >>> weights = {split1: 2.5, split2: 1.0}
     >>> system = WeightedSplitSystem(weights)
@@ -61,32 +60,28 @@ class WeightedSplitSystem(SplitSystem):
     2.5
     >>> system.total_weight
     3.5
-    
+
     >>> # From list of tuples
     >>> system = WeightedSplitSystem([(split1, 0.8), (split2, 0.2)])
     >>> system.get_weight(split1)
     0.8
     """
-    
-    __slots__ = ('_splits', '_elements', '_initialized', '_weights', '_total_weight')
-    
+
+    __slots__ = ("_splits", "_elements", "_initialized", "_weights", "_total_weight")
+
     # I/O format configuration (override parent)
-    _default_format = 'nexus'
-    _supported_formats = ['nexus']
-    
+    _default_format = "nexus"
+    _supported_formats = ["nexus"]
+
     def __init__(
         self,
         splits: (
-            set[Split]
-            | list[Split]
-            | dict[Split, float]
-            | list[tuple[Split, float]]
-            | None
+            set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None
         ) = None,
     ) -> None:
         """
         Initialize a weighted split system.
-        
+
         Parameters
         ----------
         splits : set[Split] | list[Split] | dict[Split, float] | list[tuple[Split, float]] | None, optional
@@ -96,7 +91,7 @@ class WeightedSplitSystem(SplitSystem):
             - A dictionary mapping splits to their weights
             - A list of (split, weight) tuples
             By default None (empty system).
-        
+
         Raises
         ------
         ValueError
@@ -105,9 +100,9 @@ class WeightedSplitSystem(SplitSystem):
         """
         if splits is None:
             splits = {}
-        
+
         weights: dict[Split, float] = {}
-        
+
         # Determine input type and extract splits and weights
         if isinstance(splits, dict):
             # Dictionary: splits are keys, values are weights
@@ -143,68 +138,68 @@ class WeightedSplitSystem(SplitSystem):
                 f"Expected set[Split], list[Split], dict[Split, float], "
                 f"list[tuple[Split, float]], or None, got {type(splits)}"
             )
-        
+
         # Validate that all weights are positive (zero and negative are not allowed)
         for split, weight in weights.items():
             if weight <= 0:
                 raise PhyloZooValueError(f"Weight must be positive, got {weight} for split {split}")
-        
+
         # Only include splits that have weights (all weights are positive at this point)
         splits_with_weights = set(weights.keys())
-        
+
         # Initialize parent with only splits that have weights
         super().__init__(splits_with_weights)
-        
+
         # Store weights
         # Use object.__setattr__ to bypass immutability check during initialization
-        object.__setattr__(self, '_weights', dict(weights))
-        object.__setattr__(self, '_total_weight', sum(weights.values()))
-    
+        object.__setattr__(self, "_weights", dict(weights))
+        object.__setattr__(self, "_total_weight", sum(weights.values()))
+
     @property
     def weights(self) -> dict[Split, float]:
         """
         Get the weights dictionary (read-only).
-        
+
         Returns
         -------
         dict[Split, float]
             Dictionary mapping splits to their weights.
         """
         return self._weights.copy()  # Return a copy for immutability
-    
+
     @property
     def total_weight(self) -> float:
         """
         Get the sum of all weights in the system.
-        
+
         Returns
         -------
         float
             Sum of all weights.
         """
         return self._total_weight
-    
+
     def get_weight(self, split: Split) -> float:
         """
         Get the weight of a split.
-        
+
         Returns 0.0 if the split is not in the system (i.e., has no weight assigned).
-        
+
         Parameters
         ----------
         split : Split
             Split to get the weight for.
-        
+
         Returns
         -------
         float
             Weight of the split, or 0.0 if the split is not in the system.
-        
+
         Raises
         ------
         PhyloZooValueError
             If the split does not cover the same elements as the split system.
-        
+
         Examples
         --------
         >>> split1 = Split({1, 2}, {3, 4})
@@ -221,13 +216,13 @@ class WeightedSplitSystem(SplitSystem):
                 f"Split {split} does not cover the same elements as the split system. "
                 f"Expected elements: {self._elements}, got: {split.elements}"
             )
-        
+
         return self._weights.get(split, 0.0)
-    
+
     def __repr__(self) -> str:
         """
         Return string representation of the weighted split system.
-        
+
         Returns
         -------
         str
@@ -235,22 +230,24 @@ class WeightedSplitSystem(SplitSystem):
         """
         if len(self._weights) == 0:
             return "WeightedSplitSystem()"
-        
-        weights_str = ", ".join(f"{repr(split)}: {weight}" for split, weight in self._weights.items())
+
+        weights_str = ", ".join(
+            f"{repr(split)}: {weight}" for split, weight in self._weights.items()
+        )
         return f"WeightedSplitSystem({{{weights_str}}})"
-    
+
     def __str__(self) -> str:
         """
         Return human-readable string representation of the weighted split system.
-        
+
         Displays the weighted split system showing all splits with their weights,
         one per line. No truncation is applied.
-        
+
         Returns
         -------
         str
             Human-readable string representation.
-        
+
         Examples
         --------
         >>> split1 = Split({1, 2}, {3, 4})
@@ -262,18 +259,16 @@ class WeightedSplitSystem(SplitSystem):
         n = len(self._splits)
         if n == 0:
             return "WeightedSplitSystem({})"
-        
+
         # Sort splits for consistent display
         sorted_splits = sorted(self._splits, key=lambda s: (str(s.set1), str(s.set2)))
-        
+
         # Show all splits with weights, one per line
-        splits_lines = [
-            f"  {split}: {self._weights[split]}," for split in sorted_splits
-        ]
+        splits_lines = [f"  {split}: {self._weights[split]}," for split in sorted_splits]
         # Remove trailing comma from last line
         if splits_lines:
-            splits_lines[-1] = splits_lines[-1].rstrip(',')
-        return f"WeightedSplitSystem({{\n" + "\n".join(splits_lines) + "\n})"
+            splits_lines[-1] = splits_lines[-1].rstrip(",")
+        return "WeightedSplitSystem({\n" + "\n".join(splits_lines) + "\n})"
 
 
 def to_weightedsplitsystem(
@@ -282,26 +277,26 @@ def to_weightedsplitsystem(
 ) -> WeightedSplitSystem:
     """
     Convert a SplitSystem to a WeightedSplitSystem.
-    
+
     Assigns the same weight (default_weight) to each split in the system.
-    
+
     Parameters
     ----------
     system : SplitSystem
         The split system to convert.
     default_weight : float, optional
         The weight to assign to each split. Must be positive. By default 1.0.
-    
+
     Returns
     -------
     WeightedSplitSystem
         A weighted split system with all splits having the specified weight.
-    
+
     Raises
     ------
     PhyloZooValueError
         If default_weight is not positive.
-    
+
     Examples
     --------
     >>> split1 = Split({1, 2}, {3, 4})
@@ -317,7 +312,6 @@ def to_weightedsplitsystem(
     """
     if default_weight <= 0:
         raise PhyloZooValueError(f"default_weight must be positive, got {default_weight}")
-    
+
     weights = {split: default_weight for split in system.splits}
     return WeightedSplitSystem(weights)
-

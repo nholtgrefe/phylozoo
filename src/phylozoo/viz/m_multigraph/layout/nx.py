@@ -21,12 +21,12 @@ from .routes import compute_mmgraph_routes
 if TYPE_CHECKING:
     from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_nx_layout(
-    graph: 'MixedMultiGraph[T]',
-    layout: str = 'spring',
+    graph: "MixedMultiGraph[T]",
+    layout: str = "spring",
     **kwargs: Any,
 ) -> MGraphLayout[T]:
     """

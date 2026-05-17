@@ -4,15 +4,15 @@ Directed multi-graph module.
 This module provides the DirectedMultiGraph class for working with directed multi-graphs.
 """
 
-from typing import Any, Dict, Iterator, List, Set, Tuple, TypeVar
+from typing import Any, Iterator, TypeVar
 
 import networkx as nx
 
 from phylozoo.utils.exceptions import warn_on_keyword, warn_on_none_value
 from phylozoo.utils.io import IOMixin
-from phylozoo.utils.exceptions import PhyloZooValueError, PhyloZooWarning
+from phylozoo.utils.exceptions import PhyloZooValueError
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class DirectedMultiGraph(IOMixin):
@@ -58,18 +58,18 @@ class DirectedMultiGraph(IOMixin):
     >>> key2 = G.add_edge(1, 2, weight=2.0)  # Parallel edge
     >>> key1 != key2
     True
-    
+
     >>> from phylozoo.core.primitives.d_multigraph.features import number_of_connected_components
     >>> number_of_connected_components(G)
     1
-    
+
     >>> # Initialize with edges (including attributes)
     >>> G2 = DirectedMultiGraph(
     ...     edges=[(1, 2), {'u': 2, 'v': 3, 'weight': 5.0}]
     ... )
     >>> G2.number_of_edges()
     2
-    
+
     Attributes
     ----------
     _graph : nx.MultiDiGraph
@@ -81,9 +81,9 @@ class DirectedMultiGraph(IOMixin):
     """
 
     # I/O format configuration
-    _default_format = 'dot'
-    _supported_formats = ['dot', 'edgelist']
-    
+    _default_format = "dot"
+    _supported_formats = ["dot", "edgelist"]
+
     def __init__(
         self,
         edges: list[tuple[T, T] | tuple[T, T, int] | dict[str, Any]] | None = None,
@@ -137,9 +137,9 @@ class DirectedMultiGraph(IOMixin):
             for edge in edges:
                 if isinstance(edge, dict):
                     # Dict format: {'u': u, 'v': v, 'key': key, **attr}
-                    u = edge.pop('u')
-                    v = edge.pop('v')
-                    key = edge.pop('key', None)
+                    u = edge.pop("u")
+                    v = edge.pop("v")
+                    key = edge.pop("key", None)
                     self.add_edge(u, v, key=key, **edge)
                 elif len(edge) == 2:
                     u, v = edge
@@ -183,7 +183,16 @@ class DirectedMultiGraph(IOMixin):
         """
         return self._graph.nodes(data=data)
 
-    def edges_iter(self, keys: bool = False, data: bool | str = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, Any] | tuple[T, T, dict[str, Any]] | tuple[T, T, int, Any] | tuple[T, T, int, dict[str, Any]]]:
+    def edges_iter(
+        self, keys: bool = False, data: bool | str = False
+    ) -> Iterator[
+        tuple[T, T]
+        | tuple[T, T, int]
+        | tuple[T, T, Any]
+        | tuple[T, T, dict[str, Any]]
+        | tuple[T, T, int, Any]
+        | tuple[T, T, int, dict[str, Any]]
+    ]:
         """
         Return an iterator over edges.
 
@@ -300,11 +309,20 @@ class DirectedMultiGraph(IOMixin):
         [2, 3]
         """
         return self._graph.successors(v)
-    
-    def incident_parent_edges(self, v: T, keys: bool = False, data: bool | str = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, Any] | tuple[T, T, dict[str, Any]] | tuple[T, T, int, Any] | tuple[T, T, int, dict[str, Any]]]:
+
+    def incident_parent_edges(
+        self, v: T, keys: bool = False, data: bool | str = False
+    ) -> Iterator[
+        tuple[T, T]
+        | tuple[T, T, int]
+        | tuple[T, T, Any]
+        | tuple[T, T, dict[str, Any]]
+        | tuple[T, T, int, Any]
+        | tuple[T, T, int, dict[str, Any]]
+    ]:
         """
         Return an iterator over edges entering node v (from parent nodes).
-        
+
         Parameters
         ----------
         v : T
@@ -315,12 +333,12 @@ class DirectedMultiGraph(IOMixin):
             If False (default), no edge data is included.
             If True, return edge data dictionaries.
             If string, return value of that edge attribute.
-        
+
         Returns
         -------
         Iterator
             Iterator over incoming edges. Format depends on keys and data parameters.
-        
+
         Examples
         --------
         >>> G = DirectedMultiGraph()
@@ -338,11 +356,20 @@ class DirectedMultiGraph(IOMixin):
         if v not in self._graph:
             return iter([])
         return self._graph.in_edges(v, keys=keys, data=data)
-    
-    def incident_child_edges(self, v: T, keys: bool = False, data: bool | str = False) -> Iterator[tuple[T, T] | tuple[T, T, int] | tuple[T, T, Any] | tuple[T, T, dict[str, Any]] | tuple[T, T, int, Any] | tuple[T, T, int, dict[str, Any]]]:
+
+    def incident_child_edges(
+        self, v: T, keys: bool = False, data: bool | str = False
+    ) -> Iterator[
+        tuple[T, T]
+        | tuple[T, T, int]
+        | tuple[T, T, Any]
+        | tuple[T, T, dict[str, Any]]
+        | tuple[T, T, int, Any]
+        | tuple[T, T, int, dict[str, Any]]
+    ]:
         """
         Return an iterator over edges leaving node v (to child nodes).
-        
+
         Parameters
         ----------
         v : T
@@ -353,12 +380,12 @@ class DirectedMultiGraph(IOMixin):
             If False (default), no edge data is included.
             If True, return edge data dictionaries.
             If string, return value of that edge attribute.
-        
+
         Returns
         -------
         Iterator
             Iterator over outgoing edges. Format depends on keys and data parameters.
-        
+
         Examples
         --------
         >>> G = DirectedMultiGraph()
@@ -490,14 +517,15 @@ class DirectedMultiGraph(IOMixin):
     class NodeView:
         """
         Node view that works as both attribute and method, similar to NetworkX's NodeView.
-        
+
         This class provides a set-like interface for nodes while also being callable
         as a method to get iterators or node data.
         """
+
         def __init__(self, items: set[T], callable_func: callable):
             """
             Initialize a node view.
-            
+
             Parameters
             ----------
             items : set[T]
@@ -507,64 +535,65 @@ class DirectedMultiGraph(IOMixin):
             """
             self._items = items
             self._callable_func = callable_func
-        
+
         def __call__(self, data: bool | str = False):
             """
             Call as method to get iterator or node data.
-            
+
             Parameters
             ----------
             data : bool | str, optional
                 If False (default), return iterator over nodes.
                 If True, return iterator of (node, data_dict) tuples.
                 If string, return iterator of (node, attribute_value) tuples.
-            
+
             Returns
             -------
             Iterator[T] | Iterator[tuple[T, Any]]
                 Iterator over nodes or (node, data) tuples.
             """
             return self._callable_func(data)
-        
+
         def __iter__(self):
             """Iterate over nodes."""
             return iter(self._items)
-        
+
         def __contains__(self, item: T) -> bool:
             """Check if node in view."""
             return item in self._items
-        
+
         def __repr__(self) -> str:
             """String representation."""
             return repr(self._items)
-        
+
         def __len__(self) -> int:
             """Number of nodes."""
             return len(self._items)
-        
+
         def __or__(self, other):
             """Union with other set."""
             return self._items | other
-        
+
         def __and__(self, other):
             """Intersection with other set."""
             return self._items & other
-        
+
         def issubset(self, other):
             """Check if this is a subset of other."""
             return self._items.issubset(other)
-    
+
     class EdgeView:
         """
         Edge view that works as both attribute and method, similar to NetworkX's EdgeView.
-        
+
         This class provides a list-like interface for edges while also being callable
         as a method to get iterators with keys or data.
         """
+
         def __init__(self, items: list[tuple[T, T]], callable_func: callable):
             """
             Initialize an edge view.
-            
+
             Parameters
             ----------
             items : list[tuple[T, T]]
@@ -574,11 +603,11 @@ class DirectedMultiGraph(IOMixin):
             """
             self._items = items
             self._callable_func = callable_func
-        
+
         def __call__(self, keys: bool = False, data: bool | str = False):
             """
             Call as method to get iterator with keys or data.
-            
+
             Parameters
             ----------
             keys : bool, optional
@@ -587,32 +616,32 @@ class DirectedMultiGraph(IOMixin):
                 If False (default), no edge data is included.
                 If True, return edge data dictionaries.
                 If string, return value of that edge attribute.
-            
+
             Returns
             -------
             Iterator
                 Iterator over edges. Format depends on keys and data parameters.
             """
             return self._callable_func(keys, data)
-        
+
         def __iter__(self):
             """Iterate over edges."""
             return iter(self._items)
-        
+
         def __contains__(self, item: tuple[T, T]) -> bool:
             """Check if edge in view."""
             return item in self._items
-        
+
         def __repr__(self) -> str:
             """String representation."""
             return repr(self._items)
-        
+
         def __len__(self) -> int:
             """Number of edges."""
             return len(self._items)
-    
+
     @property
-    def nodes(self) -> 'NodeView':
+    def nodes(self) -> "NodeView":
         """
         Get all nodes (works as both attribute and method).
 
@@ -639,7 +668,7 @@ class DirectedMultiGraph(IOMixin):
         return self.NodeView(nodes_set, self.nodes_iter)
 
     @property
-    def edges(self) -> 'EdgeView':
+    def edges(self) -> "EdgeView":
         """
         Get all edges (works as both attribute and method).
 
@@ -705,7 +734,7 @@ class DirectedMultiGraph(IOMixin):
         for attr_name, attr_value in attr.items():
             warn_on_keyword(attr_name, "Attribute name")
             warn_on_none_value(attr_value, f"Attribute '{attr_name}'")
-        
+
         self._graph.add_node(v, **attr)
         self._combined.add_node(v, **attr)
 
@@ -758,25 +787,25 @@ class DirectedMultiGraph(IOMixin):
     def generate_node_ids(self, count: int) -> Iterator[int]:
         """
         Generate new integer node IDs that are not in the graph.
-        
+
         Finds the largest integer node ID in the graph and generates count
         consecutive integer IDs starting from max + 1.
-        
+
         Parameters
         ----------
         count : int
             Number of node IDs to generate.
-        
+
         Yields
         ------
         int
             Consecutive integer node IDs starting from max + 1.
-        
+
         Raises
         ------
         PhyloZooValueError
             If count is negative.
-        
+
         Examples
         --------
         >>> G = DirectedMultiGraph()
@@ -790,14 +819,14 @@ class DirectedMultiGraph(IOMixin):
         """
         if count < 0:
             raise PhyloZooValueError(f"count must be non-negative, got {count}")
-        
+
         if count == 0:
             return
-        
+
         # Find maximum integer node ID
         int_nodes = [n for n in self.nodes() if isinstance(n, int)]
         max_node = max(int_nodes) if int_nodes else -1
-        
+
         # Generate consecutive IDs starting from max + 1
         for i in range(max_node + 1, max_node + 1 + count):
             yield i
@@ -896,9 +925,7 @@ class DirectedMultiGraph(IOMixin):
 
         return key
 
-    def add_edges_from(
-        self, edges: list[tuple[T, T] | tuple[T, T, int]], **attr: Any
-    ) -> None:
+    def add_edges_from(self, edges: list[tuple[T, T] | tuple[T, T, int]], **attr: Any) -> None:
         """
         Add all edges in 'edges' to the graph.
 
@@ -960,9 +987,7 @@ class DirectedMultiGraph(IOMixin):
         self._graph.remove_edge(u, v, key)
         self._combined.remove_edge(u, v, key)
 
-    def remove_edges_from(
-        self, edges: list[tuple[T, T] | tuple[T, T, int]]
-    ) -> None:
+    def remove_edges_from(self, edges: list[tuple[T, T] | tuple[T, T, int]]) -> None:
         """
         Remove all edges in 'edges' from the graph.
 
@@ -1069,7 +1094,7 @@ class DirectedMultiGraph(IOMixin):
     def __repr__(self) -> str:
         """
         Return a concise representation.
-        
+
         Returns
         -------
         str
@@ -1176,23 +1201,21 @@ class DirectedMultiGraph(IOMixin):
             return 0
         return self._graph.out_degree(v)
 
-
-
     # ========== Graph Operations ==========
 
     def _validate_synchronization(self) -> bool:
         """
         Validate that the internal graphs are synchronized.
-        
+
         Checks that `_combined` contains all edges from `_graph`.
         This is useful for debugging if the graphs have been modified directly
         (which should not happen).
-        
+
         Returns
         -------
         bool
             True if graphs are synchronized, False otherwise.
-        
+
         Examples
         --------
         >>> G = DirectedMultiGraph()
@@ -1209,17 +1232,17 @@ class DirectedMultiGraph(IOMixin):
         for u, v, key in self._graph.edges(keys=True):
             if not self._combined.has_edge(u, v, key):
                 return False
-        
+
         # Check that combined doesn't have extra edges
         combined_edges = set(self._combined.edges(keys=True))
         graph_edges = set(self._graph.edges(keys=True))
-        
+
         if combined_edges != graph_edges:
             return False
-        
+
         return True
 
-    def copy(self) -> 'DirectedMultiGraph':
+    def copy(self) -> "DirectedMultiGraph":
         """
         Create a copy of the graph.
 
@@ -1271,17 +1294,17 @@ class DirectedMultiGraph(IOMixin):
     def set_graph_attribute(self, key: str, value: Any) -> None:
         """
         Set a graph attribute in all underlying graphs.
-        
+
         Sets the same attribute value in the graph and combined graph's
         `.graph` attribute dictionaries.
-        
+
         Parameters
         ----------
         key : str
             The attribute key.
         value : Any
             The attribute value.
-        
+
         Examples
         --------
         >>> G = DirectedMultiGraph()

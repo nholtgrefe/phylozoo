@@ -18,23 +18,23 @@ if TYPE_CHECKING:
 
 
 @lru_cache(maxsize=128)
-def has_parallel_edges(network: 'MixedPhyNetwork') -> bool:
+def has_parallel_edges(network: "MixedPhyNetwork") -> bool:
     """
     Check if the network has any parallel edges.
-    
+
     Parallel edges are multiple edges between the same pair of nodes,
     either as multiple directed edges in the same direction or multiple undirected edges.
-    
+
     Parameters
     ----------
     network : MixedPhyNetwork
         The mixed phylogenetic network to check.
-    
+
     Returns
     -------
     bool
         True if the network has at least one pair of parallel edges, False otherwise.
-    
+
     Examples
     --------
     >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})])
@@ -44,27 +44,27 @@ def has_parallel_edges(network: 'MixedPhyNetwork') -> bool:
     return graph_has_parallel_edges(network._graph)
 
 
-def level(network: 'SemiDirectedPhyNetwork') -> int:
+def level(network: "SemiDirectedPhyNetwork") -> int:
     """
     Return the level of the network.
-    
+
     The level is the maximum over all blobs of (number of hybrid edges minus
     number of hybrid nodes) in that blob.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network.
-    
+
     Returns
     -------
     int
         The level of the network.
-    
+
     Notes
     -----
     For empty networks, this function returns 0.
-    
+
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -74,47 +74,44 @@ def level(network: 'SemiDirectedPhyNetwork') -> int:
     """
     if network.number_of_nodes() == 0:
         return 0
-    
+
     hybrid_edges = network.hybrid_edges
     hybrid_nodes = network.hybrid_nodes
-    
+
     max_level = 0
     for blob_set in blobs(network, trivial=False, leaves=False):
         # Count hybrid edges in this blob (both endpoints must be in blob)
-        hybrid_edges_in_blob = sum(
-            1 for u, v, _ in hybrid_edges
-            if u in blob_set and v in blob_set
-        )
+        hybrid_edges_in_blob = sum(1 for u, v, _ in hybrid_edges if u in blob_set and v in blob_set)
         # Count hybrid nodes in this blob
         hybrid_nodes_in_blob = sum(1 for node in hybrid_nodes if node in blob_set)
-        
+
         blob_level = hybrid_edges_in_blob - hybrid_nodes_in_blob
         max_level = max(max_level, blob_level)
-    
+
     return max_level
 
 
-def vertex_level(network: 'SemiDirectedPhyNetwork') -> int:
+def vertex_level(network: "SemiDirectedPhyNetwork") -> int:
     """
     Return the vertex level of the network.
-    
+
     The vertex level is the maximum over all blobs of the number of hybrid nodes
     in that blob.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network.
-    
+
     Returns
     -------
     int
         The vertex level of the network.
-    
+
     Notes
     -----
     For empty networks, this function returns 0.
-    
+
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -124,34 +121,34 @@ def vertex_level(network: 'SemiDirectedPhyNetwork') -> int:
     """
     if network.number_of_nodes() == 0:
         return 0
-    
+
     hybrid_nodes = network.hybrid_nodes
-    
+
     max_vertex_level = 0
     for blob_set in blobs(network, trivial=False, leaves=False):
         hybrid_nodes_in_blob = sum(1 for node in hybrid_nodes if node in blob_set)
         max_vertex_level = max(max_vertex_level, hybrid_nodes_in_blob)
-    
+
     return max_vertex_level
 
 
-def reticulation_number(network: 'SemiDirectedPhyNetwork') -> int:
+def reticulation_number(network: "SemiDirectedPhyNetwork") -> int:
     """
     Return the reticulation number of the network.
-    
+
     The reticulation number is the total number of hybrid edges minus the total
     number of hybrid nodes.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network.
-    
+
     Returns
     -------
     int
         The reticulation number of the network.
-    
+
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -163,28 +160,28 @@ def reticulation_number(network: 'SemiDirectedPhyNetwork') -> int:
 
 
 @lru_cache(maxsize=128)
-def is_binary(network: 'MixedPhyNetwork') -> bool:
+def is_binary(network: "MixedPhyNetwork") -> bool:
     """
     Check if the network is binary.
-    
+
     A network is binary if every internal node has degree exactly 3.
-    
+
     Parameters
     ----------
     network : MixedPhyNetwork
         The mixed phylogenetic network to check.
-    
+
     Returns
     -------
     bool
         True if the network is binary, False otherwise.
-    
+
     Notes
     -----
     For empty networks or single-node networks, this function returns True.
     Unlike directed networks, semi-directed networks have no root node, so all
     internal nodes must have degree 3.
-    
+
     Examples
     --------
     >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})])
@@ -193,35 +190,35 @@ def is_binary(network: 'MixedPhyNetwork') -> bool:
     """
     if network.number_of_nodes() == 0:
         return True
-    
+
     internal_nodes = network.internal_nodes
-    
+
     for node in internal_nodes:
         node_degree = network.degree(node)
         # All internal nodes must have degree 3
         if node_degree != 3:
             return False
-    
+
     return True
 
 
 @lru_cache(maxsize=128)
-def is_tree(network: 'MixedPhyNetwork') -> bool:
+def is_tree(network: "MixedPhyNetwork") -> bool:
     """
     Check if the network is a tree.
-    
+
     A network is a tree if it has no hybrid edges.
-    
+
     Parameters
     ----------
     network : MixedPhyNetwork
         The mixed phylogenetic network to check.
-    
+
     Returns
     -------
     bool
         True if the network is a tree, False otherwise.
-    
+
     Examples
     --------
     >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
@@ -232,27 +229,27 @@ def is_tree(network: 'MixedPhyNetwork') -> bool:
 
 
 @lru_cache(maxsize=128)
-def is_simple(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_simple(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is simple.
-    
+
     A network is simple if it has at most one non-leaf blob.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network to check.
-    
+
     Returns
     -------
     bool
         True if the network has at most one non-leaf blob, False otherwise.
-    
+
     Notes
     -----
     For empty networks, this function returns True.
     Some authors call a simple network a "bloblet (network)".
-    
+
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -262,34 +259,34 @@ def is_simple(network: 'SemiDirectedPhyNetwork') -> bool:
     """
     if network.number_of_nodes() == 0:
         return True
-    
+
     non_leaf_blobs = list(blobs(network, leaves=False))
     return len(non_leaf_blobs) <= 1
 
 
 @lru_cache(maxsize=128)
-def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is galled.
-    
+
     A network is galled if no hybrid node is ancestral to another hybrid node in the same blob.
     A hybrid node is ancestral to another one if there exists an up-down path from one to the other.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network to check.
-    
+
     Returns
     -------
     bool
         True if the network is galled, False otherwise.
-    
+
     Notes
     -----
     For empty networks or networks with no hybrid nodes, this function returns True.
     All trees are galled networks.
-    
+
     Examples
     --------
     >>> # Network with no hybrid nodes (galled)
@@ -299,7 +296,7 @@ def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
     ... )
     >>> is_galled(net)
     True
-    
+
     >>> # Network with single hybrid in its own blob (galled)
     >>> net = SemiDirectedPhyNetwork(
     ...     directed_edges=[
@@ -314,7 +311,7 @@ def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
     ... )
     >>> is_galled(net)
     True
-    
+
     >>> # Network with hybrid ancestral to another hybrid in same blob (not galled)
     >>> net = SemiDirectedPhyNetwork(
     ...     directed_edges=[
@@ -331,28 +328,28 @@ def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
     False
     """
     from ...primitives.m_multigraph.features import updown_path_vertices
-    
+
     if network.number_of_nodes() == 0:
         return True
-    
+
     hybrid_nodes = network.hybrid_nodes
-    
+
     # If no hybrid nodes, network is galled (it's a tree)
     if not hybrid_nodes:
         return True
-    
+
     # Get all blobs
     blob_list = blobs(network, trivial=False, leaves=False)
-    
+
     # Check each blob
     for blob_set in blob_list:
         # Get hybrid nodes in this blob
         hybrids_in_blob = [h for h in hybrid_nodes if h in blob_set]
-        
+
         # If there's only one hybrid in the blob, it can't be ancestral to another
         if len(hybrids_in_blob) <= 1:
             continue
-        
+
         # Check if any hybrid in this blob is ancestral to another hybrid in the same blob
         # (i.e., there exists an up-down path from one to the other)
         for h1 in hybrids_in_blob:
@@ -363,28 +360,29 @@ def is_galled(network: 'SemiDirectedPhyNetwork') -> bool:
                     path_vertices = updown_path_vertices(network._graph, h1, h2)
                     if h2 in path_vertices:
                         return False
-    
+
     return True
 
+
 @lru_cache(maxsize=128)
-def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_stackfree(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is stack-free.
-    
+
     A network is stack-free if no hybrid node has another hybrid node as its child.
     In a semi-directed network, hybrid nodes have exactly one outgoing directed edge,
     so we check if that child is also a hybrid node.
-    
+
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
         The semi-directed phylogenetic network to check.
-    
+
     Returns
     -------
     bool
         True if the network is stack-free (no hybrid has a hybrid child), False otherwise.
-    
+
     Examples
     --------
     >>> # Network with no hybrids (stack-free)
@@ -394,7 +392,7 @@ def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
     ... )
     >>> is_stackfree(net)
     True
-    
+
     >>> # Network with hybrid that has tree node child (stack-free)
     >>> net = SemiDirectedPhyNetwork(
     ...     directed_edges=[
@@ -409,7 +407,7 @@ def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
     ... )
     >>> is_stackfree(net)
     True
-    
+
     >>> # Network with stacked hybrids (not stack-free)
     >>> net = SemiDirectedPhyNetwork(
     ...     directed_edges=[
@@ -426,11 +424,11 @@ def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
     False
     """
     hybrid_nodes = network.hybrid_nodes
-    
+
     # If no hybrid nodes, network is stack-free
     if not hybrid_nodes:
         return True
-    
+
     # Check each hybrid node: if its child (via directed edge) is also a hybrid, it's stacked
     for hybrid in hybrid_nodes:
         # Hybrid nodes have exactly one outgoing directed edge
@@ -442,11 +440,11 @@ def is_stackfree(network: 'SemiDirectedPhyNetwork') -> bool:
             # If the child is also a hybrid node, we have a stack
             if child in hybrid_nodes:
                 return False
-    
+
     return True
 
 
-def _edge_root_locations(network: 'SemiDirectedPhyNetwork') -> list[tuple]:
+def _edge_root_locations(network: "SemiDirectedPhyNetwork") -> list[tuple]:
     """
     Get all valid edge root locations (undirected + directed edges).
 
@@ -467,7 +465,7 @@ def _edge_root_locations(network: 'SemiDirectedPhyNetwork') -> list[tuple]:
 
 
 @lru_cache(maxsize=128)
-def is_strongly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_strongly_treechild(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is strongly tree-child.
 
@@ -533,7 +531,7 @@ def is_strongly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
 
 
 @lru_cache(maxsize=128)
-def is_weakly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_weakly_treechild(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is weakly tree-child.
 
@@ -599,7 +597,7 @@ def is_weakly_treechild(network: 'SemiDirectedPhyNetwork') -> bool:
 
 
 @lru_cache(maxsize=128)
-def is_strongly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_strongly_treebased(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is strongly tree-based.
 
@@ -665,7 +663,7 @@ def is_strongly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
 
 
 @lru_cache(maxsize=128)
-def is_weakly_treebased(network: 'SemiDirectedPhyNetwork') -> bool:
+def is_weakly_treebased(network: "SemiDirectedPhyNetwork") -> bool:
     """
     Check if the network is weakly tree-based.
 

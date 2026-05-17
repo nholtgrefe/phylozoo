@@ -37,9 +37,9 @@ BEGIN DISTANCES;
 END;
 """
         labels, blocks = nexus_fmt.parse_nexus(s)
-        assert labels == ['A', 'B', 'C']
-        assert 'DISTANCES' in blocks
-        assert 'MATRIX' in blocks['DISTANCES']
+        assert labels == ["A", "B", "C"]
+        assert "DISTANCES" in blocks
+        assert "MATRIX" in blocks["DISTANCES"]
 
     def test_parse_nexus_multi_block(self) -> None:
         """Parse NEXUS with TAXA, Distances, and SPLITS blocks."""
@@ -76,11 +76,11 @@ BEGIN SPLITS;
 END;
 """
         labels, blocks = nexus_fmt.parse_nexus(s)
-        assert labels == ['1', '2', '3', '4']
-        assert 'DISTANCES' in blocks
-        assert 'SPLITS' in blocks
-        assert 'MATRIX' in blocks['DISTANCES']
-        assert 'MATRIX' in blocks['SPLITS']
+        assert labels == ["1", "2", "3", "4"]
+        assert "DISTANCES" in blocks
+        assert "SPLITS" in blocks
+        assert "MATRIX" in blocks["DISTANCES"]
+        assert "MATRIX" in blocks["SPLITS"]
 
     def test_parse_nexus_no_taxa_raises(self) -> None:
         """parse_nexus raises when no TAXA block is present."""
@@ -105,7 +105,7 @@ class TestWriteTaxaBlock:
         [
             ([], "0", ["BEGIN TAXA", "ntax=0", "END;"]),
             (
-                ['A', 'B', 'C'],
+                ["A", "B", "C"],
                 "3",
                 ["BEGIN TAXA", "ntax=3", "A", "B", "C", "END;"],
             ),

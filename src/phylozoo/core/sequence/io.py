@@ -42,13 +42,13 @@ from .base import MSA
 def to_fasta(msa: MSA, **kwargs: Any) -> str:
     """
     Convert an MSA to FASTA format string.
-    
+
     FASTA format consists of:
 
     - Each sequence starts with a '>' followed by the taxon identifier
     - The sequence follows on subsequent lines (can be wrapped)
     - Sequences are separated by newlines
-    
+
     Parameters
     ----------
     msa : MSA
@@ -58,17 +58,17 @@ def to_fasta(msa: MSA, **kwargs: Any) -> str:
 
         - line_length (int): Maximum line length for sequences (default: 80).
           Set to 0 or None for no wrapping.
-    
+
     Returns
     -------
     str
         The FASTA format string representation of the MSA.
-    
+
     Examples
     --------
     >>> from phylozoo.core.sequence import MSA
     >>> from phylozoo.core.sequence.io import to_fasta
-    >>> 
+    >>>
     >>> sequences = {"taxon1": "ACGTACGT", "taxon2": "TGCAACGT"}
     >>> msa = MSA(sequences)
     >>> fasta_str = to_fasta(msa)
@@ -76,59 +76,59 @@ def to_fasta(msa: MSA, **kwargs: Any) -> str:
     True
     >>> 'ACGTACGT' in fasta_str
     True
-    
+
     Notes
     -----
     Taxon identifiers are converted to strings for output.
     Sequences are wrapped to 80 characters per line by default.
     """
-    line_length = kwargs.get('line_length', 80)
+    line_length = kwargs.get("line_length", 80)
     if line_length is None or line_length <= 0:
         line_length = None  # No wrapping
-    
+
     fasta_lines = []
-    
+
     for taxon in msa.taxa_order:
         # Header line: >taxon_identifier
         fasta_lines.append(f">{taxon}")
-        
+
         # Get sequence
         seq = msa.get_sequence(taxon)
         if seq is None:
-            seq = ''
-        
+            seq = ""
+
         # Wrap sequence if line_length is specified
         if line_length and len(seq) > line_length:
             for i in range(0, len(seq), line_length):
-                fasta_lines.append(seq[i:i + line_length])
+                fasta_lines.append(seq[i : i + line_length])
         else:
             fasta_lines.append(seq)
-    
-    return '\n'.join(fasta_lines) + '\n'
+
+    return "\n".join(fasta_lines) + "\n"
 
 
 def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
     """
     Parse a FASTA format string and create an MSA.
-    
+
     Parameters
     ----------
     fasta_string : str
         FASTA format string containing sequence alignment data.
     **kwargs
         Additional arguments (currently unused, for compatibility).
-    
+
     Returns
     -------
     MSA
         Parsed MSA.
-    
+
     Raises
     ------
     PhyloZooParseError
         If the FASTA string is malformed or cannot be parsed (e.g., empty taxon identifier,
         sequence data before header, no sequences found).
-    
+
     Examples
     --------
     >>> from phylozoo.core.sequence.io import from_fasta
@@ -138,7 +138,7 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
     2
     >>> msa.get_sequence("taxon1")
     'ACGTACGT'
-    
+
     Notes
     -----
     This parser:
@@ -151,48 +151,48 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
     sequences: dict[str, str] = {}
     current_taxon: str | None = None
     current_seq: list[str] = []
-    
-    lines = fasta_string.split('\n')
-    
+
+    lines = fasta_string.split("\n")
+
     for line in lines:
         line = line.strip()
-        
+
         if not line:
             continue
-        
+
         # Check if this is a header line (starts with '>')
-        if line.startswith('>'):
+        if line.startswith(">"):
             # Save previous sequence if any
             if current_taxon is not None:
-                seq_str = ''.join(current_seq)
+                seq_str = "".join(current_seq)
                 if seq_str:  # Only add if sequence is not empty
                     sequences[current_taxon] = seq_str
                 current_seq = []
-            
+
             # Extract taxon identifier (everything after '>', stripped)
             current_taxon = line[1:].strip()
             if not current_taxon:
                 raise PhyloZooParseError("FASTA header line has empty taxon identifier")
-        
+
         elif current_taxon is not None:
             # This is a sequence line
             # Remove whitespace and add to current sequence
-            seq_line = line.replace(' ', '').replace('\t', '')
+            seq_line = line.replace(" ", "").replace("\t", "")
             if seq_line:
                 current_seq.append(seq_line)
         else:
             # Sequence line before any header
             raise PhyloZooParseError("FASTA string has sequence data before first header line")
-    
+
     # Don't forget the last sequence
     if current_taxon is not None:
-        seq_str = ''.join(current_seq)
+        seq_str = "".join(current_seq)
         if seq_str:
             sequences[current_taxon] = seq_str
-    
+
     if not sequences:
         raise PhyloZooParseError("No sequences found in FASTA string")
-    
+
     # Create MSA (will validate that all sequences have same length)
     return MSA(sequences)
 
@@ -200,13 +200,13 @@ def from_fasta(fasta_string: str, **kwargs: Any) -> MSA:
 def to_nexus(msa: MSA, **kwargs: Any) -> str:
     """
     Convert an MSA to NEXUS format string.
-    
+
     NEXUS format for sequences consists of:
 
     - #NEXUS header
     - TAXA block with taxon labels
     - CHARACTERS block with sequence data
-    
+
     Parameters
     ----------
     msa : MSA
@@ -217,17 +217,17 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
         - datatype (str): Data type (default: 'DNA'). Can be 'DNA', 'RNA', 'PROTEIN', etc.
         - missing (str): Missing data character (default: 'N')
         - gap (str): Gap character (default: '-')
-    
+
     Returns
     -------
     str
         The NEXUS format string representation of the MSA.
-    
+
     Examples
     --------
     >>> from phylozoo.core.sequence import MSA
     >>> from phylozoo.core.sequence.io import to_nexus
-    >>> 
+    >>>
     >>> sequences = {"taxon1": "ACGTACGT", "taxon2": "TGCAACGT"}
     >>> msa = MSA(sequences)
     >>> nexus_str = to_nexus(msa)
@@ -237,7 +237,7 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     True
     >>> 'BEGIN CHARACTERS' in nexus_str
     True
-    
+
     Notes
     -----
     The NEXUS format includes:
@@ -246,9 +246,9 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     - Characters block with DIMENSIONS, FORMAT, and MATRIX
     - Taxon identifiers are converted to strings
     """
-    datatype = kwargs.get('datatype', 'DNA').upper()
-    missing = kwargs.get('missing', 'N')
-    gap = kwargs.get('gap', '-')
+    datatype = kwargs.get("datatype", "DNA").upper()
+    missing = kwargs.get("missing", "N")
+    gap = kwargs.get("gap", "-")
 
     n = msa.num_taxa
     seq_length = msa.sequence_length
@@ -256,7 +256,7 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     body += f"    FORMAT datatype={datatype} missing={missing} gap={gap};\n"
     body += "    MATRIX\n"
     for taxon in msa.taxa_order:
-        seq = msa.get_sequence(taxon) or ''
+        seq = msa.get_sequence(taxon) or ""
         body += f"        {taxon}    {seq}\n"
     return (
         nexus_fmt.nexus_header()
@@ -268,31 +268,31 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
 def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     """
     Parse a NEXUS format string and create an MSA.
-    
+
     Parameters
     ----------
     nexus_string : str
         NEXUS format string containing sequence alignment data.
     **kwargs
         Additional arguments (currently unused, for compatibility).
-    
+
     Returns
     -------
     MSA
         Parsed MSA.
-    
+
     Raises
     ------
     PhyloZooParseError
         If the NEXUS string is malformed or cannot be parsed (e.g., missing TAXA or CHARACTERS blocks,
         mismatched number of taxa and matrix rows, invalid matrix format).
-    
+
     Examples
     --------
     >>> from phylozoo.core.sequence.io import from_nexus
-    >>> 
+    >>>
     >>> nexus_str = '''#NEXUS
-    ... 
+    ...
     ... BEGIN TAXA;
     ...     DIMENSIONS ntax=2;
     ...     TAXLABELS
@@ -300,7 +300,7 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     ...         taxon2
     ...     ;
     ... END;
-    ... 
+    ...
     ... BEGIN CHARACTERS;
     ...     DIMENSIONS nchar=8;
     ...     FORMAT datatype=DNA missing=N gap=-;
@@ -309,13 +309,13 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     ...         taxon2    TGCAACGT
     ...     ;
     ... END;'''
-    >>> 
+    >>>
     >>> msa = from_nexus(nexus_str)
     >>> len(msa)
     2
     >>> msa.get_sequence("taxon1")
     'ACGTACGT'
-    
+
     Notes
     -----
     This parser supports:
@@ -336,59 +336,55 @@ def from_nexus(nexus_string: str, **kwargs: Any) -> MSA:
     if not labels:
         raise PhyloZooParseError("No taxa labels found in NEXUS string")
 
-    matrix_match = re.search(r'MATRIX\s+(.*?);', content, re.DOTALL | re.IGNORECASE)
+    matrix_match = re.search(r"MATRIX\s+(.*?);", content, re.DOTALL | re.IGNORECASE)
     if not matrix_match:
         raise PhyloZooParseError("Could not find MATRIX in CHARACTERS block")
     matrix_section = matrix_match.group(1)
-    matrix_lines = [line.strip() for line in matrix_section.strip().split('\n') if line.strip()]
-    
+    matrix_lines = [line.strip() for line in matrix_section.strip().split("\n") if line.strip()]
+
     if len(matrix_lines) != n:
         raise PhyloZooParseError(
-            f"Number of matrix rows ({len(matrix_lines)}) does not match "
-            f"number of taxa ({n})"
+            f"Number of matrix rows ({len(matrix_lines)}) does not match " f"number of taxa ({n})"
         )
-    
+
     # Parse sequences
     sequences: dict[str, str] = {}
-    
+
     for i, line in enumerate(matrix_lines):
         # Split line: taxon identifier and sequence
         # Taxon identifier is typically separated by whitespace from sequence
         parts = line.split(None, 1)  # Split on whitespace, max 1 split
-        
+
         if len(parts) < 2:
             raise PhyloZooParseError(
                 f"Matrix row {i+1} does not have both taxon identifier and sequence"
             )
-        
+
         taxon = parts[0].strip()
-        seq = parts[1].strip().replace(' ', '').replace('\t', '')  # Remove whitespace
-        
+        seq = parts[1].strip().replace(" ", "").replace("\t", "")  # Remove whitespace
+
         # Verify taxon matches expected label
         if taxon != labels[i]:
             raise PhyloZooParseError(
                 f"Matrix row {i+1} taxon '{taxon}' does not match taxa label '{labels[i]}'"
             )
-        
+
         sequences[taxon] = seq
-    
+
     # Create MSA (will validate that all sequences have same length)
     return MSA(sequences)
 
 
 # Register format handlers with FormatRegistry
 FormatRegistry.register(
-    MSA, 'fasta',
+    MSA,
+    "fasta",
     reader=from_fasta,
     writer=to_fasta,
-    extensions=['.fasta', '.fa', '.fas'],
-    default=True
+    extensions=[".fasta", ".fa", ".fas"],
+    default=True,
 )
 
 FormatRegistry.register(
-    MSA, 'nexus',
-    reader=from_nexus,
-    writer=to_nexus,
-    extensions=['.nexus', '.nex', '.nxs']
+    MSA, "nexus", reader=from_nexus, writer=to_nexus, extensions=[".nexus", ".nex", ".nxs"]
 )
-

@@ -50,7 +50,7 @@ class IOMixin:
     >>> net2 = MyNetwork.load('network.enewick')
     """
 
-    _default_format: str = 'default'
+    _default_format: str = "default"
     _supported_formats: list[str] = []
 
     def to_string(self, format: str | None = None, **kwargs: object) -> str:
@@ -77,8 +77,7 @@ class IOMixin:
         format = format or self._default_format
         if format not in self._supported_formats:
             raise PhyloZooFormatError(
-                f"Format '{format}' not supported. "
-                f"Supported formats: {self._supported_formats}"
+                f"Format '{format}' not supported. " f"Supported formats: {self._supported_formats}"
             )
         writer = FormatRegistry.get_writer(type(self), format)
         return writer(self, **kwargs)
@@ -123,7 +122,9 @@ class IOMixin:
         write_file_safely(filepath, content)
 
     @classmethod
-    def load(cls, filepath: str | Path, format: str | None = None, **kwargs: object):  # noqa: ANN206
+    def load(
+        cls, filepath: str | Path, format: str | None = None, **kwargs: object
+    ):  # noqa: ANN206
         """
         Load instance from a file.
 
@@ -178,8 +179,7 @@ class IOMixin:
         format = format or cls._default_format
         if format not in cls._supported_formats:
             raise PhyloZooFormatError(
-                f"Format '{format}' not supported. "
-                f"Supported formats: {cls._supported_formats}"
+                f"Format '{format}' not supported. " f"Supported formats: {cls._supported_formats}"
             )
         reader = FormatRegistry.get_reader(cls, format)
         return reader(string, **kwargs)

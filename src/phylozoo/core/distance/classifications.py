@@ -17,44 +17,45 @@ from ...utils.exceptions import PhyloZooValueError
 from ..primitives.circular_ordering import CircularOrdering
 from .base import DistanceMatrix
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def satisfies_triangle_inequality(distance_matrix: DistanceMatrix) -> bool:
     """
     Check if the distance matrix satisfies the triangle inequality.
-    
+
     A distance matrix satisfies the triangle inequality if:
     d(i,k) <= d(i,j) + d(j,k) for all i, j, k.
-    
+
     Parameters
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to check.
-    
+
     Returns
     -------
     bool
         True if triangle inequality holds, False otherwise.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import satisfies_triangle_inequality
-    >>> 
+    >>>
     >>> # Matrix satisfying triangle inequality
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix)
     >>> satisfies_triangle_inequality(dm)
     True
-    >>> 
+    >>>
     >>> # Matrix violating triangle inequality
     >>> bad_matrix = np.array([[0, 1, 5], [1, 0, 1], [5, 1, 0]])
     >>> bad_dm = DistanceMatrix(bad_matrix)
     >>> satisfies_triangle_inequality(bad_dm)
     False
     """
+
     @njit(cache=True)
     def _check_triangle_inequality_numba(matrix: np.ndarray, n: int) -> bool:
         """Numba-accelerated triangle inequality check."""
@@ -69,30 +70,30 @@ def satisfies_triangle_inequality(distance_matrix: DistanceMatrix) -> bool:
                     if matrix[i, k] > matrix[i, j] + matrix[j, k]:
                         return False
         return True
-    
+
     return _check_triangle_inequality_numba(distance_matrix._matrix, len(distance_matrix))
 
 
 def has_zero_diagonal(distance_matrix: DistanceMatrix) -> bool:
     """
     Check if the diagonal of the distance matrix is zero.
-    
+
     Parameters
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to check.
-    
+
     Returns
     -------
     bool
         True if diagonal is zero, False otherwise.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import has_zero_diagonal
-    >>> 
+    >>>
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix)
     >>> has_zero_diagonal(dm)
@@ -104,23 +105,23 @@ def has_zero_diagonal(distance_matrix: DistanceMatrix) -> bool:
 def is_nonnegative(distance_matrix: DistanceMatrix) -> bool:
     """
     Check if all distances are non-negative.
-    
+
     Parameters
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to check.
-    
+
     Returns
     -------
     bool
         True if all distances are non-negative, False otherwise.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import is_nonnegative
-    >>> 
+    >>>
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix)
     >>> is_nonnegative(dm)
@@ -132,36 +133,36 @@ def is_nonnegative(distance_matrix: DistanceMatrix) -> bool:
 def is_metric(distance_matrix: DistanceMatrix) -> bool:
     """
     Check if the distance matrix is a metric.
-    
+
     A metric distance matrix satisfies:
 
     1. Non-negativity: d(x, y) >= 0 for all x, y
     2. Triangle inequality: d(x, z) <= d(x, y) + d(y, z) for all x, y, z
     3. Zero diagonal: d(x, x) = 0 for all x
     4. Symmetry: d(x, y) = d(y, x) for all x, y (already enforced in constructor)
-    
+
     Parameters
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to check.
-    
+
     Returns
     -------
     bool
         True if the matrix is a metric, False otherwise.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import is_metric
-    >>> 
+    >>>
     >>> # Euclidean distance matrix (metric)
     >>> matrix = np.array([[0, 1, 2], [1, 0, 1], [2, 1, 0]])
     >>> dm = DistanceMatrix(matrix)
     >>> is_metric(dm)
     True
-    >>> 
+    >>>
     >>> # Non-metric (violates triangle inequality)
     >>> bad_matrix = np.array([[0, 1, 5], [1, 0, 1], [5, 1, 0]])
     >>> bad_dm = DistanceMatrix(bad_matrix)
@@ -169,75 +170,69 @@ def is_metric(distance_matrix: DistanceMatrix) -> bool:
     False
     """
     return (
-        is_nonnegative(distance_matrix) and
-        satisfies_triangle_inequality(distance_matrix) and
-        has_zero_diagonal(distance_matrix)
+        is_nonnegative(distance_matrix)
+        and satisfies_triangle_inequality(distance_matrix)
+        and has_zero_diagonal(distance_matrix)
     )
 
 
 def is_pseudo_metric(distance_matrix: DistanceMatrix) -> bool:
     """
     Check if the distance matrix is a pseudo-metric.
-    
+
     A pseudo-metric distance matrix satisfies:
 
     1. Non-negativity: d(x, y) >= 0 for all x, y
     2. Triangle inequality: d(x, z) <= d(x, y) + d(y, z) for all x, y, z
-    
+
     Note: Unlike a metric, a pseudo-metric does not require d(x, x) = 0
     (though it may still hold).
-    
+
     Parameters
     ----------
     distance_matrix : DistanceMatrix
         The distance matrix to check.
-    
+
     Returns
     -------
     bool
         True if the matrix is a pseudo-metric, False otherwise.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import is_pseudo_metric
-    >>> 
+    >>>
     >>> # Pseudo-metric (satisfies non-negativity and triangle inequality)
     >>> matrix = np.array([[0.1, 1, 2], [1, 0.1, 1], [2, 1, 0.1]])
     >>> dm = DistanceMatrix(matrix)
     >>> is_pseudo_metric(dm)
     True
-    >>> 
+    >>>
     >>> # Not a pseudo-metric (violates triangle inequality)
     >>> bad_matrix = np.array([[0, 1, 5], [1, 0, 1], [5, 1, 0]])
     >>> bad_dm = DistanceMatrix(bad_matrix)
     >>> is_pseudo_metric(bad_dm)
     False
     """
-    return (
-        is_nonnegative(distance_matrix) and
-        satisfies_triangle_inequality(distance_matrix)
-    )
+    return is_nonnegative(distance_matrix) and satisfies_triangle_inequality(distance_matrix)
 
 
-def is_kalmanson(
-    distance_matrix: DistanceMatrix,
-    circular_order: CircularOrdering[T]
-) -> bool:
+def is_kalmanson(distance_matrix: DistanceMatrix, circular_order: CircularOrdering[T]) -> bool:
     """
     Check if the distance matrix is Kalmanson with respect to a circular order.
-    
+
     A distance matrix is Kalmanson with respect to a circular order if it satisfies
     the Kalmanson inequalities for all quadruples of labels in that order.
-    
+
     The Kalmanson conditions are classical inequalities for circular metrics :cite:`Kalmanson1975`.
-    
+
     For a circular order (l1, l2, ..., ln), the Kalmanson conditions are:
 
     - d(ei, ej) + d(ek, el) <= d(ei, ek) + d(ej, el) for all i < j < k < l
     - d(ei, el) + d(ej, ek) <= d(ei, ek) + d(ej, el) for all i < j < k < l
-    
+
     Parameters
     ----------
     distance_matrix : DistanceMatrix
@@ -245,12 +240,12 @@ def is_kalmanson(
     circular_order : CircularOrdering[T]
         A circular ordering of all labels in the distance matrix. Must contain
         the same elements as the distance matrix labels.
-    
+
     Returns
     -------
     bool
         True if the matrix is Kalmanson with respect to the given order, False otherwise.
-    
+
     Raises
     ------
     PhyloZooValueError
@@ -258,14 +253,14 @@ def is_kalmanson(
         a pseudo-metric.
     TypeError
         If circular_order is not a CircularOrdering.
-    
+
     Examples
     --------
     >>> import numpy as np
     >>> from phylozoo.core.distance import DistanceMatrix
     >>> from phylozoo.core.distance.classifications import is_kalmanson
     >>> from phylozoo.core.primitives.circular_ordering import CircularOrdering
-    >>> 
+    >>>
     >>> # Kalmanson matrix (e.g., from a circular network)
     >>> matrix = np.array([
     ...     [0, 1, 2, 2, 1],
@@ -284,51 +279,44 @@ def is_kalmanson(
         raise TypeError(
             f"circular_order must be a CircularOrdering, got {type(circular_order).__name__}"
         )
-    
+
     if len(circular_order) == 0:
         raise PhyloZooValueError("circular_order cannot be empty")
-    
+
     # Extract order list from CircularOrdering
     order_list = list(circular_order.order)
-    
+
     if not set(order_list) == set(distance_matrix.labels):
-        raise PhyloZooValueError(
-            "circular_order must contain all labels of the distance matrix"
-        )
-    
+        raise PhyloZooValueError("circular_order must contain all labels of the distance matrix")
+
     if len(order_list) != len(distance_matrix.labels):
         raise PhyloZooValueError(
             f"circular_order has {len(order_list)} elements, but distance matrix "
             f"has {len(distance_matrix.labels)} labels"
         )
-    
+
     if not is_pseudo_metric(distance_matrix):
         raise PhyloZooValueError(
             "Distance matrix must be pseudo-metric to check Kalmanson property"
         )
-    
+
     # Early exit for small matrices (need at least 4 elements for Kalmanson check)
     n = len(distance_matrix)
     if n < 4:
         # Trivially Kalmanson if less than 4 elements
         return True
-    
+
     # Get ordered indices
     try:
         ordered_indices = np.array(
-            [distance_matrix.get_index(label) for label in order_list],
-            dtype=np.int64
+            [distance_matrix.get_index(label) for label in order_list], dtype=np.int64
         )
     except PhyloZooValueError as e:
-        raise PhyloZooValueError(
-            f"circular_order contains invalid labels: {e}"
-        ) from e
-    
+        raise PhyloZooValueError(f"circular_order contains invalid labels: {e}") from e
+
     @njit(cache=True)
     def _check_kalmanson_conditions(
-        matrix: np.ndarray,
-        ordered_indices: np.ndarray,
-        n: int
+        matrix: np.ndarray, ordered_indices: np.ndarray, n: int
     ) -> bool:
         """Numba-accelerated Kalmanson condition check."""
         # Check all combinations of 4 indices (i < j < k < l)
@@ -340,26 +328,33 @@ def is_kalmanson(
                         jj = ordered_indices[j]
                         kk = ordered_indices[k]
                         ll = ordered_indices[l]
-                        
+
                         # Bounds checking
-                        if ii < 0 or ii >= n or jj < 0 or jj >= n or \
-                           kk < 0 or kk >= n or ll < 0 or ll >= n:
+                        if (
+                            ii < 0
+                            or ii >= n
+                            or jj < 0
+                            or jj >= n
+                            or kk < 0
+                            or kk >= n
+                            or ll < 0
+                            or ll >= n
+                        ):
                             return False
-                        
+
                         d_ij = matrix[ii, jj]
                         d_kl = matrix[kk, ll]
                         d_ik = matrix[ii, kk]
                         d_il = matrix[ii, ll]
                         d_jk = matrix[jj, kk]
                         d_jl = matrix[jj, ll]
-                        
+
                         # Kalmanson conditions
                         cond1 = d_ij + d_kl - d_ik - d_jl
                         cond2 = d_il + d_jk - d_ik - d_jl
-                        
+
                         if cond1 > 0 or cond2 > 0:
                             return False
         return True
-    
-    return _check_kalmanson_conditions(distance_matrix._matrix, ordered_indices, n)
 
+    return _check_kalmanson_conditions(distance_matrix._matrix, ordered_indices, n)

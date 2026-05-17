@@ -26,12 +26,12 @@ class DNetStyle(DMGraphStyle):
     'blue'
     """
 
-    leaf_color: str = 'lightblue'
-    hybrid_color: str = 'lightblue'
+    leaf_color: str = "lightblue"
+    hybrid_color: str = "lightblue"
     leaf_size: float | None = None
-    hybrid_edge_color: str = 'red'
+    hybrid_edge_color: str = "red"
 
-    def copy(self) -> 'DNetStyle':
+    def copy(self) -> "DNetStyle":
         """
         Create a copy of this style.
 

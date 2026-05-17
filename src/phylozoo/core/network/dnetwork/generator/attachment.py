@@ -12,7 +12,7 @@ edge sides (``DirEdgeSide``), depending on the side type.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from phylozoo.core.network.dnetwork.conversions import dnetwork_from_graph
 from phylozoo.core.network.dnetwork.generator.base import DirectedGenerator
@@ -236,9 +236,7 @@ def attach_leaves_to_generator(
     # Require at least two taxa in total across all sides
     total_taxa = sum(len(taxa) for taxa in side_taxa.values())
     if total_taxa < 2:
-        raise PhyloZooValueError(
-            f"At least two taxa must be attached in total, got {total_taxa}."
-        )
+        raise PhyloZooValueError(f"At least two taxa must be attached in total, got {total_taxa}.")
 
     # Work on a copy of the generator's graph to avoid mutating the original
     graph: DirectedMultiGraph[T] = generator.graph.copy()
@@ -254,10 +252,7 @@ def attach_leaves_to_generator(
         elif isinstance(side, NodeSide):
             _attach_leaves_to_node_side(graph, side, taxa)
         else:
-            raise PhyloZooValueError(
-                f"Unsupported side type {type(side)} in side_taxa mapping."
-            )
+            raise PhyloZooValueError(f"Unsupported side type {type(side)} in side_taxa mapping.")
 
     # Convert the augmented graph into a full DirectedPhyNetwork
     return dnetwork_from_graph(graph)
-

@@ -5,9 +5,9 @@ from .plot import plot_mmgraph
 from .style import MGraphStyle, default_style
 
 __all__ = [
-    'compute_nx_layout',
-    'plot_mmgraph',
-    'MGraphLayout',
-    'MGraphStyle',
-    'default_style',
+    "compute_nx_layout",
+    "plot_mmgraph",
+    "MGraphLayout",
+    "MGraphStyle",
+    "default_style",
 ]

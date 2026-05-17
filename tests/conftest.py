@@ -42,5 +42,3 @@ def sample_split_system():
     split1 = Split({1, 2}, {3, 4})
     split2 = Split({1, 3}, {2, 4})
     return SplitSystem([split1, split2])
-
-

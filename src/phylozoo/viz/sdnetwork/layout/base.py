@@ -6,16 +6,15 @@ This module provides layout data classes that store computed layout information.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, TypeVar
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, TypeVar
 
-from phylozoo.viz._types import Positions
 from ...m_multigraph.layout.base import MGraphLayout
 
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -41,7 +40,7 @@ class SDNetLayout(MGraphLayout[T]):
     (1.0, 0.0)
     >>> layout.algorithm
     'pz-radial'
-    
+
     Attributes
     ----------
     network : SemiDirectedPhyNetwork
@@ -56,5 +55,5 @@ class SDNetLayout(MGraphLayout[T]):
         Parameters used to generate this layout (read-only).
     """
 
-    network: 'SemiDirectedPhyNetwork'
-    algorithm: str = 'pz-radial'  # Default, but typically overridden by specific layouts
+    network: "SemiDirectedPhyNetwork"
+    algorithm: str = "pz-radial"  # Default, but typically overridden by specific layouts

@@ -5,9 +5,9 @@ from .plot import plot_dmgraph
 from .style import DMGraphStyle, default_style
 
 __all__ = [
-    'compute_nx_layout',
-    'plot_dmgraph',
-    'DMGraphLayout',
-    'DMGraphStyle',
-    'default_style',
+    "compute_nx_layout",
+    "plot_dmgraph",
+    "DMGraphLayout",
+    "DMGraphStyle",
+    "default_style",
 ]

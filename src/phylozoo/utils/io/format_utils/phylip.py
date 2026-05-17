@@ -33,7 +33,7 @@ def parse_phylip_matrix(phylip_string: str) -> tuple[int, list[tuple[str, str]]]
     PhyloZooParseError
         If string is empty or first line is not an integer.
     """
-    lines = [line.rstrip('\n\r') for line in phylip_string.strip().split('\n') if line.strip()]
+    lines = [line.rstrip("\n\r") for line in phylip_string.strip().split("\n") if line.strip()]
 
     if not lines:
         raise PhyloZooParseError("PHYLIP string is empty")
@@ -41,19 +41,13 @@ def parse_phylip_matrix(phylip_string: str) -> tuple[int, list[tuple[str, str]]]
     try:
         n = int(lines[0])
     except ValueError as e:
-        raise PhyloZooParseError(
-            f"Could not parse number of taxa from first line: {e}"
-        ) from e
+        raise PhyloZooParseError(f"Could not parse number of taxa from first line: {e}") from e
 
     if n <= 0:
-        raise PhyloZooParseError(
-            f"Number of taxa must be positive, got {n}"
-        )
+        raise PhyloZooParseError(f"Number of taxa must be positive, got {n}")
 
     if len(lines) < n + 1:
-        raise PhyloZooParseError(
-            f"PHYLIP string has {len(lines) - 1} data lines, expected {n}"
-        )
+        raise PhyloZooParseError(f"PHYLIP string has {len(lines) - 1} data lines, expected {n}")
 
     rows: list[tuple[str, str]] = []
     for i in range(1, n + 1):
@@ -61,7 +55,7 @@ def parse_phylip_matrix(phylip_string: str) -> tuple[int, list[tuple[str, str]]]
         # Label: first 10 characters (PHYLIP standard) or until first whitespace
         if len(line) <= _PHYLIP_LABEL_LEN:
             label = line.strip()
-            rest = ''
+            rest = ""
         else:
             label = line[:_PHYLIP_LABEL_LEN].strip()
             rest = line[_PHYLIP_LABEL_LEN:].strip()
@@ -90,4 +84,4 @@ def write_phylip_matrix(n: int, rows: list[tuple[str, str]]) -> str:
     for label, rest in rows:
         label_padded = str(label).ljust(_PHYLIP_LABEL_LEN)
         lines.append(f"{label_padded}{rest}")
-    return '\n'.join(lines) + '\n'
+    return "\n".join(lines) + "\n"

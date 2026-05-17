@@ -25,4 +25,3 @@ __all__ = [
     "all_level_k_generators",
     "attach_leaves_to_generator",
 ]
-

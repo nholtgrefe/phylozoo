@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from phylozoo.utils.exceptions import PhyloZooLayoutError
 from phylozoo.viz._layout_utils import compute_layout_center
 from phylozoo.viz._matplotlib import plt
 
@@ -21,8 +20,8 @@ if TYPE_CHECKING:
 
 
 def plot_mmgraph(
-    graph: 'MixedMultiGraph',
-    layout: str = 'spring',
+    graph: "MixedMultiGraph",
+    layout: str = "spring",
     style: MGraphStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -87,9 +86,9 @@ def plot_mmgraph(
 
     def get_label(node: Any) -> str | None:
         if node in graph._directed.nodes:
-            return graph._directed.nodes[node].get('label', str(node))
+            return graph._directed.nodes[node].get("label", str(node))
         if node in graph._undirected.nodes:
-            return graph._undirected.nodes[node].get('label', str(node))
+            return graph._undirected.nodes[node].get("label", str(node))
         return str(node)
 
     render_layout(
@@ -98,7 +97,7 @@ def plot_mmgraph(
         positions,
         style,
         center,
-        get_node_type=lambda _: 'generic',
+        get_node_type=lambda _: "generic",
         get_label=get_label,
         radial_labels_for_leaves=False,
     )

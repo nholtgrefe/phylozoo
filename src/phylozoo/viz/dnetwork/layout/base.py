@@ -7,7 +7,7 @@ This module provides layout data classes that store computed layout information.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 # Positions inherited from DMGraphLayout
 from ...d_multigraph.layout.base import DMGraphLayout
@@ -15,7 +15,7 @@ from ...d_multigraph.layout.base import DMGraphLayout
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -41,7 +41,7 @@ class DNetLayout(DMGraphLayout[T]):
     (0.0, 1.5)
     >>> layout.algorithm
     'pz-dag'
-    
+
     Attributes
     ----------
     network : DirectedPhyNetwork
@@ -60,7 +60,7 @@ class DNetLayout(DMGraphLayout[T]):
         Parameters used to generate this layout (read-only).
     """
 
-    network: 'DirectedPhyNetwork'
+    network: "DirectedPhyNetwork"
     backbone_edges: set[tuple[T, T, int]] = field(default_factory=set)
     reticulate_edges: set[tuple[T, T, int]] = field(default_factory=set)
-    algorithm: str = 'pz-dag'  # Default, but typically overridden by specific layouts
+    algorithm: str = "pz-dag"  # Default, but typically overridden by specific layouts

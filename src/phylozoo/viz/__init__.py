@@ -9,4 +9,4 @@ styling. Use :func:`plot` for all supported types. It dispatches by object type:
 
 from .plot import plot
 
-__all__ = ['plot']
+__all__ = ["plot"]

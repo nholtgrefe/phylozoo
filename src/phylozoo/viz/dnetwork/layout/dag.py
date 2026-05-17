@@ -25,22 +25,22 @@ from .routes import compute_backbone_routes, compute_hybrid_routes
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_pz_dag_layout(
-    network: 'DirectedPhyNetwork',
+    network: "DirectedPhyNetwork",
     layer_gap: float = 1.5,
     leaf_gap: float = 1.0,
     trials: int = 2000,
     seed: int | None = None,
-    direction: str = 'TD',  # "TD" = top-down, "LR" = left-right
+    direction: str = "TD",  # "TD" = top-down, "LR" = left-right
     x_scale: float = 1.5,
     y_scale: float = 1.0,
 ) -> DNetLayout:
     """
     Layout a phylogenetic network (DAG) using a tree-backbone heuristic.
-    
+
     This is a custom PhyloZoo layout algorithm (pz-dag).
 
     This function implements a tree-backbone layout algorithm:
@@ -101,7 +101,7 @@ def compute_pz_dag_layout(
     if network.number_of_nodes() == 0:
         raise PhyloZooLayoutError("Cannot compute layout for empty network")
 
-    if direction.upper() not in ('TD', 'LR'):
+    if direction.upper() not in ("TD", "LR"):
         raise PhyloZooValueError(f"direction must be 'TD' or 'LR', got '{direction}'")
 
     rng = random.Random(seed)
@@ -135,7 +135,9 @@ def compute_pz_dag_layout(
     T = nx.DiGraph(tree_edges)
 
     # --- Step 2: Recursive layout helper (x only) ---
-    def layout_tree(node: T, depth: int, x_offset: list[float]) -> tuple[dict[T, tuple[float, float]], float]:
+    def layout_tree(
+        node: T, depth: int, x_offset: list[float]
+    ) -> tuple[dict[T, tuple[float, float]], float]:
         """Recursively layout tree, returning positions and next x offset."""
         children = list(T.successors(node))
         if not children:
@@ -155,15 +157,9 @@ def compute_pz_dag_layout(
         return pos, x_offset[0]
 
     # --- Step 3: Crossing count heuristic ---
-    def count_crossings(
-        pos: dict[T, tuple[float, float]], edges: list[tuple[T, T]]
-    ) -> int:
+    def count_crossings(pos: dict[T, tuple[float, float]], edges: list[tuple[T, T]]) -> int:
         """Count edge crossings."""
-        xs = [
-            (pos[u][0], pos[v][0])
-            for u, v in edges
-            if u in pos and v in pos
-        ]
+        xs = [(pos[u][0], pos[v][0]) for u, v in edges if u in pos and v in pos]
         count = 0
         for i in range(len(xs)):
             x1u, x1v = xs[i]
@@ -175,7 +171,7 @@ def compute_pz_dag_layout(
 
     # --- Step 4: Optimization loop (for x-ordering) ---
     best_pos: dict[T, tuple[float, float]] | None = None
-    best_score = float('inf')
+    best_score = float("inf")
     node_children: dict[T, list[T]] = {n: list(T.successors(n)) for n in T.nodes}
 
     for _ in range(trials):
@@ -191,7 +187,7 @@ def compute_pz_dag_layout(
 
         # Compute layout with this ordering
         pos, _ = layout_tree(root, 0, [0.0])
-        
+
         # Count crossings including non-tree edges
         all_edges = [(u, v) for u, v in G.edges]
         score = count_crossings(pos, all_edges)
@@ -216,13 +212,13 @@ def compute_pz_dag_layout(
 
     # --- Step 6: Final coordinate mapping ---
     final_positions: dict[T, tuple[float, float]] = {}
-    if direction.upper() == 'TD':
+    if direction.upper() == "TD":
         # Root at top, children below
         for n in pos:
             x, _ = pos[n]
             y = (max_depth - depths[n]) * layer_gap
             final_positions[n] = (x * x_scale, y * y_scale)
-    elif direction.upper() == 'LR':
+    elif direction.upper() == "LR":
         # Root on left, children to the right
         for n in pos:
             y, _ = pos[n]  # reuse previous 'x' as vertical coordinate
@@ -241,9 +237,7 @@ def compute_pz_dag_layout(
             hybrid_edge_set.add((u, v, key))
 
     # Compute routes
-    backbone_routes = compute_backbone_routes(
-        network, final_positions, tree_edge_set
-    )
+    backbone_routes = compute_backbone_routes(network, final_positions, tree_edge_set)
     hybrid_routes = compute_hybrid_routes(
         network,
         final_positions,
@@ -259,15 +253,14 @@ def compute_pz_dag_layout(
         edge_routes=all_routes,
         backbone_edges=tree_edge_set,
         reticulate_edges=hybrid_edge_set,
-        algorithm='pz-dag',
+        algorithm="pz-dag",
         parameters={
-            'layer_gap': layer_gap,
-            'leaf_gap': leaf_gap,
-            'trials': trials,
-            'seed': seed,
-            'direction': direction,
-            'x_scale': x_scale,
-            'y_scale': y_scale,
+            "layer_gap": layer_gap,
+            "leaf_gap": leaf_gap,
+            "trials": trials,
+            "seed": seed,
+            "direction": direction,
+            "x_scale": x_scale,
+            "y_scale": y_scale,
         },
     )
-

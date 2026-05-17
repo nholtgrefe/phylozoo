@@ -1,4 +1,3 @@
 """
 Sequence module tests.
 """
-

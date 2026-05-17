@@ -133,10 +133,7 @@ class TestTripletProfileSetInit:
         t1 = Triplet(Split({1}, {2, 3}))
         t2 = Triplet(Split({4}, {5, 6}))
 
-        profileset = TripletProfileSet(
-            profiles=[t1, t2],
-            taxa=frozenset({1, 2, 3, 4, 5, 6, 7, 8})
-        )
+        profileset = TripletProfileSet(profiles=[t1, t2], taxa=frozenset({1, 2, 3, 4, 5, 6, 7, 8}))
 
         assert len(profileset.taxa) == 8
         assert 7 in profileset.taxa
@@ -192,10 +189,7 @@ class TestTripletProfileSetProperties:
         """Test taxa property when explicit taxa is provided."""
         t1 = Triplet(Split({1}, {2, 3}))
 
-        profileset = TripletProfileSet(
-            profiles=[t1],
-            taxa=frozenset({1, 2, 3, 4, 5, 6})
-        )
+        profileset = TripletProfileSet(profiles=[t1], taxa=frozenset({1, 2, 3, 4, 5, 6}))
 
         assert len(profileset.taxa) == 6
         assert 4 in profileset.taxa
@@ -227,10 +221,7 @@ class TestTripletProfileSetProperties:
     def test_is_dense_with_explicit_taxa(self) -> None:
         """Test is_dense when explicit taxa is provided."""
         t1 = Triplet(Split({1}, {2, 3}))
-        profileset = TripletProfileSet(
-            profiles=[t1],
-            taxa=frozenset({1, 2, 3, 4, 5, 6})
-        )
+        profileset = TripletProfileSet(profiles=[t1], taxa=frozenset({1, 2, 3, 4, 5, 6}))
 
         # 6 taxa, should have C(6,3) = 20 profiles for dense, but only 1
         assert profileset.is_dense is False
@@ -519,10 +510,7 @@ class TestTripletProfileSetEdgeCases:
         triplets = []
         for i in range(10):
             taxa_start = i * 3
-            t = Triplet(Split(
-                {taxa_start + 1},
-                {taxa_start + 2, taxa_start + 3}
-            ))
+            t = Triplet(Split({taxa_start + 1}, {taxa_start + 2, taxa_start + 3}))
             triplets.append(t)
 
         profileset = TripletProfileSet(profiles=triplets)
@@ -583,15 +571,9 @@ class TestTripletProfileSetValidation:
         t2 = Triplet(Split({4}, {5, 6}))
 
         # Valid: taxa is superset
-        profileset1 = TripletProfileSet(
-            profiles=[t1, t2],
-            taxa=frozenset({1, 2, 3, 4, 5, 6, 7, 8})
-        )
+        profileset1 = TripletProfileSet(profiles=[t1, t2], taxa=frozenset({1, 2, 3, 4, 5, 6, 7, 8}))
         assert len(profileset1.taxa) == 8
 
         # Invalid: taxa is not superset
         with pytest.raises(ValueError, match="Provided taxa must be a superset"):
-            TripletProfileSet(
-                profiles=[t1, t2],
-                taxa=frozenset({1, 2, 3})
-            )
+            TripletProfileSet(profiles=[t1, t2], taxa=frozenset({1, 2, 3}))

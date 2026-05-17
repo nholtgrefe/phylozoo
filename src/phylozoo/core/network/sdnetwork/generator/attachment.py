@@ -289,9 +289,7 @@ def attach_leaves_to_generator(
     # Require at least two taxa in total across all sides
     total_taxa = sum(len(taxa) for taxa in side_taxa.values())
     if total_taxa < 2:
-        raise PhyloZooValueError(
-            f"At least two taxa must be attached in total, got {total_taxa}."
-        )
+        raise PhyloZooValueError(f"At least two taxa must be attached in total, got {total_taxa}.")
 
     graph = generator.graph.copy()
 
@@ -303,8 +301,6 @@ def attach_leaves_to_generator(
         elif isinstance(side, NodeSide):
             _attach_leaves_to_node_side(graph, side, taxa)
         else:
-            raise PhyloZooValueError(
-                f"Unsupported side type {type(side)} in side_taxa mapping."
-            )
+            raise PhyloZooValueError(f"Unsupported side type {type(side)} in side_taxa mapping.")
 
     return sdnetwork_from_graph(graph, network_type="semi-directed")

@@ -50,7 +50,7 @@ class Triplet:
     True
     """
 
-    __slots__ = ('_taxa', '_split', '_initialized')
+    __slots__ = ("_taxa", "_split", "_initialized")
 
     def __init__(
         self,
@@ -96,9 +96,9 @@ class Triplet:
             stored_split = None
 
         # Store as immutable
-        object.__setattr__(self, '_taxa', taxa_set)
-        object.__setattr__(self, '_split', stored_split)
-        object.__setattr__(self, '_initialized', True)
+        object.__setattr__(self, "_taxa", taxa_set)
+        object.__setattr__(self, "_split", stored_split)
+        object.__setattr__(self, "_initialized", True)
 
     def __setattr__(self, name: str, value: any) -> None:
         """
@@ -109,13 +109,11 @@ class Triplet:
         AttributeError
             If attempting to modify any attribute after initialization.
         """
-        if not hasattr(self, '_initialized') or not self._initialized:
+        if not hasattr(self, "_initialized") or not self._initialized:
             super().__setattr__(name, value)
             return
 
-        raise AttributeError(
-            f"Cannot modify attribute '{name}'. Triplet is immutable."
-        )
+        raise AttributeError(f"Cannot modify attribute '{name}'. Triplet is immutable.")
 
     @property
     def taxa(self) -> frozenset[str]:
@@ -204,7 +202,7 @@ class Triplet:
         """
         return self._split is None
 
-    def copy(self) -> 'Triplet':
+    def copy(self) -> "Triplet":
         """
         Create a copy of the triplet.
 
@@ -217,7 +215,7 @@ class Triplet:
             return Triplet(self._taxa)
         return Triplet(self._split)
 
-    def to_network(self) -> 'DirectedPhyNetwork':
+    def to_network(self) -> "DirectedPhyNetwork":
         """
         Convert the triplet to a DirectedPhyNetwork.
 
@@ -244,9 +242,9 @@ class Triplet:
                 (root_node, taxa_list[2]),
             ]
             nodes = [
-                (taxa_list[0], {'label': str(taxa_list[0])}),
-                (taxa_list[1], {'label': str(taxa_list[1])}),
-                (taxa_list[2], {'label': str(taxa_list[2])}),
+                (taxa_list[0], {"label": str(taxa_list[0])}),
+                (taxa_list[1], {"label": str(taxa_list[1])}),
+                (taxa_list[2], {"label": str(taxa_list[2])}),
             ]
         else:
             # Resolved triplet: root -> outgroup, root -> internal -> cherry
@@ -265,9 +263,9 @@ class Triplet:
                 (internal_node, cherry_leaves[1]),
             ]
             nodes = [
-                (outgroup_leaf, {'label': str(outgroup_leaf)}),
-                (cherry_leaves[0], {'label': str(cherry_leaves[0])}),
-                (cherry_leaves[1], {'label': str(cherry_leaves[1])}),
+                (outgroup_leaf, {"label": str(outgroup_leaf)}),
+                (cherry_leaves[0], {"label": str(cherry_leaves[0])}),
+                (cherry_leaves[1], {"label": str(cherry_leaves[1])}),
             ]
 
         return DirectedPhyNetwork(

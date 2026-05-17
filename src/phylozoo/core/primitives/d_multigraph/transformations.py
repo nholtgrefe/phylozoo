@@ -7,27 +7,28 @@ This module provides functions to transform DirectedMultiGraph instances
 
 from typing import Any, TypeVar, Iterable
 
-import networkx as nx
 
 from . import DirectedMultiGraph
 from phylozoo.utils.exceptions import PhyloZooValueError
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_attrs: dict[str, Any] | None = None) -> None:
+def identify_vertices(
+    graph: "DirectedMultiGraph", vertices: list[T], merged_attrs: dict[str, Any] | None = None
+) -> None:
     """
     Identify multiple vertices by keeping the first vertex.
-    
+
     This function identifies all vertices in the list with the first vertex.
     All edges incident to the other vertices are moved to the first vertex,
     and the other vertices are removed. The first vertex's attributes are
     preserved (or replaced with merged_attrs if provided).
-    
+
     This operation modifies the graph in place. Identification may create
     new parallel edges. Self-loops are not created (edges from a vertex
     to itself are removed).
-    
+
     Parameters
     ----------
     graph : DirectedMultiGraph
@@ -39,24 +40,24 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
         Attributes to use for the kept vertex. If None, the first vertex's
         attributes are preserved. If provided, these attributes replace the
         first vertex's attributes.
-    
+
     Raises
     ------
     PhyloZooValueError
         If the vertices list is empty, if any vertex is not in the graph, or
         if identification would create edges in both directions between the
         same pair of nodes (u->v and v->u), which is not allowed.
-    
+
     Notes
     -----
     This function does not create self-loops. Any edges that would become
     self-loops after identification are removed.
-    
+
     Identification may create parallel edges. However, if identification would
     result in edges in both directions between the same pair of nodes (e.g.,
     both u->v and v->u), a ValueError is raised as this violates the graph's
     constraints.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
@@ -75,40 +76,40 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
     """
     if not vertices:
         raise PhyloZooValueError("Vertices list cannot be empty")
-    
+
     vertices_list = list(vertices)
     if len(vertices_list) < 2:
         return  # Nothing to identify
-    
+
     first_vertex = vertices_list[0]
     other_vertices = vertices_list[1:]
-    
+
     # Check that all vertices exist
     for v in vertices_list:
         if v not in graph.nodes():
             raise PhyloZooValueError(f"Vertex {v} not found in graph")
-    
+
     # Before merging, check if identification would create bidirectional edges
     # After merging, edges from other_vertices will be moved to first_vertex
     # We need to check if this would create both u->v and v->u for any external node pair
-    
+
     # Collect all external nodes that would have edges to/from first_vertex after merging
     external_outgoing_targets: set[T] = set()  # Nodes that would receive edges FROM first_vertex
     external_incoming_sources: set[T] = set()  # Nodes that would have edges TO first_vertex
-    
+
     for other_v in other_vertices:
         # Check outgoing edges from other_v (will become first_vertex -> target)
         for u, v, key, data in graph.incident_child_edges(other_v, keys=True, data=True):
             if v == first_vertex or v in other_vertices:
                 continue  # Skip self-loops and edges to vertices being merged
             external_outgoing_targets.add(v)
-        
+
         # Check incoming edges to other_v (will become source -> first_vertex)
         for u, v, key, data in graph.incident_parent_edges(other_v, keys=True, data=True):
             if u == first_vertex or u in other_vertices:
                 continue  # Skip self-loops and edges from vertices being merged
             external_incoming_sources.add(u)
-    
+
     # Check if first_vertex already has edges that would conflict
     # Check outgoing edges from first_vertex
     for u, v, key, data in graph.incident_child_edges(first_vertex, keys=True, data=True):
@@ -120,7 +121,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
                     f"Identification would create edges in both directions between {first_vertex} and {v}, "
                     f"which is not allowed."
                 )
-    
+
     # Check incoming edges to first_vertex
     for u, v, key, data in graph.incident_parent_edges(first_vertex, keys=True, data=True):
         if u not in vertices_list:  # External source
@@ -131,32 +132,32 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
                     f"Identification would create edges in both directions between {first_vertex} and {u}, "
                     f"which is not allowed."
                 )
-    
+
     # Collect node attributes from first vertex
     first_vertex_attrs = {}
     if first_vertex in graph._graph.nodes():
         first_vertex_attrs.update(graph._graph.nodes[first_vertex])
-    
+
     # Merge all other vertices into first vertex
     for other_v in other_vertices:
         # Collect all edges incident to other_v before removal
         edges_to_add: list[tuple[T, T, int, dict[str, Any]]] = []
-        
+
         # Outgoing edges from other_v
         for u, v, key, data in graph.incident_child_edges(other_v, keys=True, data=True):
             if v == first_vertex or v in other_vertices:
                 continue  # Skip self-loops and edges to other vertices being merged
             edges_to_add.append((first_vertex, v, key, data or {}))
-        
+
         # Incoming edges to other_v
         for u, v, key, data in graph.incident_parent_edges(other_v, keys=True, data=True):
             if u == first_vertex or u in other_vertices:
                 continue  # Skip self-loops and edges from other vertices being merged
             edges_to_add.append((u, first_vertex, key, data or {}))
-        
+
         # Remove the vertex (this removes all its incident edges)
         graph.remove_node(other_v)
-        
+
         # Add edges to first_vertex
         for u, v, key, data in edges_to_add:
             # Check if edge with this key already exists - if so, let it auto-generate
@@ -166,7 +167,7 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
                 graph.add_edge(u, v, key=None, **data)
             else:
                 graph.add_edge(u, v, key=key, **data)
-    
+
     # Update first vertex attributes
     if merged_attrs is not None:
         # Replace attributes with merged_attrs
@@ -183,14 +184,16 @@ def identify_vertices(graph: 'DirectedMultiGraph', vertices: list[T], merged_att
     # Otherwise, first vertex's attributes are already preserved
 
 
-def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: dict[str, Any] | None = None) -> None:
+def suppress_degree2_node(
+    graph: "DirectedMultiGraph", node: T, merged_attrs: dict[str, Any] | None = None
+) -> None:
     """
     Suppress a single degree-2 node in a directed multigraph in place.
-    
+
     A degree-2 node has exactly two incident edges. For a directed multigraph, the only
     valid configuration is indegree=1 and outdegree=1 (u->x->v). Suppression connects
     the two neighbors directly: u->x->v becomes u->v.
-    
+
     Invalid configurations that raise ValueError:
 
     - indegree=2, outdegree=0: Multiple incoming directed edges
@@ -205,7 +208,7 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     - If `merged_attrs` is None: attributes are merged by taking the incoming edge's data
       first, then the outgoing edge's data overriding. For attributes present in both edges,
       the outgoing edge's value overrides the incoming edge's value.
-    
+
     Parameters
     ----------
     graph : DirectedMultiGraph
@@ -215,16 +218,16 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     merged_attrs : dict[str, Any] | None, optional
         Pre-merged attributes to use for the resulting edge. If None, attributes are merged
         by taking incoming edge data first, then outgoing edge data overriding.
-        
+
         When provided, these attributes will be used directly for the new edge created
         during suppression. This is useful when special attribute handling is needed.
-    
+
     Raises
     ------
     PhyloZooValueError
         If the node is not degree-2, or has an invalid edge configuration (indegree=2
         with outdegree=0, or indegree=0 with outdegree=2).
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
@@ -240,17 +243,15 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
     # Check that node exists
     if node not in graph.nodes():
         raise PhyloZooValueError(f"Node {node} not found in graph")
-    
+
     # Verify node is degree-2 using the public API
     if graph.degree(node) != 2:
-        raise PhyloZooValueError(
-            f"Node {node} has degree {graph.degree(node)}, expected degree 2"
-        )
-    
+        raise PhyloZooValueError(f"Node {node} has degree {graph.degree(node)}, expected degree 2")
+
     # Check indegree and outdegree
     in_deg = graph.indegree(node)
     out_deg = graph.outdegree(node)
-    
+
     # Invalid configurations
     if in_deg == 2 and out_deg == 0:
         raise PhyloZooValueError(
@@ -262,32 +263,32 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
             f"Node {node} has indegree 0 and outdegree 2. "
             f"Cannot suppress node with multiple outgoing directed edges."
         )
-    
+
     # Valid configuration: indegree=1, outdegree=1
     if in_deg != 1 or out_deg != 1:
         raise PhyloZooValueError(
             f"Node {node} has indegree {in_deg} and outdegree {out_deg}. "
             f"Expected indegree 1 and outdegree 1 for suppression."
         )
-    
+
     # Collect incident edges using the public API
     directed_in = list(graph.incident_parent_edges(node, keys=True, data=True))
     directed_out = list(graph.incident_child_edges(node, keys=True, data=True))
-    
+
     # We should have exactly one incoming and one outgoing edge
     if len(directed_in) != 1 or len(directed_out) != 1:
         raise PhyloZooValueError(
             f"Node {node} has {len(directed_in)} incoming and {len(directed_out)} outgoing edges. "
             f"Expected exactly 1 of each."
         )
-    
+
     # Get the neighbors and edge data
     (u, _, k1, d1) = directed_in[0]  # u->node
     (_, v, k2, d2) = directed_out[0]  # node->v
-    
+
     # Remove the node and its incident edges
     graph.remove_node(node)
-    
+
     # Determine resulting edge attributes
     # Use provided merged_attrs if given, otherwise merge attributes (incoming first, then outgoing)
     if merged_attrs is None:
@@ -296,20 +297,22 @@ def suppress_degree2_node(graph: 'DirectedMultiGraph', node: T, merged_attrs: di
             merged_attrs.update(d1)
         if d2:
             merged_attrs.update(d2)
-    
+
     # Add the new edge u->v
     # Always use key=None to allow parallel edges to be created if the edge already exists
     graph.add_edge(u, v, key=None, **merged_attrs)
 
 
-def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs: dict[str, Any] | None = None) -> None:
+def identify_parallel_edge(
+    graph: "DirectedMultiGraph", u: T, v: T, merged_attrs: dict[str, Any] | None = None
+) -> None:
     """
     Identify all parallel edges between two nodes by keeping one edge.
-    
+
     This function removes all parallel edges between u and v except one,
     effectively merging them into a single edge. The first edge (lowest key)
     is kept, and all others are removed.
-    
+
     Edge attributes are handled as follows:
 
     - If `merged_attrs` is provided: these attributes are used directly for the kept edge.
@@ -329,15 +332,15 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
     merged_attrs : dict[str, Any] | None, optional
         Pre-merged attributes to use for the kept edge. If None, attributes are merged
         by taking the first edge's data first, then subsequent edges' data overriding.
-        
+
         When provided, these attributes will be used directly for the kept edge.
         This is useful when special attribute handling is needed.
-    
+
     Raises
     ------
     PhyloZooValueError
         If either node is not in the graph, or if no edges exist between u and v.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
@@ -369,26 +372,26 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
         raise PhyloZooValueError(f"Node {u} not found in graph")
     if v not in graph.nodes():
         raise PhyloZooValueError(f"Node {v} not found in graph")
-    
+
     # Check if there are any edges between u and v
     if not graph.has_edge(u, v):
         raise PhyloZooValueError(f"No edges exist between nodes {u} and {v}")
-    
+
     # Get all parallel edges between u and v
     edges_dict = graph._graph[u].get(v, {})
     if not edges_dict:
         raise PhyloZooValueError(f"No edges exist between nodes {u} and {v}")
-    
+
     num_edges = len(edges_dict)
     if num_edges <= 1:
         # No parallel edges, nothing to do
         return
-    
+
     # Collect all edge keys and data
     edge_keys = sorted(edges_dict.keys())
     first_key = edge_keys[0]
     first_data = edges_dict[first_key]
-    
+
     # Determine merged attributes
     if merged_attrs is None:
         merged_attrs = {}
@@ -403,16 +406,16 @@ def identify_parallel_edge(graph: 'DirectedMultiGraph', u: T, v: T, merged_attrs
     else:
         # Use provided merged_attrs directly
         pass
-    
+
     # Remove all edges between u and v
     for key in edge_keys:
         graph.remove_edge(u, v, key=key)
-    
+
     # Add back a single edge with merged attributes
     graph.add_edge(u, v, key=first_key, **merged_attrs)
 
 
-def subgraph(graph: 'DirectedMultiGraph', nodes: Iterable[T]) -> 'DirectedMultiGraph':
+def subgraph(graph: "DirectedMultiGraph", nodes: Iterable[T]) -> "DirectedMultiGraph":
     """
     Return the induced subgraph of `graph` on the given `nodes`.
 

@@ -2,7 +2,7 @@
 Tests for the ``to_sd_network`` conversion utility.
 """
 
-from typing import Dict, Set, Tuple
+from typing import Set, Tuple
 
 import pytest
 
@@ -55,7 +55,12 @@ class TestToSDNetwork:
                 (10, 1),
                 (10, 2),
             ],
-            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (8, {"label": "C"}), (9, {"label": "D"})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (8, {"label": "C"}),
+                (9, {"label": "D"}),
+            ],
         )
 
         sdnet = to_sd_network(dnet)
@@ -99,7 +104,12 @@ class TestToSDNetwork:
                 (5, 11),  # ensure tree node 5 has out-degree >= 2
                 (6, 12),  # ensure tree node 6 has out-degree >= 2
             ],
-            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (11, {"label": "C"}), (12, {"label": "D"})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+            ],
         )
 
         sdnet = to_sd_network(dnet)
@@ -121,6 +131,3 @@ class TestToSDNetwork:
             (u, v) for u, v, _ in sdnet._graph._directed.edges(keys=True)
         }
         assert directed_edges == {(5, 4), (6, 4)}
-
-
-

@@ -13,12 +13,12 @@ from phylozoo.utils.exceptions import PhyloZooParseError
 
 # Regex for TAXA block: BEGIN TAXA; ... TAXLABELS ... ; END;
 _RE_TAXA = re.compile(
-    r'BEGIN\s+Taxa;.*?TAXLABELS\s+(.*?);\s*END;',
+    r"BEGIN\s+Taxa;.*?TAXLABELS\s+(.*?);\s*END;",
     re.DOTALL | re.IGNORECASE,
 )
 # Regex for any block: BEGIN Name; content ; END;
 _RE_BLOCK = re.compile(
-    r'BEGIN\s+(\w+);\s*([\s\S]*?);\s*END;',
+    r"BEGIN\s+(\w+);\s*([\s\S]*?);\s*END;",
     re.IGNORECASE,
 )
 
@@ -51,28 +51,26 @@ def parse_nexus(nexus_string: str) -> tuple[list[str], dict[str, str]]:
     # TAXA block
     taxa_match = _RE_TAXA.search(nexus_string)
     if not taxa_match:
-        raise PhyloZooParseError(
-            "Could not find Taxa block with TAXLABELS in NEXUS string"
-        )
+        raise PhyloZooParseError("Could not find Taxa block with TAXLABELS in NEXUS string")
     taxa_section = taxa_match.group(1)
-    labels = [line.strip() for line in taxa_section.strip().split('\n') if line.strip()]
+    labels = [line.strip() for line in taxa_section.strip().split("\n") if line.strip()]
 
     # Data blocks (exclude TAXA)
     blocks: dict[str, str] = {}
     for match in _RE_BLOCK.finditer(nexus_string):
         name = match.group(1)
-        if name.upper() == 'TAXA':
+        if name.upper() == "TAXA":
             continue
         # Canonical names: DISTANCES, CHARACTERS, SPLITS
         canonical = (
             name.upper()
-            if name.upper() in ('DISTANCES', 'CHARACTERS', 'SPLITS')
+            if name.upper() in ("DISTANCES", "CHARACTERS", "SPLITS")
             else name.capitalize()
         )
         # Include trailing ";" so block content can be parsed with MATRIX\s+(.*?);
         body = match.group(2).strip()
-        if not body.endswith(';'):
-            body += ';'
+        if not body.endswith(";"):
+            body += ";"
         blocks[canonical] = body
 
     return labels, blocks
@@ -130,7 +128,7 @@ def write_block(block_name: str, body: str) -> str:
     str
         Full block including BEGIN/END.
     """
-    if body and not body.rstrip().endswith(';'):
+    if body and not body.rstrip().endswith(";"):
         body = body.rstrip() + "\n    ;\n"
     else:
         body = body.rstrip() + "\n"

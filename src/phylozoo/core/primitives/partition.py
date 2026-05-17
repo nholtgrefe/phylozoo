@@ -18,37 +18,37 @@ from phylozoo.utils.exceptions import (
     PhyloZooTypeError,
 )
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Partition:
     """
     General class for partitions of sets.
-    
+
     A partition is a collection of disjoint sets (called parts or blocks) whose
     union equals the original set. Each element appears in exactly one part.
-    
+
     This class is immutable - once created, the partition structure cannot be
     modified. All parts are stored as frozensets.
-    
+
     Parameters
     ----------
     parts : list[set[T]]
         List of sets of elements. The sets must be disjoint (no overlapping
         elements).
-    
+
     Raises
     ------
     PhyloZooValueError
         If the sets overlap (i.e., the partition is invalid).
     PhyloZooWarning
         If an empty set is added to the partition.
-    
+
     Notes
     -----
     The partition is immutable after initialization. Attempts to modify attributes
     will raise AttributeError.
-    
+
     Examples
     --------
     >>> partition = Partition([{1, 2}, {3, 4}, {5}])
@@ -63,64 +63,65 @@ class Partition:
     >>> partition.parts  # Read-only tuple
     (frozenset({1, 2}), frozenset({3, 4}), frozenset({5}))
     """
-    
-    __slots__ = ('_parts', '_elements', '_initialized')
-    
+
+    __slots__ = ("_parts", "_elements", "_initialized")
+
     def __init__(self, parts: list[set[T]]) -> None:
         # Convert to frozensets, compute elements, and validate in one pass
         parts_frozen: list[frozenset] = []
         elements_set: set[T] = set()
         total_size: int = 0
-        
+
         for part in parts:
             part_frozen = frozenset(part)
-            
+
             # Warn if empty set is added
             if len(part_frozen) == 0:
                 warnings.warn(
                     "Empty set added to partition. This may cause unexpected behavior.",
                     PhyloZooWarning,
-                    stacklevel=2
+                    stacklevel=2,
                 )
-            
+
             parts_frozen.append(part_frozen)
             part_size = len(part_frozen)
             total_size += part_size
-            
+
             # Check for overlaps during element collection (early validation)
             for elt in part_frozen:
                 if elt in elements_set:
                     raise PhyloZooValueError("Invalid partition: sets overlap")
                 elements_set.add(elt)
-        
+
         # Validate total size matches (catches any remaining edge cases)
         if total_size != len(elements_set):
             raise PhyloZooValueError("Invalid partition: sets overlap")
-        
+
         # Store in canonical form
         self._parts: tuple = self._canonical_form(tuple(parts_frozen))
         self._elements: frozenset = frozenset(elements_set)
         self._initialized: bool = True
-    
+
     @staticmethod
     def _canonical_form(parts: tuple) -> tuple:
         """
         Compute canonical form of a partition.
-        
+
         The canonical form sorts parts by size first, then by their elements
         in sorted order. This ensures deterministic ordering regardless of
         input order.
-        
+
         Parameters
         ----------
         parts : tuple
             Tuple of frozensets representing the partition parts.
-        
+
         Returns
         -------
         tuple
             Tuple of frozensets in canonical (sorted) order.
         """
+
         def sort_key(part: frozenset) -> tuple:
             """Sort key: (size, sorted_elements). Uses simple sorting when possible."""
             try:
@@ -138,60 +139,58 @@ class Partition:
                         element_keys.append((elt_type, str(elt)))
                 element_keys.sort()
                 return (len(part), tuple(element_keys))
-        
+
         return tuple(sorted(parts, key=sort_key))
-    
+
     def __setattr__(self, name: str, value: Any) -> None:
         """
         Prevent modification of attributes after initialization.
-        
+
         Raises
         ------
         PhyloZooAttributeError
             If attempting to modify any attribute after initialization.
         """
         # Allow setting during initialization
-        if not hasattr(self, '_initialized') or not self._initialized:
+        if not hasattr(self, "_initialized") or not self._initialized:
             super().__setattr__(name, value)
             return
-        
+
         # Prevent modification after initialization
         if name in self.__slots__:
             raise PhyloZooAttributeError(
                 f"Cannot modify attribute '{name}'. Partition is immutable."
             )
-        raise PhyloZooAttributeError(
-            f"Cannot set attribute '{name}'. Partition is immutable."
-        )
-    
+        raise PhyloZooAttributeError(f"Cannot set attribute '{name}'. Partition is immutable.")
+
     @property
     def parts(self) -> tuple:
         """
         Get the parts of the partition (read-only).
-        
+
         Returns
         -------
         tuple
             Tuple of frozensets representing the partition blocks.
         """
         return self._parts
-    
+
     @property
     def elements(self) -> frozenset:
         """
         Get the elements of the partition (read-only).
-        
+
         Returns
         -------
         frozenset
             Frozen set containing all elements in the partition.
         """
         return self._elements
-    
+
     def __repr__(self) -> str:
         """
         Return string representation of the partition.
-        
+
         Returns
         -------
         str
@@ -199,24 +198,24 @@ class Partition:
         """
         unfrozen_set = [set(part) for part in self._parts]
         return f"Partition({unfrozen_set})"
-    
+
     def __eq__(self, other: Any) -> bool:
         """
         Check if two partitions are equal.
-        
+
         Two partitions are equal if they have the same parts (order doesn't matter).
         Since parts are stored in canonical (sorted) order, we can compare tuples directly.
-        
+
         Parameters
         ----------
         other : Any
             Object to compare with.
-        
+
         Returns
         -------
         bool
             True if partitions are equal, False otherwise.
-        
+
         Examples
         --------
         >>> p1 = Partition([{1, 2}, {3, 4}])
@@ -228,16 +227,16 @@ class Partition:
             return False
         # Since parts are stored in canonical order, we can compare directly
         return self._parts == other._parts
-    
+
     def __hash__(self) -> int:
         """
         Return hash of the partition.
-        
+
         Returns
         -------
         int
             Hash value based on the parts.
-        
+
         Notes
         -----
         Partitions are hashable because parts are stored as frozensets.
@@ -245,21 +244,21 @@ class Partition:
         the tuple directly.
         """
         return hash(self._parts)
-    
+
     def __contains__(self, subset: set[T, frozenset]) -> bool:
         """
         Check if a subset is one of the parts in the partition.
-        
+
         Parameters
         ----------
         subset : set[T, frozenset]
             Subset to check.
-        
+
         Returns
         -------
         bool
             True if the subset is a part of the partition, False otherwise.
-        
+
         Examples
         --------
         >>> partition = Partition([{1, 2}, {3, 4}])
@@ -270,20 +269,20 @@ class Partition:
         """
         subset_frozen = frozenset(subset) if isinstance(subset, set) else subset
         return any(subset_frozen == part for part in self._parts)
-    
+
     def __iter__(self) -> Iterator[frozenset]:
         """
         Return an iterator over the parts of the partition.
-        
+
         The iteration order is deterministic and consistent regardless of
         the input order. Parts are sorted by size first, then by their
         elements in sorted order.
-        
+
         Returns
         -------
         Iterator[frozenset]
             Iterator over the parts in sorted order.
-        
+
         Examples
         --------
         >>> partition = Partition([{3, 4}, {1, 2}])
@@ -292,16 +291,16 @@ class Partition:
         """
         # Parts are already stored in sorted order, so just iterate
         return iter(self._parts)
-    
+
     def __len__(self) -> int:
         """
         Return the number of parts in the partition.
-        
+
         Returns
         -------
         int
             Number of parts (blocks) in the partition.
-        
+
         Examples
         --------
         >>> partition = Partition([{1, 2}, {3, 4}, {5}])
@@ -309,16 +308,16 @@ class Partition:
         3
         """
         return len(self._parts)
-    
+
     def size(self) -> int:
         """
         Return the total number of elements the partition covers.
-        
+
         Returns
         -------
         int
             Total number of elements in all parts.
-        
+
         Examples
         --------
         >>> partition = Partition([{1, 2}, {3, 4}, {5}])
@@ -326,19 +325,19 @@ class Partition:
         5
         """
         return len(self._elements)
-    
+
     def _is_valid(self) -> bool:
         """
         Check if the partition is valid.
-        
+
         A partition is valid if each element appears in exactly one part
         of the partition (i.e., parts are disjoint and cover all elements).
-        
+
         Returns
         -------
         bool
             True if partition is valid, False otherwise.
-        
+
         Notes
         -----
         The implementation checks if the sum of sizes of all parts equals
@@ -346,26 +345,26 @@ class Partition:
         no overlapping elements.
         """
         return sum(len(part) for part in self._parts) == len(self._elements)
-    
+
     def get_part(self, element: T) -> frozenset:
         """
         Get the part that contains the given element.
-        
+
         Parameters
         ----------
         element : T
             Element to find.
-        
+
         Returns
         -------
         frozenset
             The part (frozenset) containing the element.
-        
+
         Raises
         ------
         PhyloZooValueError
             If the element is not found in any part of the partition.
-        
+
         Examples
         --------
         >>> partition = Partition([{1, 2}, {3, 4}])
@@ -378,24 +377,24 @@ class Partition:
             if element in part:
                 return part
         raise PhyloZooValueError(f"Element {element} not found in partition")
-    
-    def subpartitions(self, size: int = 4) -> Iterator['Partition']:
+
+    def subpartitions(self, size: int = 4) -> Iterator["Partition"]:
         """
         Generate all subpartitions of a specified size.
-        
+
         A subpartition is a partition formed by selecting a subset of the
         parts from the current partition.
-        
+
         Parameters
         ----------
         size : int, optional
             Number of parts to include in each subpartition, by default 4.
-        
+
         Yields
         ------
         Partition
             Subpartitions of the specified size.
-        
+
         Examples
         --------
         >>> partition = Partition([{1}, {2}, {3}, {4}, {5}])
@@ -405,19 +404,19 @@ class Partition:
         """
         for comb in itertools.combinations(self._parts, size):
             yield Partition([set(part) for part in comb])
-    
-    def representative_partitions(self) -> Iterator['Partition']:
+
+    def representative_partitions(self) -> Iterator["Partition"]:
         """
         Generate all partitions with exactly one element per part.
-        
+
         For each part in the current partition, selects exactly one element,
         creating a new partition where each part is a singleton set.
-        
+
         Yields
         ------
         Partition
             Representative partitions with exactly one element per part.
-        
+
         Examples
         --------
         >>> partition = Partition([{1, 2}, {3, 4}])
@@ -429,31 +428,31 @@ class Partition:
         """
         for comb in itertools.product(*self._parts):
             yield Partition([{elt} for elt in comb])
-    
-    def is_refinement(self, other: 'Partition') -> bool:
+
+    def is_refinement(self, other: "Partition") -> bool:
         """
         Check if this partition is a refinement of another partition.
-        
+
         A partition P is a refinement of partition Q if every part of P is
         a subset of some part of Q.
-        
+
         Parameters
         ----------
         other : Partition
             The partition to check against.
-        
+
         Returns
         -------
         bool
             True if this partition is a refinement of 'other', False otherwise.
-        
+
         Raises
         ------
         PhyloZooValueError
             If 'other' covers different elements.
         PhyloZooTypeError
             If 'other' is not a Partition instance.
-        
+
         Examples
         --------
         >>> p1 = Partition([{1}, {2}, {3}])  # Fine partition
@@ -467,9 +466,8 @@ class Partition:
             raise PhyloZooTypeError("The argument must be an instance of Partition")
         if not self._elements == other._elements:
             raise PhyloZooValueError("Other partition covers different elements.")
-        
+
         for part in self._parts:
             if not any(part.issubset(other_part) for other_part in other._parts):
                 return False
         return True
-    

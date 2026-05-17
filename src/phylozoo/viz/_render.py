@@ -38,7 +38,7 @@ PARALLEL_OFFSET_STEP = 0.1
 
 def _get_edge_color(route: EdgeRoute, style: RenderStyle) -> str:
     """Get edge color from route type and style."""
-    if route.edge_type.is_hybrid and hasattr(style, 'hybrid_edge_color'):
+    if route.edge_type.is_hybrid and hasattr(style, "hybrid_edge_color"):
         return style.hybrid_edge_color
     return style.edge_color
 
@@ -114,7 +114,7 @@ def draw_edge(
         patch = mpatches.PathPatch(
             path,
             edgecolor=edge_color,
-            facecolor='none',
+            facecolor="none",
             linewidth=style.edge_width,
             zorder=1,
         )
@@ -123,11 +123,11 @@ def draw_edge(
             dx = ex - cx
             dy = ey - cy
             ax.annotate(
-                '',
+                "",
                 xy=(ex, ey),
                 xytext=(ex - 0.1 * dx, ey - 0.1 * dy),
                 arrowprops=dict(
-                    arrowstyle='->',
+                    arrowstyle="->",
                     color=edge_color,
                     lw=style.edge_width,
                     mutation_scale=style.arrow_head_size,
@@ -146,11 +146,11 @@ def draw_edge(
         )
         if route.edge_type.is_directed and len(points) >= 2:
             ax.annotate(
-                '',
+                "",
                 xy=(xs[-1], ys[-1]),
                 xytext=(xs[-2], ys[-2]),
                 arrowprops=dict(
-                    arrowstyle='->',
+                    arrowstyle="->",
                     color=edge_color,
                     lw=style.edge_width,
                     mutation_scale=style.arrow_head_size,
@@ -192,8 +192,8 @@ def draw_node(
     # Linear scaling: size 500 -> ~0.02 radius; size 20000 -> ~0.5 (capped)
     radius = min(size / 1000.0, 12.0) * 0.042
 
-    edgecolor = getattr(style, 'node_edge_color', 'black')
-    linewidth = getattr(style, 'node_edge_width', 1.5)
+    edgecolor = getattr(style, "node_edge_color", "black")
+    linewidth = getattr(style, "node_edge_width", 1.5)
 
     circle = Circle(
         (x, y),
@@ -209,9 +209,9 @@ def draw_node(
 
 def _get_node_color(node_type: str, style: RenderStyle) -> str:
     """Get node color from node type and style."""
-    if node_type == 'leaf' and hasattr(style, 'leaf_color'):
+    if node_type == "leaf" and hasattr(style, "leaf_color"):
         return style.leaf_color
-    if node_type == 'hybrid' and hasattr(style, 'hybrid_color'):
+    if node_type == "hybrid" and hasattr(style, "hybrid_color"):
         return style.hybrid_color
     return style.node_color
 
@@ -221,7 +221,7 @@ def _get_node_size(node_type: str, style: RenderStyle) -> float:
 
     For leaf nodes, uses leaf_size if set; otherwise falls back to node_size.
     """
-    if node_type == 'leaf' and hasattr(style, 'leaf_size') and style.leaf_size is not None:
+    if node_type == "leaf" and hasattr(style, "leaf_size") and style.leaf_size is not None:
         return style.leaf_size
     return style.node_size
 
@@ -231,7 +231,7 @@ def draw_label(
     position: tuple[float, float],
     text: str,
     style: RenderStyle,
-    node_type: str = 'leaf',
+    node_type: str = "leaf",
     center: tuple[float, float] | None = None,
 ) -> Any:
     """
@@ -272,22 +272,22 @@ def draw_label(
         offset_x = dx * scale
         offset_y = dy * scale
         if abs(dx) < 1e-6:
-            ha = 'center'
+            ha = "center"
         elif dx > 0:
-            ha = 'left'
+            ha = "left"
         else:
-            ha = 'right'
+            ha = "right"
         if abs(dy) < 1e-6:
-            va = 'center'
+            va = "center"
         elif dy > 0:
-            va = 'bottom'
+            va = "bottom"
         else:
-            va = 'top'
+            va = "top"
     else:
         offset_x = 0.0
         offset_y = -style.label_offset
-        ha = 'center'
-        va = 'top'
+        ha = "center"
+        va = "top"
 
     return ax.text(
         x + offset_x,
@@ -336,18 +336,18 @@ def draw_label_radial(
     label_y = label_radius * math.sin(angle)
 
     if abs(angle) < math.pi / 6 or abs(angle) > 5 * math.pi / 6:
-        ha = 'center'
+        ha = "center"
     elif angle > 0:
-        ha = 'left'
+        ha = "left"
     else:
-        ha = 'right'
+        ha = "right"
 
     if abs(angle - math.pi / 2) < math.pi / 6:
-        va = 'bottom'
+        va = "bottom"
     elif abs(angle + math.pi / 2) < math.pi / 6:
-        va = 'top'
+        va = "top"
     else:
-        va = 'center'
+        va = "center"
 
     return ax.text(
         label_x,
@@ -404,13 +404,13 @@ def render_layout(
         if style.with_labels:
             label = get_label(node)
             if label:
-                if radial_labels_for_leaves and node_type == 'leaf':
+                if radial_labels_for_leaves and node_type == "leaf":
                     draw_label_radial(ax, position, label, style)
                 else:
                     draw_label(ax, position, label, style, node_type, center=center)
 
-    ax.set_aspect('equal')
-    ax.axis('off')
+    ax.set_aspect("equal")
+    ax.axis("off")
 
 
 def build_parallel_groups(

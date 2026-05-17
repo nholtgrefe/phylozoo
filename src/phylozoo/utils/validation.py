@@ -85,7 +85,7 @@ import contextlib
 import contextvars
 import fnmatch
 from functools import wraps
-from typing import Callable, Iterable, Iterator, List, Sequence, Type, TypeVar
+from typing import Callable, Iterable, Iterator, Sequence, Type, TypeVar
 
 from phylozoo.utils.exceptions import PhyloZooValueError
 
@@ -94,8 +94,8 @@ T = TypeVar("T")
 _validation_disabled: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "_validation_disabled", default=False
 )
-_suppression_stack: contextvars.ContextVar[list[tuple[list[str] | None, list[str] | None]]] = contextvars.ContextVar(
-    "_suppression_stack", default=[]
+_suppression_stack: contextvars.ContextVar[list[tuple[list[str] | None, list[str] | None]]] = (
+    contextvars.ContextVar("_suppression_stack", default=[])
 )
 
 
@@ -150,29 +150,29 @@ def no_validation(
     >>> # Suppress all validation (uses class defaults)
     >>> with no_validation():
     ...     obj = MyClass()
-    
+
     >>> # Suppress only specific methods for all classes
     >>> with no_validation(methods=["validate"]):
     ...     obj.validate()
-    
+
     >>> # Suppress only specific classes (uses their defaults)
     >>> with no_validation(classes=["DirectedGenerator"]):
     ...     gen = DirectedGenerator(...)  # validate suppressed
     ...     net = DirectedPhyNetwork(...)  # validate NOT suppressed
-    
+
     >>> # Suppress specific methods for specific classes
     >>> with no_validation(classes=["DirectedGenerator"], methods=["validate"]):
     ...     gen = DirectedGenerator(...)  # validate suppressed
     """
     previous_disabled = _validation_disabled.get()
     stack_snapshot = list(_suppression_stack.get())
-    
+
     # Get current patterns from stack if available
     if stack_snapshot:
         current_classes, current_methods = stack_snapshot[-1]
     else:
         current_classes, current_methods = None, None
-    
+
     # Determine new patterns
     new_classes = list(classes) if classes is not None else current_classes
     new_methods = list(methods) if methods is not None else current_methods
@@ -242,16 +242,18 @@ def validation_aware(
                 continue
 
             @wraps(method)
-            def wrapper(self: T, *args: object, __m: Callable = method, __name: str = name, **kwargs: object):
+            def wrapper(
+                self: T, *args: object, __m: Callable = method, __name: str = name, **kwargs: object
+            ):
                 if _validation_disabled.get():
                     # Get class name for class pattern matching
                     class_name = self.__class__.__name__
-                    
+
                     # Get active patterns (class_patterns, method_patterns)
                     class_patterns, method_patterns = _active_patterns(
                         getattr(self, "_validation_default", default_list)
                     )
-                    
+
                     # Check if class matches (if class patterns specified)
                     if class_patterns is not None:
                         class_matches = any(
@@ -260,7 +262,7 @@ def validation_aware(
                         if not class_matches:
                             # Class doesn't match, don't suppress
                             return __m(self, *args, **kwargs)
-                    
+
                     # Check if method matches
                     if method_patterns is not None:
                         # Use specified method patterns
@@ -283,11 +285,13 @@ def validation_aware(
                         else:
                             # No method patterns specified and no class defaults - don't suppress
                             return __m(self, *args, **kwargs)
-                    
+
                     # Check if method is in allowed list
-                    if not any(fnmatch.fnmatch(__name, allowed_pattern) for allowed_pattern in allowed_list):
+                    if not any(
+                        fnmatch.fnmatch(__name, allowed_pattern) for allowed_pattern in allowed_list
+                    ):
                         return __m(self, *args, **kwargs)
-                    
+
                     # All checks passed - suppress validation
                     return None
                 return __m(self, *args, **kwargs)
@@ -297,4 +301,3 @@ def validation_aware(
         return cls
 
     return decorator
-

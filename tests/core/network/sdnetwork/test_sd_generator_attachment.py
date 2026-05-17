@@ -17,7 +17,6 @@ from phylozoo.core.network.sdnetwork.generator import (
 )
 from phylozoo.core.network.sdnetwork.generator.side import (
     BidirectedEdgeSide,
-    UndirEdgeSide,
 )
 from phylozoo.core.network.dnetwork.generator.side import (
     DirEdgeSide,
@@ -80,9 +79,7 @@ class TestAttachLeavesNodeSides:
         bidir_side = gen.edge_sides[0]
         assert isinstance(bidir_side, BidirectedEdgeSide)
 
-        network = attach_leaves_to_generator(
-            gen, {hybrid_side: ["X"], bidir_side: ["Y"]}
-        )
+        network = attach_leaves_to_generator(gen, {hybrid_side: ["X"], bidir_side: ["Y"]})
 
         assert "X" in network.taxa
         assert "Y" in network.taxa
@@ -152,9 +149,7 @@ class TestAttachLeavesEdgeSides:
         bidir_side = gen.edge_sides[0]
         assert isinstance(bidir_side, BidirectedEdgeSide)
 
-        network = attach_leaves_to_generator(
-            gen, {hybrid_side: ["H"], bidir_side: ["P", "Q"]}
-        )
+        network = attach_leaves_to_generator(gen, {hybrid_side: ["H"], bidir_side: ["P", "Q"]})
 
         assert network.taxa >= {"H", "P", "Q"}
         assert len(network.leaves) >= 3

@@ -26,12 +26,12 @@ class SDNetStyle(MGraphStyle):
     'blue'
     """
 
-    leaf_color: str = 'lightblue'
-    hybrid_color: str = 'lightblue'
+    leaf_color: str = "lightblue"
+    hybrid_color: str = "lightblue"
     leaf_size: float | None = None
-    hybrid_edge_color: str = 'red'
+    hybrid_edge_color: str = "red"
 
-    def copy(self) -> 'SDNetStyle':
+    def copy(self) -> "SDNetStyle":
         """
         Create a copy of this style.
 

@@ -11,7 +11,6 @@ This module tests all aspects of network initialization including:
 """
 
 import warnings
-from typing import Dict, List, Tuple
 
 import pytest
 
@@ -26,7 +25,7 @@ class TestEmptyNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore the init warning
             net = DirectedPhyNetwork(edges=[])
-        
+
         assert net.number_of_nodes() == 0
         assert net.number_of_edges() == 0
         with pytest.warns(UserWarning, match="Empty network.*no nodes.*detected"):
@@ -37,7 +36,7 @@ class TestEmptyNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(edges=[])
-        
+
         assert len(net.leaves) == 0
         assert len(net.taxa) == 0
         # Empty network has no root - accessing root_node should raise
@@ -56,7 +55,7 @@ class TestMinimalValidNetworks:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore the init warning
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         assert net.number_of_nodes() == 1
         assert net.number_of_edges() == 0
         with pytest.warns(UserWarning, match="Single-node network detected"):
@@ -143,11 +142,18 @@ class TestNetworksWithHybrids:
         # Structure with 2 hybrid nodes
         net = DirectedPhyNetwork(
             edges=[
-                (10, 7), (10, 8),  # Root to tree nodes
-                (7, 5), (7, 6),    # Tree node 7 splits
-                (8, 5), (8, 9),    # Tree node 8 splits, 5 is hybrid
-                (5, 4), (6, 4),    # Hybrid node 4
-                (4, 1), (9, 2), (9, 3), (6, 11)  # To leaves (9 and 6 split to 2 children)
+                (10, 7),
+                (10, 8),  # Root to tree nodes
+                (7, 5),
+                (7, 6),  # Tree node 7 splits
+                (8, 5),
+                (8, 9),  # Tree node 8 splits, 5 is hybrid
+                (5, 4),
+                (6, 4),  # Hybrid node 4
+                (4, 1),
+                (9, 2),
+                (9, 3),
+                (6, 11),  # To leaves (9 and 6 split to 2 children)
             ],
             nodes=[
                 (1, {"label": "A"}),
@@ -165,11 +171,18 @@ class TestNetworksWithHybrids:
         # Hybrid node 4 has parent hybrid node 5
         net = DirectedPhyNetwork(
             edges=[
-                (10, 7), (10, 8),
-                (7, 5), (7, 6),
-                (8, 5), (8, 9),
-                (5, 4), (6, 4),
-                (4, 1), (9, 2), (9, 3), (6, 11)
+                (10, 7),
+                (10, 8),
+                (7, 5),
+                (7, 6),
+                (8, 5),
+                (8, 9),
+                (5, 4),
+                (6, 4),
+                (4, 1),
+                (9, 2),
+                (9, 3),
+                (6, 11),
             ],
             nodes=[
                 (1, {"label": "A"}),
@@ -189,12 +202,14 @@ class TestParallelEdges:
         """Test parallel edges entering a hybrid node."""
         net = DirectedPhyNetwork(
             edges=[
-                (7, 5), (7, 6),
-                (5, 4, 0), (5, 4, 1),  # Two parallel edges from 5 to 4
+                (7, 5),
+                (7, 6),
+                (5, 4, 0),
+                (5, 4, 1),  # Two parallel edges from 5 to 4
                 (5, 8),
                 (6, 4),
                 (6, 9),
-                (4, 2)
+                (4, 2),
             ],
             nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
@@ -206,14 +221,14 @@ class TestParallelEdges:
         """Test parallel edges using dict format."""
         net = DirectedPhyNetwork(
             edges=[
-                {'u': 7, 'v': 5},
-                {'u': 7, 'v': 6},
-                {'u': 5, 'v': 4, 'key': 0},
-                {'u': 5, 'v': 4, 'key': 1},  # Parallel edge
-                {'u': 5, 'v': 8},
-                {'u': 6, 'v': 4},
-                {'u': 6, 'v': 9},
-                {'u': 4, 'v': 2}
+                {"u": 7, "v": 5},
+                {"u": 7, "v": 6},
+                {"u": 5, "v": 4, "key": 0},
+                {"u": 5, "v": 4, "key": 1},  # Parallel edge
+                {"u": 5, "v": 8},
+                {"u": 6, "v": 4},
+                {"u": 6, "v": 9},
+                {"u": 4, "v": 2},
             ],
             nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
@@ -244,10 +259,7 @@ class TestEdgeFormats:
     def test_dict_edges(self) -> None:
         """Test edges as dictionaries."""
         net = DirectedPhyNetwork(
-            edges=[
-                {'u': 1, 'v': 2},
-                {'u': 1, 'v': 3, 'key': 10}
-            ],
+            edges=[{"u": 1, "v": 2}, {"u": 1, "v": 3, "key": 10}],
             nodes=[(2, {"label": "A"}), (3, {"label": "B"})],
         )
         assert net.has_edge(1, 2)
@@ -256,11 +268,7 @@ class TestEdgeFormats:
     def test_mixed_edge_formats(self) -> None:
         """Test mixing different edge formats."""
         net = DirectedPhyNetwork(
-            edges=[
-                (1, 2),  # Tuple
-                {'u': 1, 'v': 3},  # Dict
-                (1, 4, 0)  # Tuple with key
-            ],
+            edges=[(1, 2), {"u": 1, "v": 3}, (1, 4, 0)],  # Tuple  # Dict  # Tuple with key
             nodes=[(2, {"label": "A"}), (3, {"label": "B"}), (4, {"label": "C"})],
         )
         assert net.number_of_edges() == 3
@@ -460,6 +468,7 @@ class TestInvalidInitialization:
     def test_invalid_internal_labels_format(self) -> None:
         """Test that invalid internal_node_labels format raises PhyloZooTypeError."""
         from phylozoo.utils.exceptions import PhyloZooTypeError
+
         with pytest.raises(PhyloZooTypeError, match="Node tuple must be"):
             DirectedPhyNetwork(
                 edges=[(1, 2)],
@@ -472,25 +481,18 @@ class TestInvalidInitialization:
         # caught first. However, the connectivity check is still performed as an
         # explicit validation step. If a network somehow passes the root check but
         # is disconnected, it will be caught here.
-        
+
         # Two disconnected components (will fail on multiple roots first)
         with pytest.raises(ValueError, match="multiple root nodes|not connected"):
             DirectedPhyNetwork(
-                edges=[
-                    (1, 2),  # Component 1: 1 -> 2
-                    (3, 4)   # Component 2: 3 -> 4 (disconnected)
-                ],
+                edges=[(1, 2), (3, 4)],  # Component 1: 1 -> 2  # Component 2: 3 -> 4 (disconnected)
                 nodes=[(2, {"label": "A"}), (4, {"label": "B"})],
             )
-        
+
         # Three disconnected components (will fail on multiple roots first)
         with pytest.raises(ValueError, match="multiple root nodes|not connected"):
             DirectedPhyNetwork(
-                edges=[
-                    (1, 2),  # Component 1
-                    (3, 4),  # Component 2
-                    (5, 6)   # Component 3
-                ],
+                edges=[(1, 2), (3, 4), (5, 6)],  # Component 1  # Component 2  # Component 3
                 nodes=[(2, {"label": "A"}), (4, {"label": "B"}), (6, {"label": "C"})],
             )
 
@@ -537,15 +539,27 @@ class TestValidationEdgeCases:
         """Test validation of complex hybrid structure."""
         # Multiple hybrid nodes with various configurations
         edges = [
-            (20, 10), (20, 11),  # Root splits
-            (10, 5), (10, 6),     # Tree node 10 splits
-            (11, 5), (11, 7),     # Hybrid node 5
-            (5, 4), (6, 4),      # Hybrid node 4
-            (4, 1), (7, 2), (7, 8), (6, 3)  # To leaves (7 and 6 split to 2 children)
+            (20, 10),
+            (20, 11),  # Root splits
+            (10, 5),
+            (10, 6),  # Tree node 10 splits
+            (11, 5),
+            (11, 7),  # Hybrid node 5
+            (5, 4),
+            (6, 4),  # Hybrid node 4
+            (4, 1),
+            (7, 2),
+            (7, 8),
+            (6, 3),  # To leaves (7 and 6 split to 2 children)
         ]
         net = DirectedPhyNetwork(
             edges=edges,
-            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"}), (8, {"label": "D"})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+            ],
         )
         net.validate()
         assert len(net.hybrid_nodes) == 2
@@ -554,12 +568,15 @@ class TestValidationEdgeCases:
         """Test that parallel edges don't break validation."""
         net = DirectedPhyNetwork(
             edges=[
-                (7, 5), (7, 6),
-                (5, 4, 0), (5, 4, 1), (5, 4, 2),  # 3 parallel edges
+                (7, 5),
+                (7, 6),
+                (5, 4, 0),
+                (5, 4, 1),
+                (5, 4, 2),  # 3 parallel edges
                 (5, 8),
                 (6, 4),
                 (6, 9),
-                (4, 2)
+                (4, 2),
             ],
             nodes=[(2, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
@@ -585,19 +602,13 @@ class TestAutoLabelingEdgeCases:
 
     def test_numeric_node_ids_auto_labeling(self) -> None:
         """Test auto-labeling with numeric node IDs."""
-        net = DirectedPhyNetwork(
-            edges=[(100, 50), (100, 51)],
-            nodes=None
-        )
+        net = DirectedPhyNetwork(edges=[(100, 50), (100, 51)], nodes=None)
         # Should auto-label as strings of node IDs
         assert "50" in net.taxa or "51" in net.taxa
 
     def test_string_node_ids_auto_labeling(self) -> None:
         """Test auto-labeling with string node IDs."""
-        net = DirectedPhyNetwork(
-            edges=[("root", "leaf1"), ("root", "leaf2")],
-            nodes=None
-        )
+        net = DirectedPhyNetwork(edges=[("root", "leaf1"), ("root", "leaf2")], nodes=None)
         # Should auto-label using string representation
         assert len(net.taxa) == 2
 
@@ -661,11 +672,11 @@ class TestSingleNodeNetwork:
     def test_single_node_to_sd_network(self) -> None:
         """Test conversion to semi-directed network."""
         from phylozoo.core.network.dnetwork.derivations import to_sd_network
-        
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)  # Ignore empty-edge warning in SD init
             sd_net = to_sd_network(net)
@@ -680,7 +691,7 @@ class TestSingleNodeNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         net_copy = net.copy()
         assert net_copy.number_of_nodes() == 1
         assert net_copy.root_node == 1
@@ -693,7 +704,7 @@ class TestSingleNodeNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         nodes_list = list(net)
         assert nodes_list == [1]
         assert len(net) == 1
@@ -705,19 +716,18 @@ class TestSingleNodeNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         assert list(net.children(1)) == []
         assert list(net.parents(1)) == []
         assert net.outdegree(1) == 0
         assert net.indegree(1) == 0
-
 
     def test_single_node_lsa_node(self) -> None:
         """Test LSA_node property for single-node network."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         assert net.LSA_node == 1
         assert net.LSA_node == net.root_node
         assert net.LSA_node in net.leaves
@@ -727,7 +737,7 @@ class TestSingleNodeNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         assert list(net.incident_parent_edges(1)) == []
         assert list(net.incident_child_edges(1)) == []
         assert net.number_of_edges() == 0
@@ -737,8 +747,7 @@ class TestSingleNodeNetwork:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
-        
+
         assert list(net.parents(1)) == []
         assert list(net.children(1)) == []
         assert list(net.neighbors(1)) == []
-

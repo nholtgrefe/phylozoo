@@ -15,22 +15,22 @@ else:
     from . import MixedMultiGraph
 
 
-def graph_to_mixedmultigraph(graph: nx.Graph) -> 'MixedMultiGraph':
+def graph_to_mixedmultigraph(graph: nx.Graph) -> "MixedMultiGraph":
     """
     Create a MixedMultiGraph from a NetworkX Graph.
-    
+
     All edges from the Graph are added as undirected edges.
-    
+
     Parameters
     ----------
     graph : nx.Graph
         NetworkX Graph to convert.
-    
+
     Returns
     -------
     MixedMultiGraph
         New MixedMultiGraph instance with all edges as undirected.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -53,23 +53,23 @@ def graph_to_mixedmultigraph(graph: nx.Graph) -> 'MixedMultiGraph':
     return mg
 
 
-def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> 'MixedMultiGraph':
+def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> "MixedMultiGraph":
     """
     Create a MixedMultiGraph from a NetworkX MultiGraph.
-    
+
     All edges from the MultiGraph are added as undirected edges, preserving
     parallel edges and their keys.
-    
+
     Parameters
     ----------
     graph : nx.MultiGraph
         NetworkX MultiGraph to convert.
-    
+
     Returns
     -------
     MixedMultiGraph
         New MixedMultiGraph instance with all edges as undirected.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -94,23 +94,23 @@ def multigraph_to_mixedmultigraph(graph: nx.MultiGraph) -> 'MixedMultiGraph':
     return mg
 
 
-def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> 'MixedMultiGraph':
+def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> "MixedMultiGraph":
     """
     Create a MixedMultiGraph from a NetworkX MultiDiGraph.
-    
+
     All edges from the MultiDiGraph are added as directed edges, preserving
     parallel edges and their keys.
-    
+
     Parameters
     ----------
     graph : nx.MultiDiGraph
         NetworkX MultiDiGraph to convert.
-    
+
     Returns
     -------
     MixedMultiGraph
         New MixedMultiGraph instance with all edges as directed.
-    
+
     Examples
     --------
     >>> import networkx as nx
@@ -136,23 +136,23 @@ def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> 'MixedMultiGraph'
     return mg
 
 
-def directedmultigraph_to_mixedmultigraph(graph: 'DirectedMultiGraph') -> 'MixedMultiGraph':
+def directedmultigraph_to_mixedmultigraph(graph: "DirectedMultiGraph") -> "MixedMultiGraph":
     """
     Create a MixedMultiGraph from a DirectedMultiGraph.
-    
+
     All edges from the DirectedMultiGraph are added as directed edges,
     preserving parallel edges and their keys.
-    
+
     Parameters
     ----------
     graph : DirectedMultiGraph
         DirectedMultiGraph instance to convert.
-    
+
     Returns
     -------
     MixedMultiGraph
         New MixedMultiGraph instance with all edges as directed.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
@@ -174,4 +174,3 @@ def directedmultigraph_to_mixedmultigraph(graph: 'DirectedMultiGraph') -> 'Mixed
         mg._directed.add_edge(u, v, key=key, **data)
         mg._combined.add_edge(u, v, key=key, **data)
     return mg
-

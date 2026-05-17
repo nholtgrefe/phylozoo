@@ -69,7 +69,7 @@ class TripletProfile:
     0.5
     """
 
-    __slots__ = ('_taxa', '_triplets', '_initialized', '_split_cache')
+    __slots__ = ("_taxa", "_triplets", "_initialized", "_split_cache")
 
     def __init__(
         self,
@@ -136,7 +136,7 @@ class TripletProfile:
             raw_dict = dict(triplets)
 
         # Set triplets before validation
-        object.__setattr__(self, '_triplets', raw_dict)
+        object.__setattr__(self, "_triplets", raw_dict)
         self._validate_triplets()
 
         # When weights are provided they must sum to 1.0 (no scaling). List-of-triplets
@@ -150,9 +150,9 @@ class TripletProfile:
         # Extract taxa and store as immutable
         first_triplet = next(iter(self._triplets.keys()))
         taxa_set = first_triplet.taxa
-        object.__setattr__(self, '_taxa', taxa_set)
-        object.__setattr__(self, '_triplets', MappingProxyType(self._triplets))
-        object.__setattr__(self, '_initialized', True)
+        object.__setattr__(self, "_taxa", taxa_set)
+        object.__setattr__(self, "_triplets", MappingProxyType(self._triplets))
+        object.__setattr__(self, "_initialized", True)
 
     def _validate_triplets(self) -> None:
         """
@@ -198,13 +198,11 @@ class TripletProfile:
         AttributeError
             If attempting to modify any attribute after initialization.
         """
-        if not hasattr(self, '_initialized') or not self._initialized:
+        if not hasattr(self, "_initialized") or not self._initialized:
             super().__setattr__(name, value)
             return
 
-        raise AttributeError(
-            f"Cannot modify attribute '{name}'. TripletProfile is immutable."
-        )
+        raise AttributeError(f"Cannot modify attribute '{name}'. TripletProfile is immutable.")
 
     @property
     def taxa(self) -> frozenset[str]:
@@ -262,7 +260,7 @@ class TripletProfile:
         Split | None
             The split of the single triplet, or None if multiple triplets or star tree.
         """
-        if hasattr(self, '_split_cache'):
+        if hasattr(self, "_split_cache"):
             return self._split_cache
 
         if len(self._triplets) == 1:
@@ -274,7 +272,7 @@ class TripletProfile:
             result = None
 
         # Cache the result
-        object.__setattr__(self, '_split_cache', result)
+        object.__setattr__(self, "_split_cache", result)
         return result
 
     def __len__(self) -> int:
@@ -408,11 +406,9 @@ class TripletProfile:
         sorted_triplets = sorted(self._triplets.items(), key=lambda item: str(item[0]))
 
         # Show all triplets with weights, one per line
-        triplet_lines = [
-            f"  {triplet}: {weight}," for triplet, weight in sorted_triplets
-        ]
+        triplet_lines = [f"  {triplet}: {weight}," for triplet, weight in sorted_triplets]
         # Remove trailing comma from last line
         if triplet_lines:
-            triplet_lines[-1] = triplet_lines[-1].rstrip(',')
+            triplet_lines[-1] = triplet_lines[-1].rstrip(",")
 
-        return f"TripletProfile({{\n" + "\n".join(triplet_lines) + "\n})"
+        return "TripletProfile({\n" + "\n".join(triplet_lines) + "\n})"

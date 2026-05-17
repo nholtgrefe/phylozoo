@@ -15,7 +15,7 @@ class TestIdentifyVerticesBasic:
         """Test that empty vertices list raises ValueError."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
-        
+
         with pytest.raises(ValueError, match="Vertices list cannot be empty"):
             identify_vertices(G, [])
 
@@ -23,10 +23,10 @@ class TestIdentifyVerticesBasic:
         """Test that identifying a single vertex does nothing."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
-        
+
         initial_nodes = list(G.nodes())
         identify_vertices(G, [1])
-        
+
         assert list(G.nodes()) == initial_nodes
         assert G.has_edge(1, 2)
 
@@ -34,7 +34,7 @@ class TestIdentifyVerticesBasic:
         """Test that identifying a non-existent vertex raises ValueError."""
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
-        
+
         with pytest.raises(ValueError, match="not found in graph"):
             identify_vertices(G, [1, 99])
 
@@ -43,9 +43,9 @@ class TestIdentifyVerticesBasic:
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 3)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         assert 2 not in G.nodes()
         assert 1 in G.nodes()
         assert G.has_edge(1, 3)
@@ -55,9 +55,9 @@ class TestIdentifyVerticesBasic:
         G = MixedMultiGraph()
         G.add_directed_edge(1, 2)
         G.add_directed_edge(2, 3)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         assert 2 not in G.nodes()
         assert 1 in G.nodes()
         assert G.has_edge(1, 3)
@@ -69,9 +69,9 @@ class TestIdentifyVerticesBasic:
         G.add_undirected_edge(2, 3)
         G.add_undirected_edge(3, 4)
         G.add_undirected_edge(4, 5)
-        
+
         identify_vertices(G, [1, 2, 3])
-        
+
         assert 1 in G.nodes()
         assert 2 not in G.nodes()
         assert 3 not in G.nodes()
@@ -89,9 +89,9 @@ class TestIdentifyVerticesNoSelfLoops:
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 2)
         G.add_undirected_edge(2, 1)  # Same edge, undirected
-        
+
         identify_vertices(G, [1, 2])
-        
+
         # Should not have self-loop
         assert not G.has_edge(1, 1)
         assert 1 in G.nodes()
@@ -102,9 +102,9 @@ class TestIdentifyVerticesNoSelfLoops:
         G = MixedMultiGraph()
         G.add_directed_edge(1, 2)
         G.add_directed_edge(2, 1)  # Bidirectional
-        
+
         identify_vertices(G, [1, 2])
-        
+
         # Should not have self-loop
         assert not G.has_edge(1, 1)
         assert 1 in G.nodes()
@@ -119,7 +119,7 @@ class TestIdentifyVerticesMutualExclusivityError:
         G = MixedMultiGraph()
         G.add_directed_edge(1, 3)  # 1 -> 3 (directed)
         G.add_undirected_edge(2, 3)  # 2 - 3 (undirected)
-        
+
         # After merging 1 and 2: would have both directed 1->3 and undirected 1-3
         with pytest.raises(ValueError, match="both directed and undirected"):
             identify_vertices(G, [1, 2])
@@ -129,7 +129,7 @@ class TestIdentifyVerticesMutualExclusivityError:
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 3)  # 1 - 3 (undirected)
         G.add_directed_edge(2, 3)  # 2 -> 3 (directed)
-        
+
         # After merging 1 and 2: would have both undirected 1-3 and directed 1->3
         with pytest.raises(ValueError, match="both directed and undirected"):
             identify_vertices(G, [1, 2])
@@ -140,7 +140,7 @@ class TestIdentifyVerticesMutualExclusivityError:
         G.add_directed_edge(1, 4)  # 1 -> 4
         G.add_undirected_edge(2, 4)  # 2 - 4
         G.add_directed_edge(3, 5)  # 3 -> 5
-        
+
         # After merging [1, 2, 3]: would have both directed 1->4 and undirected 1-4
         with pytest.raises(ValueError, match="both directed and undirected"):
             identify_vertices(G, [1, 2, 3])
@@ -154,18 +154,18 @@ class TestIdentifyVerticesAttributes:
         G = MixedMultiGraph()
         G.add_node(1)
         G.add_node(2)
-        G._undirected.nodes[1]['label'] = 'first'
-        G._undirected.nodes[1]['weight'] = 1.0
-        G._undirected.nodes[2]['label'] = 'second'
-        G._undirected.nodes[2]['weight'] = 2.0
+        G._undirected.nodes[1]["label"] = "first"
+        G._undirected.nodes[1]["weight"] = 1.0
+        G._undirected.nodes[2]["label"] = "second"
+        G._undirected.nodes[2]["weight"] = 2.0
         G.add_undirected_edge(1, 2)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         assert 1 in G.nodes()
         node_attrs = G._undirected.nodes[1]
-        assert node_attrs['label'] == 'first'
-        assert node_attrs['weight'] == 1.0
+        assert node_attrs["label"] == "first"
+        assert node_attrs["weight"] == 1.0
 
     def test_custom_merged_attributes(self) -> None:
         """Test using custom merged attributes."""
@@ -173,21 +173,21 @@ class TestIdentifyVerticesAttributes:
         G.add_node(1)
         G.add_node(2)
         G.add_node(3)
-        G._undirected.nodes[1]['label'] = 'first'
-        G._undirected.nodes[2]['label'] = 'second'
-        G._undirected.nodes[3]['label'] = 'third'
+        G._undirected.nodes[1]["label"] = "first"
+        G._undirected.nodes[2]["label"] = "second"
+        G._undirected.nodes[3]["label"] = "third"
         G.add_undirected_edge(1, 4)
         G.add_undirected_edge(2, 4)
         G.add_undirected_edge(3, 4)
-        
-        merged_attrs = {'label': 'merged', 'weight': 5.0, 'custom': 'value'}
+
+        merged_attrs = {"label": "merged", "weight": 5.0, "custom": "value"}
         identify_vertices(G, [1, 2, 3], merged_attrs=merged_attrs)
-        
+
         assert 1 in G.nodes()
         node_attrs = G._undirected.nodes[1]
-        assert node_attrs['label'] == 'merged'
-        assert node_attrs['weight'] == 5.0
-        assert node_attrs['custom'] == 'value'
+        assert node_attrs["label"] == "merged"
+        assert node_attrs["weight"] == 5.0
+        assert node_attrs["custom"] == "value"
 
 
 class TestIdentifyVerticesParallelEdges:
@@ -198,9 +198,9 @@ class TestIdentifyVerticesParallelEdges:
         G = MixedMultiGraph()
         G.add_undirected_edge(1, 3, weight=1.0)
         G.add_undirected_edge(2, 3, weight=2.0)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         # Should have parallel undirected edges from 1 to 3
         assert G._undirected.number_of_edges(1, 3) == 2
         assert G.has_edge(1, 3)
@@ -210,9 +210,9 @@ class TestIdentifyVerticesParallelEdges:
         G = MixedMultiGraph()
         G.add_directed_edge(1, 3, weight=1.0)
         G.add_directed_edge(2, 3, weight=2.0)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         # Should have parallel directed edges from 1 to 3
         assert G._directed.number_of_edges(1, 3) == 2
         assert G.has_edge(1, 3)
@@ -228,9 +228,9 @@ class TestIdentifyVerticesComplex:
         G.add_undirected_edge(2, 3)
         G.add_directed_edge(4, 5)
         G.add_directed_edge(5, 6)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         # Edges involving 4, 5, 6 should be unchanged
         assert G.has_edge(4, 5)
         assert G.has_edge(5, 6)
@@ -243,11 +243,10 @@ class TestIdentifyVerticesComplex:
         G.add_undirected_edge(2, 3)
         G.add_directed_edge(1, 4)
         G.add_directed_edge(2, 5)
-        
+
         identify_vertices(G, [1, 2])
-        
+
         # Should have both undirected and directed edges from 1
         assert G.has_edge(1, 3)  # Undirected
         assert G.has_edge(1, 4)  # Directed
         assert G.has_edge(1, 5)  # Directed
-

@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 
 def plot_sdnetwork(
-    network: 'SemiDirectedPhyNetwork',
-    layout: str = 'twopi',
+    network: "SemiDirectedPhyNetwork",
+    layout: str = "twopi",
     style: SDNetStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -84,12 +84,11 @@ def plot_sdnetwork(
     else:
         fig = ax.figure
 
-    if layout == 'pz-radial':
+    if layout == "pz-radial":
         computed_layout = compute_pz_radial_layout(network, **layout_kwargs)
-    elif layout.startswith('pz-'):
+    elif layout.startswith("pz-"):
         raise PhyloZooLayoutError(
-            f"Unknown PhyloZoo layout: '{layout}'. "
-            "Supported PhyloZoo layouts: 'pz-radial'"
+            f"Unknown PhyloZoo layout: '{layout}'. " "Supported PhyloZoo layouts: 'pz-radial'"
         )
     else:
         computed_layout = compute_nx_layout(network, layout=layout, **layout_kwargs)
@@ -102,10 +101,10 @@ def plot_sdnetwork(
 
     def get_node_type(node: Any) -> str:
         if node in leaves:
-            return 'leaf'
+            return "leaf"
         if node in hybrid_nodes:
-            return 'hybrid'
-        return 'tree'
+            return "hybrid"
+        return "tree"
 
     render_layout(
         ax,
@@ -115,7 +114,7 @@ def plot_sdnetwork(
         center,
         get_node_type,
         network_obj.get_label,
-        radial_labels_for_leaves=(layout == 'pz-radial'),
+        radial_labels_for_leaves=(layout == "pz-radial"),
     )
 
     if show:

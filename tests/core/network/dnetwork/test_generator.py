@@ -25,7 +25,6 @@ from phylozoo.core.network.dnetwork.generator.construction import (
     _apply_rules,
     _get_node_reachability_matrix,
 )
-from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.classifications import is_binary, has_parallel_edges
 from phylozoo.utils.exceptions import (
     PhyloZooGeneratorStructureError,
@@ -159,27 +158,27 @@ class TestDirectedGenerator:
         """Test generator cached properties."""
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
-        
+
         # Test root_node
         assert gen.root_node == 0
-        
+
         # Test hybrid_nodes
         assert gen.hybrid_nodes == {1}
-        
+
         # Test level
         assert gen.level == 1
-        
+
         # Test edge_sides
         edge_sides = gen.edge_sides
         assert len(edge_sides) == 2
         assert all(isinstance(side, DirEdgeSide) for side in edge_sides)
-        
+
         # Test hybrid_sides
         hybrid_sides = gen.hybrid_sides
         assert len(hybrid_sides) == 1
         assert all(isinstance(side, HybridSide) for side in hybrid_sides)
         assert hybrid_sides[0].node == 1
-        
+
         # Test sides
         sides = gen.sides
         assert len(sides) == 3  # 2 edge sides + 1 hybrid side
@@ -188,7 +187,7 @@ class TestDirectedGenerator:
         """Test parallel_edge_sides property."""
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
-        
+
         parallel = gen.parallel_edge_sides
         assert len(parallel) == 1  # One pair of parallel edges
         assert len(parallel[0]) == 2  # Two edges in the pair
@@ -200,7 +199,7 @@ class TestDirectedGenerator:
         # For now, just test that the property exists and works
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
-        
+
         non_parallel = gen.non_parallel_edge_sides
         # All edges are parallel in this case
         assert isinstance(non_parallel, list)
@@ -257,10 +256,10 @@ class TestGeneratorsFromNetwork:
         """Test extracting generators from a level-1 network."""
         network = LEVEL_1_DNETWORK_SINGLE_HYBRID
         generators = list(generators_from_network(network))
-        
+
         # Should extract at least one generator
         assert len(generators) > 0
-        
+
         # All should be valid generators
         for gen in generators:
             assert isinstance(gen, DirectedGenerator)
@@ -270,10 +269,10 @@ class TestGeneratorsFromNetwork:
         """Test that generators_from_network checks for binary network."""
         # Use a non-binary network fixture
         non_binary_network = DTREE_NON_BINARY_SMALL
-        
+
         # Verify it's not binary
         assert is_binary(non_binary_network) is False
-        
+
         # Should raise an error when trying to extract generators
         with pytest.raises(PhyloZooNotImplementedError, match="binary"):
             list(generators_from_network(non_binary_network))
@@ -281,16 +280,16 @@ class TestGeneratorsFromNetwork:
     def test_generators_from_network_no_parallel_edges(self) -> None:
         """Test that generators_from_network warns for parallel edges."""
         from unittest.mock import patch
-        
+
         # Create a network with parallel edges
         network = LEVEL_1_DNETWORK_PARALLEL_EDGES
-        
+
         # Verify it has parallel edges
         assert has_parallel_edges(network) is True
-        
+
         # Mock is_binary to return True so we can test the parallel edges warning
         # (since the binary check happens first, we need to bypass it to test the warning)
-        with patch('phylozoo.core.network.dnetwork.generator.base.is_binary', return_value=True):
+        with patch("phylozoo.core.network.dnetwork.generator.base.is_binary", return_value=True):
             # Should issue a warning (not an error) for parallel edges
             with pytest.warns(UserWarning, match="parallel edges"):
                 list(generators_from_network(network))
@@ -304,7 +303,7 @@ class TestNodeReachabilityMatrix:
         # Use a level-1 generator (parallel edges) for testing
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
-        
+
         reach = _get_node_reachability_matrix(gen)
         assert reach.get((0, 1), False) is True
         assert reach.get((0, 0), False) is True  # Self-reachable
@@ -315,7 +314,7 @@ class TestNodeReachabilityMatrix:
         """Test that each node is reachable from itself."""
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
-        
+
         reach = _get_node_reachability_matrix(gen)
         assert reach.get((0, 0), False) is True
         assert reach.get((1, 1), False) is True
@@ -324,7 +323,7 @@ class TestNodeReachabilityMatrix:
         """Test reachability with parallel edges."""
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen = DirectedGenerator(graph)
-        
+
         reach = _get_node_reachability_matrix(gen)
         assert reach.get((0, 1), False) is True
         assert reach.get((1, 0), False) is False
@@ -363,12 +362,12 @@ class TestApplyRules:
         """Test applying rules to level-1 generator."""
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen1 = DirectedGenerator(graph)
-        
+
         results = list(_apply_rules(gen1))
-        
+
         # Should generate multiple level-2 generators
         assert len(results) > 0
-        
+
         # All results should be valid generators
         for result in results:
             assert isinstance(result, DirectedGenerator)
@@ -378,7 +377,7 @@ class TestApplyRules:
         """Test that _apply_rules doesn't raise errors."""
         graph = DirectedMultiGraph(edges=[(0, 1), (0, 1)])
         gen1 = DirectedGenerator(graph)
-        
+
         # Should not raise any errors
         results = list(_apply_rules(gen1))
         assert len(results) == 12  # Known number from previous testing
@@ -408,7 +407,7 @@ class TestAllLevelKGenerators:
         """Test generating level-2 generators."""
         generators = all_level_k_generators(2)
         assert len(generators) == 4  # Known number from previous testing
-        
+
         # All should be level-2
         for gen in generators:
             assert gen.level == 2
@@ -418,7 +417,7 @@ class TestAllLevelKGenerators:
         """Test generating level-3 generators."""
         generators = all_level_k_generators(3)
         assert len(generators) == 65  # Known number from previous testing
-        
+
         # All should be level-3
         for gen in generators:
             assert gen.level == 3
@@ -433,10 +432,10 @@ class TestAllLevelKGenerators:
         """Test that returned generators are non-isomorphic."""
         generators = all_level_k_generators(2)
         gen_list = list(generators)
-        
+
         # Check that no two generators are isomorphic
         from phylozoo.core.primitives.d_multigraph.isomorphism import is_isomorphic
-        
+
         for i, gen1 in enumerate(gen_list):
             for j, gen2 in enumerate(gen_list):
                 if i != j:
@@ -458,15 +457,15 @@ class TestGeneratorIntegration:
         # Start with level-0
         level0 = all_level_k_generators(0)
         assert len(level0) == 1
-        
+
         # Generate level-1
         level1 = all_level_k_generators(1)
         assert len(level1) == 1
-        
+
         # Generate level-2
         level2 = all_level_k_generators(2)
         assert len(level2) == 4
-        
+
         # Verify all are valid
         for gen in level0 | level1 | level2:
             assert isinstance(gen, DirectedGenerator)
@@ -475,16 +474,15 @@ class TestGeneratorIntegration:
     def test_generator_properties_consistency(self) -> None:
         """Test that generator properties are consistent."""
         generators = all_level_k_generators(2)
-        
+
         for gen in generators:
             # Level should match number of hybrid nodes
             assert gen.level == len(gen.hybrid_nodes)
-            
+
             # Root should have in-degree 0
             root = gen.root_node
             assert gen.graph.indegree(root) == 0
-            
+
             # Hybrid nodes should have in-degree >= 2
             for hybrid in gen.hybrid_nodes:
                 assert gen.graph.indegree(hybrid) >= 2
-

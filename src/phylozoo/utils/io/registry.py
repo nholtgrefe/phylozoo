@@ -142,7 +142,7 @@ class FormatRegistry:
     def _get_available_formats(cls, obj_type: type) -> list[str]:
         """Get list of available formats for a type."""
         formats = []
-        for (registered_type, format) in cls._readers.keys():
+        for registered_type, format in cls._readers.keys():
             if registered_type == obj_type:
                 formats.append(format)
         return sorted(set(formats))

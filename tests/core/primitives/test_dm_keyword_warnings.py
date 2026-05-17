@@ -19,4 +19,3 @@ def test_keyword_edge_key_warns_dm() -> None:
     with pytest.warns(UserWarning, match="Python keyword"):
         g = DirectedMultiGraph()
         g.add_edge("a", "b", key="class")
-

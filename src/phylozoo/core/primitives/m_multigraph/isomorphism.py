@@ -13,7 +13,7 @@ import networkx as nx
 
 from .base import MixedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def _to_digraph_for_isomorphism(
@@ -21,17 +21,17 @@ def _to_digraph_for_isomorphism(
 ) -> nx.MultiDiGraph:
     """
     Convert MixedMultiGraph to MultiDiGraph for isomorphism checking.
-    
+
     Undirected edges are converted to bidirectional directed edges (u->v and v->u
     with the same key and attributes). This works because MixedMultiGraph enforces
     mutual exclusivity: edges between the same nodes are either all directed or
     all undirected, never mixed.
-    
+
     Parameters
     ----------
     G : MixedMultiGraph
         Mixed multi-graph to convert.
-    
+
     Returns
     -------
     nx.MultiDiGraph
@@ -39,11 +39,11 @@ def _to_digraph_for_isomorphism(
         as bidirectional pairs.
     """
     result = nx.MultiDiGraph()
-    
+
     # Copy graph attributes
     if G._directed.graph:
         result.graph.update(G._directed.graph)
-    
+
     # Copy nodes with attributes (from both subgraphs, merge if needed)
     for node, data in G._directed.nodes(data=True):
         result.add_node(node, **data)
@@ -53,17 +53,17 @@ def _to_digraph_for_isomorphism(
         else:
             # Merge attributes if node exists in both
             result.nodes[node].update(data)
-    
+
     # Add directed edges as-is
     for u, v, key, data in G._directed.edges(keys=True, data=True):
         result.add_edge(u, v, key=key, **data)
-    
+
     # Add undirected edges as bidirectional directed edges
     # Use the same key for both directions to preserve parallel edge structure
     for u, v, key, data in G._undirected.edges(keys=True, data=True):
         result.add_edge(u, v, key=key, **data)
         result.add_edge(v, u, key=key, **data)
-    
+
     return result
 
 
@@ -76,12 +76,12 @@ def is_isomorphic(
 ) -> bool:
     """
     Check if two mixed multi-graphs are isomorphic.
-    
+
     Two graphs are isomorphic if there exists a bijection between their node sets
     that preserves adjacency, edge direction, and parallel edges. Undirected edges
     are treated as bidirectional, so they must match with other undirected edges
     (which appear as bidirectional pairs in the converted graph).
-    
+
     Parameters
     ----------
     G1 : MixedMultiGraph
@@ -95,19 +95,19 @@ def is_isomorphic(
         that also don't have that attribute. By default None.
     edge_attrs : list[str] | None, optional
         List of edge attribute names to match. If None, edge attributes are ignored.
-        Edges must have matching values for all specified attributes. If a node 
-        doesn't have an attribute, it matches only with nodes that also don't have 
+        Edges must have matching values for all specified attributes. If a node
+        doesn't have an attribute, it matches only with nodes that also don't have
         that attribute.By default None.
     graph_attrs : list[str] | None, optional
         List of graph-level attribute names to match. If None, graph attributes are
         ignored. Graph attributes are checked before isomorphism checking for efficiency.
         By default None.
-    
+
     Returns
     -------
     bool
         True if the graphs are isomorphic, False otherwise.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -136,7 +136,7 @@ def is_isomorphic(
     ... )
     >>> is_isomorphic(G5, G6)
     True
-    
+
     Notes
     -----
     - Graph attributes are checked first for efficiency (early exit if they don't match).
@@ -148,22 +148,20 @@ def is_isomorphic(
         for attr in graph_attrs:
             if G1._directed.graph.get(attr) != G2._directed.graph.get(attr):
                 return False
-    
+
     # Convert to directed graphs
     nx_G1 = _to_digraph_for_isomorphism(G1)
     nx_G2 = _to_digraph_for_isomorphism(G2)
-    
+
     # Create node match function
     if node_attrs:
         # Use NetworkX's efficient categorical_node_match
         # Default values are None, meaning nodes without the attribute match
         # only with nodes that also don't have it
-        node_match = nx.isomorphism.categorical_node_match(
-            node_attrs, [None] * len(node_attrs)
-        )
+        node_match = nx.isomorphism.categorical_node_match(node_attrs, [None] * len(node_attrs))
     else:
         node_match = None
-    
+
     # Create edge match function
     if edge_attrs:
         # For multi-graphs, use categorical_multiedge_match
@@ -174,37 +172,37 @@ def is_isomorphic(
         )
     else:
         edge_match = None
-    
+
     # Use MultiDiGraphMatcher
     matcher = nx.isomorphism.MultiDiGraphMatcher(
-        nx_G1, nx_G2,
-        node_match=node_match,
-        edge_match=edge_match
+        nx_G1, nx_G2, node_match=node_match, edge_match=edge_match
     )
-    
+
     return matcher.is_isomorphic()
 
 
-def _get_graph_invariant(graph: MixedMultiGraph) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+def _get_graph_invariant(
+    graph: MixedMultiGraph,
+) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
     """
     Compute graph invariants for fast isomorphism candidate filtering.
-    
-    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
-    sorted_undirected_degrees, sorted_edge_multiplicities). Isomorphic graphs must have 
+
+    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees,
+    sorted_undirected_degrees, sorted_edge_multiplicities). Isomorphic graphs must have
     the same invariants (but not vice versa).
-    
+
     Parameters
     ----------
     graph : MixedMultiGraph
         The graph to compute invariants for.
-    
+
     Returns
     -------
     tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]
-        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
-        sorted_undirected_degrees, sorted_edge_multiplicities). Edge multiplicities are 
+        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees,
+        sorted_undirected_degrees, sorted_edge_multiplicities). Edge multiplicities are
         the number of parallel edges for each (u, v) pair, sorted.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -224,18 +222,18 @@ def _get_graph_invariant(graph: MixedMultiGraph) -> tuple[int, int, tuple[int, .
     in_degrees = tuple(sorted(graph.indegree(v) for v in nodes))
     out_degrees = tuple(sorted(graph.outdegree(v) for v in nodes))
     undirected_degrees = tuple(sorted(graph._undirected.degree(v) for v in nodes))
-    
+
     # Count edge multiplicities (number of parallel edges for each (u, v) pair)
     edge_multiplicities: list[int] = []
     seen_pairs: set[tuple[Any, Any]] = set()
-    
+
     # Count directed edge multiplicities
     for u, v, _ in graph.directed_edges_iter(keys=True):
         if (u, v) not in seen_pairs:
             multiplicity = graph._directed.number_of_edges(u, v)
             edge_multiplicities.append(multiplicity)
             seen_pairs.add((u, v))
-    
+
     # Count undirected edge multiplicities
     for u, v, _ in graph.undirected_edges_iter(keys=True):
         # Normalize edge for undirected (order doesn't matter)
@@ -244,8 +242,14 @@ def _get_graph_invariant(graph: MixedMultiGraph) -> tuple[int, int, tuple[int, .
             multiplicity = graph._undirected.number_of_edges(u, v)
             edge_multiplicities.append(multiplicity)
             seen_pairs.add(edge_key)
-    
-    sorted_multiplicities = tuple(sorted(edge_multiplicities))
-    
-    return (num_nodes, num_edges, in_degrees, out_degrees, undirected_degrees, sorted_multiplicities)
 
+    sorted_multiplicities = tuple(sorted(edge_multiplicities))
+
+    return (
+        num_nodes,
+        num_edges,
+        in_degrees,
+        out_degrees,
+        undirected_degrees,
+        sorted_multiplicities,
+    )

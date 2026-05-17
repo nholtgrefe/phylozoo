@@ -7,10 +7,6 @@ This module tests:
 - Cached property behavior on copy
 """
 
-import warnings
-
-import pytest
-
 from phylozoo.core.network.sdnetwork import MixedPhyNetwork
 from tests.core.network.sdnetwork.conftest import expect_mixed_network_warning
 
@@ -22,11 +18,11 @@ class TestCopy:
         """Test that copy creates independent objects."""
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         net2 = net1.copy()
-        
+
         # Should be different objects
         assert net1 is not net2
         assert net1._graph is not net2._graph
@@ -37,11 +33,16 @@ class TestCopy:
         """Test that labels are copied."""
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (3, {'label': 'root'})],
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (4, {"label": "C"}),
+                    (3, {"label": "root"}),
+                ],
             )
         net2 = net1.copy()
-        
+
         # Labels should be copied
         assert net2.get_label(1) == "A"
         assert net2.get_label(2) == "B"
@@ -51,11 +52,11 @@ class TestCopy:
         """Test that graph structure is copied."""
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         net2 = net1.copy()
-        
+
         # Graph structure should be copied
         assert net2.number_of_nodes() == net1.number_of_nodes()
         assert net2.number_of_edges() == net1.number_of_edges()
@@ -66,12 +67,18 @@ class TestCopy:
         """Test that copied network has equal properties."""
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            directed_edges=[(5, 4), (6, 4)],
-            undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
-            nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
+                directed_edges=[(5, 4), (6, 4)],
+                undirected_edges=[(4, 2), (5, 8), (5, 10), (6, 9), (6, 11)],
+                nodes=[
+                    (2, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                    (11, {"label": "E"}),
+                ],
             )
         net2 = net1.copy()
-        
+
         # All properties should be equal
         assert net1.leaves == net2.leaves
         assert net1.taxa == net2.taxa
@@ -85,15 +92,15 @@ class TestCopy:
         """Test that cached properties are recomputed on copy."""
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         # Access to cache
         _ = net1.leaves
         _ = net1.taxa
-        
+
         net2 = net1.copy()
-        
+
         # Properties should be equal but may be different objects (recomputed)
         assert net1.leaves == net2.leaves
         assert net1.taxa == net2.taxa
@@ -103,15 +110,15 @@ class TestCopy:
         # Node 3 needs degree >= 3
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            undirected_edges=[
-            {'u': 3, 'v': 1, 'branch_length': 0.5, 'bootstrap': 0.95},
-            {'u': 3, 'v': 2, 'branch_length': 0.3},
-            (3, 4)
-            ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[
+                    {"u": 3, "v": 1, "branch_length": 0.5, "bootstrap": 0.95},
+                    {"u": 3, "v": 2, "branch_length": 0.3},
+                    (3, 4),
+                ],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         net2 = net1.copy()
-        
+
         # Edge attributes should be copied
         assert net2.get_branch_length(3, 1) == 0.5
         assert net2.get_bootstrap(3, 1) == 0.95
@@ -123,15 +130,18 @@ class TestCopy:
         # Nodes 5 and 6 need degree >= 3
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            directed_edges=[
-            {'u': 5, 'v': 4, 'gamma': 0.6},
-            {'u': 6, 'v': 4, 'gamma': 0.4}
-            ],
-            undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
+                directed_edges=[{"u": 5, "v": 4, "gamma": 0.6}, {"u": 6, "v": 4, "gamma": 0.4}],
+                undirected_edges=[(4, 1), (5, 8), (5, 10), (6, 9), (6, 11)],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                    (11, {"label": "E"}),
+                ],
             )
         net2 = net1.copy()
-        
+
         # Gamma values should be copied
         assert net2.get_gamma(5, 4) == 0.6
         assert net2.get_gamma(6, 4) == 0.4
@@ -140,8 +150,8 @@ class TestCopy:
         """Test that copy returns correct type."""
         with expect_mixed_network_warning():
             net1 = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         net2 = net1.copy()
         assert isinstance(net2, MixedPhyNetwork)
@@ -154,8 +164,8 @@ class TestImmutability:
         """Test that mutation methods don't exist."""
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         # Verify mutation methods don't exist
         assert not hasattr(net, "add_undirected_edge")
@@ -168,8 +178,8 @@ class TestImmutability:
         """Test that underlying graph is not directly modifiable."""
         with expect_mixed_network_warning():
             net = MixedPhyNetwork(
-            undirected_edges=[(3, 1), (3, 2), (3, 4)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+                undirected_edges=[(3, 1), (3, 2), (3, 4)],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         # Direct modification should be possible but discouraged
         # We test that the network structure remains consistent
@@ -177,4 +187,3 @@ class TestImmutability:
         # If we could modify, we'd test that here
         # But since it's immutable, we just verify structure
         assert net.number_of_edges() == original_edges
-

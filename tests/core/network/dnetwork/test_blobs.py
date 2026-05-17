@@ -2,8 +2,6 @@
 Tests for blob computation in DirectedPhyNetwork.
 """
 
-import warnings
-
 import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
@@ -25,7 +23,7 @@ class TestBlobs:
     def test_single_node_network(self) -> None:
         """Test that single-node network has one trivial blob."""
         with pytest.warns(UserWarning, match="Single-node network detected"):
-            net = DirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
+            net = DirectedPhyNetwork(nodes=[(1, {"label": "A"})])
         blobs_list = list(blobs(net))
         # Single node should be one trivial blob
         assert len(blobs_list) == 1
@@ -37,10 +35,7 @@ class TestBlobs:
 
     def test_single_edge_network(self) -> None:
         """Test that single-edge network has two trivial blobs."""
-        net = DirectedPhyNetwork(
-            edges=[(1, 2)],
-            nodes=[(2, {'label': 'A'})]
-        )
+        net = DirectedPhyNetwork(edges=[(1, 2)], nodes=[(2, {"label": "A"})])
         blobs_list = list(blobs(net))
         # Single edge should create two trivial blobs (one per node)
         assert len(blobs_list) == 2
@@ -56,10 +51,10 @@ class TestBlobs:
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 1), (5, 2), (6, 3), (6, 4)],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (4, {'label': 'D'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -71,20 +66,25 @@ class TestBlobs:
         """Test network with hybrid node creating non-trivial blob."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -100,20 +100,25 @@ class TestBlobs:
         """Test network with parallel edges creating 2-node blob."""
         net = DirectedPhyNetwork(
             edges=[
-                (7, 5), (7, 6),
-                (5, 4, 0), (5, 4, 1), (5, 4, 2),  # Parallel edges
+                (7, 5),
+                (7, 6),
+                (5, 4, 0),
+                (5, 4, 1),
+                (5, 4, 2),  # Parallel edges
                 (6, 4),
                 (4, 8),
-                (5, 1), (5, 2),
+                (5, 1),
+                (5, 2),
                 (6, 3),
-                (8, 9), (8, 10),
+                (8, 9),
+                (8, 10),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -127,20 +132,25 @@ class TestBlobs:
         """Test filtering with trivial=False."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         # trivial=False requires leaves=False
@@ -152,20 +162,25 @@ class TestBlobs:
         """Test filtering with leaves=False."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         without_leaves = list(blobs(net, leaves=False))
@@ -178,10 +193,10 @@ class TestBlobs:
         net = DirectedPhyNetwork(
             edges=[(7, 5), (7, 6), (5, 1), (5, 2), (6, 3), (6, 4)],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (4, {'label': 'D'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
             ],
         )
         with pytest.raises(ValueError, match="Cannot have trivial=False and leaves=True"):
@@ -191,20 +206,25 @@ class TestBlobs:
         """Test that all nodes are covered by blobs."""
         net = DirectedPhyNetwork(
             edges=[
-                (8, 5), (8, 6),
-                (5, 1), (5, 2),
-                (6, 3), (6, 9),
-                (5, 4), (6, 4),
+                (8, 5),
+                (8, 6),
+                (5, 1),
+                (5, 2),
+                (6, 3),
+                (6, 9),
+                (5, 4),
+                (6, 4),
                 (4, 7),
-                (7, 10), (7, 11),
+                (7, 10),
+                (7, 11),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (9, {'label': 'D'}),
-                (10, {'label': 'E'}),
-                (11, {'label': 'F'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -212,4 +232,3 @@ class TestBlobs:
         for blob in blobs_list:
             all_nodes.update(blob)
         assert all_nodes == set(net._graph.nodes())
-

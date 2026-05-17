@@ -16,14 +16,14 @@ from .phylip import (
 )
 
 __all__ = [
-    'nexus',
-    'phylip',
+    "nexus",
+    "phylip",
     # Nexus
-    'nexus_header',
-    'parse_nexus',
-    'write_block',
-    'write_taxa_block',
+    "nexus_header",
+    "parse_nexus",
+    "write_block",
+    "write_taxa_block",
     # PHYLIP
-    'parse_phylip_matrix',
-    'write_phylip_matrix',
+    "parse_phylip_matrix",
+    "write_phylip_matrix",
 ]

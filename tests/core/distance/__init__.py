@@ -1,4 +1,3 @@
 """
 Distance module tests.
 """
-

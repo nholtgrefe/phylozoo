@@ -20,4 +20,3 @@ __all__ = [
     "bootstrap_per_gene",
     "hamming_distances",
 ]
-

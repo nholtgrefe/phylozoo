@@ -24,17 +24,17 @@ class BaseStyle:
     'blue'
     """
 
-    node_color: str = 'lightblue'
+    node_color: str = "lightblue"
     node_size: float = 500.0
-    node_edge_color: str = 'black'
+    node_edge_color: str = "black"
     node_edge_width: float = 1.5
-    edge_color: str = 'gray'
+    edge_color: str = "gray"
     edge_width: float = 2.0
     arrow_head_size: float = 18.0
     with_labels: bool = True
     label_offset: float = 0.12
     label_font_size: float = 10.0
-    label_color: str = 'black'
+    label_color: str = "black"
 
 
 @dataclass

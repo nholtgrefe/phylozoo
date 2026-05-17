@@ -16,9 +16,8 @@ All tests create valid DirectedPhyNetworks that pass validation.
 
 import pytest
 
-from phylozoo.core.network import DirectedPhyNetwork, SemiDirectedPhyNetwork
+from phylozoo.core.network import DirectedPhyNetwork
 from phylozoo.core.network.dnetwork.derivations import to_sd_network
-from phylozoo.core.network.dnetwork.classifications import is_lsa_network
 
 
 class TestToSDNetworkBasicTrees:
@@ -28,7 +27,7 @@ class TestToSDNetworkBasicTrees:
         """Ternary tree with 3 leaves."""
         dnet = DirectedPhyNetwork(
             edges=[(4, 1), (4, 2), (4, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -50,7 +49,12 @@ class TestToSDNetworkBasicTrees:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -70,7 +74,12 @@ class TestToSDNetworkBasicTrees:
                 (6, 3),
                 (6, 4),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -94,7 +103,7 @@ class TestToSDNetworkHybrids:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -125,7 +134,12 @@ class TestToSDNetworkHybrids:
                 (5, 1),
                 (6, 2),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -151,7 +165,7 @@ class TestToSDNetworkHybrids:
                 (9, 12),
                 (5, 1),  # Hybrid node 5 has single child
             ],
-            nodes=[(1, {'label': 'A'}), (11, {'label': 'B'}), (12, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (11, {"label": "B"}), (12, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -176,7 +190,12 @@ class TestToSDNetworkLSAConversion:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
 
         sdnet = to_sd_network(dnet)
@@ -206,7 +225,12 @@ class TestToSDNetworkLSAConversion:
                 (10, 1),
                 (10, 2),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (8, {'label': 'C'}), (9, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (8, {"label": "C"}),
+                (9, {"label": "D"}),
+            ],
         )
 
         sdnet = to_sd_network(dnet)
@@ -234,7 +258,12 @@ class TestToSDNetworkLSAConversion:
                 (5, 11),
                 (6, 12),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+            ],
         )
 
         sdnet = to_sd_network(dnet)
@@ -272,7 +301,7 @@ class TestToSDNetworkParallelEdges:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -300,7 +329,7 @@ class TestToSDNetworkEdgeAttributes:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -319,7 +348,12 @@ class TestToSDNetworkEdgeAttributes:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -332,13 +366,27 @@ class TestToSDNetworkEdgeAttributes:
             edges=[
                 (7, 5),
                 (7, 6),
-                {"u": 5, "v": 4, "gamma": 0.65, "branch_length": 0.1, "bootstrap": 0.9, "custom": "foo"},
-                {"u": 6, "v": 4, "gamma": 0.35, "branch_length": 0.2, "bootstrap": 0.85, "custom": "bar"},
+                {
+                    "u": 5,
+                    "v": 4,
+                    "gamma": 0.65,
+                    "branch_length": 0.1,
+                    "bootstrap": 0.9,
+                    "custom": "foo",
+                },
+                {
+                    "u": 6,
+                    "v": 4,
+                    "gamma": 0.35,
+                    "branch_length": 0.2,
+                    "bootstrap": 0.85,
+                    "custom": "bar",
+                },
                 (5, 8),
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -401,9 +449,7 @@ class TestToSDNetworkEdgeCases:
     def test_single_edge_tree(self) -> None:
         """Tree with single edge."""
         with pytest.warns(UserWarning, match="Single-node network detected"):
-            sdnet = to_sd_network(
-                DirectedPhyNetwork(edges=[(2, 1)], nodes=[(1, {'label': 'A'})])
-            )
+            sdnet = to_sd_network(DirectedPhyNetwork(edges=[(2, 1)], nodes=[(1, {"label": "A"})]))
 
         # LSA of a single-leaf tree is the leaf; conversion yields a single-node network
         assert sdnet.number_of_nodes() == 1
@@ -449,7 +495,7 @@ class TestToSDNetworkComplexTopologies:
                 (5, 8),
                 (3, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (7, {'label': 'B'}), (8, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (7, {"label": "B"}), (8, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -478,7 +524,15 @@ class TestToSDNetworkComplexTopologies:
                 (13, 23),
                 (5, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (17, {'label': 'B'}), (18, {'label': 'C'}), (19, {'label': 'D'}), (21, {'label': 'E'}), (22, {'label': 'F'}), (23, {'label': 'G'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (17, {"label": "B"}),
+                (18, {"label": "C"}),
+                (19, {"label": "D"}),
+                (21, {"label": "E"}),
+                (22, {"label": "F"}),
+                (23, {"label": "G"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -502,7 +556,12 @@ class TestToSDNetworkRoundTrip:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'Species_A'}), (2, {'label': 'Species_B'}), (6, {'label': 'Species_C'}), (7, {'label': 'Species_D'})],
+            nodes=[
+                (1, {"label": "Species_A"}),
+                (2, {"label": "Species_B"}),
+                (6, {"label": "Species_C"}),
+                (7, {"label": "Species_D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -520,7 +579,15 @@ class TestToSDNetworkRoundTrip:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (5, {'label': 'root'}), (3, {'label': 'left'}), (4, {'label': 'right'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+                (5, {"label": "root"}),
+                (3, {"label": "left"}),
+                (4, {"label": "right"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -543,7 +610,12 @@ class TestToSDNetworkRoundTrip:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -556,7 +628,9 @@ class TestToSDNetworkValidation:
 
     def test_simple_tree_validates(self) -> None:
         """Simple tree should produce valid SD network."""
-        dnet = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+        dnet = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         sdnet = to_sd_network(dnet)
 
         # Should validate successfully (already validated in __init__)
@@ -574,7 +648,7 @@ class TestToSDNetworkValidation:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -596,7 +670,12 @@ class TestToSDNetworkValidation:
                 (5, 1),
                 (6, 2),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -618,7 +697,12 @@ class TestToSDNetworkStructurePreservation:
                 (9, 3),
                 (9, 4),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -637,7 +721,7 @@ class TestToSDNetworkStructurePreservation:
                 (9, 12),
                 (5, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (11, {'label': 'B'}), (12, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (11, {"label": "B"}), (12, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -657,12 +741,16 @@ class TestToSDNetworkStructurePreservation:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
         # Count tree edges
-        tree_edges_in_dnet = [(u, v, k) for u, v, k in dnet._graph.edges(keys=True) if (u, v, k) not in dnet.hybrid_edges]
+        tree_edges_in_dnet = [
+            (u, v, k)
+            for u, v, k in dnet._graph.edges(keys=True)
+            if (u, v, k) not in dnet.hybrid_edges
+        ]
 
         # After conversion and suppression, most tree edges should be undirected
         # (some may be merged due to suppression)
@@ -684,7 +772,12 @@ class TestToSDNetworkStructurePreservation:
                 (5, 1),
                 (6, 2),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -710,7 +803,12 @@ class TestToSDNetworkDegreeSuppression:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -733,7 +831,14 @@ class TestToSDNetworkDegreeSuppression:
                 (6, 10),
                 (6, 11),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (8, {'label': 'C'}), (9, {'label': 'D'}), (10, {'label': 'E'}), (11, {'label': 'F'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (8, {"label": "C"}),
+                (9, {"label": "D"}),
+                (10, {"label": "E"}),
+                (11, {"label": "F"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -756,7 +861,7 @@ class TestToSDNetworkHybridGamma:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -775,7 +880,7 @@ class TestToSDNetworkHybridGamma:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -795,7 +900,7 @@ class TestToSDNetworkHybridGamma:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -820,7 +925,7 @@ class TestToSDNetworkConsistency:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -846,7 +951,7 @@ class TestToSDNetworkBootstrap:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (8, {"label": "B"}), (9, {"label": "C"})],
         )
         sdnet = to_sd_network(dnet)
 
@@ -874,7 +979,12 @@ class TestToSDNetworkComplexSuppressions:
                 (6, 1),
                 (6, 2),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -897,7 +1007,15 @@ class TestToSDNetworkInternalLabels:
                 (4, 6),
                 (4, 7),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (6, {'label': 'C'}), (7, {'label': 'D'}), (5, {'label': 'root'}), (3, {'label': 'left'}), (4, {'label': 'right'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (6, {"label": "C"}),
+                (7, {"label": "D"}),
+                (5, {"label": "root"}),
+                (3, {"label": "left"}),
+                (4, {"label": "right"}),
+            ],
         )
         sdnet = to_sd_network(dnet)
 
@@ -907,4 +1025,3 @@ class TestToSDNetworkInternalLabels:
         # Other labels preserved
         assert sdnet.get_label(3) == "left"
         assert sdnet.get_label(4) == "right"
-

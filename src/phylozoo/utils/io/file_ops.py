@@ -12,7 +12,7 @@ from pathlib import Path
 from phylozoo.utils.exceptions import PhyloZooIOError, PhyloZooValueError
 
 
-def read_file_safely(filepath: str | Path, encoding: str = 'utf-8') -> str:
+def read_file_safely(filepath: str | Path, encoding: str = "utf-8") -> str:
     """
     Read a file safely with error handling.
 
@@ -56,7 +56,7 @@ def read_file_safely(filepath: str | Path, encoding: str = 'utf-8') -> str:
         raise PhyloZooIOError(f"Error reading file {filepath}: {e}") from e
 
 
-def write_file_safely(filepath: str | Path, content: str, encoding: str = 'utf-8') -> None:
+def write_file_safely(filepath: str | Path, content: str, encoding: str = "utf-8") -> None:
     """
     Write content to a file safely with error handling.
 

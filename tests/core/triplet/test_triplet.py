@@ -91,9 +91,7 @@ class TestTripletMethods:
             ({1, 2, 3}, False),
         ],
     )
-    def test_is_resolved(
-        self, triplet_input: Split | set[int], expected_resolved: bool
-    ) -> None:
+    def test_is_resolved(self, triplet_input: Split | set[int], expected_resolved: bool) -> None:
         """Test is_resolved method."""
         triplet = Triplet(triplet_input)
         assert triplet.is_resolved() == expected_resolved
@@ -105,9 +103,7 @@ class TestTripletMethods:
             ({1, 2, 3}, True),
         ],
     )
-    def test_is_star(
-        self, triplet_input: Split | set[int], expected_star: bool
-    ) -> None:
+    def test_is_star(self, triplet_input: Split | set[int], expected_star: bool) -> None:
         """Test is_star method."""
         triplet = Triplet(triplet_input)
         assert triplet.is_star() == expected_star
@@ -132,7 +128,7 @@ class TestTripletMethods:
 
         assert network.number_of_nodes() == 5  # 3 leaves + 1 internal + 1 root
         assert network.number_of_edges() == 4  # 1 outgroup + 1 root-to-internal + 2 cherry
-        assert network.taxa == {'1', '2', '3'}
+        assert network.taxa == {"1", "2", "3"}
         assert len(network.leaves) == 3
         # The root has the outgroup as a direct leaf child and an internal node.
         root = network.root_node
@@ -140,7 +136,7 @@ class TestTripletMethods:
         assert len(children) == 2
         leaf_children = [c for c in children if c in network.leaves]
         assert len(leaf_children) == 1
-        assert network.get_label(leaf_children[0]) == '1'
+        assert network.get_label(leaf_children[0]) == "1"
 
     def test_to_network_star(self) -> None:
         """Test to_network for star tree."""
@@ -149,7 +145,7 @@ class TestTripletMethods:
 
         assert network.number_of_nodes() == 4  # 3 leaves + 1 root
         assert network.number_of_edges() == 3  # 3 leaf edges
-        assert network.taxa == {'1', '2', '3'}
+        assert network.taxa == {"1", "2", "3"}
         assert len(network.leaves) == 3
         # All three leaves are direct children of the root.
         root = network.root_node

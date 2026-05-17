@@ -40,6 +40,7 @@ class TestPartitionCreation:
     def test_part_with_empty_set(self) -> None:
         """Test partition containing an empty set."""
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             partition = Partition([{1, 2}, set()])
@@ -395,8 +396,11 @@ class TestPartitionMethods:
     def test_is_refinement_not_partition_raises_error(self) -> None:
         """Test that is_refinement raises error for non-Partition."""
         from phylozoo.utils.exceptions import PhyloZooTypeError
+
         partition = Partition([{1, 2}, {3, 4}])
-        with pytest.raises(PhyloZooTypeError, match="The argument must be an instance of Partition"):
+        with pytest.raises(
+            PhyloZooTypeError, match="The argument must be an instance of Partition"
+        ):
             partition.is_refinement("not a partition")
 
 
@@ -507,6 +511,7 @@ class TestPartitionEdgeCases:
     def test_empty_sets_in_partition(self) -> None:
         """Test partition with multiple empty sets."""
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             partition = Partition([set(), set(), {1}])
@@ -541,7 +546,7 @@ class TestPartitionEdgeCases:
 
 class TestPartitionDocstringExamples:
     """Test examples from Partition docstring."""
-    
+
     def test_docstring_example(self) -> None:
         """Test the example from Partition docstring."""
         partition = Partition([{1, 2}, {3, 4}, {5}])
@@ -554,4 +559,3 @@ class TestPartitionDocstringExamples:
         assert frozenset({1, 2}) in partition.parts
         assert frozenset({3, 4}) in partition.parts
         assert frozenset({5}) in partition.parts
-

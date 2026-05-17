@@ -24,7 +24,7 @@ class TestValidSemiDirectedNetworks:
         """Ternary tree should be valid."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(4, 1), (4, 2), (4, 3)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})],
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (3, {"label": "C"})],
         )
         net.validate()
 
@@ -42,7 +42,15 @@ class TestValidSemiDirectedNetworks:
                 (6, 4),
                 (6, 9),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'}), (8, {'label': 'E'}), (9, {'label': 'F'}), (10, {'label': 'G'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (4, {"label": "D"}),
+                (8, {"label": "E"}),
+                (9, {"label": "F"}),
+                (10, {"label": "G"}),
+            ],
         )
         net.validate()
 
@@ -61,7 +69,12 @@ class TestValidSemiDirectedNetworks:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (8, {"label": "B"}),
+                (9, {"label": "C"}),
+                (10, {"label": "D"}),
+            ],
         )
         net.validate()
 
@@ -83,7 +96,13 @@ class TestValidSemiDirectedNetworks:
                 (5, 1),
                 (6, 2),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (11, {'label': 'C'}), (12, {'label': 'D'}), (13, {'label': 'E'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (11, {"label": "C"}),
+                (12, {"label": "D"}),
+                (13, {"label": "E"}),
+            ],
         )
         net.validate()
 
@@ -91,7 +110,7 @@ class TestValidSemiDirectedNetworks:
         """Star tree should be valid."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(10, i) for i in range(1, 6)],
-            nodes=[(i, {'label': f"Taxon{i}"}) for i in range(1, 6)],
+            nodes=[(i, {"label": f"Taxon{i}"}) for i in range(1, 6)],
         )
         net.validate()
 
@@ -112,7 +131,14 @@ class TestInvalidConnectivity:
                     (6, 5),
                     (6, 8),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (5, {'label': 'D'}), (7, {'label': 'E'}), (8, {'label': 'F'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (4, {"label": "C"}),
+                    (5, {"label": "D"}),
+                    (7, {"label": "E"}),
+                    (8, {"label": "F"}),
+                ],
             )
 
     def test_disconnected_with_hybrid(self) -> None:
@@ -135,7 +161,15 @@ class TestInvalidConnectivity:
                     (15, 9),
                     (15, 13),
                 ],
-                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'}), (12, {'label': 'F'}), (13, {'label': 'G'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                    (11, {"label": "E"}),
+                    (12, {"label": "F"}),
+                    (13, {"label": "G"}),
+                ],
             )
 
 
@@ -145,14 +179,15 @@ class TestInvalidDegreeConstraints:
     def test_internal_node_degree_2(self) -> None:
         """Internal node with degree 2 should be invalid."""
         with pytest.raises(
-            ValueError, match="Internal node .* has degree 2, but all internal nodes must have degree >= 3"
+            ValueError,
+            match="Internal node .* has degree 2, but all internal nodes must have degree >= 3",
         ):
             SemiDirectedPhyNetwork(
                 undirected_edges=[
                     (3, 1),  # Node 3 has degree 2 (invalid)
                     (3, 2),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
             )
 
     def test_leaf_with_outgoing_directed_edge(self) -> None:
@@ -161,7 +196,10 @@ class TestInvalidDegreeConstraints:
             SemiDirectedPhyNetwork(
                 directed_edges=[(1, 2)],  # 1 has outgoing edge
                 undirected_edges=[(3, 1), (3, 2), (3, 4)],
-                nodes=[(1, {'label': 'A'}), (4, {'label': 'B'})],  # 1 is marked as taxon but has outdegree > 0
+                nodes=[
+                    (1, {"label": "A"}),
+                    (4, {"label": "B"}),
+                ],  # 1 is marked as taxon but has outdegree > 0
             )
 
     def test_invalid_indegree_constraint(self) -> None:
@@ -183,7 +221,13 @@ class TestInvalidDegreeConstraints:
                     (5, 6),
                     (5, 7),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (6, {'label': 'D'}), (7, {'label': 'E'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (3, {"label": "C"}),
+                    (6, {"label": "D"}),
+                    (7, {"label": "E"}),
+                ],
             )
 
 
@@ -192,38 +236,44 @@ class TestInvalidBootstrap:
 
     def test_bootstrap_below_zero(self) -> None:
         """Bootstrap value below 0 should be invalid."""
-        with pytest.raises(ValueError, match="Bootstrap value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"):
+        with pytest.raises(
+            ValueError, match="Bootstrap value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"
+        ):
             SemiDirectedPhyNetwork(
                 undirected_edges=[
                     {"u": 3, "v": 1, "bootstrap": -0.1},
                     (3, 2),
                     (3, 4),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
 
     def test_bootstrap_above_one(self) -> None:
         """Bootstrap value above 1 should be invalid."""
-        with pytest.raises(ValueError, match="Bootstrap value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"):
+        with pytest.raises(
+            ValueError, match="Bootstrap value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"
+        ):
             SemiDirectedPhyNetwork(
                 undirected_edges=[
                     {"u": 3, "v": 1, "bootstrap": 1.5},
                     (3, 2),
                     (3, 4),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
 
     def test_bootstrap_nan(self) -> None:
         """Bootstrap value as NaN should be invalid."""
-        with pytest.raises(ValueError, match="Bootstrap value .* is nan, but must be in \\[0\\.0, 1\\.0\\]"):
+        with pytest.raises(
+            ValueError, match="Bootstrap value .* is nan, but must be in \\[0\\.0, 1\\.0\\]"
+        ):
             SemiDirectedPhyNetwork(
                 undirected_edges=[
                     {"u": 3, "v": 1, "bootstrap": math.nan},
                     (3, 2),
                     (3, 4),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
 
 
@@ -246,7 +296,12 @@ class TestInvalidGamma:
                     (6, 9),
                     (4, 1),
                 ],
-                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                ],
             )
 
     def test_gamma_not_summing_to_one(self) -> None:
@@ -265,12 +320,19 @@ class TestInvalidGamma:
                     (6, 9),
                     (4, 1),
                 ],
-                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                ],
             )
 
     def test_gamma_below_zero(self) -> None:
         """Gamma value below 0 should be invalid."""
-        with pytest.raises(ValueError, match="Gamma value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"):
+        with pytest.raises(
+            ValueError, match="Gamma value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"
+        ):
             SemiDirectedPhyNetwork(
                 directed_edges=[
                     {"u": 5, "v": 4, "gamma": -0.1},
@@ -284,12 +346,19 @@ class TestInvalidGamma:
                     (6, 9),
                     (4, 1),
                 ],
-                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                ],
             )
 
     def test_gamma_above_one(self) -> None:
         """Gamma value above 1 should be invalid."""
-        with pytest.raises(ValueError, match="Gamma value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"):
+        with pytest.raises(
+            ValueError, match="Gamma value .* is .*, but must be in \\[0\\.0, 1\\.0\\]"
+        ):
             SemiDirectedPhyNetwork(
                 directed_edges=[
                     {"u": 5, "v": 4, "gamma": 0.5},
@@ -303,7 +372,12 @@ class TestInvalidGamma:
                     (6, 9),
                     (4, 1),
                 ],
-                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                ],
             )
 
 
@@ -315,7 +389,8 @@ class TestEdgeCases:
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
             net = SemiDirectedPhyNetwork(
                 directed_edges=[],
-                undirected_edges=[], nodes=[],
+                undirected_edges=[],
+                nodes=[],
             )
         # Empty networks skip full validation
         with pytest.warns(UserWarning, match="Empty network.*no nodes"):
@@ -339,7 +414,7 @@ class TestEdgeCases:
         """Two nodes with undirected edge should be valid."""
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(1, 2)],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})],
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
         )
         net.validate()
 
@@ -349,7 +424,7 @@ class TestEdgeCases:
             SemiDirectedPhyNetwork(
                 directed_edges=[(1, 2)],
                 undirected_edges=[],
-                nodes=[(2, {'label': 'A'})],
+                nodes=[(2, {"label": "A"})],
             )
 
     def test_two_nodes_both_edges_invalid(self) -> None:
@@ -358,7 +433,7 @@ class TestEdgeCases:
             SemiDirectedPhyNetwork(
                 directed_edges=[(1, 2)],
                 undirected_edges=[(1, 2)],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
             )
 
 
@@ -380,7 +455,12 @@ class TestComplexValidation:
                 {"u": 6, "v": 9, "branch_length": 0.6},
                 {"u": 4, "v": 1, "branch_length": 0.7},
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (8, {"label": "B"}),
+                (9, {"label": "C"}),
+                (10, {"label": "D"}),
+            ],
         )
         net.validate()
 
@@ -400,7 +480,12 @@ class TestComplexValidation:
                 (6, 9),
                 (4, 1),
             ],
-            nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (8, {"label": "B"}),
+                (9, {"label": "C"}),
+                (10, {"label": "D"}),
+            ],
         )
         net.validate()
 
@@ -424,7 +509,17 @@ class TestComplexValidation:
                 (9, 14),
                 (9, 15),
             ],
-            nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (11, {'label': 'D'}), (12, {'label': 'E'}), (13, {'label': 'F'}), (14, {'label': 'G'}), (15, {'label': 'H'}), (16, {'label': 'I'})],
+            nodes=[
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (11, {"label": "D"}),
+                (12, {"label": "E"}),
+                (13, {"label": "F"}),
+                (14, {"label": "G"}),
+                (15, {"label": "H"}),
+                (16, {"label": "I"}),
+            ],
         )
         net.validate()
 
@@ -444,7 +539,14 @@ class TestValidationMessages:
                     (6, 5),
                     (6, 8),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'}), (5, {'label': 'D'}), (7, {'label': 'E'}), (8, {'label': 'F'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (4, {"label": "C"}),
+                    (5, {"label": "D"}),
+                    (7, {"label": "E"}),
+                    (8, {"label": "F"}),
+                ],
             )
         assert "not connected" in str(exc_info.value).lower()
 
@@ -453,7 +555,7 @@ class TestValidationMessages:
         with pytest.raises(ValueError) as exc_info:
             SemiDirectedPhyNetwork(
                 undirected_edges=[(3, 1), (3, 2)],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
             )
         assert "degree" in str(exc_info.value).lower()
 
@@ -473,7 +575,12 @@ class TestValidationMessages:
                     (6, 9),
                     (4, 1),
                 ],
-                nodes=[(1, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (8, {"label": "B"}),
+                    (9, {"label": "C"}),
+                    (10, {"label": "D"}),
+                ],
             )
         assert "gamma" in str(exc_info.value).lower()
 
@@ -486,7 +593,7 @@ class TestValidationMessages:
                     (3, 2),
                     (3, 4),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})],
+                nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
             )
         assert "bootstrap" in str(exc_info.value).lower()
 
@@ -517,7 +624,7 @@ class TestValidationPerformance:
 
         # Mark last level as leaves
         for i, leaf in enumerate(current_level):
-            nodes.append((leaf, {'label': f"Taxon{i}"}))
+            nodes.append((leaf, {"label": f"Taxon{i}"}))
 
         start = time.time()
         net = SemiDirectedPhyNetwork(
@@ -561,7 +668,16 @@ class TestInvalidSemiDirectedStructures:
                     (9, 17),
                     (7, 2),
                 ],
-                nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (12, {'label': 'C'}), (13, {'label': 'D'}), (14, {'label': 'E'}), (15, {'label': 'F'}), (16, {'label': 'G'}), (17, {'label': 'H'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (2, {"label": "B"}),
+                    (12, {"label": "C"}),
+                    (13, {"label": "D"}),
+                    (14, {"label": "E"}),
+                    (15, {"label": "F"}),
+                    (16, {"label": "G"}),
+                    (17, {"label": "H"}),
+                ],
             )
 
     def test_source_component_only_leaves(self) -> None:
@@ -589,13 +705,22 @@ class TestInvalidSemiDirectedStructures:
                     (8, 11),
                     (8, 12),
                 ],
-                nodes=[(1, {'label': 'A'}), (4, {'label': 'B'}), (5, {'label': 'C'}), (6, {'label': 'D'}), (9, {'label': 'E'}), (10, {'label': 'F'}), (11, {'label': 'G'}), (12, {'label': 'H'})],
+                nodes=[
+                    (1, {"label": "A"}),
+                    (4, {"label": "B"}),
+                    (5, {"label": "C"}),
+                    (6, {"label": "D"}),
+                    (9, {"label": "E"}),
+                    (10, {"label": "F"}),
+                    (11, {"label": "G"}),
+                    (12, {"label": "H"}),
+                ],
             )
 
     def test_invalid_cross_pattern_network_creates_cycle(self) -> None:
         """
         Test invalid network with cross-pattern directed edges (from image left graph).
-        
+
         This network has a cross-pattern of directed edges that creates a directed cycle
         when oriented, making it invalid.
         """
@@ -624,13 +749,23 @@ class TestInvalidSemiDirectedStructures:
                     (7, 17),
                     (8, 18),
                 ],
-                nodes=[(13, {'label': 'A'}), (14, {'label': 'B'}), (15, {'label': 'C'}), (16, {'label': 'D'}), (17, {'label': 'E'}), (18, {'label': 'F'}), (20, {'label': 'G'}), (33, {'label': 'v1'}), (34, {'label': 'v2'})],
+                nodes=[
+                    (13, {"label": "A"}),
+                    (14, {"label": "B"}),
+                    (15, {"label": "C"}),
+                    (16, {"label": "D"}),
+                    (17, {"label": "E"}),
+                    (18, {"label": "F"}),
+                    (20, {"label": "G"}),
+                    (33, {"label": "v1"}),
+                    (34, {"label": "v2"}),
+                ],
             )
 
     def test_invalid_dag_structure(self) -> None:
         """
         Test invalid network with DAG-like structure.
-        
+
         This network structure may not roundtrip correctly due to the specific
         arrangement of directed and undirected edges.
         """
@@ -670,7 +805,21 @@ class TestInvalidSemiDirectedStructures:
                     (14, 17),
                     (13, 14),
                 ],
-                nodes=[(6, {'label': 'A'}), (7, {'label': 'B'}), (16, {'label': 'C'}), (17, {'label': 'D'}), (18, {'label': 'E'}), (19, {'label': 'F'}), (20, {'label': 'G'}), (21, {'label': 'H'}), (22, {'label': 'I'}), (23, {'label': 'J'}), (24, {'label': 'K'}), (25, {'label': 'L'}), (26, {'label': 'M'})],
+                nodes=[
+                    (6, {"label": "A"}),
+                    (7, {"label": "B"}),
+                    (16, {"label": "C"}),
+                    (17, {"label": "D"}),
+                    (18, {"label": "E"}),
+                    (19, {"label": "F"}),
+                    (20, {"label": "G"}),
+                    (21, {"label": "H"}),
+                    (22, {"label": "I"}),
+                    (23, {"label": "J"}),
+                    (24, {"label": "K"}),
+                    (25, {"label": "L"}),
+                    (26, {"label": "M"}),
+                ],
             )
 
     def test_network_with_undirected_cycle_creating_directed_cycle(self) -> None:
@@ -706,5 +855,20 @@ class TestInvalidSemiDirectedStructures:
                     (16, 18),  # Ensure node 16 has degree >= 3
                     (16, 27),  # Extra edge for node 16
                 ],
-                nodes=[(11, {'label': 'A'}), (13, {'label': 'B'}), (14, {'label': 'C'}), (17, {'label': 'D'}), (18, {'label': 'E'}), (19, {'label': 'F'}), (20, {'label': 'G'}), (21, {'label': 'H'}), (22, {'label': 'I'}), (23, {'label': 'J'}), (24, {'label': 'K'}), (25, {'label': 'L'}), (26, {'label': 'M'}), (27, {'label': 'N'})],
+                nodes=[
+                    (11, {"label": "A"}),
+                    (13, {"label": "B"}),
+                    (14, {"label": "C"}),
+                    (17, {"label": "D"}),
+                    (18, {"label": "E"}),
+                    (19, {"label": "F"}),
+                    (20, {"label": "G"}),
+                    (21, {"label": "H"}),
+                    (22, {"label": "I"}),
+                    (23, {"label": "J"}),
+                    (24, {"label": "K"}),
+                    (25, {"label": "L"}),
+                    (26, {"label": "M"}),
+                    (27, {"label": "N"}),
+                ],
             )

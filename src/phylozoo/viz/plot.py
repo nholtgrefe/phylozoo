@@ -13,7 +13,7 @@ from ._dispatch import _get_plotter, resolve_layout
 
 def plot(
     obj: Any,
-    layout: str = 'auto',
+    layout: str = "auto",
     style: Any = None,
     ax: Any | None = None,
     show: bool = False,

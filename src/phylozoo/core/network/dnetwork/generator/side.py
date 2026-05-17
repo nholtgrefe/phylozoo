@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -24,6 +24,7 @@ class Side:
     Subclasses: NodeSide (and HybridSide) for node attachment; EdgeSide and DirEdgeSide
     for edge attachment.
     """
+
     pass
 
 
@@ -51,6 +52,7 @@ class NodeSide(Side):
     >>> node_side.node
     0
     """
+
     node: T
 
     def __repr__(self) -> str:
@@ -123,6 +125,7 @@ class EdgeSide(Side):
 
     DirEdgeSide is the concrete directed-edge implementation.
     """
+
     pass
 
 
@@ -153,6 +156,7 @@ class DirEdgeSide(EdgeSide):
     >>> edge_side.key
     0
     """
+
     u: T
     v: T
     key: int

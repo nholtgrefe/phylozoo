@@ -7,7 +7,6 @@ import math
 import pytest
 
 from phylozoo.core.network.dnetwork.derivations import k_taxon_subnetworks
-from phylozoo.core.network.dnetwork.features import cut_edges
 from tests.fixtures import directed_networks
 
 
@@ -117,9 +116,7 @@ class TestKTaxonSubnetworksWithOptions:
         num_taxa = len(network.taxa)
         k = min(2, num_taxa)
 
-        subnetworks = list(
-            k_taxon_subnetworks(network, k=k, suppress_2_blobs=True)
-        )
+        subnetworks = list(k_taxon_subnetworks(network, k=k, suppress_2_blobs=True))
 
         # All subnetworks should be valid
         assert len(subnetworks) == math.comb(num_taxa, k)
@@ -132,9 +129,7 @@ class TestKTaxonSubnetworksWithOptions:
         num_taxa = len(network.taxa)
         k = min(2, num_taxa)
 
-        subnetworks = list(
-            k_taxon_subnetworks(network, k=k, identify_parallel_edges=True)
-        )
+        subnetworks = list(k_taxon_subnetworks(network, k=k, identify_parallel_edges=True))
 
         # All subnetworks should be valid and have no parallel edges
         assert len(subnetworks) == math.comb(num_taxa, k)
@@ -335,11 +330,9 @@ class TestKTaxonSubnetworksEdgeCases:
 
         # Get the set of taxa for each subnetwork
         subnet_taxa_sets = {
-            frozenset(subnet.get_label(leaf) for leaf in subnet.leaves)
-            for subnet in subnetworks
+            frozenset(subnet.get_label(leaf) for leaf in subnet.leaves) for subnet in subnetworks
         }
 
         # All should be unique
         assert len(subnet_taxa_sets) == len(subnetworks)
         assert len(subnet_taxa_sets) == math.comb(num_taxa, k)
-

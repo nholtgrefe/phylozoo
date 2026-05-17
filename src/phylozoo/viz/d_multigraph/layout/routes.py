@@ -14,11 +14,11 @@ from phylozoo.viz._types import EdgeRoute, EdgeType
 if TYPE_CHECKING:
     from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def compute_dmgraph_routes(
-    graph: 'DirectedMultiGraph[T]',
+    graph: "DirectedMultiGraph[T]",
     positions: dict[T, tuple[float, float]],
 ) -> dict[tuple[T, T, int], EdgeRoute]:
     """
@@ -61,13 +61,13 @@ def compute_dmgraph_routes(
     # Compute routes for each edge
     for (u, v), edge_list in edge_groups.items():
         num_parallel = len(edge_list)
-        
+
         for idx, (u_edge, v_edge, key) in enumerate(edge_list):
             if u_edge not in positions or v_edge not in positions:
                 continue
 
             is_parallel = num_parallel > 1
-            
+
             x1, y1 = positions[u_edge]
             x2, y2 = positions[v_edge]
             points = ((x1, y1), (x2, y2))

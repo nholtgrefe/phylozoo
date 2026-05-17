@@ -21,7 +21,9 @@ class TestFindLSANode:
         """
         A simple binary tree should have its root as the LSA.
         """
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         assert lsa_node(net) == 3
 
     def test_hybrid_lsa_below_root(self) -> None:
@@ -56,7 +58,7 @@ class TestFindLSANode:
     def test_single_node_network(self) -> None:
         """
         Single-node network has that node as the LSA.
-        
+
         In a single-node network, the node is both root and leaf, so it is the LSA.
         """
         with warnings.catch_warnings():
@@ -74,7 +76,9 @@ class TestToLSANetwork:
         """
         When root is already LSA, to_lsa_network returns a copy rooted at the same node.
         """
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         lsa_net = to_lsa_network(net)
         assert lsa_net.root_node == 3
         assert set(lsa_net.leaves) == {1, 2}
@@ -139,13 +143,15 @@ class TestIsLSANetwork:
         """
         Tree with root as LSA returns True.
         """
-        net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})])
+        net = DirectedPhyNetwork(
+            edges=[(3, 1), (3, 2)], nodes=[(1, {"label": "A"}), (2, {"label": "B"})]
+        )
         assert is_lsa_network(net) is True
 
     def test_single_node_network_true(self) -> None:
         """
         Single-node network is an LSA network.
-        
+
         In a single-node network, the node is both root and leaf, so it is the LSA.
         """
         with warnings.catch_warnings():
@@ -170,4 +176,3 @@ class TestIsLSANetwork:
         ]
         net = DirectedPhyNetwork(edges=edges, nodes=[(8, {"label": "A"}), (9, {"label": "B"})])
         assert is_lsa_network(net) is False
-

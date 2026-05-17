@@ -13,7 +13,7 @@ import networkx as nx
 
 from .base import DirectedMultiGraph
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def is_isomorphic(
@@ -25,12 +25,12 @@ def is_isomorphic(
 ) -> bool:
     """
     Check if two directed multi-graphs are isomorphic.
-    
+
     Two graphs are isomorphic if there exists a bijection between their node sets
     that preserves adjacency, edge direction, and parallel edges. Optionally,
     node attributes, edge attributes, and graph-level attributes can be required
     to match as well.
-    
+
     Parameters
     ----------
     G1 : DirectedMultiGraph
@@ -45,18 +45,18 @@ def is_isomorphic(
     edge_attrs : list[str] | None, optional
         List of edge attribute names to match. If None, edge attributes are ignored.
         Edges must have matching values for all specified attributes. If an edge
-        doesn't have an attribute, it matches only with nodes that also don't have 
+        doesn't have an attribute, it matches only with nodes that also don't have
         that attribute. By default None.
     graph_attrs : list[str] | None, optional
         List of graph-level attribute names to match. If None, graph attributes are
         ignored. Graph attributes are checked before isomorphism checking for efficiency.
         By default None.
-    
+
     Returns
     -------
     bool
         True if the graphs are isomorphic, False otherwise.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
@@ -99,7 +99,7 @@ def is_isomorphic(
     >>> G9 = DirectedMultiGraph(edges=[(1, 2)])
     >>> is_isomorphic(G7, G9)
     False
-    
+
     Notes
     -----
 
@@ -109,24 +109,22 @@ def is_isomorphic(
     # Get the underlying NetworkX graphs
     nx_G1 = G1._graph
     nx_G2 = G2._graph
-    
+
     # Check graph attributes first (early exit if they don't match)
     if graph_attrs:
         for attr in graph_attrs:
             if nx_G1.graph.get(attr) != nx_G2.graph.get(attr):
                 return False
-    
+
     # Create node match function
     if node_attrs:
         # Use NetworkX's efficient categorical_node_match
         # Default values are None, meaning nodes without the attribute match
         # only with nodes that also don't have it
-        node_match = nx.isomorphism.categorical_node_match(
-            node_attrs, [None] * len(node_attrs)
-        )
+        node_match = nx.isomorphism.categorical_node_match(node_attrs, [None] * len(node_attrs))
     else:
         node_match = None
-    
+
     # Create edge match function
     if edge_attrs:
         # For multi-graphs, use categorical_multiedge_match
@@ -137,37 +135,37 @@ def is_isomorphic(
         )
     else:
         edge_match = None
-    
+
     # Use MultiDiGraphMatcher with matching functions
     matcher = nx.isomorphism.MultiDiGraphMatcher(
-        nx_G1, nx_G2,
-        node_match=node_match,
-        edge_match=edge_match
+        nx_G1, nx_G2, node_match=node_match, edge_match=edge_match
     )
-    
+
     return matcher.is_isomorphic()
 
 
-def _get_graph_invariant(graph: DirectedMultiGraph) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+def _get_graph_invariant(
+    graph: DirectedMultiGraph,
+) -> tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
     """
     Compute graph invariants for fast isomorphism candidate filtering.
-    
-    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
-    sorted_edge_multiplicities). Isomorphic graphs must have the same invariants 
+
+    Returns a tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees,
+    sorted_edge_multiplicities). Isomorphic graphs must have the same invariants
     (but not vice versa).
-    
+
     Parameters
     ----------
     graph : DirectedMultiGraph
         The graph to compute invariants for.
-    
+
     Returns
     -------
     tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]]
-        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees, 
-        sorted_edge_multiplicities). Edge multiplicities are the number of parallel 
+        Tuple of (num_nodes, num_edges, sorted_in_degrees, sorted_out_degrees,
+        sorted_edge_multiplicities). Edge multiplicities are the number of parallel
         edges for each (u, v) pair, sorted.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
@@ -183,7 +181,7 @@ def _get_graph_invariant(graph: DirectedMultiGraph) -> tuple[int, int, tuple[int
     num_edges = graph.number_of_edges()
     in_degrees = tuple(sorted(graph.indegree(v) for v in nodes))
     out_degrees = tuple(sorted(graph.outdegree(v) for v in nodes))
-    
+
     # Count edge multiplicities (number of parallel edges for each (u, v) pair)
     edge_multiplicities: list[int] = []
     seen_pairs: set[tuple[Any, Any]] = set()
@@ -192,8 +190,7 @@ def _get_graph_invariant(graph: DirectedMultiGraph) -> tuple[int, int, tuple[int
             multiplicity = graph._graph.number_of_edges(u, v)
             edge_multiplicities.append(multiplicity)
             seen_pairs.add((u, v))
-    
-    sorted_multiplicities = tuple(sorted(edge_multiplicities))
-    
-    return (num_nodes, num_edges, in_degrees, out_degrees, sorted_multiplicities)
 
+    sorted_multiplicities = tuple(sorted(edge_multiplicities))
+
+    return (num_nodes, num_edges, in_degrees, out_degrees, sorted_multiplicities)

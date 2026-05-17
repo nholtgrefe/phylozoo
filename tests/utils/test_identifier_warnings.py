@@ -18,9 +18,7 @@ class TestWarnOnKeyword:
         "keyword,context",
         [("for", "Identifier"), ("class", "Key"), ("def", "Name")],
     )
-    def test_keyword_context_warns(
-        self, keyword: str, context: str
-    ) -> None:
+    def test_keyword_context_warns(self, keyword: str, context: str) -> None:
         """Keywords used as identifier/key/name should emit a warning."""
         with pytest.warns(UserWarning, match="is a Python keyword"):
             warn_on_keyword(keyword, context)
@@ -128,9 +126,8 @@ class TestWarnOnNoneValue:
         # Literal None should warn
         with pytest.warns(UserWarning, match="has value None.*Python keyword"):
             warn_on_none_value(None, "Attribute 'weight'")  # Literal None
-        
+
         # String "None" is NOT the same as literal None, so should not warn
         with warnings.catch_warnings():
             warnings.simplefilter("error", UserWarning)
             warn_on_none_value("None", "Attribute 'weight'")  # String "None", not literal None
-

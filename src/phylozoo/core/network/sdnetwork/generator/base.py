@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, TypeVar
 import networkx as nx
 
 from phylozoo.utils.exceptions import (
-    PhyloZooGeneratorStructureError, 
+    PhyloZooGeneratorStructureError,
     PhyloZooValueError,
     PhyloZooGeneratorError,
 )
@@ -29,36 +29,35 @@ from ....primitives.m_multigraph.features import (
     source_components,
 )
 from ....primitives.m_multigraph.transformations import orient_away_from_vertex
-from ....primitives.d_multigraph import DirectedMultiGraph
-from .....utils.validation import validation_aware, no_validation
+from .....utils.validation import validation_aware
 from ...dnetwork.generator.side import Side, HybridSide, DirEdgeSide, IsolatedNodeSide
 from ...dnetwork.generator.base import DirectedGenerator
 from .side import BidirectedEdgeSide, UndirEdgeSide
 
 if TYPE_CHECKING:
-    from ...sdnetwork.base import MixedPhyNetwork
+    pass
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
 class SemiDirectedGenerator:
     """
     A level-k generator for semi-directed phylogenetic networks.
-    
+
     A generator is a biconnected component that represents the
     core structure of a level-k network. Generators use MixedMultiGraph
     directly and have their own validation rules. These are not networks
     themselves, but simplified structures used to build networks.
-    
+
     Unlike DirectedGenerator, SemiDirectedGenerator allows both directed
     and undirected edges.
-    
+
     Parameters
     ----------
     graph : MixedMultiGraph
         The underlying graph structure of the generator.         Should be biconnected.
-    
+
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -72,38 +71,38 @@ class SemiDirectedGenerator:
     1
     >>> generator.hybrid_nodes
     {1}
-    
+
     Attributes
     ----------
     _graph : MixedMultiGraph[T]
         Internal graph structure using MixedMultiGraph.
         **Warning:** Do not modify directly.
     """
-    
+
     def __init__(self, graph: MixedMultiGraph[T]) -> None:
         """
         Initialize a generator from a graph.
-        
+
         Parameters
         ----------
         graph : MixedMultiGraph
             The graph structure of the generator. Should be biconnected.
-        
+
         Raises
         ------
         ValueError
             If validation fails.
         """
         self._graph = graph
-        
+
         # Validate the generator structure
         self.validate()
-    
+
     @property
     def graph(self) -> MixedMultiGraph[T]:
         """Get the underlying graph structure."""
         return self._graph
-    
+
     @cached_property
     def hybrid_nodes(self) -> set[T]:
         """
@@ -132,23 +131,20 @@ class SemiDirectedGenerator:
             node = list(self._graph.nodes())[0]
             if self._graph._undirected.number_of_edges(node, node) == 1:
                 return {node}
-        return {
-            v for v in self._graph.nodes()
-            if self._graph.indegree(v) >= 2
-        }
-    
+        return {v for v in self._graph.nodes() if self._graph.indegree(v) >= 2}
+
     @cached_property
     def level(self) -> int:
         """
         Get the level of this generator.
-        
+
         The level is the number of hybrid nodes in the generator.
-        
+
         Returns
         -------
         int
             The level of the generator.
-        
+
         Examples
         --------
         >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
@@ -158,11 +154,11 @@ class SemiDirectedGenerator:
         1
         """
         return len(self.hybrid_nodes)
-    
+
     def validate(self) -> None:
         """
         Validate the generator structure.
-        
+
         A semi-directed generator is valid if it can be rooted on an edge as a directed generator.
         This is done by:
 
@@ -171,7 +167,7 @@ class SemiDirectedGenerator:
         3. Subdividing that edge
         4. Orienting away from the subdivision vertex
         5. Checking if the result is a valid DirectedGenerator
-        
+
         Level-0: single node, no edges. Level-1: single node, one undirected
         self-loop (bidirected edge). Level >= 2: structural constraints and
         rootability as above.
@@ -193,9 +189,7 @@ class SemiDirectedGenerator:
             if num_edges == 0:
                 return  # Level-0
             if num_edges == 1:
-                undir_self = list(
-                    self._graph._undirected.edges(node, node, keys=True)
-                )
+                undir_self = list(self._graph._undirected.edges(node, node, keys=True))
                 if len(undir_self) == 1:
                     return  # Level-1 (bidirected edge)
                 raise PhyloZooGeneratorStructureError(
@@ -209,11 +203,11 @@ class SemiDirectedGenerator:
         # Level >= 2: validate structural constraints and rootability
         self._validate_structural_constraints()
         self._validate_rootability()
-    
+
     def _validate_structural_constraints(self) -> None:
         """
         Validate structural constraints (bi-edge connected, no self-loops, acyclic).
-        
+
         Raises
         ------
         PhyloZooGeneratorStructureError
@@ -226,11 +220,13 @@ class SemiDirectedGenerator:
                 f"Generator graph must be a single bi-edge connected component (blob), "
                 f"but found {len(bi_edge_comps)} bi-edge connected components"
             )
-        
+
         # 2. Disallow self-loops (except the special case handled in validate())
         if has_self_loops(self._graph):
-            raise PhyloZooGeneratorStructureError("Self-loops are not allowed in SemiDirectedGenerator.")
-        
+            raise PhyloZooGeneratorStructureError(
+                "Self-loops are not allowed in SemiDirectedGenerator."
+            )
+
         # 3. Check for directed cycles (must be acyclic in directed part)
         # Create a directed subgraph for cycle checking
         if self._graph._directed.number_of_edges() > 0:
@@ -240,11 +236,11 @@ class SemiDirectedGenerator:
                     f"Generator contains directed cycles. Found {len(cycles)} cycle(s). "
                     f"First cycle: {cycles[0] if cycles else 'unknown'}"
                 )
-    
+
     def _validate_rootability(self) -> None:
         """
         Validate that the generator can be rooted on an edge as a directed generator.
-        
+
         This is done by:
 
         1. Finding source components
@@ -252,7 +248,7 @@ class SemiDirectedGenerator:
         3. Subdividing that edge
         4. Orienting away from the subdivision vertex
         5. Checking if the result is a valid DirectedGenerator
-        
+
         Raises
         ------
         PhyloZooGeneratorStructureError
@@ -267,7 +263,7 @@ class SemiDirectedGenerator:
         nodes_in_component, undirected_edges_in_comp, outgoing_edges = components[0]
         if not nodes_in_component:
             raise PhyloZooGeneratorStructureError("Source component is empty")
-        
+
         # Step 2: Find an edge in the source component.
         # We can only root on undirected edges in the source component or on
         # outgoing directed edges (from the component to outside).
@@ -284,12 +280,12 @@ class SemiDirectedGenerator:
             u, v, key = outgoing_edges[0]
             edge_to_subdivide = (u, v, key)
             edge_type = "directed"
-        
+
         if edge_to_subdivide is None:
             raise PhyloZooGeneratorStructureError(
                 "No edge found in source component to subdivide for rooting"
             )
-        
+
         u, v, key = edge_to_subdivide
 
         # Step 3: Subdivide the edge
@@ -303,15 +299,15 @@ class SemiDirectedGenerator:
             graph_copy.remove_edge(norm_u, norm_v, key=key)
         else:
             graph_copy.remove_edge(u, v, key=key)
-        
+
         # Add subdivision vertex using MixedMultiGraph's node-id generator
         subdiv_node = next(graph_copy.generate_node_ids(1))
         graph_copy.add_node(subdiv_node)
-        
+
         # Add subdivision edges
         graph_copy.add_directed_edge(subdiv_node, u)
         graph_copy.add_directed_edge(subdiv_node, v)
-        
+
         # Step 4: Orient away from subdivision vertex
         try:
             oriented_dm = orient_away_from_vertex(graph_copy, subdiv_node)
@@ -319,7 +315,7 @@ class SemiDirectedGenerator:
             raise PhyloZooGeneratorStructureError(
                 f"Failed to orient generator away from subdivision vertex: {e}"
             )
-        
+
         # Step 5: Check if the result is a valid DirectedGenerator
         try:
             _ = DirectedGenerator(oriented_dm)
@@ -329,15 +325,15 @@ class SemiDirectedGenerator:
                 f"Semi-directed generator cannot be rooted on edge to form valid "
                 f"DirectedGenerator: {e}"
             )
-    
+
     @cached_property
     def parallel_directed_edge_sides(self) -> list[tuple[DirEdgeSide, ...]]:
         """
         Get tuples of parallel directed edge sides.
-        
+
         Returns groups of DirEdgeSide objects that represent parallel directed edges
         (multiple directed edges between the same pair of nodes).
-        
+
         Returns
         -------
         list[tuple[DirEdgeSide, ...]]
@@ -351,15 +347,15 @@ class SemiDirectedGenerator:
             if edge_key not in edge_groups:
                 edge_groups[edge_key] = []
             edge_groups[edge_key].append(DirEdgeSide(u=u, v=v, key=key))
-        
+
         # Return only groups with more than one edge (parallel edges)
         parallel_groups: list[tuple[DirEdgeSide, ...]] = []
         for edge_group in edge_groups.values():
             if len(edge_group) > 1:
                 parallel_groups.append(tuple(edge_group))
-        
+
         return parallel_groups
-    
+
     @cached_property
     def non_parallel_directed_edge_sides(self) -> list[DirEdgeSide]:
         """
@@ -372,9 +368,7 @@ class SemiDirectedGenerator:
         list[DirEdgeSide]
             List of non-parallel directed edge sides.
         """
-        all_edges: set[tuple[T, T, int]] = set(
-            self._graph.directed_edges_iter(keys=True)
-        )
+        all_edges: set[tuple[T, T, int]] = set(self._graph.directed_edges_iter(keys=True))
         parallel_edges: set[tuple[T, T, int]] = set()
         for parallel_group in self.parallel_directed_edge_sides:
             for edge_side in parallel_group:
@@ -441,21 +435,19 @@ class SemiDirectedGenerator:
             return []
         elif self.level == 1:
             node = list(self._graph.nodes())[0]
-            edge = next(
-                iter(self._graph._undirected.edges(node, node, keys=True))
-            )
+            edge = next(iter(self._graph._undirected.edges(node, node, keys=True)))
             key = edge[2]
             return [BidirectedEdgeSide(node=node, key=key)]
         return list(self.directed_edge_sides) + list(self.undirected_edge_sides)
-    
+
     @cached_property
     def hybrid_sides(self) -> list[HybridSide]:
         """
         Get all hybrid sides of this generator.
-        
+
         Returns all hybrid nodes (in-degree >= 2 from directed edges) with out-degree 0
         (from directed edges) as HybridSide objects.
-        
+
         Returns
         -------
         list[HybridSide]
@@ -466,7 +458,7 @@ class SemiDirectedGenerator:
             if self._graph.outdegree(node) == 0:
                 hybrid_sides_list.append(HybridSide(node=node))
         return hybrid_sides_list
-    
+
     @cached_property
     def sides(self) -> list[Side]:
         """
@@ -488,13 +480,11 @@ class SemiDirectedGenerator:
             return list(self.hybrid_sides) + list(self.edge_sides)
         else:
             return list(self.hybrid_sides) + list(self.edge_sides)
-    
+
     def __repr__(self) -> str:
         """String representation of the generator."""
         num_nodes = self._graph.number_of_nodes()
         num_edges = self._graph.number_of_edges()
         return (
-            f"SemiDirectedGenerator(level={self.level}, "
-            f"nodes={num_nodes}, edges={num_edges})"
+            f"SemiDirectedGenerator(level={self.level}, " f"nodes={num_nodes}, edges={num_edges})"
         )
-

@@ -97,9 +97,7 @@ class TestAttachLeavesNodeSides:
 
         taxa_hybrid = ["X"]
         taxa_edge = ["Y"]
-        network = attach_leaves_to_generator(
-            gen, {hybrid_side: taxa_hybrid, edge_side: taxa_edge}
-        )
+        network = attach_leaves_to_generator(gen, {hybrid_side: taxa_hybrid, edge_side: taxa_edge})
 
         assert "X" in network.taxa
         outdeg = network._graph.outdegree(hybrid_side.node)  # type: ignore[attr-defined]
@@ -156,9 +154,7 @@ class TestAttachLeavesEdgeSides:
 
         taxa_edge = ["A", "B"]
         taxa_hybrid = ["H"]
-        network = attach_leaves_to_generator(
-            gen, {edge_side: taxa_edge, hybrid_side: taxa_hybrid}
-        )
+        network = attach_leaves_to_generator(gen, {edge_side: taxa_edge, hybrid_side: taxa_hybrid})
 
         # Taxa should match exactly the attached labels
         assert network.taxa == {"A", "B", "H"}
@@ -216,4 +212,3 @@ class TestAttachLeavesMixed:
         network = attach_leaves_to_generator(gen, side_taxa)
 
         assert network.taxa == {"R1", "R2", "R3", "L1", "L2", "H1"}
-

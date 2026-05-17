@@ -13,7 +13,6 @@ import pytest
 
 from phylozoo.core.network.dnetwork.classifications import (
     has_parallel_edges,
-    is_binary,
     is_lsa_network,
     is_tree,
     level,
@@ -23,7 +22,6 @@ from phylozoo.core.network.dnetwork.derivations import subnetwork
 from phylozoo.core.network.dnetwork.features import (
     blobs,
     cut_edges,
-    cut_vertices,
     k_blobs,
 )
 from tests.fixtures import directed_networks
@@ -97,7 +95,7 @@ class TestSubnetworkBasic:
         """Test that empty taxa list returns an empty network."""
         network = directed_networks.DTREE_SMALL_BINARY
         subnet = subnetwork(network, [])
-        
+
         # Should return an empty network
         assert subnet.number_of_nodes() == 0
         assert subnet.number_of_edges() == 0
@@ -227,9 +225,7 @@ class TestSubnetworkPropertyPreservation:
         # All nodes in subnet should be ancestors of at least one selected taxon
         # or be the selected taxa themselves
         subnet_nodes = set(subnet._graph.nodes())
-        selected_leaf_nodes = {
-            subnet.get_node_id(taxon) for taxon in subset_taxa
-        }
+        selected_leaf_nodes = {subnet.get_node_id(taxon) for taxon in subset_taxa}
 
         # Check that every node in subnet is either a selected leaf or an ancestor
         root = subnet.root_node
@@ -514,4 +510,3 @@ class TestSubnetworkOptionsInteraction:
         # Should have correct taxa
         subnet_taxa = {subnet.get_label(leaf) for leaf in subnet.leaves}
         assert subnet_taxa == set(subset_taxa)
-

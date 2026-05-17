@@ -12,7 +12,7 @@ from typing import TypeVar
 from ...primitives.m_multigraph.isomorphism import is_isomorphic as mm_is_isomorphic
 from .base import MixedPhyNetwork
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def is_isomorphic(
@@ -24,12 +24,12 @@ def is_isomorphic(
 ) -> bool:
     """
     Check if two semi-directed or mixed phylogenetic networks are isomorphic.
-    
+
     Two networks are isomorphic if there exists a bijection between their node sets
     that preserves adjacency, edge direction, parallel edges, and node labels.
     Labels are always checked (non-optional), and additional node, edge, and graph
     attributes can be specified.
-    
+
     Parameters
     ----------
     net1 : MixedPhyNetwork
@@ -45,12 +45,12 @@ def is_isomorphic(
     graph_attrs : list[str] | None, optional
         List of graph-level attribute names to match. If None, graph attributes are
         ignored. By default None.
-    
+
     Returns
     -------
     bool
         True if the networks are isomorphic, False otherwise.
-    
+
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -93,7 +93,7 @@ def is_isomorphic(
     ... )
     >>> is_isomorphic(net6, net7, edge_attrs=['branch_length'])
     True
-    
+
     Notes
     -----
 
@@ -106,11 +106,11 @@ def is_isomorphic(
     """
     # Always include 'label' in node attributes
     if node_attrs is None:
-        node_attrs_list = ['label']
+        node_attrs_list = ["label"]
     else:
         # Ensure 'label' is included (avoid duplicates)
-        node_attrs_list = ['label'] + [attr for attr in node_attrs if attr != 'label']
-    
+        node_attrs_list = ["label"] + [attr for attr in node_attrs if attr != "label"]
+
     # Call the underlying graph isomorphism function
     return mm_is_isomorphic(
         net1._graph,
@@ -119,4 +119,3 @@ def is_isomorphic(
         edge_attrs=edge_attrs,
         graph_attrs=graph_attrs,
     )
-

@@ -146,30 +146,34 @@ class TripletProfileSet:
             # Determine mode from first item, validate consistency for subsequent items
             if mode is None:
                 if isinstance(obj, TripletProfile):
-                    mode = 'profile'
+                    mode = "profile"
                 elif isinstance(obj, Triplet):
-                    mode = 'triplet'
+                    mode = "triplet"
                 else:
                     raise PhyloZooValueError(f"Expected TripletProfile or Triplet, got {type(obj)}")
             else:
                 # Validate that subsequent items match the mode
-                if mode == 'profile' and not isinstance(obj, TripletProfile):
+                if mode == "profile" and not isinstance(obj, TripletProfile):
                     if isinstance(obj, Triplet):
-                        raise PhyloZooValueError("Cannot mix TripletProfile and Triplet objects in profiles list")
+                        raise PhyloZooValueError(
+                            "Cannot mix TripletProfile and Triplet objects in profiles list"
+                        )
                     raise PhyloZooValueError(f"Expected TripletProfile, got {type(obj)}")
-                elif mode == 'triplet' and not isinstance(obj, Triplet):
+                elif mode == "triplet" and not isinstance(obj, Triplet):
                     if isinstance(obj, TripletProfile):
-                        raise PhyloZooValueError("Cannot mix TripletProfile and Triplet objects in profiles list")
+                        raise PhyloZooValueError(
+                            "Cannot mix TripletProfile and Triplet objects in profiles list"
+                        )
                     raise PhyloZooValueError(f"Expected Triplet, got {type(obj)}")
 
             # Validate weight
             if weight <= 0:
-                obj_type = "profile" if mode == 'profile' else "triplet"
+                obj_type = "profile" if mode == "profile" else "triplet"
                 raise PhyloZooValueError(
                     f"{obj_type.capitalize()} weight must be positive, got {weight} for {obj_type} {obj}"
                 )
 
-            if mode == 'profile':
+            if mode == "profile":
                 # Mode 1: From TripletProfile objects
                 profile = obj
                 profile_taxa = profile.taxa
@@ -202,7 +206,7 @@ class TripletProfileSet:
         # If we processed triplets, create profiles from grouped data.
         # Each taxa set becomes a TripletProfile built from its triplets, with
         # default profile weight 1.0 in the set.
-        if mode == 'triplet':
+        if mode == "triplet":
             for taxa_set, triplets_dict in profile_data.items():
                 # Validate no empty profiles
                 if len(triplets_dict) == 0:
@@ -477,10 +481,7 @@ class TripletProfileSet:
             return "TripletProfileSet({})"
 
         # Sort profiles by taxa for consistent display
-        sorted_profiles = sorted(
-            self._profiles.items(),
-            key=lambda item: sorted(item[0])
-        )
+        sorted_profiles = sorted(self._profiles.items(), key=lambda item: sorted(item[0]))
 
         # Show all profiles with weights, one per line
         profile_lines = []
@@ -491,6 +492,6 @@ class TripletProfileSet:
 
         # Remove trailing comma from last line
         if profile_lines:
-            profile_lines[-1] = profile_lines[-1].rstrip(',')
+            profile_lines[-1] = profile_lines[-1].rstrip(",")
 
-        return f"TripletProfileSet({{\n" + "\n".join(profile_lines) + "\n})"
+        return "TripletProfileSet({\n" + "\n".join(profile_lines) + "\n})"

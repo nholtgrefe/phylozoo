@@ -2,8 +2,6 @@
 Tests for blob computation in SemiDirectedPhyNetwork and MixedPhyNetwork.
 """
 
-import warnings
-
 import pytest
 
 from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
@@ -25,7 +23,7 @@ class TestBlobs:
     def test_single_node_network(self) -> None:
         """Test that single-node network has one trivial blob."""
         with pytest.warns(UserWarning, match="Single-node network detected"):
-            net = SemiDirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
+            net = SemiDirectedPhyNetwork(nodes=[(1, {"label": "A"})])
         blobs_list = list(blobs(net))
         # Single node should be one trivial blob
         assert len(blobs_list) == 1
@@ -37,10 +35,7 @@ class TestBlobs:
 
     def test_single_edge_network(self) -> None:
         """Test that single-edge network has two trivial blobs."""
-        net = SemiDirectedPhyNetwork(
-            undirected_edges=[(1, 2)],
-            nodes=[(2, {'label': 'A'})]
-        )
+        net = SemiDirectedPhyNetwork(undirected_edges=[(1, 2)], nodes=[(2, {"label": "A"})])
         blobs_list = list(blobs(net))
         # Single edge should create two trivial blobs (one per node)
         assert len(blobs_list) == 2
@@ -57,9 +52,9 @@ class TestBlobs:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (4, {'label': 'C'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -71,20 +66,23 @@ class TestBlobs:
         """Test network with hybrid node creating non-trivial blob."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -100,21 +98,26 @@ class TestBlobs:
         """Test network with parallel edges creating 2-node blob."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
-                (5, 6), (5, 6), (5, 6),  # Parallel edges
+                (5, 6),
+                (5, 6),
+                (5, 6),  # Parallel edges
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -128,20 +131,23 @@ class TestBlobs:
         """Test filtering with trivial=False."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
             ],
         )
         # trivial=False requires leaves=False
@@ -153,20 +159,23 @@ class TestBlobs:
         """Test filtering with leaves=False."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
             ],
         )
         without_leaves = list(blobs(net, leaves=False))
@@ -179,9 +188,9 @@ class TestBlobs:
         net = SemiDirectedPhyNetwork(
             undirected_edges=[(3, 1), (3, 2), (3, 4)],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (4, {'label': 'C'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (4, {"label": "C"}),
             ],
         )
         with pytest.raises(ValueError, match="Cannot have trivial=False and leaves=True"):
@@ -191,20 +200,23 @@ class TestBlobs:
         """Test that all nodes are covered by blobs."""
         net = SemiDirectedPhyNetwork(
             directed_edges=[
-                {'u': 6, 'v': 5, 'gamma': 0.6},
-                {'u': 7, 'v': 5, 'gamma': 0.4},
+                {"u": 6, "v": 5, "gamma": 0.6},
+                {"u": 7, "v": 5, "gamma": 0.4},
             ],
             undirected_edges=[
                 (5, 1),
-                (6, 2), (6, 3), (6, 7),
-                (7, 8), (7, 9),
+                (6, 2),
+                (6, 3),
+                (6, 7),
+                (7, 8),
+                (7, 9),
             ],
             nodes=[
-                (1, {'label': 'A'}),
-                (2, {'label': 'B'}),
-                (3, {'label': 'C'}),
-                (8, {'label': 'D'}),
-                (9, {'label': 'E'}),
+                (1, {"label": "A"}),
+                (2, {"label": "B"}),
+                (3, {"label": "C"}),
+                (8, {"label": "D"}),
+                (9, {"label": "E"}),
             ],
         )
         blobs_list = list(blobs(net))
@@ -212,4 +224,3 @@ class TestBlobs:
         for blob in blobs_list:
             all_nodes.update(blob)
         assert all_nodes == set(net._graph.nodes())
-
