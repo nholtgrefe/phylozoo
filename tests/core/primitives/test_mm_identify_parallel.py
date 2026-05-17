@@ -27,7 +27,7 @@ class TestIdentifyParallelEdgeDirected:
         """Test identifying two parallel directed edges."""
         G = MixedMultiGraph()
         key1 = G.add_directed_edge(1, 2, weight=1.0)
-        key2 = G.add_directed_edge(1, 2, weight=2.0)
+        _ = G.add_directed_edge(1, 2, weight=2.0)
 
         assert G._directed.number_of_edges(1, 2) == 2
 
@@ -42,8 +42,8 @@ class TestIdentifyParallelEdgeDirected:
         """Test identifying three parallel directed edges."""
         G = MixedMultiGraph()
         key1 = G.add_directed_edge(1, 2, weight=1.0, label="first")
-        key2 = G.add_directed_edge(1, 2, weight=2.0, label="second")
-        key3 = G.add_directed_edge(1, 2, weight=3.0, label="third")
+        _ = G.add_directed_edge(1, 2, weight=2.0, label="second")
+        _ = G.add_directed_edge(1, 2, weight=3.0, label="third")
 
         assert G._directed.number_of_edges(1, 2) == 3
 
@@ -76,7 +76,7 @@ class TestIdentifyParallelEdgeUndirected:
         """Test identifying two parallel undirected edges."""
         G = MixedMultiGraph()
         key1 = G.add_undirected_edge(1, 2, weight=1.0)
-        key2 = G.add_undirected_edge(1, 2, weight=2.0)
+        _ = G.add_undirected_edge(1, 2, weight=2.0)
 
         assert G._undirected.number_of_edges(1, 2) == 2
 
@@ -91,8 +91,8 @@ class TestIdentifyParallelEdgeUndirected:
         """Test identifying three parallel undirected edges."""
         G = MixedMultiGraph()
         key1 = G.add_undirected_edge(1, 2, weight=1.0, label="first")
-        key2 = G.add_undirected_edge(1, 2, weight=2.0, label="second")
-        key3 = G.add_undirected_edge(1, 2, weight=3.0, label="third")
+        _ = G.add_undirected_edge(1, 2, weight=2.0, label="second")
+        _ = G.add_undirected_edge(1, 2, weight=3.0, label="third")
 
         assert G._undirected.number_of_edges(1, 2) == 3
 

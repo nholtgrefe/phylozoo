@@ -319,15 +319,15 @@ def is_kalmanson(distance_matrix: DistanceMatrix, circular_order: CircularOrderi
         matrix: np.ndarray, ordered_indices: np.ndarray, n: int
     ) -> bool:
         """Numba-accelerated Kalmanson condition check."""
-        # Check all combinations of 4 indices (i < j < k < l)
+        # Check all combinations of 4 indices (i < j < k < m)
         for i in range(n):
             for j in range(i + 1, n):
                 for k in range(j + 1, n):
-                    for l in range(k + 1, n):
+                    for m in range(k + 1, n):
                         ii = ordered_indices[i]
                         jj = ordered_indices[j]
                         kk = ordered_indices[k]
-                        ll = ordered_indices[l]
+                        ll = ordered_indices[m]
 
                         # Bounds checking
                         if (

@@ -190,9 +190,6 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     # Create a working graph copy (preserves all node and edge attributes)
     working_graph = network._graph.copy()
 
-    # Get original leaves (these should never be suppressed)
-    original_leaves = network.leaves
-
     # Iterate until no more changes occur
     max_iterations = 1000  # Safety limit
     iteration = 0

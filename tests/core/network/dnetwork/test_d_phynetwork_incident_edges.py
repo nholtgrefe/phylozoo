@@ -295,7 +295,7 @@ class TestIncidentEdgesEdgeCases:
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            net = DirectedPhyNetwork(edges=[])
+            _ = DirectedPhyNetwork(edges=[])
         # Should handle gracefully (no nodes to test)
 
     def test_incident_edges_nonexistent_node(self) -> None:

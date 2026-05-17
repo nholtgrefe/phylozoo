@@ -466,8 +466,7 @@ def omnians(network: DirectedPhyNetwork) -> set[T]:
             stacklevel=2,
         )
 
-    # Get sets of leaves and hybrid nodes
-    leaves = network.leaves
+    # Get the set of hybrid nodes
     hybrid_nodes = network.hybrid_nodes
 
     # Find omnians: internal nodes (not leaves) where all children are hybrid nodes

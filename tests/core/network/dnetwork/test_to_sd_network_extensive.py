@@ -406,7 +406,7 @@ class TestToSDNetworkLargeNetworks:
         edges = []
         node_id = 1
         current_level = [0]
-        taxa = {}
+        _ = {}
 
         # Build 3 levels
         for level in range(3):

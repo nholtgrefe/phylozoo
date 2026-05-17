@@ -76,9 +76,7 @@ def plot_dmgraph(
         style = default_style()
 
     if ax is None:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.figure
+        _, ax = plt.subplots()
 
     computed_layout = compute_nx_layout(graph, layout=layout, **layout_kwargs)
     positions = computed_layout.positions

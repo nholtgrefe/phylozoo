@@ -845,7 +845,7 @@ class TestDisplayedSplits:
                 (7, {"label": "D"}),
             ],
         )
-        splits = displayed_splits(net)
+        _ = displayed_splits(net)
         # Get all displayed trees to verify probabilities
         trees = list(displayed_trees(net, probability=True))
         total_prob = sum(tree.get_network_attribute("probability") or 1.0 for tree in trees)

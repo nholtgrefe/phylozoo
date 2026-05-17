@@ -553,7 +553,7 @@ class TestFormatConversion:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             input_file = os.path.join(tmpdir, "input.nexus")
-            output_file = os.path.join(tmpdir, "output.nexus")
+            _ = os.path.join(tmpdir, "output.nexus")
 
             system.save(input_file, overwrite=True)
 
@@ -570,7 +570,7 @@ class TestFormatConversion:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             input_file = os.path.join(tmpdir, "input.nexus")
-            output_file = os.path.join(tmpdir, "output.nexus")
+            _ = os.path.join(tmpdir, "output.nexus")
 
             system.save(input_file, overwrite=True)
 

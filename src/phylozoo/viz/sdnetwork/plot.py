@@ -80,9 +80,7 @@ def plot_sdnetwork(
         style = default_style()
 
     if ax is None:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.figure
+        _, ax = plt.subplots()
 
     if layout == "pz-radial":
         computed_layout = compute_pz_radial_layout(network, **layout_kwargs)

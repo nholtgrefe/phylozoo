@@ -479,7 +479,7 @@ class DirectedPhyNetwork(IOMixin):
         """
         # 1. Check for single root node (using cached property)
         # Accessing root_node will raise if no root or multiple roots
-        root = self.root_node
+        root = self.root_node  # noqa: F841 (kept for side-effect: raises on bad root)
 
         # 2. Check leaf nodes: in-degree 1, out-degree 0 (using cached property)
         leaves = self.leaves
@@ -1583,14 +1583,3 @@ class DirectedPhyNetwork(IOMixin):
             Iterator over node identifiers.
         """
         return iter(self._graph.nodes)
-
-    def __len__(self) -> int:
-        """
-        Return the number of nodes.
-
-        Returns
-        -------
-        int
-            Number of nodes.
-        """
-        return self.number_of_nodes()

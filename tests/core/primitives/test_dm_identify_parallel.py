@@ -27,7 +27,7 @@ class TestIdentifyParallelEdgeBasic:
         """Test identifying two parallel edges."""
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2, weight=1.0)
-        key2 = G.add_edge(1, 2, weight=2.0)
+        _ = G.add_edge(1, 2, weight=2.0)
 
         assert G._graph.number_of_edges(1, 2) == 2
 
@@ -42,8 +42,8 @@ class TestIdentifyParallelEdgeBasic:
         """Test identifying three parallel edges."""
         G = DirectedMultiGraph()
         key1 = G.add_edge(1, 2, weight=1.0, label="first")
-        key2 = G.add_edge(1, 2, weight=2.0, label="second")
-        key3 = G.add_edge(1, 2, weight=3.0, label="third")
+        _ = G.add_edge(1, 2, weight=2.0, label="second")
+        _ = G.add_edge(1, 2, weight=3.0, label="third")
 
         assert G._graph.number_of_edges(1, 2) == 3
 
@@ -145,7 +145,7 @@ class TestIdentifyParallelEdgeComplex:
         G.add_edge(3, 4, weight=4.0)
         G.add_edge(1, 4, weight=5.0)
 
-        initial_other_edges = {
+        _ = {
             (2, 3): G._graph[2][3][0].copy(),
             (3, 4): G._graph[3][4][0].copy(),
             (1, 4): G._graph[1][4][0].copy(),

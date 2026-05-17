@@ -459,7 +459,7 @@ class TestRootLocations:
         from phylozoo.core.network.sdnetwork.base import MixedPhyNetwork
         from phylozoo.utils.validation import no_validation
 
-        graph = MixedMultiGraph(undirected_edges=[(1, 2), (3, 4)])
+        _ = MixedMultiGraph(undirected_edges=[(1, 2), (3, 4)])
 
         # This should have two source components
         with no_validation(classes=["MixedPhyNetwork"]):

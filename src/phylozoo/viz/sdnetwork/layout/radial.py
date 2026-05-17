@@ -25,6 +25,7 @@ from .routes import compute_radial_routes
 
 if TYPE_CHECKING:
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
+    from phylozoo.viz._types import EdgeRoute
 
 T = TypeVar("T")
 

@@ -412,7 +412,7 @@ class TestIOMixin:
 
     def test_load_auto_detect_format(self) -> None:
         """Test loading with auto-detected format."""
-        net = self.TestNetwork("test")
+        _ = self.TestNetwork("test")
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".fmt1") as f:
             f.write("FORMAT1:loaded")
             temp_path = f.name

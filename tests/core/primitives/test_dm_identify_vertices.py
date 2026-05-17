@@ -191,8 +191,8 @@ class TestIdentifyVerticesParallelEdges:
     def test_parallel_edges_preserve_attributes(self) -> None:
         """Test that parallel edges preserve their attributes."""
         G = DirectedMultiGraph()
-        key1 = G.add_edge(1, 3, weight=1.0, label="first")
-        key2 = G.add_edge(2, 3, weight=2.0, label="second")
+        _ = G.add_edge(1, 3, weight=1.0, label="first")
+        _ = G.add_edge(2, 3, weight=2.0, label="second")
 
         identify_vertices(G, [1, 2])
 

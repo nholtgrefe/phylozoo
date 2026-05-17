@@ -396,7 +396,7 @@ class TestComplexTopologies:
             t1 = 1000 + 2 * i
             t2 = 1000 + 2 * i + 1
             h = 2000 + i
-            l = 3000 + i
+            leaf = 3000 + i
 
             edges.append((root, t1))
             edges.append((root, t2))
@@ -404,8 +404,8 @@ class TestComplexTopologies:
             edges.append((t1, 4000 + i))  # Tree node t1 also has another child
             edges.append((t2, h))
             edges.append((t2, 5000 + i))  # Tree node t2 also has another child
-            edges.append((h, l))
-            nodes.append((l, {"label": f"Taxon{i}"}))
+            edges.append((h, leaf))
+            nodes.append((leaf, {"label": f"Taxon{i}"}))
             nodes.append((4000 + i, {"label": f"TaxonA{i}"}))
             nodes.append((5000 + i, {"label": f"TaxonB{i}"}))
 

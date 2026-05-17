@@ -295,7 +295,7 @@ class TestKTaxonSubnetworksEdgeCases:
     def test_single_taxon_network(self):
         """Test with a network that has only one taxon."""
         network = directed_networks.DTREE_SINGLE_NODE
-        num_taxa = len(network.taxa)
+        _ = len(network.taxa)
 
         # k=0 should return empty network
         subnetworks = list(k_taxon_subnetworks(network, k=0))

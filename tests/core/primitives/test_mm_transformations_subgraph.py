@@ -15,7 +15,7 @@ def test_subgraph_basic() -> None:
     G.add_node(3, label="C")
 
     k1 = G.add_undirected_edge(1, 2, weight=1.0)
-    k2 = G.add_directed_edge(2, 3, weight=2.0)
+    _ = G.add_directed_edge(2, 3, weight=2.0)
 
     H = subgraph(G, [1, 2])
 

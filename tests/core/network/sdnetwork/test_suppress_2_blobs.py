@@ -33,7 +33,7 @@ class TestSuppress2BlobsBasic:
         net = LEVEL_1_SDNETWORK_PARALLEL_EDGES
 
         # Check that we have a 2-blob
-        two_blobs = k_blobs(net, k=2, trivial=False, leaves=False)
+        _ = k_blobs(net, k=2, trivial=False, leaves=False)
         # May or may not have 2-blobs, but function should work
 
         original_nodes = net.number_of_nodes()
@@ -171,7 +171,7 @@ class TestSuppress2BlobsEdgeCases:
         net = LEVEL_2_SDNETWORK_MANY_PARALLEL_EDGES
 
         # Count 2-blobs
-        two_blobs = k_blobs(net, k=2, trivial=False, leaves=False)
+        _ = k_blobs(net, k=2, trivial=False, leaves=False)
 
         original_nodes = net.number_of_nodes()
         result = suppress_2_blobs(net)

@@ -163,7 +163,7 @@ class TestSubnetworkWithOptions:
         subset_taxa = all_taxa[:2]
 
         # Without make_lsa
-        subnet1 = subnetwork(network, subset_taxa, make_lsa=False)
+        _ = subnetwork(network, subset_taxa, make_lsa=False)
         # With make_lsa
         subnet2 = subnetwork(network, subset_taxa, make_lsa=True)
 

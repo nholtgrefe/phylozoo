@@ -60,7 +60,7 @@ class TestDirectedPhyNetworkENewickIO:
 
         assert net.number_of_nodes() >= 3
         # Check that branch lengths are preserved
-        root = net.root_node
+        _ = net.root_node
         has_branch_lengths = False
         for u, v, k, d in net._graph.edges(keys=True, data=True):
             if "branch_length" in d:

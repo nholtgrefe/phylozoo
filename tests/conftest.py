@@ -9,7 +9,9 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-import pytest
+# Imported after the sys.path mutation so the path is set up before any test
+# discovery happens.
+import pytest  # noqa: E402
 
 
 @pytest.fixture

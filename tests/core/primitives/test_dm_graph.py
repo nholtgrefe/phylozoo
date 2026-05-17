@@ -506,8 +506,8 @@ class TestQueryOperations:
     def test_has_edge_with_key(self) -> None:
         """Test has_edge with key parameter."""
         G = DirectedMultiGraph()
-        key1 = G.add_edge(1, 2, key=10)
-        key2 = G.add_edge(1, 2, key=20)
+        _ = G.add_edge(1, 2, key=10)
+        _ = G.add_edge(1, 2, key=20)
         assert G.has_edge(1, 2, key=10)
         assert G.has_edge(1, 2, key=20)
         assert not G.has_edge(1, 2, key=30)
@@ -1336,7 +1336,7 @@ class TestEdgeCases:
         # Direct self-loops might not be explicitly supported
         # This test documents current behavior
         try:
-            key = G.add_edge(1, 1)
+            _ = G.add_edge(1, 1)
             assert G.has_edge(1, 1)
             assert G.degree(1) == 2  # Self-loop contributes 2 to degree
         except Exception as e:

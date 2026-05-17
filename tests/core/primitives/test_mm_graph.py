@@ -153,7 +153,7 @@ class TestInitialization:
         """Directed/undirected self-loops cannot coexist; newer edge replaces older type."""
         G = MixedMultiGraph()
         # Start with undirected self-loop
-        k_u0 = G.add_undirected_edge(1, 1, weight=1.0)
+        _ = G.add_undirected_edge(1, 1, weight=1.0)
         assert count_undirected_edges(G, 1, 1) == 1
         assert count_directed_edges(G, 1, 1) == 0
         assert has_self_loops(G) is True
@@ -713,8 +713,8 @@ class TestMutualExclusivity:
     def test_adding_directed_removes_undirected(self) -> None:
         """Test that adding directed edge removes undirected edges."""
         G = MixedMultiGraph()
-        key1 = G.add_undirected_edge(1, 2, weight=1.0)
-        key2 = G.add_undirected_edge(1, 2, weight=2.0)
+        _ = G.add_undirected_edge(1, 2, weight=1.0)
+        _ = G.add_undirected_edge(1, 2, weight=2.0)
         assert count_undirected_edges(G, 1, 2) == 2
 
         G.add_directed_edge(1, 2, weight=3.0)
@@ -724,8 +724,8 @@ class TestMutualExclusivity:
     def test_adding_undirected_removes_directed(self) -> None:
         """Test that adding undirected edge removes directed edges."""
         G = MixedMultiGraph()
-        key1 = G.add_directed_edge(1, 2, weight=1.0)
-        key2 = G.add_directed_edge(1, 2, weight=2.0)
+        _ = G.add_directed_edge(1, 2, weight=1.0)
+        _ = G.add_directed_edge(1, 2, weight=2.0)
         assert count_directed_edges(G, 1, 2) == 2
 
         G.add_undirected_edge(1, 2, weight=3.0)
@@ -2225,8 +2225,8 @@ class TestLargerGraphs:
 
         # Create graph
         for i in range(1, 10):
-            key1 = G.add_undirected_edge(i, i + 1, weight=1.0)
-            key2 = G.add_undirected_edge(i, i + 1, weight=2.0)  # Parallel
+            _ = G.add_undirected_edge(i, i + 1, weight=1.0)
+            _ = G.add_undirected_edge(i, i + 1, weight=2.0)  # Parallel
 
         # Remove some edges
         G.remove_edge(1, 2, key=0)  # Remove one parallel edge

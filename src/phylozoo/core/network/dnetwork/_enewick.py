@@ -741,7 +741,9 @@ class _ENewickParser:
 
 # ========== eNewick Writer and Reader for DirectedPhyNetwork ==========
 
-from typing import TYPE_CHECKING, TypeVar
+# Imports placed here (not at the top of the file) to keep the writer/reader
+# section self-contained alongside the parser section above.
+from typing import TYPE_CHECKING, TypeVar  # noqa: E402
 
 if TYPE_CHECKING:
     from .base import DirectedPhyNetwork

@@ -549,7 +549,7 @@ class TestStressTests:
         """Test network with 2000 edges."""
         edges = []
         nodes = []
-        root = 100000
+        _ = 100000
 
         # Create structure with many edges
         node_id = 1

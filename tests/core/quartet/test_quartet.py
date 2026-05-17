@@ -282,7 +282,7 @@ class TestQuartetCircularOrderings:
 
         assert len(orderings) == 2
         # Should contain orderings where 1,3 are neighbors and 2,4 are neighbors
-        ordering_lists = [list(co.order) for co in orderings]
+        _ = [list(co.order) for co in orderings]
         # Check that 1 and 3 are neighbors in both orderings
         for ordering in orderings:
             assert ordering.are_neighbors(1, 3)

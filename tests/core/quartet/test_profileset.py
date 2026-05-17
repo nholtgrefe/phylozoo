@@ -299,7 +299,7 @@ class TestQuartetProfileSetProperties:
     def test_max_profile_len_mixed_lengths(self) -> None:
         """Test max_profile_len with profiles of different lengths."""
         q1 = Quartet(Split({1, 2}, {3, 4}))
-        q2 = Quartet(Split({1, 3}, {2, 4}))
+        _ = Quartet(Split({1, 3}, {2, 4}))
         profile1 = QuartetProfile([q1])  # length 1
         q3 = Quartet(Split({5, 6}, {7, 8}))
         q4 = Quartet(Split({5, 7}, {6, 8}))

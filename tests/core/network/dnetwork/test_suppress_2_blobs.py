@@ -68,7 +68,7 @@ class TestSuppress2BlobsBasic:
 
         # Check that root is in a 2-blob (with trivial=True)
         two_blobs_trivial = k_blobs(net, k=2, trivial=True, leaves=False)
-        root_blobs = [blob for blob in two_blobs_trivial if net.root_node in blob]
+        _ = [blob for blob in two_blobs_trivial if net.root_node in blob]
         # Root node 3 has 2 outgoing edges, so it's a 2-blob with trivial=True
 
         # The function uses trivial=False, so root won't be in 2-blobs
@@ -179,7 +179,7 @@ class TestSuppress2BlobsEdgeCases:
 
         # Count 2-blobs (excluding root-containing)
         two_blobs = k_blobs(net, k=2, trivial=False, leaves=False)
-        non_root_blobs = [blob for blob in two_blobs if net.root_node not in blob]
+        _ = [blob for blob in two_blobs if net.root_node not in blob]
 
         original_nodes = net.number_of_nodes()
         result = suppress_2_blobs(net)

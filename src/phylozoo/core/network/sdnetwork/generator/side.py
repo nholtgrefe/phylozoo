@@ -13,7 +13,12 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from ...dnetwork.generator.side import (
+    DirEdgeSide,  # noqa: F401  (re-exported for convenience)
     EdgeSide,
+    HybridSide,  # noqa: F401  (re-exported for convenience)
+    IsolatedNodeSide,  # noqa: F401  (re-exported for convenience)
+    NodeSide,  # noqa: F401  (re-exported for convenience)
+    Side,  # noqa: F401  (re-exported for convenience)
 )
 
 T = TypeVar("T")

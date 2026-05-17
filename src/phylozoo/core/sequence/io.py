@@ -250,7 +250,6 @@ def to_nexus(msa: MSA, **kwargs: Any) -> str:
     missing = kwargs.get("missing", "N")
     gap = kwargs.get("gap", "-")
 
-    n = msa.num_taxa
     seq_length = msa.sequence_length
     body = f"    DIMENSIONS nchar={seq_length};\n"
     body += f"    FORMAT datatype={datatype} missing={missing} gap={gap};\n"

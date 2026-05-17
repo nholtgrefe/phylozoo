@@ -152,7 +152,7 @@ class TestImmutability:
         original_edges = list(net._graph.edges())
 
         # Create copy to verify original unchanged
-        net2 = net.copy()
+        _ = net.copy()
         assert set(net._graph.nodes) == original_nodes
         assert list(net._graph.edges()) == original_edges
 
@@ -167,7 +167,7 @@ class TestImmutability:
         original_label_to_node = net._label_to_node.copy()
 
         # Create copy
-        net2 = net.copy()
+        _ = net.copy()
 
         # Original should be unchanged
         assert net._node_to_label == original_labels
