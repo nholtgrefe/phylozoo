@@ -55,7 +55,7 @@ Citing PhyloZoo
 
 If you use *PhyloZoo* in your research, please cite the package as follows:
 
-    Niels Holtgrefe (2026). *PhyloZoo*. Version 0.1.0.
+    Niels Holtgrefe (2026). *PhyloZoo*. Version 0.2.0.
     Available at: ``https://github.com/nholtgrefe/phylozoo``
 
 If applicable, please also make sure to track down any relevant references for the algorithms you are using.
