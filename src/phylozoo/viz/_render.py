@@ -24,6 +24,7 @@ class RenderStyle(Protocol):
     node_size: float
     edge_color: str
     edge_width: float
+    arrow_head_size: float
     with_labels: bool
     label_offset: float
     label_font_size: float
@@ -129,6 +130,7 @@ def draw_edge(
                     arrowstyle='->',
                     color=edge_color,
                     lw=style.edge_width,
+                    mutation_scale=style.arrow_head_size,
                 ),
                 zorder=2,
             )
@@ -151,6 +153,7 @@ def draw_edge(
                     arrowstyle='->',
                     color=edge_color,
                     lw=style.edge_width,
+                    mutation_scale=style.arrow_head_size,
                 ),
                 zorder=2,
             )

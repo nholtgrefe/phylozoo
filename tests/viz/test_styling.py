@@ -20,6 +20,7 @@ class TestDNetStyle:
         assert style.leaf_size is None
         assert style.edge_color == 'gray'
         assert style.hybrid_edge_color == 'red'
+        assert style.arrow_head_size == 18.0
         assert style.with_labels is True
 
     def test_leaf_size_default_uses_node_size(self) -> None:
@@ -41,11 +42,13 @@ class TestDNetStyle:
             node_color='blue',
             leaf_color='green',
             edge_width=3.0,
+            arrow_head_size=24.0,
         )
 
         assert style.node_color == 'blue'
         assert style.leaf_color == 'green'
         assert style.edge_width == 3.0
+        assert style.arrow_head_size == 24.0
 
     def test_copy(self) -> None:
         """Test style copying."""
@@ -53,6 +56,7 @@ class TestDNetStyle:
         style2 = style1.copy()
 
         assert style2.node_color == 'blue'
+        assert style2.arrow_head_size == style1.arrow_head_size
         assert style2 is not style1
 
 

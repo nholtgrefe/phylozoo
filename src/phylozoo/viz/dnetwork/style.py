@@ -58,6 +58,7 @@ class DNetStyle(DMGraphStyle):
             edge_color=self.edge_color,
             hybrid_edge_color=self.hybrid_edge_color,
             edge_width=self.edge_width,
+            arrow_head_size=self.arrow_head_size,
             with_labels=self.with_labels,
             label_offset=self.label_offset,
             label_font_size=self.label_font_size,
