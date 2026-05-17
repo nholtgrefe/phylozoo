@@ -21,13 +21,6 @@ Classification Functions
    :members:
    :show-inheritance:
 
-Operations
-----------
-
-.. automodule:: phylozoo.core.distance.operations
-   :members:
-   :show-inheritance:
-
 I/O Support
 -----------
 

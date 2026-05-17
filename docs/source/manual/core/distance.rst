@@ -180,52 +180,6 @@ these conditions with respect to a given circular ordering. This function requir
 
 The check is implemented using Numba-accelerated loops.
 
-Traveling Salesman Problem (TSP)
----------------------------------
-
-The distance module provides functions for solving the Traveling Salesman Problem,
-which finds the optimal tour visiting all taxa exactly once and returning to the
-starting point. TSP solutions are useful for generating circular orderings.
-
-Exact Solution
-^^^^^^^^^^^^^^
-
-The :func:`~phylozoo.core.distance.operations.optimal_tsp_tour` function provides
-an exact solution using the Held–Karp dynamic programming algorithm :cite:`HeldKarp1962`.
-
-The function returns a :class:`~phylozoo.core.primitives.circular_ordering.CircularOrdering` in canonical
-form, representing the optimal tour.
-
-Example:
-
-.. code-block:: python
-
-   from phylozoo.core.distance.operations import optimal_tsp_tour
-
-   tour = optimal_tsp_tour(dm)
-   print(f"Optimal tour: {tour.order}")
-
-
-Approximate Solutions
-^^^^^^^^^^^^^^^^^^^^^
-
-For larger instances where exact solutions are infeasible, the
-:func:`~phylozoo.core.distance.operations.approximate_tsp_tour` function provides
-heuristic solvers. Supported methods include:
-
-- **simulated_annealing** (default): Simulated annealing with greedy initialization.
-  Often produces good-quality tours at moderate runtime.
-
-- **greedy**: Nearest-neighbor heuristic. Very fast but can produce poor results
-  in adversarial cases.
-
-- **christofides**: Christofides algorithm :cite:`Christofides1976` providing a :math:`3/2`-approximation
-  when the distance matrix is metric.
-
-The function uses :mod:`NetworkX <networkx>`'s traveling salesman utilities and returns a
-:class:`~phylozoo.core.primitives.circular_ordering.CircularOrdering`. It is suitable for larger
-matrices where exact solutions are computationally prohibitive.
-
 See Also
 --------
 
