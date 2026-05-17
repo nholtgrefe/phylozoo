@@ -44,6 +44,7 @@ Changed
 * ``ParallelBackend`` class docstring restructured to plain prose (the enum members are
   now described inline rather than in a NumPy-style ``Attributes`` section) to avoid
   duplicate Sphinx object descriptions.
+* Black, Ruff, and Mypy fixes have been made thoughout the codebase.
 
 Removed
 ^^^^^^^
