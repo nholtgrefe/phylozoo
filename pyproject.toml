@@ -12,10 +12,21 @@ description = "a package for working with phylogenetic networks and related evol
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+keywords = [
+    "phylogenetics",
+    "phylogenetic networks",
+    "bioinformatics",
+    "evolutionary-biology",
+    "computational-biology",
+    "graphs",
 ]
 dependencies = [
     "numpy>=1.20.0",
@@ -55,6 +66,9 @@ docs = [
     "pybtex>=0.24.0",
     "matplotlib>=3.5.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/nholtgrefe/phylozoo"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

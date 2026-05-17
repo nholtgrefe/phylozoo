@@ -19,8 +19,6 @@ phylogenetic network analysis in Python—a common framework that other packages
 - **Multiple sequence alignments** — store and manipulate sequence data with efficient NumPy-backed arrays, including bootstrapping and site-pattern extraction.
 - **Flexible visualization** — plot networks with different layouts and fine-grained control over styling, labels, and coloring via Matplotlib.
 - **Standard file formats** — read and write common phylogenetic formats including eNewick, DOT, FASTA, and NEXUS, making it easy to integrate with existing workflows.
-- **Performance** — leverages NumPy and optional Numba JIT compilation for computationally intensive algorithms.
-
 
 ## Installation
 
