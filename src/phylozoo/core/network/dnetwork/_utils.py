@@ -133,8 +133,8 @@ def _suppress_deg2_nodes(
                 continue
 
             # Get edge data
-            (u, _, k1, d1) = incoming[0]
-            (_, v, k2, d2) = outgoing[0]
+            u, _, k1, d1 = incoming[0]
+            _, v, k2, d2 = outgoing[0]
 
             # Merge attributes using helper function
             merged_attrs = _merge_attrs_for_degree2_suppression_directed(

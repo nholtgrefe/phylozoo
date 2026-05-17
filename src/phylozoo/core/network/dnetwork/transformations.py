@@ -334,8 +334,8 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             continue
 
         # Get edge data for merging
-        (u, _, k1, d1) = directed_in[0]
-        (_, v, k2, d2) = directed_out[0]
+        u, _, k1, d1 = directed_in[0]
+        _, v, k2, d2 = directed_out[0]
 
         # Merge attributes using the helper function
         merged_attrs = _merge_attrs_for_degree2_suppression_directed(d1 or {}, d2 or {})

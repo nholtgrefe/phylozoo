@@ -18,7 +18,6 @@ from ....utils.exceptions import (
     PhyloZooAlgorithmError,
 )
 
-
 if TYPE_CHECKING:
     from . import DirectedPhyNetwork
 

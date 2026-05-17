@@ -283,8 +283,8 @@ def suppress_degree2_node(
         )
 
     # Get the neighbors and edge data
-    (u, _, k1, d1) = directed_in[0]  # u->node
-    (_, v, k2, d2) = directed_out[0]  # node->v
+    u, _, k1, d1 = directed_in[0]  # u->node
+    _, v, k2, d2 = directed_out[0]  # node->v
 
     # Remove the node and its incident edges
     graph.remove_node(node)
