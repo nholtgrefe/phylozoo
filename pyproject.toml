@@ -8,7 +8,7 @@ dynamic = ["version"]
 authors = [
     {name = "Niels Holtgrefe", email = "n.a.l.holtgrefe@tudelft.nl"},
 ]
-description = "A phylogenetic networks analysis package"
+description = "a package for working with phylogenetic networks and related evolutionary datatypes"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [

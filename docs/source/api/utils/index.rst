@@ -13,3 +13,4 @@ utils
    io/index
    exceptions
    validation
+   parallel

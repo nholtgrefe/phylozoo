@@ -5,9 +5,12 @@ This module provides a unified interface for parallelizing operations across
 the PhyloZoo package. It supports multiple backends (sequential, threading,
 multiprocessing) and can be used via function parameters.
 
-**Note:** This module is currently not used by PhyloZoo but is kept for
-possible future implementations. It is not documented in the user manual or
-API reference.
+**Note:** This module provides the standard interface for parallel execution
+across PhyloZoo. No PhyloZoo functions currently expose a ``parallel`` parameter,
+but this module is the intended way to introduce parallelization in future
+implementations, or for dependent packages to utilize -- any function that wants to support parallel execution should
+accept a :class:`ParallelConfig` (or ``None`` for the default sequential
+behavior) and use its :meth:`ParallelConfig.get_executor` to obtain a backend.
 
 Examples
 --------
@@ -74,21 +77,18 @@ R = TypeVar('R')
 class ParallelBackend(Enum):
     """
     Available parallelization backends.
-    
-    Attributes
-    ----------
-    SEQUENTIAL : str
-        No parallelization - executes sequentially (default).
-        Use for debugging or when overhead outweighs benefits.
-    THREADING : str
-        Thread-based parallelization. Good for I/O-bound operations
-        or when sharing memory is important. Limited by Python's GIL
-        for CPU-bound tasks.
-    MULTIPROCESSING : str
-        Process-based parallelization. Best for CPU-bound tasks that
-        don't require shared memory. Bypasses Python's GIL.
+
+    The three members are:
+
+    - ``SEQUENTIAL`` -- no parallelization; executes sequentially (default).
+      Use for debugging or when overhead outweighs benefits.
+    - ``THREADING`` -- thread-based parallelization. Good for I/O-bound
+      operations or when sharing memory is important. Limited by Python's GIL
+      for CPU-bound tasks.
+    - ``MULTIPROCESSING`` -- process-based parallelization. Best for CPU-bound
+      tasks that don't require shared memory. Bypasses Python's GIL.
     """
-    
+
     SEQUENTIAL = "sequential"
     THREADING = "threading"
     MULTIPROCESSING = "multiprocessing"

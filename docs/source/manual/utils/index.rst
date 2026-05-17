@@ -8,3 +8,4 @@ Utilities Module
    io/index
    exceptions
    validation
+   parallel
