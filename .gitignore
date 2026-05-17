@@ -140,3 +140,10 @@ sandbox/
 
 # Todo file
 TODO.txt
+
+# sixth
+.sixth/
+
+# AI tools
+CLAUDE*
+
