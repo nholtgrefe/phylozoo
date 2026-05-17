@@ -34,13 +34,6 @@ Added
 Changed
 ^^^^^^^
 
-* :func:`~phylozoo.viz.plot` (and the per-type plotters
-  :func:`~phylozoo.viz.dnetwork.plot_dnetwork`,
-  :func:`~phylozoo.viz.sdnetwork.plot_sdnetwork`,
-  :func:`~phylozoo.viz.d_multigraph.plot_dmgraph`,
-  :func:`~phylozoo.viz.m_multigraph.plot_mmgraph`) now have ``show=True`` as the
-  default. Pass ``show=False`` to suppress display, for example when saving the figure
-  or composing subplots.
 * ``ParallelBackend`` class docstring restructured to plain prose (the enum members are
   now described inline rather than in a NumPy-style ``Attributes`` section) to avoid
   duplicate Sphinx object descriptions.
