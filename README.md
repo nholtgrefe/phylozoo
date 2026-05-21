@@ -4,7 +4,7 @@
 [![CI](https://github.com/nholtgrefe/phylozoo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/nholtgrefe/phylozoo/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-stable-blue)](https://nholtgrefe.github.io/phylozoo/)
 
-<img src="https://github.com/nholtgrefe/phylozoo/blob/master/docs/source/_static/phylozoo_compact.svg" alt="PhyloZoo logo" width="375" align="left">
+<img src="https://github.com/nholtgrefe/phylozoo/blob/master/docs/source/_static/phylozoo_compact.png" alt="PhyloZoo logo" width="375" align="left">
 
 PhyloZoo is a Python package for working with phylogenetic networks and related evolutionary
 data types. PhyloZoo aims to provide the foundational infrastructure for

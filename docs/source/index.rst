@@ -1,5 +1,5 @@
 
-.. image:: _static/phylozoo_full.svg
+.. image:: _static/phylozoo_full.png
    :alt: PhyloZoo logo
    :width: 500px
    :align: left
