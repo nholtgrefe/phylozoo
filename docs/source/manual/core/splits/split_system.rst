@@ -183,7 +183,7 @@ Tree Reconstruction
 ^^^^^^^^^^^^^^^^^^^
 
 The :func:`~phylozoo.core.split.algorithms.tree_from_splitsystem` function converts a
-compatible split system into an unrooted phylogenetic tree represented as a `~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
+compatible split system into an unrooted phylogenetic tree represented as a :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
 The algorithm builds a tree that displays all splits in the system.
 
 .. code-block:: python
