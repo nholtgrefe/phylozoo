@@ -4,6 +4,44 @@ Changelog
 Version History
 ---------------
 
+Version 0.2.1
+~~~~~~~~~~~~~
+
+Added
+^^^^^
+
+* Split decomposition (:cite:`Bandelt1992`) for distance matrices:
+
+  * :func:`~phylozoo.core.distance.decomposition.isolation_index` — computes the isolation
+    index of a bipartition with respect to a distance matrix.
+  * :func:`~phylozoo.core.distance.decomposition.split_decomposition` — canonical
+    decomposition ``d = d^0 + Σ α_S δ_S``, returning a
+    :class:`~phylozoo.core.split.weighted_splitsystem.WeightedSplitSystem` of all d-splits
+    and the split-prime residual as a :class:`~phylozoo.core.distance.base.DistanceMatrix`.
+  * Both functions are re-exported from ``phylozoo.core.distance``.
+
+* New classification functions in :mod:`phylozoo.core.distance.classifications`:
+
+  * :func:`~phylozoo.core.distance.classifications.is_tree_metric` — four-point condition
+    check (Numba-accelerated, :math:`O(n^4)`).
+  * :func:`~phylozoo.core.distance.classifications.is_totally_decomposable` — checks
+    whether the split-prime residual is zero.
+
+* :func:`~phylozoo.core.split.algorithms.distances_from_splitsystem` ↔
+  :func:`~phylozoo.core.distance.decomposition.split_decomposition` round-trip tests and
+  :func:`~phylozoo.core.split.algorithms.tree_from_splitsystem` ↔
+  :func:`~phylozoo.core.network.sdnetwork.derivations.induced_splits` round-trip tests.
+* Documentation: new *Split Decomposition* section in the distance manual; updated
+  *Algorithms* section in the split-system manual; new ``api/core/distance`` entry for
+  the decomposition module. BibTeX entry ``Bandelt1992`` added to ``bibliography.bib``.
+
+Changed
+^^^^^^^
+
+* ``_check_kalmanson_conditions`` moved from a nested closure inside
+  :func:`~phylozoo.core.distance.classifications.is_kalmanson` to a module-level
+  ``@njit`` function, consistent with the other Numba helpers in the module.
+
 Version 0.2.0
 ~~~~~~~~~~~~~
 
