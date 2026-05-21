@@ -9,10 +9,14 @@ implementation is split across the base, classifications, and io submodules.
 """
 
 from .base import DistanceMatrix
-from . import classifications, io
+from .decomposition import isolation_index, split_decomposition
+from . import classifications, decomposition, io
 
 __all__ = [
     "DistanceMatrix",
+    "isolation_index",
+    "split_decomposition",
     "classifications",
+    "decomposition",
     "io",
 ]

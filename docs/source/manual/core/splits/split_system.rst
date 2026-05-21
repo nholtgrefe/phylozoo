@@ -215,6 +215,25 @@ the sum of weights of all splits that separate them.
 For weighted split systems, the split weights are used in the distance computation.
 For regular split systems, each split contributes weight 1.0 to the distances.
 
+The inverse operation is :func:`~phylozoo.core.distance.decomposition.split_decomposition`,
+which recovers the weighted split system from a distance matrix.  When the input distance
+matrix comes from a tree split system, the round-trip is lossless:
+
+.. code-block:: python
+
+   from phylozoo.core.distance import split_decomposition
+
+   # Round-trip: tree split system → distances → split system
+   dm = distances_from_splitsystem(tree_system)
+   recovered, residual = split_decomposition(dm)
+
+   # For a tree metric the residual is zero and the d-splits match exactly
+   import numpy as np
+   assert np.allclose(residual.np_array, 0)
+   assert recovered.splits == tree_system.splits
+
+See :doc:`Distance Matrices <../distance>` for the full split decomposition documentation.
+
 Quartet Profile Extraction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -21,6 +21,13 @@ Classification Functions
    :members:
    :show-inheritance:
 
+Split Decomposition
+-------------------
+
+.. automodule:: phylozoo.core.distance.decomposition
+   :members:
+   :show-inheritance:
+
 I/O Support
 -----------
 

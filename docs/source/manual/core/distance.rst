@@ -180,8 +180,166 @@ these conditions with respect to a given circular ordering. This function requir
 
 The check is implemented using Numba-accelerated loops.
 
+**Tree Metrics**
+
+The :func:`~phylozoo.core.distance.classifications.is_tree_metric` function checks whether
+a distance matrix is a *tree metric* — a metric that arises as the path-length distances on
+some edge-weighted tree. The check is based on the *four-point condition*: for every choice
+of four taxa the maximum of the three pairwise sums
+
+.. math::
+
+   \{d_{ij}+d_{kl},\; d_{ik}+d_{jl},\; d_{il}+d_{jk}\}
+
+must be achieved by at least two of them :cite:`Bandelt1992`. The test uses a
+Numba-accelerated loop over all :math:`\binom{n}{4}` quartets and returns in
+:math:`O(n^4)` time.
+
+.. code-block:: python
+
+   from phylozoo.core.distance.classifications import is_tree_metric
+
+   if is_tree_metric(dm):
+       print("Distance matrix is a tree metric")
+
+**Totally Decomposable Metrics**
+
+The :func:`~phylozoo.core.distance.classifications.is_totally_decomposable` function checks
+whether a distance matrix is *totally decomposable*: the split-prime residual :math:`d^0`
+of the canonical split decomposition is zero, meaning the metric is expressed exactly as a
+weighted sum of split metrics.  Every tree metric is totally decomposable, but the converse
+does not hold — totally decomposable metrics may have incompatible d-splits. See next
+section for details on split decompositions.
+
+.. code-block:: python
+
+   from phylozoo.core.distance.classifications import is_totally_decomposable
+
+   if is_totally_decomposable(dm):
+       print("All pairwise distances are explained by d-splits alone")
+
+
+Split Decomposition
+-------------------
+
+The :mod:`phylozoo.core.distance.decomposition` module implements the *canonical split
+decomposition* of :cite:`Bandelt1992`.  Every finite metric :math:`d` decomposes
+uniquely as
+
+.. math::
+
+   d = d^0 + \sum_{S} \alpha_S\,\delta_S
+
+where :math:`S` ranges over all *d-splits* (bipartitions with positive isolation index),
+:math:`\alpha_S` is the isolation index of :math:`S`, :math:`\delta_S` is the
+corresponding split metric, and :math:`d^0` is the *split-prime residual* — a metric that
+admits no further d-splits.
+
+All classes and functions can be imported from the core distance module:
+
+.. code-block:: python
+
+   from phylozoo.core.distance import isolation_index, split_decomposition
+
+Isolation Index
+^^^^^^^^^^^^^^^
+
+The :func:`~phylozoo.core.distance.decomposition.isolation_index` function computes the
+isolation index of a split :math:`(A, B)`:
+
+.. math::
+
+   \alpha_{A,B} = \tfrac{1}{2}\,
+       \min_{\substack{i,j\in A \\ k,l\in B}}
+       \bigl(\max\{d_{ij}+d_{kl},\, d_{ik}+d_{jl},\, d_{il}+d_{jk}\} - d_{ij} - d_{kl}\bigr)
+
+The index is always non-negative; it is strictly positive if and only if the split is
+a *d-split* of the distance matrix.
+
+.. code-block:: python
+
+   import numpy as np
+   from phylozoo.core.distance import DistanceMatrix, isolation_index
+   from phylozoo.core.split import Split
+
+   d = np.array([
+       [ 0,  4,  5,  7, 13,  8,  6],
+       [ 4,  0,  1,  3,  9, 12, 10],
+       [ 5,  1,  0,  2,  8, 13, 11],
+       [ 7,  3,  2,  0,  6, 11, 13],
+       [13,  9,  8,  6,  0,  5,  7],
+       [ 8, 12, 13, 11,  5,  0,  2],
+       [ 6, 10, 11, 13,  7,  2,  0],
+   ], dtype=float)
+   dm = DistanceMatrix(d, labels=list("ABCDEFG"))
+
+   s = Split({"E", "F", "G"}, {"A", "B", "C", "D"})
+   print(isolation_index(dm, s))  # 6.0
+
+Split Decomposition
+^^^^^^^^^^^^^^^^^^^
+
+The :func:`~phylozoo.core.distance.decomposition.split_decomposition` function computes the
+full decomposition and returns both the :class:`~phylozoo.core.split.weighted_splitsystem.WeightedSplitSystem`
+of all d-splits and the residual :class:`~phylozoo.core.distance.base.DistanceMatrix`.
+
+.. code-block:: python
+
+   system, residual = split_decomposition(dm)
+
+   print(len(system.splits))          # 4  (Table 1 has four d-splits)
+   import numpy as np
+   print(np.allclose(residual.np_array, 0))  # True  (totally decomposable)
+
+   for sp in system.splits:
+       print(sp, "→ α =", system.get_weight(sp))
+
+Round-Trip Identity
+^^^^^^^^^^^^^^^^^^^
+
+The decomposition satisfies :math:`d^1 + d^0 = d` exactly (up to floating-point noise),
+where :math:`d^1 = \sum_S \alpha_S\,\delta_S` is computed from the weighted split system
+via :func:`~phylozoo.core.split.algorithms.distances_from_splitsystem`:
+
+.. code-block:: python
+
+   from phylozoo.core.split.algorithms import distances_from_splitsystem
+
+   d1_dm = distances_from_splitsystem(system)
+   labels = list(dm.labels)
+   n = len(labels)
+   d1 = np.array([[d1_dm.get_distance(labels[r], labels[c]) for c in range(n)]
+                  for r in range(n)])
+
+   assert np.allclose(d1 + residual.np_array, dm.np_array)  # always holds
+
+Conversely, when a :class:`~phylozoo.core.split.weighted_splitsystem.WeightedSplitSystem`
+encodes a tree metric (all d-splits are pairwise compatible), the decomposition is the
+inverse of :func:`~phylozoo.core.split.algorithms.distances_from_splitsystem`:
+
+.. code-block:: python
+
+   from phylozoo.core.split import WeightedSplitSystem, Split
+   from phylozoo.core.distance import split_decomposition
+   from phylozoo.core.split.algorithms import distances_from_splitsystem
+
+   # Build a tree split system, convert to distances, then recover the system
+   tree_system = WeightedSplitSystem({
+       Split({"A"}, {"B", "C", "D"}): 1.0,
+       Split({"B"}, {"A", "C", "D"}): 1.0,
+       Split({"C"}, {"A", "B", "D"}): 1.0,
+       Split({"D"}, {"A", "B", "C"}): 1.0,
+       Split({"A", "B"}, {"C", "D"}): 2.0,
+   })
+   dm = distances_from_splitsystem(tree_system)
+   recovered, residual = split_decomposition(dm)
+
+   assert recovered.splits == tree_system.splits        # same d-splits
+   assert np.allclose(residual.np_array, 0)             # zero residual
+
 See Also
 --------
 
 - :doc:`API Reference <../../api/core/distance>` — Complete function signatures and detailed examples
+- :doc:`Split Systems <../splits/split_system>` — Working with weighted split systems and round-trips
 - :doc:`Circular Orderings <primitives/circular_ordering>` — Working with circular orderings

@@ -3,7 +3,8 @@ Distance matrix classification module.
 
 This module provides functions for classifying distance matrices based on mathematical
 properties: triangle inequality, metric properties (triangle inequality, symmetry,
-non-negativity), and Kalmanson conditions (circular ordering constraints).
+non-negativity), Kalmanson conditions (circular ordering constraints), and split-
+decomposition properties (tree metrics, total decomposability).
 """
 
 from __future__ import annotations
@@ -314,47 +315,179 @@ def is_kalmanson(distance_matrix: DistanceMatrix, circular_order: CircularOrderi
     except PhyloZooValueError as e:
         raise PhyloZooValueError(f"circular_order contains invalid labels: {e}") from e
 
-    @njit(cache=True)
-    def _check_kalmanson_conditions(
-        matrix: np.ndarray, ordered_indices: np.ndarray, n: int
-    ) -> bool:
-        """Numba-accelerated Kalmanson condition check."""
-        # Check all combinations of 4 indices (i < j < k < m)
-        for i in range(n):
-            for j in range(i + 1, n):
-                for k in range(j + 1, n):
-                    for m in range(k + 1, n):
-                        ii = ordered_indices[i]
-                        jj = ordered_indices[j]
-                        kk = ordered_indices[k]
-                        ll = ordered_indices[m]
-
-                        # Bounds checking
-                        if (
-                            ii < 0
-                            or ii >= n
-                            or jj < 0
-                            or jj >= n
-                            or kk < 0
-                            or kk >= n
-                            or ll < 0
-                            or ll >= n
-                        ):
-                            return False
-
-                        d_ij = matrix[ii, jj]
-                        d_kl = matrix[kk, ll]
-                        d_ik = matrix[ii, kk]
-                        d_il = matrix[ii, ll]
-                        d_jk = matrix[jj, kk]
-                        d_jl = matrix[jj, ll]
-
-                        # Kalmanson conditions
-                        cond1 = d_ij + d_kl - d_ik - d_jl
-                        cond2 = d_il + d_jk - d_ik - d_jl
-
-                        if cond1 > 0 or cond2 > 0:
-                            return False
-        return True
-
     return _check_kalmanson_conditions(distance_matrix._matrix, ordered_indices, n)  # type: ignore[no-any-return]
+
+
+@njit(cache=True)
+def _check_kalmanson_conditions(
+    matrix: np.ndarray, ordered_indices: np.ndarray, n: int
+) -> bool:
+    """Numba-accelerated Kalmanson condition check."""
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for m in range(k + 1, n):
+                    ii = ordered_indices[i]
+                    jj = ordered_indices[j]
+                    kk = ordered_indices[k]
+                    ll = ordered_indices[m]
+
+                    if (
+                        ii < 0
+                        or ii >= n
+                        or jj < 0
+                        or jj >= n
+                        or kk < 0
+                        or kk >= n
+                        or ll < 0
+                        or ll >= n
+                    ):
+                        return False
+
+                    d_ij = matrix[ii, jj]
+                    d_kl = matrix[kk, ll]
+                    d_ik = matrix[ii, kk]
+                    d_il = matrix[ii, ll]
+                    d_jk = matrix[jj, kk]
+                    d_jl = matrix[jj, ll]
+
+                    cond1 = d_ij + d_kl - d_ik - d_jl
+                    cond2 = d_il + d_jk - d_ik - d_jl
+
+                    if cond1 > 0 or cond2 > 0:
+                        return False
+    return True
+
+
+@njit(cache=True)
+def _check_four_point_condition(matrix: np.ndarray, n: int, atol: float) -> bool:
+    """Numba-accelerated four-point condition check over all C(n,4) quartets."""
+    for i in range(n):
+        for j in range(i + 1, n):
+            for k in range(j + 1, n):
+                for ll in range(k + 1, n):
+                    s1 = matrix[i, j] + matrix[k, ll]
+                    s2 = matrix[i, k] + matrix[j, ll]
+                    s3 = matrix[i, ll] + matrix[j, k]
+                    max_s = max(s1, max(s2, s3))
+                    count = 0
+                    if max_s - s1 <= atol:
+                        count += 1
+                    if max_s - s2 <= atol:
+                        count += 1
+                    if max_s - s3 <= atol:
+                        count += 1
+                    if count < 2:
+                        return False
+    return True
+
+
+def is_tree_metric(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool:
+    """
+    Check if the distance matrix is a tree metric.
+
+    A distance matrix is a tree metric if and only if it satisfies the
+    *four-point condition*: for every choice of four elements i, j, k, l the
+    maximum of the three sums
+
+        {d_ij + d_kl,  d_ik + d_jl,  d_il + d_jk}
+
+    is attained by at least two of them :cite:`Bandelt1992`.  Equivalently,
+    the split decomposition has zero residual and all d-splits are pairwise
+    compatible.
+
+    Parameters
+    ----------
+    distance_matrix : DistanceMatrix
+        The distance matrix to check.
+    atol : float, optional
+        Absolute tolerance for floating-point comparisons.  By default 1e-10.
+
+    Returns
+    -------
+    bool
+        True if the four-point condition holds for every quartet, False otherwise.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from phylozoo.core.distance import DistanceMatrix
+    >>> from phylozoo.core.distance.classifications import is_tree_metric
+    >>>
+    >>> # Path-tree metric on four taxa (1-2-3-4)
+    >>> matrix = np.array([
+    ...     [0, 1, 2, 3],
+    ...     [1, 0, 1, 2],
+    ...     [2, 1, 0, 1],
+    ...     [3, 2, 1, 0],
+    ... ], dtype=float)
+    >>> dm = DistanceMatrix(matrix)
+    >>> is_tree_metric(dm)
+    True
+    >>>
+    >>> # Not a tree metric (incompatible splits)
+    >>> bad = np.array([[0, 1, 2, 2], [1, 0, 2, 2], [2, 2, 0, 1], [2, 2, 1, 0]], dtype=float)
+    >>> dm2 = DistanceMatrix(bad)
+    >>> is_tree_metric(dm2)
+    False
+    """
+    n = len(distance_matrix)
+    if n < 4:
+        return True
+    return bool(_check_four_point_condition(distance_matrix._matrix, n, atol))
+
+
+def is_totally_decomposable(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool:
+    """
+    Check if the distance matrix is totally decomposable.
+
+    A distance matrix is totally decomposable if its split-prime residual d^0
+    is zero, i.e., d can be expressed *exactly* as a weighted sum of split metrics::
+
+        d = sum_S alpha_S * delta_S
+
+    This is equivalent to saying that all pairwise distances are fully explained
+    by the d-splits (no indecomposable noise remains).
+
+    Parameters
+    ----------
+    distance_matrix : DistanceMatrix
+        The distance matrix to check.
+    atol : float, optional
+        Absolute tolerance used to compare the residual to zero.
+        By default 1e-10.
+
+    Returns
+    -------
+    bool
+        True if the residual is zero within ``atol``, False otherwise.
+
+    See Also
+    --------
+    split_decomposition : Returns the residual directly.
+    is_tree_metric : Stronger condition (totally decomposable + compatible splits).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from phylozoo.core.distance import DistanceMatrix
+    >>> from phylozoo.core.distance.classifications import is_totally_decomposable
+    >>>
+    >>> # Table 1 from :cite:`Bandelt1992` has zero residual
+    >>> d = np.array([
+    ...     [ 0,  4,  5,  7, 13,  8,  6],
+    ...     [ 4,  0,  1,  3,  9, 12, 10],
+    ...     [ 5,  1,  0,  2,  8, 13, 11],
+    ...     [ 7,  3,  2,  0,  6, 11, 13],
+    ...     [13,  9,  8,  6,  0,  5,  7],
+    ...     [ 8, 12, 13, 11,  5,  0,  2],
+    ...     [ 6, 10, 11, 13,  7,  2,  0],
+    ... ], dtype=float)
+    >>> dm = DistanceMatrix(d, labels=list("ABCDEFG"))
+    >>> is_totally_decomposable(dm)
+    True
+    """
+    from .decomposition import split_decomposition
+
+    _, residual = split_decomposition(distance_matrix)
+    return bool(np.allclose(residual.np_array, 0.0, atol=atol))
