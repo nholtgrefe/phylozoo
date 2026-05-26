@@ -559,6 +559,52 @@ class TestDisplayedTrees:
         for tree in trees:
             assert tree.get_network_attribute("probability") is None
 
+    def test_make_lsa_false_can_produce_unary_root(self) -> None:
+        """Without make_lsa, a switching that prunes one side of the root
+        yields a tree whose root has out-degree 1 (the degenerate root bug).
+
+        Network layout (root=0, tree node=10, hybrid=3):
+          0 → 10, 0 → 3
+          10 → 3  (10 is second parent of hybrid 3)
+          10 → 20 (B), 10 → 30 (C)
+          3  → 40 (D)
+
+        Switching that keeps (10→3) removes (0→3); then 3 is suppressed into
+        10, and root 0 is left with a single child 10.
+        """
+        net = DirectedPhyNetwork(
+            edges=[(0, 10), (0, 3), (10, 3), (10, 20), (10, 30), (3, 40)],
+            nodes=[(20, {"label": "B"}), (30, {"label": "C"}), (40, {"label": "D"})],
+        )
+        trees = list(displayed_trees(net))
+        assert len(trees) == 2
+        root_outdegrees = [t.outdegree(t.root_node) for t in trees]
+        assert 1 in root_outdegrees  # at least one tree has a unary root
+
+    def test_make_lsa_true_removes_unary_root(self) -> None:
+        """With make_lsa=True every displayed tree has a root of out-degree >= 2."""
+        net = DirectedPhyNetwork(
+            edges=[(0, 10), (0, 3), (10, 3), (10, 20), (10, 30), (3, 40)],
+            nodes=[(20, {"label": "B"}), (30, {"label": "C"}), (40, {"label": "D"})],
+        )
+        trees = list(displayed_trees(net, make_lsa=True))
+        assert len(trees) == 2
+        for tree in trees:
+            assert tree.outdegree(tree.root_node) >= 2
+            assert tree.taxa == {"B", "C", "D"}
+
+    def test_make_lsa_true_on_proper_tree_is_noop(self) -> None:
+        """For a tree network make_lsa=True leaves the result unchanged."""
+        net = DirectedPhyNetwork(
+            edges=[(0, 10), (0, 20), (10, 30), (10, 40)],
+            nodes=[(20, {"label": "A"}), (30, {"label": "B"}), (40, {"label": "C"})],
+        )
+        trees_plain = list(displayed_trees(net))
+        trees_lsa = list(displayed_trees(net, make_lsa=True))
+        assert len(trees_plain) == len(trees_lsa) == 1
+        assert trees_plain[0].taxa == trees_lsa[0].taxa == {"A", "B", "C"}
+        assert trees_plain[0].root_node == trees_lsa[0].root_node
+
 
 class TestDistances:
     """Test distances function for DirectedPhyNetwork."""

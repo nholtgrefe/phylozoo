@@ -490,7 +490,9 @@ def _switchings(
 
 
 def displayed_trees(
-    network: DirectedPhyNetwork, probability: bool = False
+    network: DirectedPhyNetwork,
+    probability: bool = False,
+    make_lsa: bool = False,
 ) -> Iterator[DirectedPhyNetwork]:
     """
     Generate all displayed trees of a directed phylogenetic network.
@@ -500,6 +502,11 @@ def displayed_trees(
     1. Taking a switching (deleting all but one parent edge per hybrid node)
     2. Exhaustively removing degree-1 nodes that are not leaves or the root
     3. Suppressing all degree-2 nodes
+
+    Note: when the original network root is preserved even though its entire
+    subtree on one side is pruned, the resulting tree can have a root of
+    out-degree 1. Pass ``make_lsa=True`` to strip that
+    redundant root and re-root at the LSA.
 
     Parameters
     ----------
@@ -512,6 +519,12 @@ def displayed_trees(
         hybrid edge has no gamma value, it is taken to be 1/k where k is the
         in-degree of the hybrid node. If there are no hybrid nodes, the
         probability is 1.0. By default False.
+    make_lsa : bool, optional
+        If True, convert each displayed tree to its LSA-network before
+        yielding, removing any unary root that may arise when one side of the
+        root is entirely pruned during a switching. For trees whose root
+        already has out-degree >= 2 the conversion is a no-op. By default
+        False.
 
     Yields
     ------
@@ -568,6 +581,9 @@ def displayed_trees(
         # Note: dnetwork_from_graph already copies graph attributes, so probability
         # is automatically preserved from the switching graph.
         displayed_tree = dnetwork_from_graph(tree_graph)
+
+        if make_lsa:
+            displayed_tree = to_lsa_network(displayed_tree)
 
         yield displayed_tree
 
