@@ -35,7 +35,7 @@ Let's create a simple phylogenetic network:
        ]
    )
 
-   print(f"Network has {network.num_nodes} nodes")
+   print(f"Network has {network.number_of_nodes()} nodes")
    print(f"Leaves: {network.leaves}")
    print(f"Is tree: {network.is_tree()}")
 
@@ -46,18 +46,27 @@ Now let's create a network with a hybrid node. Hybrid edges use a ``gamma`` valu
 
 .. code-block:: python
 
+   from phylozoo.core.network.dnetwork.classifications import level
+
    # Create a network with hybridization
+   # Edge attributes (e.g. gamma) are passed as dicts with "u" and "v" keys
    hybrid_net = DirectedPhyNetwork(
        edges=[
-           ("root", "u1"), ("root", "u2"),  # Root to tree nodes
-           ("u1", "h", {"gamma": 0.6}),    # Hybrid edge
-           ("u2", "h", {"gamma": 0.4}),     # Hybrid edge (must sum to 1.0)
-           ("h", "leaf1")                   # Hybrid to leaf
+           ("root", "u1"), ("root", "u2"),          # Root to tree nodes
+           {"u": "u1", "v": "h", "gamma": 0.6},     # Hybrid edge
+           {"u": "u2", "v": "h", "gamma": 0.4},     # Hybrid edge (must sum to 1.0)
+           ("h", "leaf_a"),                          # Hybrid to leaf
+           ("u1", "leaf_b"),                         # Extra leaf on u1
+           ("u2", "leaf_c"),                         # Extra leaf on u2
        ],
-       nodes=[("leaf1", {"label": "A"})]
+       nodes=[
+           ("leaf_a", {"label": "A"}),
+           ("leaf_b", {"label": "B"}),
+           ("leaf_c", {"label": "C"}),
+       ]
    )
 
-   print(f"Network level: {hybrid_net.level()}")
+   print(f"Network level: {level(hybrid_net)}")
 
 PhyloZoo also supports **semi-directed networks**, which allow undirected tree edges
 for modeling root uncertainty. See :doc:`Semi-Directed Networks <../manual/core/networks/semi_directed/overview>` for details.
@@ -84,13 +93,16 @@ Plot networks with the built-in visualization module:
 
 .. code-block:: python
 
+   import matplotlib.pyplot as plt
    from phylozoo.viz import plot
 
    # Plot network (opens interactive window)
    plot(network, show=True)
 
-   # Save to file instead
-   plot(network, path="network.png")
+   # Save to file via matplotlib
+   fig, ax = plt.subplots()
+   plot(network, ax=ax)
+   fig.savefig("network.png")
 
 For layout options and styling, see :doc:`Visualization <../manual/visualization/overview>`.
 
