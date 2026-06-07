@@ -1,6 +1,6 @@
 
 [![PyPI](https://img.shields.io/pypi/v/phylozoo)](https://pypi.org/project/phylozoo/)
-[![License](https://img.shields.io/github/license/nholtgrefe/phylozoo)](https://github.com/nholtgrefe/phylozoo/blob/master/LICENSE.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://github.com/nholtgrefe/phylozoo/blob/master/LICENSE.md)
 [![CI](https://github.com/nholtgrefe/phylozoo/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/nholtgrefe/phylozoo/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-stable-blue)](https://nholtgrefe.github.io/phylozoo/)
 
