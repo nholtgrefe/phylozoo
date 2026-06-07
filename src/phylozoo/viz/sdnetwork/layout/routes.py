@@ -71,11 +71,24 @@ def compute_radial_routes(
             continue
 
         is_parallel = parallel_counts[(u, v)] > 1
-        is_directed = network._graph._directed.has_edge(u, v, key=key)
-        is_hybrid = v in network.hybrid_nodes if is_directed else False
+
+        # The combined (undirected) MultiGraph may yield a directed edge in
+        # the reverse of the direction stored in _directed (e.g. (6,5) when
+        # _directed has (5,6)).  Check both orientations.
+        is_directed_fwd = network._graph._directed.has_edge(u, v, key=key)
+        is_directed_rev = network._graph._directed.has_edge(v, u, key=key)
+        is_directed = is_directed_fwd or is_directed_rev
+
+        # Ensure points run parent → hybrid so the arrowhead points correctly.
+        if is_directed_rev:
+            src, dst = v, u
+        else:
+            src, dst = u, v
+
+        is_hybrid = dst in network.hybrid_nodes if is_directed else False
 
         # Straight line route
-        points = (positions[u], positions[v])
+        points = (positions[src], positions[dst])
 
         edge_routes[(u, v, key)] = EdgeRoute(
             edge_type=EdgeType(
