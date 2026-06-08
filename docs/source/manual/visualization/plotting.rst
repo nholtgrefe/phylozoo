@@ -92,7 +92,6 @@ for details.
 * **dot** — Hierarchical (layered) layout. Well-suited for directed acyclic graphs and phylogenetic trees.
 * **twopi** — Radial layout with root at center. Good for trees and semi-directed networks.
 * **neato** — Spring-embedder (stress minimisation). Default for SemiDirectedPhyNetwork; handles reticulations well.
-* **neato** — Spring-model layout.
 * **fdp** — Force-directed placement.
 * **sfdp** — Scalable force-directed layout for large graphs.
 * **circo** — Circular layout.
@@ -142,3 +141,4 @@ See Also
 --------
 
 - :doc:`Styling <styling>` — Colors, sizes, and appearance
+- :doc:`Tutorial: Plotting a Semi-Directed Network <../../tutorials/visualization_sdnetwork>` — End-to-end example with layout and style customisation
