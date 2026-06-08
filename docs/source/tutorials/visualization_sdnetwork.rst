@@ -2,17 +2,12 @@ Plotting a Semi-Directed Network
 =================================
 
 This tutorial walks through plotting a semi-directed phylogenetic network step by step,
-using a published *Xiphophorus* fish reticulate phylogeny as a running example.
+using the *Xiphophorus* swordfish reticulate phylogeny from :cite:`Holtgrefe2025Squirrel` as a running example.
 It covers loading a network from eNewick, choosing a layout, customising the style, and
 saving a publication-ready figure.
 
 Prerequisites: ``phylozoo[viz]`` installed (``pip install phylozoo[viz]``) and Graphviz
 available (``pip install phylozoo[graphviz]``).
-
-.. seealso::
-
-   :doc:`Plotting manual <../manual/visualization/plotting>` — Full reference for layouts and parameters.
-   :doc:`Styling manual <../manual/visualization/styling>` — All style attributes explained.
 
 Loading the Network
 -------------------
@@ -140,4 +135,10 @@ are highlighted in pink; three reticulation events (H1–H3) are visible as dire
    :width: 100%
 
    Semi-directed phylogenetic network of 25 *Xiphophorus* species with three
-   hybridisation events (H1–H3).
+   hybridisation events (H1–H3) :cite:`Holtgrefe2025Squirrel`.
+
+See Also
+--------
+
+- :doc:`Plotting manual <../manual/visualization/plotting>` — Full reference for layouts and parameters
+- :doc:`Styling manual <../manual/visualization/styling>` — All style attributes explained
