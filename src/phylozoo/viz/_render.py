@@ -233,9 +233,10 @@ def draw_label(
     style: RenderStyle,
     node_type: str = "leaf",
     center: tuple[float, float] | None = None,
+    anchor: tuple[float, float] | None = None,
 ) -> Any:
     """
-    Add a text label, placed outward from the layout center for consistent placement.
+    Add a text label, placed outward from a reference point.
 
     Parameters
     ----------
@@ -248,10 +249,13 @@ def draw_label(
     style : RenderStyle
         Styling configuration.
     node_type : str, optional
-        Used for fallback when node coincides with center. By default 'leaf'.
+        Used for fallback when node coincides with reference. By default 'leaf'.
     center : tuple[float, float] | None, optional
-        Layout center for outward placement. If None, uses origin (0, 0).
+        Layout center, used when anchor is not provided. If None, uses origin.
         By default None.
+    anchor : tuple[float, float] | None, optional
+        Specific reference point to move away from (e.g. a leaf's neighbour).
+        Takes precedence over center when provided. By default None.
 
     Returns
     -------
@@ -261,7 +265,12 @@ def draw_label(
     import math
 
     x, y = position
-    cx, cy = center if center is not None else (0.0, 0.0)
+    if anchor is not None:
+        cx, cy = anchor
+    elif center is not None:
+        cx, cy = center
+    else:
+        cx, cy = 0.0, 0.0
     dx = x - cx
     dy = y - cy
     dist = math.sqrt(dx * dx + dy * dy)
@@ -395,6 +404,16 @@ def render_layout(
     """
     parallel_groups = build_parallel_groups(edge_routes)
 
+    # Build neighbour position map so labels can be placed away from edges rather
+    # than away from the global layout center (which causes crossings in
+    # force-directed layouts like neato where the center is not meaningful).
+    neighbour_positions: dict[Any, list[tuple[float, float]]] = {}
+    for (u, v, _key) in edge_routes:
+        if v in positions:
+            neighbour_positions.setdefault(u, []).append(positions[v])
+        if u in positions:
+            neighbour_positions.setdefault(v, []).append(positions[u])
+
     for (u, v, key), route in edge_routes.items():
         draw_edge(ax, route, style, parallel_groups, (u, v, key))
 
@@ -407,7 +426,15 @@ def render_layout(
                 if radial_labels_for_leaves and node_type == "leaf":
                     draw_label_radial(ax, position, label, style)
                 else:
-                    draw_label(ax, position, label, style, node_type, center=center)
+                    nbrs = neighbour_positions.get(node, [])
+                    if nbrs:
+                        anchor: tuple[float, float] | None = (
+                            sum(p[0] for p in nbrs) / len(nbrs),
+                            sum(p[1] for p in nbrs) / len(nbrs),
+                        )
+                    else:
+                        anchor = None
+                    draw_label(ax, position, label, style, node_type, center=center, anchor=anchor)
 
     ax.set_aspect("equal")
     ax.axis("off")
