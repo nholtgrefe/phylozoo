@@ -8,3 +8,4 @@ Extended tutorials for using PhyloZoo.
    
    quickstart
    visualization_sdnetwork
+   indistinguishable_networks
