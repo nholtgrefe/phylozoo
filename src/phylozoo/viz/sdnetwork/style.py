@@ -26,16 +26,13 @@ class SDNetStyle(MGraphStyle):
     'blue'
     """
 
-    leaf_color: str = "lightblue"
-    hybrid_color: str = "lightblue"
-    leaf_size: float | None = None
+    node_color: str = "white"
+    leaf_color: str = "#0a0a0a"
+    hybrid_color: str = "#fcc0bc"
+    leaf_size: float = 100.0
     hybrid_edge_color: str = "red"
-    # Radial layouts cluster nodes more tightly than DAG layouts, so the
-    # BaseStyle defaults (node_size=500, label_offset=0.12) produce nodes that
-    # fill ~18% of the inter-node gap and labels that land on neighbouring nodes.
-    # These smaller values keep nodes as compact dots and labels just outside.
-    node_size: float = 200.0
-    label_offset: float = 0.07
+    node_size: float = 80.0
+    label_offset: float = 0.01
 
     def copy(self) -> "SDNetStyle":
         """
@@ -85,6 +82,6 @@ def default_style() -> SDNetStyle:
     --------
     >>> style = default_style()
     >>> style.node_color
-    'lightblue'
+    'white'
     """
     return SDNetStyle()

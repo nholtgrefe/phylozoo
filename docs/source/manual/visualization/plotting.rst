@@ -90,7 +90,8 @@ on Debian/Ubuntu, ``brew install graphviz`` on macOS). See the
 for details.
 
 * **dot** — Hierarchical (layered) layout. Well-suited for directed acyclic graphs and phylogenetic trees.
-* **twopi** — Radial layout with root at center. Good for trees and semi-directed networks (default for SemiDirectedPhyNetwork).
+* **twopi** — Radial layout with root at center. Good for trees and semi-directed networks.
+* **neato** — Spring-embedder (stress minimisation). Default for SemiDirectedPhyNetwork; handles reticulations well.
 * **neato** — Spring-model layout.
 * **fdp** — Force-directed placement.
 * **sfdp** — Scalable force-directed layout for large graphs.

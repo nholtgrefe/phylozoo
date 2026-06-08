@@ -75,7 +75,7 @@ def resolve_layout(obj: Any, layout: str) -> str:
     elif isinstance(obj, DirectedPhyNetwork):
         resolved = "pz-dag"
     elif isinstance(obj, SemiDirectedPhyNetwork):
-        resolved = "twopi"
+        resolved = "neato"
     elif isinstance(obj, (DirectedMultiGraph, MixedMultiGraph)):
         resolved = "spring"
     else:

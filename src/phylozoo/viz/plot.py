@@ -35,7 +35,7 @@ def plot(
         DirectedPhyNetwork: 'pz-dag' (default), or NetworkX ('spring', 'circular',
         'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite')
         or Graphviz ('dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo').
-        SemiDirectedPhyNetwork: 'twopi' (default), 'pz-radial' (trees only), or NetworkX/Graphviz.
+        SemiDirectedPhyNetwork: 'neato' (default), 'pz-radial' (trees only), or NetworkX/Graphviz.
         DirectedMultiGraph / MixedMultiGraph: NetworkX or Graphviz only (no PhyloZoo layouts).
         By default 'auto'.
     style : DNetStyle | SDNetStyle | DMGraphStyle | MGraphStyle, optional

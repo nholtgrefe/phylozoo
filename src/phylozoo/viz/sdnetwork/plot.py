@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def plot_sdnetwork(
     network: "SemiDirectedPhyNetwork",
-    layout: str = "twopi",
+    layout: str = "neato",
     style: SDNetStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -42,7 +42,7 @@ def plot_sdnetwork(
         Layout algorithm. PhyloZoo: 'pz-radial' (trees only). NetworkX: 'spring',
         'circular', 'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral',
         'bipartite'. Graphviz: 'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'.
-        By default 'twopi'.
+        By default 'neato'.
     style : NetworkStyle, optional
         Styling configuration. If None, uses default style.
         By default None.
