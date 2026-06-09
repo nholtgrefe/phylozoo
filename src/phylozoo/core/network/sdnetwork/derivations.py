@@ -36,6 +36,7 @@ from ...primitives.m_multigraph.features import updown_path_vertices
 from ...primitives.m_multigraph import MixedMultiGraph
 from ....core.distance import DistanceMatrix
 from ....utils.exceptions import PhyloZooValueError, PhyloZooError
+from ....utils.validation import no_validation
 
 
 def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
@@ -114,6 +115,7 @@ def subnetwork(
     taxa: list[str],
     suppress_2_blobs: bool = False,
     identify_parallel_edges: bool = False,
+    _updown_cache: dict[tuple, set] | None = None,
 ) -> SemiDirectedPhyNetwork:
     """
     Extract the subnetwork induced by a subset of taxa (leaf labels).
@@ -192,8 +194,14 @@ def subnetwork(
         nodes_set = updown_path_vertices(network._graph, leaf_nodes[0], leaf_nodes[0])
     else:
         for leaf1, leaf2 in itertools.combinations(leaf_nodes, 2):
-            # Find vertices on up-down paths between this pair of leaves
-            path_vertices = updown_path_vertices(network._graph, leaf1, leaf2)
+            if _updown_cache is not None:
+                path_vertices = (
+                    _updown_cache.get((leaf1, leaf2))
+                    or _updown_cache.get((leaf2, leaf1))
+                    or updown_path_vertices(network._graph, leaf1, leaf2)
+                )
+            else:
+                path_vertices = updown_path_vertices(network._graph, leaf1, leaf2)
             nodes_set.update(path_vertices)
         # Also include all leaves themselves (they should already be included, but ensure)
         nodes_set.update(leaf_nodes)
@@ -209,7 +217,8 @@ def subnetwork(
     _suppress_deg2_nodes(working_mm, exclude_nodes=leaf_set)
 
     # Convert to SemiDirectedPhyNetwork for higher-level transformations
-    result_net = sdnetwork_from_graph(working_mm, network_type="semi-directed")
+    with no_validation():
+        result_net = sdnetwork_from_graph(working_mm, network_type="semi-directed")
 
     # Optional post-processing steps
     if suppress_2_blobs:
@@ -286,6 +295,15 @@ def k_taxon_subnetworks(
             f"k ({k}) cannot exceed the number of taxa ({num_taxa}) in the network"
         )
 
+    # Pre-compute all pairwise updown-path vertex sets once and reuse them.
+    # For n taxa and k-taxon subsets this reduces updown_path_vertices calls
+    # from C(n,k)·C(k,2) to C(n,2) — a ~C(n,k)/n speedup for large n.
+    all_leaf_nodes = [network.get_node_id(t) for t in all_taxa]
+    updown_cache: dict[tuple, set] = {
+        (l1, l2): updown_path_vertices(network._graph, l1, l2)
+        for l1, l2 in itertools.combinations(all_leaf_nodes, 2)
+    }
+
     # Generate all combinations of k taxa
     for taxa_combination in itertools.combinations(all_taxa, k):
         yield subnetwork(
@@ -293,6 +311,7 @@ def k_taxon_subnetworks(
             list(taxa_combination),
             suppress_2_blobs=suppress_2_blobs,
             identify_parallel_edges=identify_parallel_edges,
+            _updown_cache=updown_cache,
         )
 
 
