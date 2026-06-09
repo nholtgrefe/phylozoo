@@ -19,7 +19,6 @@ from .classifications import is_tree
 from .features import blobs, root_locations, RootLocation
 from .transformations import (
     suppress_2_blobs as suppress_2_blobs_fn,
-    identify_parallel_edges as identify_parallel_edges_fn,
     _identify_parallel_edges_inplace,
 )
 from ...split import Split, SplitSystem, WeightedSplitSystem
