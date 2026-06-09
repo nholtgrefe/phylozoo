@@ -51,9 +51,7 @@ def table1_dm() -> DistanceMatrix:
 @pytest.fixture()
 def path4_dm() -> DistanceMatrix:
     """Path-tree metric on four taxa: 1 — 2 — 3 — 4."""
-    matrix = np.array(
-        [[0, 1, 2, 3], [1, 0, 1, 2], [2, 1, 0, 1], [3, 2, 1, 0]], dtype=np.float64
-    )
+    matrix = np.array([[0, 1, 2, 3], [1, 0, 1, 2], [2, 1, 0, 1], [3, 2, 1, 0]], dtype=np.float64)
     return DistanceMatrix(matrix, labels=[1, 2, 3, 4])
 
 
@@ -147,8 +145,7 @@ class TestSplitDecompositionSplits:
         }
         for sp, expected_alpha in expected_weights.items():
             assert system.get_weight(sp) == pytest.approx(expected_alpha), (
-                f"Split {sp}: expected alpha={expected_alpha}, "
-                f"got {system.get_weight(sp)}"
+                f"Split {sp}: expected alpha={expected_alpha}, " f"got {system.get_weight(sp)}"
             )
 
     def test_tree_metric_leaf_trivial_splits(self, path4_dm: DistanceMatrix) -> None:

@@ -227,9 +227,7 @@ def split_decomposition(
     matrix = distance_matrix.np_array
 
     if n < 2:
-        residual = DistanceMatrix(
-            np.zeros((n, n), dtype=np.float64), labels=labels
-        )
+        residual = DistanceMatrix(np.zeros((n, n), dtype=np.float64), labels=labels)
         return WeightedSplitSystem(), residual
 
     # Internal representation: frozensets of matrix row indices.
@@ -300,10 +298,7 @@ def split_decomposition(
         system = WeightedSplitSystem(weighted_splits)
         d1_raw = distances_from_splitsystem(system)
         d1_matrix = np.array(
-            [
-                [d1_raw.get_distance(labels[r], labels[c]) for c in range(n)]
-                for r in range(n)
-            ],
+            [[d1_raw.get_distance(labels[r], labels[c]) for c in range(n)] for r in range(n)],
             dtype=np.float64,
         )
     else:

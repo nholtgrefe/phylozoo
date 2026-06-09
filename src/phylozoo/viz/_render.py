@@ -408,7 +408,7 @@ def render_layout(
     # than away from the global layout center (which causes crossings in
     # force-directed layouts like neato where the center is not meaningful).
     neighbour_positions: dict[Any, list[tuple[float, float]]] = {}
-    for (u, v, _key) in edge_routes:
+    for u, v, _key in edge_routes:
         if v in positions:
             neighbour_positions.setdefault(u, []).append(positions[v])
         if u in positions:

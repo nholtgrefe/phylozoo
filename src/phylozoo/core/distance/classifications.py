@@ -319,9 +319,7 @@ def is_kalmanson(distance_matrix: DistanceMatrix, circular_order: CircularOrderi
 
 
 @njit(cache=True)
-def _check_kalmanson_conditions(
-    matrix: np.ndarray, ordered_indices: np.ndarray, n: int
-) -> bool:
+def _check_kalmanson_conditions(matrix: np.ndarray, ordered_indices: np.ndarray, n: int) -> bool:
     """Numba-accelerated Kalmanson condition check."""
     for i in range(n):
         for j in range(i + 1, n):
