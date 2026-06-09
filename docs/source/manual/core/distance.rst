@@ -341,5 +341,5 @@ See Also
 --------
 
 - :doc:`API Reference <../../api/core/distance>` — Complete function signatures and detailed examples
-- :doc:`Split Systems <../splits/split_system>` — Working with weighted split systems and round-trips
+- :doc:`Split Systems <splits/split_system>` — Working with weighted split systems and round-trips
 - :doc:`Circular Orderings <primitives/circular_ordering>` — Working with circular orderings

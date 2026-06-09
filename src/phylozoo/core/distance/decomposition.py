@@ -98,11 +98,11 @@ def isolation_index(distance_matrix: DistanceMatrix, split: Split) -> float:
     i, j in A and k, l in B the sum d_ij + d_kl is not the largest of the three
     quartet sums (:cite:`Bandelt1992`, Eq. 1-2).
 
-    For trivial splits (|A| = 1 or |B| = 1) the formula reduces to::
+    For trivial splits (:math:`|A| = 1` or :math:`|B| = 1`) the formula reduces to::
 
         alpha = (1/2) * min_{k != l in B} (d_ak + d_al - d_kl)
 
-    where a is the single element of A (and symmetrically for |B| = 1).
+    where a is the single element of A (and symmetrically for :math:`|B| = 1`).
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ def split_decomposition(
     -------
     weighted_system : WeightedSplitSystem
         All d-splits with their isolation indices as weights.  Includes trivial
-        splits (|A| = 1 or |B| = 1) if their isolation index is positive.
+        splits (:math:`|A| = 1` or :math:`|B| = 1`) if their isolation index is positive.
         Empty if no d-splits exist (only possible for n < 2).
     residual : DistanceMatrix
         The split-prime residual d^0 = d - d^1, where

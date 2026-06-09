@@ -1,11 +1,11 @@
 """
-PhyloZoo: A phylogenetic analysis package.
+PhyloZoo: A package for working with phylogenetic networks and related evolutionary datatypes.
 
 This package provides tools for working with phylogenetic networks, trees,
 and related structures.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # Import core classes for convenient access
 from .core import (
