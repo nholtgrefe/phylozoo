@@ -124,14 +124,19 @@ PhyloZoo uses **Ruff** for linting. Run linting checks:
 Type Checking (mypy)
 ~~~~~~~~~~~~~~~~~~~~
 
-PhyloZoo uses **mypy** for static type checking. Run type checks:
+PhyloZoo targets full **mypy** compliance and uses modern type hint syntax throughout
+(``list[int]``, ``X | None``, etc.).  You can run mypy locally at any time:
 
 .. code-block:: bash
 
    mypy src/
 
-Type checking configuration is in ``pyproject.toml``. The project uses Python 3.10+ with 
-modern type hint features.
+Type checking configuration is in ``pyproject.toml``.
+
+.. note::
+
+   mypy is not yet part of the CI workflow — not all annotations pass cleanly at
+   this stage of development.  Full mypy compliance is planned for a future release.
 
 Example
 -------

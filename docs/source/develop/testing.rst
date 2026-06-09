@@ -159,11 +159,12 @@ runs three jobs in parallel:
 * **Tests** (required) — runs the full ``pytest`` suite (with coverage) on Python
   3.10 and Python 3.11, installing the package with the ``dev`` extras.
 * **Lint** (required) — runs ``ruff check src tests`` and ``black --check src tests``.
-* **Type check** (advisory) — runs ``mypy src``. The job reports the current mypy
-  error count on every PR so progress can be tracked, but is marked
-  ``continue-on-error: true`` so it does not block merging while the codebase is
-  being cleaned up. Once the error count reaches zero the ``continue-on-error``
-  flag should be removed and the job promoted to "required".
+
+.. note::
+
+   ``mypy`` type-checking is not currently part of the CI workflow because not all
+   type annotations pass cleanly yet.  Full mypy compliance is planned for a future
+   release.  You can still run ``mypy src`` locally to inspect the current state.
 
 The configuration for each tool is taken from ``pyproject.toml``, so running them
 locally before pushing produces the same result the workflow does:
@@ -173,7 +174,6 @@ locally before pushing produces the same result the workflow does:
    pytest --cov=phylozoo --cov-report=term
    ruff check src tests
    black --check src tests
-   mypy src
 
 Concurrent runs on the same branch are cancelled automatically, so only the most
 recent commit in a pull request is checked.

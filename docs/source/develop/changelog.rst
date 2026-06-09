@@ -156,8 +156,8 @@ Added
   PhyloZoo. No functions currently expose a ``parallel`` parameter; the module is the
   intended way to introduce parallelization in future implementations.
 * New ``CI`` GitHub Actions workflow (``.github/workflows/ci.yml``) running ``pytest``
-  (Python 3.10 and 3.11), ``ruff``, ``black --check``, and ``mypy`` on every push to
-  ``master`` and every pull request. See the :doc:`Testing Guide <testing>` for details.
+  (Python 3.10 and 3.11), ``ruff``, and ``black --check`` on every push to ``master``
+  and every pull request. See the :doc:`Testing Guide <testing>` for details.
   A CI badge has been added to the project README.
 
 Changed
