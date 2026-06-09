@@ -7,6 +7,11 @@ Version History
 0.2
 ~~~
 
+0.2.3
+^^^^^
+
+* Fix PyPi deployment
+
 0.2.2
 ^^^^^
 
