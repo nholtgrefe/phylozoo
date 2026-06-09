@@ -234,6 +234,7 @@ def draw_label(
     node_type: str = "leaf",
     center: tuple[float, float] | None = None,
     anchor: tuple[float, float] | None = None,
+    rotation: float | None = None,
 ) -> Any:
     """
     Add a text label, placed outward from a reference point.
@@ -256,6 +257,10 @@ def draw_label(
     anchor : tuple[float, float] | None, optional
         Specific reference point to move away from (e.g. a leaf's neighbour).
         Takes precedence over center when provided. By default None.
+    rotation : float | None, optional
+        Label rotation in degrees. None means auto-compute from the
+        anchor-to-node direction so the label aligns with the edge.
+        By default None.
 
     Returns
     -------
@@ -276,7 +281,6 @@ def draw_label(
     dist = math.sqrt(dx * dx + dy * dy)
 
     if dist > 1e-6:
-        # Place label outward from center
         scale = style.label_offset / dist
         offset_x = dx * scale
         offset_y = dy * scale
@@ -298,6 +302,17 @@ def draw_label(
         ha = "center"
         va = "top"
 
+    # Auto-rotation: align label with the direction from anchor to node.
+    # Normalize to [-90, 90] so text is never rendered upside-down.
+    if rotation is None and dist > 1e-6:
+        angle_deg = math.degrees(math.atan2(dy, dx))
+        if angle_deg > 90:
+            angle_deg -= 180
+        elif angle_deg < -90:
+            angle_deg += 180
+    else:
+        angle_deg = rotation if rotation is not None else 0.0
+
     return ax.text(
         x + offset_x,
         y + offset_y,
@@ -306,6 +321,8 @@ def draw_label(
         color=style.label_color,
         ha=ha,
         va=va,
+        rotation=angle_deg,
+        rotation_mode="anchor",
         zorder=4,
     )
 
@@ -434,7 +451,19 @@ def render_layout(
                         )
                     else:
                         anchor = None
-                    draw_label(ax, position, label, style, node_type, center=center, anchor=anchor)
+                    # style.label_rotation: None = auto (align with edge direction),
+                    # float = fixed rotation in degrees, absent = 0 (no rotation).
+                    lrot: float | None = getattr(style, "label_rotation", 0.0)
+                    draw_label(
+                        ax,
+                        position,
+                        label,
+                        style,
+                        node_type,
+                        center=center,
+                        anchor=anchor,
+                        rotation=lrot,
+                    )
 
     ax.set_aspect("equal")
     ax.axis("off")

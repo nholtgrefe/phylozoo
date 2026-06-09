@@ -70,12 +70,20 @@ SDNetStyle
 ^^^^^^^^^^
 
 Extends MGraphStyle for :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
-Adds the same phylogenetic options as DNetStyle:
+Overrides several base defaults to suit semi-directed network plots and adds
+phylogenetic options:
 
-* **leaf_color** (str, default='lightblue'): Color for leaf nodes. Any valid matplotlib color string is supported.
-* **hybrid_color** (str, default='lightblue'): Color for hybrid nodes. Any valid matplotlib color string is supported.
-* **leaf_size** (float | None, default=None): Size of leaf nodes; if None, uses node_size
-* **hybrid_edge_color** (str, default='red'): Color for hybrid edges. Any valid matplotlib color string is supported.
+* **node_color** (str, default='white'): Color for internal nodes.
+* **node_size** (float, default=80.0): Size of internal nodes.
+* **label_offset** (float, default=0.01): Label distance from node centre in layout coordinates.
+* **leaf_color** (str, default='#0a0a0a'): Color for leaf nodes.
+* **leaf_size** (float, default=100.0): Size of leaf nodes.
+* **hybrid_color** (str, default='#fcc0bc'): Color for hybrid nodes.
+* **hybrid_edge_color** (str, default='red'): Color for hybrid edges.
+* **label_rotation** (float | None, default=None): Rotation of taxon labels in degrees.
+  ``None`` (the default) auto-aligns each label with the direction of its connecting edge,
+  which reduces overlap in force-directed layouts like ``neato``.
+  A fixed float (e.g. ``-7``) applies a uniform tilt to all labels.
 
 Example
 -------

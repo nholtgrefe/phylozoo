@@ -33,6 +33,7 @@ class SDNetStyle(MGraphStyle):
     hybrid_edge_color: str = "red"
     node_size: float = 80.0
     label_offset: float = 0.01
+    label_rotation: float | None = None
 
     def copy(self) -> "SDNetStyle":
         """
@@ -66,6 +67,7 @@ class SDNetStyle(MGraphStyle):
             label_offset=self.label_offset,
             label_font_size=self.label_font_size,
             label_color=self.label_color,
+            label_rotation=self.label_rotation,
         )
 
 

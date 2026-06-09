@@ -91,7 +91,8 @@ node sizes, and label placement:
        leaf_color="#0a0a0a",   # leaf fill
        hybrid_color="#fcc0bc", # hybrid node fill
        label_offset=0.01,      # distance from node centre to label
-       label_font_size=10.5,
+       label_font_size=13.2,
+       label_rotation=-7,      # slight tilt to reduce label overlap
    )
    ax = plot(net, layout="neato", style=style, args="-Gstart=self")
 
@@ -102,6 +103,9 @@ Key style attributes:
 * ``hybrid_edge_color`` — colour of hybrid edges (default ``"red"``).
 * ``label_offset`` — label distance from node centre in layout coordinates.
 * ``label_font_size`` — matplotlib font size.
+* ``label_rotation`` — rotation angle in degrees (``None`` = auto-align with edge direction;
+  a fixed value such as ``-7`` gives a uniform slight tilt that reduces label overlap in
+  dense regions).
 
 Labels for leaf nodes are automatically placed on the side facing away from the
 connecting edge.
