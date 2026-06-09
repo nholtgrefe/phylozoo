@@ -206,11 +206,9 @@ def subnetwork(
         # Also include all leaves themselves (they should already be included, but ensure)
         nodes_set.update(leaf_nodes)
 
-    # Create induced MixedMultiGraph using existing utility
-    induced_mm = mm_subgraph(network._graph, nodes_set)
-
-    # Work on a mutable copy for transformations
-    working_mm = induced_mm.copy()
+    # Create induced MixedMultiGraph — mm_subgraph always returns a fresh object,
+    # so no additional copy is needed before mutation.
+    working_mm = mm_subgraph(network._graph, nodes_set)
 
     # First pass: suppress all degree-2 nodes (excluding leaves)
     leaf_set = set(leaf_nodes)
