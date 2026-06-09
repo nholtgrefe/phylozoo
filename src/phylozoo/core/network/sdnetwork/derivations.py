@@ -20,6 +20,7 @@ from .features import blobs, root_locations, RootLocation
 from .transformations import (
     suppress_2_blobs as suppress_2_blobs_fn,
     identify_parallel_edges as identify_parallel_edges_fn,
+    _identify_parallel_edges_inplace,
 )
 from ...split import Split, SplitSystem, WeightedSplitSystem
 from ...quartet import Quartet, QuartetProfile, QuartetProfileSet
@@ -210,20 +211,20 @@ def subnetwork(
     # so no additional copy is needed before mutation.
     working_mm = mm_subgraph(network._graph, nodes_set)
 
-    # First pass: suppress all degree-2 nodes (excluding leaves)
+    # Suppress degree-2 nodes (excluding the target leaves)
     leaf_set = set(leaf_nodes)
     _suppress_deg2_nodes(working_mm, exclude_nodes=leaf_set)
 
-    # Convert to SemiDirectedPhyNetwork for higher-level transformations
+    # Parallel-edge identification runs directly on the mutable working_mm so
+    # that the subsequent sdnetwork_from_graph call is the only construction.
+    if identify_parallel_edges:
+        _identify_parallel_edges_inplace(working_mm, exclude_nodes=leaf_set)
+
     with no_validation():
         result_net = sdnetwork_from_graph(working_mm, network_type="semi-directed")
 
-    # Optional post-processing steps
     if suppress_2_blobs:
         result_net = suppress_2_blobs_fn(result_net)
-
-    if identify_parallel_edges:
-        result_net = identify_parallel_edges_fn(result_net)
 
     return result_net
 

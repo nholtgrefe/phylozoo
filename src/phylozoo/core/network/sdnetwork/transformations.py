@@ -18,6 +18,7 @@ from ._utils import (
     _merge_attrs_for_parallel_identification_mixed,
     _suppress_deg2_nodes,
 )
+from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.transformations import (
     identify_parallel_edge as mm_identify_parallel_edge,
     identify_vertices as mm_identify_vertices,
@@ -84,18 +85,34 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
     >>> # Step 2: Degree-2 node 2 suppressed (directed_in + undirected -> undirected) -> undirected edge 1-3 with branch_length=0.8 (0.5+0.3)
     >>> # Result: undirected edges 1-3 (0.8), 3-4 (0.2), 3-5 (0.1), 1-6 (0.1)
     """
-    # Handle empty and single-node networks
-    if network.number_of_nodes() == 0:
+    if network.number_of_nodes() <= 1:
         return network.copy()
 
-    if network.number_of_nodes() == 1:
-        return network.copy()
-
-    # Create a working graph copy (preserves all node and edge attributes)
     working_graph = network._graph.copy()
+    _identify_parallel_edges_inplace(working_graph)
+    return sdnetwork_from_graph(working_graph, network_type="semi-directed")
 
-    # Iterate until no more changes occur
-    max_iterations = 1000  # Safety limit
+
+def _identify_parallel_edges_inplace(
+    graph: MixedMultiGraph,
+    exclude_nodes: set[Any] | None = None,
+) -> None:
+    """
+    Run the parallel-edge identification + degree-2 suppression loop on *graph* in-place.
+
+    This is the hot-path variant used by :func:`subnetwork` to avoid an extra
+    ``MixedMultiGraph.copy()`` and an extra ``SemiDirectedPhyNetwork`` construction per
+    call.  The public :func:`identify_parallel_edges` is a thin wrapper around this.
+
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        Mutable graph to transform in-place.
+    exclude_nodes : set, optional
+        Nodes that must not be suppressed even if their degree drops to 2 (e.g. target
+        leaves inside :func:`subnetwork`).
+    """
+    max_iterations = 1000
     iteration = 0
 
     while iteration < max_iterations:
@@ -104,72 +121,50 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
 
         # Step 1: Find and identify all parallel directed edges
         parallel_directed: list[tuple[Any, Any]] = []
-        for u, v in working_graph._directed.edges():
-            if working_graph._directed.number_of_edges(u, v) > 1:
+        for u, v in graph._directed.edges():
+            if graph._directed.number_of_edges(u, v) > 1:
                 parallel_directed.append((u, v))
 
         for u, v in parallel_directed:
-            # Skip if nodes no longer exist
-            if u not in working_graph.nodes() or v not in working_graph.nodes():
+            if u not in graph.nodes() or v not in graph.nodes():
                 continue
-
-            # Skip if no longer parallel
-            if working_graph._directed.number_of_edges(u, v) <= 1:
+            if graph._directed.number_of_edges(u, v) <= 1:
                 continue
-
-            # Collect edge data for all parallel edges
-            edges_dict = working_graph._directed[u].get(v, {})
+            edges_dict = graph._directed[u].get(v, {})
             if len(edges_dict) <= 1:
                 continue
-
             edges_data = [edges_dict[key] for key in sorted(edges_dict.keys())]
-
-            # Merge attributes using helper function
             merged_attrs = _merge_attrs_for_parallel_identification_mixed(edges_data)
-
-            # Identify parallel edges
-            mm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
+            mm_identify_parallel_edge(graph, u, v, merged_attrs=merged_attrs)
             changes_made = True
 
         # Step 2: Find and identify all parallel undirected edges
         parallel_undirected: list[tuple[Any, Any]] = []
-        for u, v in working_graph._undirected.edges():
-            if working_graph._undirected.number_of_edges(u, v) > 1:
+        for u, v in graph._undirected.edges():
+            if graph._undirected.number_of_edges(u, v) > 1:
                 parallel_undirected.append((u, v))
 
         for u, v in parallel_undirected:
-            # Skip if nodes no longer exist
-            if u not in working_graph.nodes() or v not in working_graph.nodes():
+            if u not in graph.nodes() or v not in graph.nodes():
                 continue
-
-            # Skip if no longer parallel
-            if working_graph._undirected.number_of_edges(u, v) <= 1:
+            if graph._undirected.number_of_edges(u, v) <= 1:
                 continue
-
-            # Collect edge data for all parallel edges (check both directions)
-            edges_dict = working_graph._undirected[u].get(v, {})
+            edges_dict = graph._undirected[u].get(v, {})
             if not edges_dict:
-                edges_dict = working_graph._undirected[v].get(u, {})
-
+                edges_dict = graph._undirected[v].get(u, {})
             if len(edges_dict) <= 1:
                 continue
-
             edges_data = [edges_dict[key] for key in sorted(edges_dict.keys())]
-
-            # Merge attributes using helper function
             merged_attrs = _merge_attrs_for_parallel_identification_mixed(edges_data)
-
-            # Identify parallel edges
-            mm_identify_parallel_edge(working_graph, u, v, merged_attrs=merged_attrs)
+            mm_identify_parallel_edge(graph, u, v, merged_attrs=merged_attrs)
             changes_made = True
 
-        # Step 3: Suppress all degree-2 nodes (excluding leaves)
-        nodes_before = set(working_graph.nodes())
-        _suppress_deg2_nodes(working_graph)
-        if set(working_graph.nodes()) != nodes_before:
+        # Step 3: Suppress all degree-2 nodes
+        nodes_before = set(graph.nodes())
+        _suppress_deg2_nodes(graph, exclude_nodes=exclude_nodes)
+        if set(graph.nodes()) != nodes_before:
             changes_made = True
 
-        # If no changes were made, we're done
         if not changes_made:
             break
 
@@ -178,9 +173,6 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
             "identify_parallel_edges exceeded maximum iterations. "
             "This may indicate an infinite loop or a bug."
         )
-
-    # Create and return new network from the modified graph
-    return sdnetwork_from_graph(working_graph, network_type="semi-directed")
 
 
 def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
