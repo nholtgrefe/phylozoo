@@ -7,6 +7,18 @@ Version History
 0.2
 ~~~
 
+0.2.4
+^^^^^
+
+Fixed
+"""""
+
+* :func:`~phylozoo.core.network.sdnetwork.derivations.subnetwork`: the updown-path
+  cache lookup used an ``or``-chain (``cache.get(key) or ...``), which treated an
+  empty cached path set (falsy) as a cache miss and silently recomputed the path.
+  Fixed by using an explicit ``_MISS_SENTINEL = object()`` sentinel so empty sets are
+  handled correctly.
+
 0.2.3
 ^^^^^
 

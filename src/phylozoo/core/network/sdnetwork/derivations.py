@@ -38,6 +38,8 @@ from ....core.distance import DistanceMatrix
 from ....utils.exceptions import PhyloZooValueError, PhyloZooError
 from ....utils.validation import no_validation
 
+_MISS_SENTINEL: object = object()
+
 
 def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     """
@@ -195,11 +197,16 @@ def subnetwork(
     else:
         for leaf1, leaf2 in itertools.combinations(leaf_nodes, 2):
             if _updown_cache is not None:
-                path_vertices = (
-                    _updown_cache.get((leaf1, leaf2))
-                    or _updown_cache.get((leaf2, leaf1))
-                    or updown_path_vertices(network._graph, leaf1, leaf2)
-                )
+                # Use explicit sentinel to avoid false miss when the cached set is empty.
+                _MISS = _updown_cache.get((leaf1, leaf2), _MISS_SENTINEL)
+                if _MISS is not _MISS_SENTINEL:
+                    path_vertices = _MISS
+                else:
+                    _MISS2 = _updown_cache.get((leaf2, leaf1), _MISS_SENTINEL)
+                    path_vertices = (
+                        _MISS2 if _MISS2 is not _MISS_SENTINEL
+                        else updown_path_vertices(network._graph, leaf1, leaf2)
+                    )
             else:
                 path_vertices = updown_path_vertices(network._graph, leaf1, leaf2)
             nodes_set.update(path_vertices)
