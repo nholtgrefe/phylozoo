@@ -7,6 +7,23 @@ Version History
 0.2
 ~~~
 
+0.2.5
+^^^^^
+
+Fixed
+"""""
+
+* :attr:`~phylozoo.core.network.sdnetwork.generator.SemiDirectedGenerator.hybrid_sides`:
+  a reticulation whose child slot was already occupied by an undirected (backbone)
+  edge was still reported as a hybrid *side*. Attaching the required leaf to it then
+  produced an invalid hybrid (total degree = in-degree + 2), raising a degree error
+  in :func:`~phylozoo.core.network.sdnetwork.generator.attachment.attach_leaves_to_generator`.
+  ``hybrid_sides`` now only includes hybrid nodes whose child slot is free (no
+  directed out-edge **and** no incident undirected edge); such occupied
+  reticulations remain hybrid *nodes* (the generator's level is unchanged) and
+  their descendants are reached through the incident undirected edge side. The
+  level-1 bidirected self-loop node is still a hybrid side.
+
 0.2.4
 ^^^^^
 

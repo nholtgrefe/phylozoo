@@ -445,18 +445,35 @@ class SemiDirectedGenerator(Generic[T]):
         """
         Get all hybrid sides of this generator.
 
-        Returns all hybrid nodes (in-degree >= 2 from directed edges) with out-degree 0
-        (from directed edges) as HybridSide objects.
+        A hybrid side is a hybrid node (in-degree >= 2 from directed edges) whose
+        child slot is still **free** — that is, it has no directed out-edge *and*
+        no incident undirected edge — so a single pendant leaf can be
+        attached to it.
+        
+        The level-1 generator's single bidirected self-loop node is always a
+        hybrid side.
 
         Returns
         -------
         list[HybridSide]
-            List of all hybrid nodes with out-degree 0 as HybridSide objects.
+            List of hybrid nodes with a free child slot as HybridSide objects.
+
+        Notes
+        -----
+        The number of hybrid sides may be smaller than the generator's level: a
+        reticulation whose exit is an undirected backbone edge is a hybrid *node*
+        but not a hybrid *side*.
         """
+        is_level_1 = self.level == 1
         hybrid_sides_list: list[HybridSide] = []
         for node in self.hybrid_nodes:
-            if self._graph.outdegree(node) == 0:
-                hybrid_sides_list.append(HybridSide(node=node))
+            if self._graph.outdegree(node) != 0:
+                continue
+            # Level >= 2: the child slot must be free (no undirected backbone edge).
+            # The level-1 self-loop node is always the hybrid side.
+            if not is_level_1 and self._graph.undirected_degree(node) != 0:
+                continue
+            hybrid_sides_list.append(HybridSide(node=node))
         return hybrid_sides_list
 
     @cached_property

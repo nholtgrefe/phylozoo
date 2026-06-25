@@ -11,9 +11,12 @@ from phylozoo.core.network.sdnetwork.generator import (
     all_level_k_generators,
     dgenerator_to_sdgenerator,
 )
+from phylozoo.core.network.sdnetwork.generator.attachment import attach_leaves_to_generator
+from phylozoo.core.network.sdnetwork.generator.side import UndirEdgeSide
 from phylozoo.core.network.dnetwork.generator.construction import (
     all_level_k_generators as all_level_k_dgenerators,
 )
+from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
 
 
 class TestAllLevelKGenerators:
@@ -80,3 +83,47 @@ class TestSemiDirectedGeneratorFromMixedGraph:
         assert gen_from_copy.level == sd_gen.level
         assert graph_copy.number_of_nodes() == gen_from_copy.graph.number_of_nodes()
         assert graph_copy.number_of_edges() == gen_from_copy.graph.number_of_edges()
+
+
+class TestHybridSidesOccupiedReticulation:
+    """
+    A hybrid node whose exit is already an undirected (backbone) edge is a hybrid
+    *node* but not a hybrid *side*: attaching a pendant leaf there would make it an
+    invalid hybrid (total degree = in-degree + 2). Regression test for that case.
+    """
+
+    @staticmethod
+    def _occupied_generator() -> SemiDirectedGenerator:
+        # Level-4 generator in which reticulation node 3 (in-edges 2->3, 5->3) also
+        # has an undirected backbone edge 3--6, so its child slot is occupied.
+        graph = MixedMultiGraph(
+            directed_edges=[(2, 3), (5, 3), (5, 4), (6, 1), (6, 4), (8, 1), (8, 7), (9, 7)],
+            undirected_edges=[(2, 5), (2, 9), (3, 6), (8, 9)],
+        )
+        return SemiDirectedGenerator(graph)
+
+    def test_occupied_reticulation_is_hybrid_node_but_not_hybrid_side(self) -> None:
+        gen = self._occupied_generator()
+        assert gen.level == 4
+        assert 3 in gen.hybrid_nodes  # still a reticulation
+        side_nodes = {s.node for s in gen.hybrid_sides}
+        assert 3 not in side_nodes  # but NOT an attachable side
+        # the three free reticulations remain hybrid sides
+        assert side_nodes == {1, 4, 7}
+
+    def test_attach_leaves_skips_occupied_reticulation(self) -> None:
+        """Attaching one leaf per (free) hybrid side + leaves on an edge side builds
+        a valid network, instead of raising a degree error on the occupied node."""
+        gen = self._occupied_generator()
+        side_taxa: dict = {s: [f"r{i}"] for i, s in enumerate(gen.hybrid_sides)}
+        undir_side = next(s for s in gen.sides if isinstance(s, UndirEdgeSide))
+        side_taxa[undir_side] = ["a", "b"]
+        net = attach_leaves_to_generator(gen, side_taxa)
+        # 3 free reticulation leaves + 2 edge leaves
+        assert {"r0", "r1", "r2", "a", "b"} == set(net.taxa)
+
+    def test_level_1_node_is_still_a_hybrid_side(self) -> None:
+        """The fix must not drop the level-1 bidirected self-loop hybrid side."""
+        gen = next(iter(all_level_k_generators(1)))
+        assert gen.level == 1
+        assert len(gen.hybrid_sides) == 1
