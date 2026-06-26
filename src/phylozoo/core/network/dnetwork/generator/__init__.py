@@ -11,6 +11,7 @@ directed phylogenetic networks.
 from .attachment import attach_leaves_to_generator
 from .base import DirectedGenerator, generators_from_network
 from .construction import all_level_k_generators
+from . import io  # noqa: F401  (registers dot / edgelist I/O handlers)
 from .side import DirEdgeSide, EdgeSide, HybridSide, IsolatedNodeSide, NodeSide, Side
 
 __all__ = [

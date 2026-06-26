@@ -33,6 +33,7 @@ from ...dnetwork.classifications import is_binary, has_parallel_edges
 from ...dnetwork.features import blobs
 from ...dnetwork._utils import _suppress_deg2_nodes
 from .....utils.validation import validation_aware
+from phylozoo.utils.io import IOMixin
 from .side import Side, HybridSide, DirEdgeSide, IsolatedNodeSide
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class DirectedGenerator(Generic[T]):
+class DirectedGenerator(IOMixin, Generic[T]):
     """
     A level-k generator for directed phylogenetic networks.
 
@@ -83,6 +84,10 @@ class DirectedGenerator(Generic[T]):
     _sides : list[Side] | None
         Cached list of sides (attachment points). Computed lazily.
     """
+
+    # I/O format configuration (inherited from the underlying DirectedMultiGraph).
+    _default_format = "dot"
+    _supported_formats = ["dot", "edgelist"]
 
     def __init__(self, graph: DirectedMultiGraph[T]) -> None:
         """

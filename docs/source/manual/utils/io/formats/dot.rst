@@ -16,14 +16,22 @@ Classes and extensions
 **DOT** (``.dot``, ``.gv``):
 
 - :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` (default),
+  :class:`~phylozoo.core.network.dnetwork.generator.base.DirectedGenerator` (default),
   :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` — directed only.
-- :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` — mixed
+- :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph`,
+  :class:`~phylozoo.core.network.sdnetwork.generator.base.SemiDirectedGenerator` — mixed
   graphs, with undirected edges encoded via ``dir=none`` (see below).
 
 **PhyloZoo-DOT** (``.pzdot``):
 
 - :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` (default),
+  :class:`~phylozoo.core.network.sdnetwork.generator.base.SemiDirectedGenerator` (default),
   :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
+
+Generators (:class:`~phylozoo.core.network.sdnetwork.generator.base.SemiDirectedGenerator`,
+:class:`~phylozoo.core.network.dnetwork.generator.base.DirectedGenerator`) inherit the
+formats of their underlying graph, so they can be saved and loaded directly — no need
+to route through ``generator.graph``.
 
 Parallel (multi-)edges are encoded in both flavours with an explicit
 ``key=<int>`` attribute.
@@ -98,6 +106,19 @@ Examples
 .. code-block:: python
 
    MixedMultiGraph.convert("graph.pzdot", "graph.dot")
+
+**Generators (saved/loaded directly):**
+
+.. code-block:: python
+
+   from phylozoo.core.network.sdnetwork.generator import (
+       SemiDirectedGenerator, all_level_k_generators,
+   )
+
+   gen = next(all_level_k_generators(3))
+   gen.save("gen.pzdot")                        # phylozoo-dot (default)
+   gen.save("gen.dot", format="dot")            # standard Graphviz
+   gen2 = SemiDirectedGenerator.load("gen.dot")  # -> SemiDirectedGenerator
 
 **Directed network (standard DOT):**
 

@@ -11,7 +11,8 @@ labels or attributes).
 Classes and extensions
 ----------------------
 
-**Classes:** :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`
+**Classes:** :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`,
+:class:`~phylozoo.core.network.dnetwork.generator.base.DirectedGenerator`
 
 **File extensions:** ``.edgelist``, ``.edges``
 

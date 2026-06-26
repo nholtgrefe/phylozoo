@@ -23,6 +23,15 @@ Added
   attribute formatting/parsing, node-id coercion and document parsing) is now
   shared between the directed- and mixed-multigraph handlers in a new
   :mod:`phylozoo.utils.io.format_utils.dot` module.
+* :class:`~phylozoo.core.network.sdnetwork.generator.SemiDirectedGenerator` and
+  :class:`~phylozoo.core.network.dnetwork.generator.DirectedGenerator` now inherit
+  :class:`~phylozoo.utils.io.IOMixin`, gaining ``save``/``load``/``to_string``/
+  ``from_string``/``convert``. They inherit the formats of their underlying graph
+  — ``phylozoo-dot`` (default) and ``dot`` for the semi-directed generator,
+  ``dot`` (default) and ``edgelist`` for the directed one — so a generator can be
+  serialised and reconstructed directly, without routing through
+  ``generator.graph``. Reading rebuilds (and validates) the generator from the
+  parsed graph.
 
 Fixed
 """""

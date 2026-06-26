@@ -30,6 +30,7 @@ from ....primitives.m_multigraph.features import (
 )
 from ....primitives.m_multigraph.transformations import orient_away_from_vertex
 from .....utils.validation import validation_aware
+from phylozoo.utils.io import IOMixin
 from ...dnetwork.generator.side import Side, HybridSide, DirEdgeSide, IsolatedNodeSide
 from ...dnetwork.generator.base import DirectedGenerator
 from .side import BidirectedEdgeSide, UndirEdgeSide
@@ -41,7 +42,7 @@ T = TypeVar("T")
 
 
 @validation_aware(allowed=["validate", "_validate_*"], default=["validate"])
-class SemiDirectedGenerator(Generic[T]):
+class SemiDirectedGenerator(IOMixin, Generic[T]):
     """
     A level-k generator for semi-directed phylogenetic networks.
 
@@ -61,16 +62,16 @@ class SemiDirectedGenerator(Generic[T]):
     Examples
     --------
     >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-    >>> # Create a generator with both directed and undirected edges
+    >>> # A level-2 generator with both directed and undirected edges
     >>> gen_graph = MixedMultiGraph(
-    ...     directed_edges=[(0, 1), (0, 1)],  # Parallel directed edges
-    ...     undirected_edges=[(1, 2)]  # Undirected edge
+    ...     directed_edges=[(3, 1), (3, 2), (4, 1), (4, 2)],
+    ...     undirected_edges=[(3, 4)],
     ... )
     >>> generator = SemiDirectedGenerator(gen_graph)
     >>> generator.level
-    1
-    >>> generator.hybrid_nodes
-    {1}
+    2
+    >>> sorted(generator.hybrid_nodes)
+    [1, 2]
 
     Attributes
     ----------
@@ -78,6 +79,10 @@ class SemiDirectedGenerator(Generic[T]):
         Internal graph structure using MixedMultiGraph.
         **Warning:** Do not modify directly.
     """
+
+    # I/O format configuration (inherited from the underlying MixedMultiGraph).
+    _default_format = "phylozoo-dot"
+    _supported_formats = ["phylozoo-dot", "dot"]
 
     def __init__(self, graph: MixedMultiGraph[T]) -> None:
         """
@@ -120,7 +125,7 @@ class SemiDirectedGenerator(Generic[T]):
         Examples
         --------
         >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-        >>> gen_graph = MixedMultiGraph(directed_edges=[(0, 1), (0, 1)])
+        >>> gen_graph = MixedMultiGraph(undirected_edges=[(1, 1)])  # level-1 self-loop
         >>> generator = SemiDirectedGenerator(gen_graph)
         >>> hybrid_nodes = generator.hybrid_nodes
         >>> 1 in hybrid_nodes
@@ -148,7 +153,7 @@ class SemiDirectedGenerator(Generic[T]):
         Examples
         --------
         >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
-        >>> gen_graph = MixedMultiGraph(directed_edges=[(0, 1), (0, 1)])
+        >>> gen_graph = MixedMultiGraph(undirected_edges=[(1, 1)])  # level-1 self-loop
         >>> generator = SemiDirectedGenerator(gen_graph)
         >>> generator.level
         1
