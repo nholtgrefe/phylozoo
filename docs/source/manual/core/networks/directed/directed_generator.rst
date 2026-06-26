@@ -182,6 +182,12 @@ deduplicates by isomorphism.
    level_1 = all_level_k_generators(1)    # 1 generator
    level_2 = all_level_k_generators(2)    # 4 generators
 
+The single step iterated by this function is also exposed as
+:func:`~phylozoo.core.network.dnetwork.generator.construction.gambette_step`, which
+applies the R1 and R2 rules (with isomorphism deletion) to a given collection of
+generators. This lets you advance your own complete set of level-(k-1) generators —
+for example one loaded from disk — by one level, without rebuilding from level 0.
+
 See Also
 --------
 

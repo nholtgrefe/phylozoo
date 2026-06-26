@@ -32,6 +32,16 @@ Added
   serialised and reconstructed directly, without routing through
   ``generator.graph``. Reading rebuilds (and validates) the generator from the
   parsed graph.
+* Generator construction is now exposed as reusable single steps:
+  :func:`~phylozoo.core.network.dnetwork.generator.construction.gambette_step`
+  (apply the Gambette R1/R2 rules + isomorphism deletion to a collection of
+  directed generators) and
+  :func:`~phylozoo.core.network.sdnetwork.generator.construction.semidirect_generators`
+  (semi-direct a collection of directed generators + isomorphism deletion). The
+  ``all_level_k_generators`` functions are now thin loops over these, and a
+  caller can advance / semi-direct their own (e.g. saved) generator set without
+  rebuilding from level 0. Both accept mixed-level inputs (``gambette_step`` also
+  accepts level-0 generators) and assume their inputs are valid.
 
 Fixed
 """""

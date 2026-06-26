@@ -9,7 +9,11 @@ phylogenetic networks.
 
 from .attachment import attach_leaves_to_generator
 from .base import SemiDirectedGenerator
-from .construction import all_level_k_generators, dgenerator_to_sdgenerator
+from .construction import (
+    all_level_k_generators,
+    dgenerator_to_sdgenerator,
+    semidirect_generators,
+)
 from . import io  # noqa: F401  (registers phylozoo-dot / dot I/O handlers)
 from .side import (
     BidirectedEdgeSide,
@@ -23,6 +27,7 @@ __all__ = [
     "BidirectedEdgeSide",
     "IsolatedNodeSide",
     "dgenerator_to_sdgenerator",
+    "semidirect_generators",
     "all_level_k_generators",
     "attach_leaves_to_generator",
 ]

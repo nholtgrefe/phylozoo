@@ -7,7 +7,7 @@ from directed generators.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Iterable
 
 from ....primitives.m_multigraph import MixedMultiGraph
 from ....primitives.m_multigraph.isomorphism import is_isomorphic, _get_graph_invariant
@@ -103,6 +103,63 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     return SemiDirectedGenerator(mixed_graph)
 
 
+def semidirect_generators(
+    d_generators: Iterable[DirectedGenerator],
+) -> set[SemiDirectedGenerator]:
+    """
+    Semi-direct a collection of directed generators (with isomorphism deletion).
+
+    Each :class:`~phylozoo.core.network.dnetwork.generator.base.DirectedGenerator`
+    is converted with :func:`dgenerator_to_sdgenerator`, and the results are
+    returned with isomorphic duplicates removed. This is the single building block
+    used by :func:`all_level_k_generators`; exposing it lets a complete set of
+    level-k directed generators (e.g. loaded from disk) be semi-directed directly,
+    without rebuilding them from level 0.
+
+    Inputs are assumed to be valid directed generators; they need not share a level.
+
+    Parameters
+    ----------
+    d_generators : Iterable[DirectedGenerator]
+        Directed generators to semi-direct.
+
+    Returns
+    -------
+    set[SemiDirectedGenerator]
+        The semi-directed generators, up to isomorphism.
+
+    Warnings
+    --------
+    The result is only as complete as the input. To obtain the *complete* set of
+    all level-k semi-directed generators, use :func:`all_level_k_generators`, or
+    pass the complete set of level-k directed generators here.
+    """
+    result: list[SemiDirectedGenerator] = []
+    invariant_groups: dict[
+        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]],
+        list[SemiDirectedGenerator],
+    ] = {}
+
+    for d_gen in d_generators:
+        sd_gen = dgenerator_to_sdgenerator(d_gen)
+        invariant = _get_graph_invariant(sd_gen.graph)
+        candidate_group = invariant_groups.get(invariant)
+        is_duplicate = False
+        if candidate_group is not None:
+            for existing_gen in candidate_group:
+                if is_isomorphic(sd_gen.graph, existing_gen.graph):
+                    is_duplicate = True
+                    break
+        if not is_duplicate:
+            result.append(sd_gen)
+            if candidate_group is None:
+                invariant_groups[invariant] = [sd_gen]
+            else:
+                candidate_group.append(sd_gen)
+
+    return set(result)
+
+
 def all_level_k_generators(k: int) -> set[SemiDirectedGenerator]:
     """
     Generate all (strict) level-k semi-directed generators.
@@ -148,41 +205,6 @@ def all_level_k_generators(k: int) -> set[SemiDirectedGenerator]:
     if k < 0:
         raise PhyloZooValueError("Level must be non-negative")
 
-    # Get all level-k directed generators
-    d_generators = all_level_k_dgenerators(k)
-
-    # Semi-direct all of them
-    result: list[SemiDirectedGenerator] = []
-    # Dictionary mapping invariant -> list of generators with that invariant
-    invariant_groups: dict[
-        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]],
-        list[SemiDirectedGenerator],
-    ] = {}
-
-    for d_gen in d_generators:
-        sd_gen = dgenerator_to_sdgenerator(d_gen)
-
-        # Compute invariants for fast filtering
-        invariant = _get_graph_invariant(sd_gen.graph)
-
-        # Only check isomorphism against generators with matching invariants
-        candidate_group = invariant_groups.get(invariant)
-        is_duplicate = False
-
-        if candidate_group is not None:
-            # Only check against candidates with matching invariants
-            for existing_gen in candidate_group:
-                if is_isomorphic(sd_gen.graph, existing_gen.graph):
-                    is_duplicate = True
-                    break
-
-        # Only add if not isomorphic to any existing generator
-        if not is_duplicate:
-            result.append(sd_gen)
-            # Add to invariant group for future comparisons
-            if candidate_group is None:
-                invariant_groups[invariant] = [sd_gen]
-            else:
-                candidate_group.append(sd_gen)
-
-    return set(result)
+    # All level-k semi-directed generators are the semi-directions of all level-k
+    # directed generators, deduplicated up to isomorphism.
+    return semidirect_generators(all_level_k_dgenerators(k))

@@ -203,6 +203,12 @@ then deduplicates by isomorphism.
    level_1 = all_level_k_generators(1)   # 1 generator
    level_2 = all_level_k_generators(2)   # 2 generators
 
+The single step used by this function is also exposed as
+:func:`~phylozoo.core.network.sdnetwork.generator.construction.semidirect_generators`,
+which semi-directs (with isomorphism deletion) a given collection of directed
+generators. This lets you semi-direct your own set of level-k directed generators —
+for example one loaded from disk — directly, without rebuilding them from level 0.
+
 See Also
 --------
 

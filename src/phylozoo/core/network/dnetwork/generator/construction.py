@@ -7,7 +7,7 @@ to construct all level-k directed generators from level-(k-1) generators.
 
 from __future__ import annotations
 
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator
 
 import networkx as nx
 
@@ -367,6 +367,61 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
             yield new_gen
 
 
+def gambette_step(generators: Iterable[DirectedGenerator]) -> set[DirectedGenerator]:
+    """
+    Apply one Gambette step to a collection of directed generators.
+
+    Each generator is transformed by the R1 and R2 rules of :cite:`Gambette2009`
+    and the results are returned with isomorphic duplicates removed. This is the
+    single building block iterated by :func:`all_level_k_generators`; exposing it
+    lets a complete set of level-(k-1) generators (e.g. loaded from disk) be
+    advanced one level without rebuilding from level 0.
+
+    Inputs are assumed to be valid generators. They need **not** share a level —
+    each is advanced independently — and level-0 generators are accepted (the R1
+    rule bootstraps a single node into a level-1 generator).
+
+    Parameters
+    ----------
+    generators : Iterable[DirectedGenerator]
+        Generators to advance.
+
+    Returns
+    -------
+    set[DirectedGenerator]
+        The level-up generators, up to isomorphism.
+
+    Warnings
+    --------
+    The result is only as complete as the input: this applies one step to exactly
+    the generators given. For the complete set of all level-k generators, use
+    :func:`all_level_k_generators`, or pass the complete level-(k-1) set here.
+    """
+    result: list[DirectedGenerator] = []
+    invariant_groups: dict[
+        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]], list[DirectedGenerator]
+    ] = {}
+
+    for prev_gen in generators:
+        for new_gen in _apply_rules(prev_gen):
+            invariant = _get_graph_invariant(new_gen.graph)
+            candidate_group = invariant_groups.get(invariant)
+            is_duplicate = False
+            if candidate_group is not None:
+                for existing_gen in candidate_group:
+                    if is_isomorphic(new_gen.graph, existing_gen.graph):
+                        is_duplicate = True
+                        break
+            if not is_duplicate:
+                result.append(new_gen)
+                if candidate_group is None:
+                    invariant_groups[invariant] = [new_gen]
+                else:
+                    candidate_group.append(new_gen)
+
+    return set(result)
+
+
 def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     """
     Generate all (strict) level-k generators.
@@ -409,47 +464,13 @@ def all_level_k_generators(k: int) -> set[DirectedGenerator]:
     if k < 0:
         raise PhyloZooValueError("Level must be non-negative")
 
-    if k == 0:
-        # Level-0 generators are single nodes
-        # Return set with one generator (single node)
-        gen_graph: Any = DirectedMultiGraph()
-        gen_graph.add_node(0)  # Use 0 as the node ID
-        return {DirectedGenerator(gen_graph)}
+    # Level-0 generators are single nodes.
+    gen_graph: Any = DirectedMultiGraph()
+    gen_graph.add_node(0)  # Use 0 as the node ID
+    generators: set[DirectedGenerator] = {DirectedGenerator(gen_graph)}
 
-    # Get all level-(k-1) generators (k>=1: apply R1/R2 to previous level)
-    prev_level_generators = all_level_k_generators(k - 1)
+    # Each Gambette step raises the level by one (R1/R2 + isomorphism deletion).
+    for _ in range(k):
+        generators = gambette_step(generators)
 
-    # Apply R1 and R2 to each, filtering out isomorphic generators
-    # Use invariants to group candidates and reduce isomorphism checks
-    result: list[DirectedGenerator] = []
-    # Dictionary mapping invariant -> list of generators with that invariant
-    invariant_groups: dict[
-        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]], list[DirectedGenerator]
-    ] = {}
-
-    for prev_gen in prev_level_generators:
-        for new_gen in _apply_rules(prev_gen):
-            # Compute invariants for fast filtering
-            invariant = _get_graph_invariant(new_gen.graph)
-
-            # Only check isomorphism against generators with matching invariants
-            candidate_group = invariant_groups.get(invariant)
-            is_duplicate = False
-
-            if candidate_group is not None:
-                # Only check against candidates with matching invariants
-                for existing_gen in candidate_group:
-                    if is_isomorphic(new_gen.graph, existing_gen.graph):
-                        is_duplicate = True
-                        break
-
-            # Only add if not isomorphic to any existing generator
-            if not is_duplicate:
-                result.append(new_gen)
-                # Add to invariant group for future comparisons
-                if candidate_group is None:
-                    invariant_groups[invariant] = [new_gen]
-                else:
-                    candidate_group.append(new_gen)
-
-    return set(result)
+    return generators
