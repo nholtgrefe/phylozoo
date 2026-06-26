@@ -7,6 +7,25 @@ Version History
 0.2
 ~~~
 
+0.2.6
+^^^^^
+
+Fixed
+"""""
+
+* ``phylozoo-dot`` round-trip for
+  :class:`~phylozoo.core.primitives.m_multigraph.MixedMultiGraph`: the writer
+  injected a ``label=<node id>`` attribute on every label-less node, and the reader
+  parsed that unquoted value back as an ``int``. A round-tripped graph therefore
+  carried a spurious **non-string** ``label`` on every node, which broke downstream
+  label validation — e.g.
+  :func:`~phylozoo.core.network.sdnetwork.generator.attachment.attach_leaves_to_generator`
+  raised ``PhyloZooTypeError: ... non-string label``. The writer no longer emits the
+  redundant label, and the reader keeps any ``label`` value as a string. Generator
+  graphs (and any ``MixedMultiGraph``) now round-trip losslessly, including parallel
+  directed and undirected edges, and a loaded generator is directly usable to build
+  networks — without first rebuilding a clean graph from its edge lists.
+
 0.2.5
 ^^^^^
 

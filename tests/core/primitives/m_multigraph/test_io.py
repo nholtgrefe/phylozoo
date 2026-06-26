@@ -387,3 +387,55 @@ class TestMixedMultiGraphPhyloZooDOTIO:
             # Load with explicit format
             G2 = MixedMultiGraph.load(file_path, format="phylozoo-dot")
             assert G2.number_of_edges() == 1
+
+
+class TestPhyloZooDOTRoundTrip:
+    """Round-trip fidelity for phylozoo-dot (no spurious node labels)."""
+
+    @staticmethod
+    def _dsig(g: MixedMultiGraph) -> list:
+        return sorted(g.directed_edges_iter(keys=True))
+
+    @staticmethod
+    def _usig(g: MixedMultiGraph) -> list:
+        return sorted((tuple(sorted((a, b))), k) for a, b, k in g.undirected_edges_iter(keys=True))
+
+    def test_labelless_nodes_have_no_spurious_attribute(self) -> None:
+        """Nodes without a label must not gain a (non-string) ``label`` on round-trip.
+
+        The writer used to inject ``label=<node id>``; the reader parsed it back as
+        an int, leaving every node with a non-string label that broke downstream
+        label validation (e.g. ``attach_leaves_to_generator``).
+        """
+        G = MixedMultiGraph(directed_edges=[(1, 2), (3, 1)], undirected_edges=[(2, 3)])
+        G2 = MixedMultiGraph.from_string(G.to_string("phylozoo-dot"), "phylozoo-dot")
+
+        assert "label=" not in G.to_string("phylozoo-dot")
+        assert all(data == {} for _, data in G2.nodes(data=True))
+
+    def test_roundtrip_preserves_edges_including_parallel(self) -> None:
+        """Directed and undirected edges, with parallel multiplicities, round-trip."""
+        G = MixedMultiGraph(
+            directed_edges=[(1, 2), (1, 2)],            # parallel directed
+            undirected_edges=[(3, 4), (3, 4), (2, 3)],  # parallel undirected
+        )
+        G2 = MixedMultiGraph.from_string(G.to_string("phylozoo-dot"), "phylozoo-dot")
+
+        assert self._dsig(G) == self._dsig(G2)
+        assert self._usig(G) == self._usig(G2)
+        assert {type(n).__name__ for n in G2.nodes()} == {"int"}
+
+    def test_real_string_label_is_preserved(self) -> None:
+        """A genuine string label survives the round-trip unchanged."""
+        G = MixedMultiGraph(directed_edges=[(1, 2)])
+        G.add_node(1, label="taxonA")
+        G2 = MixedMultiGraph.from_string(G.to_string("phylozoo-dot"), "phylozoo-dot")
+        assert dict(G2.nodes(data=True))[1].get("label") == "taxonA"
+
+    def test_numeric_label_is_read_as_string(self) -> None:
+        """An (already-saved) ``label=<int>`` is read back as a string, not an int."""
+        pzdot = "graph {\n  1 [label=1];\n  2 [label=2];\n  1 -> 2;\n}"
+        G = MixedMultiGraph.from_string(pzdot, "phylozoo-dot")
+        labels = {data["label"] for _, data in G.nodes(data=True) if "label" in data}
+        assert labels == {"1", "2"}
+        assert all(isinstance(lbl, str) for lbl in labels)

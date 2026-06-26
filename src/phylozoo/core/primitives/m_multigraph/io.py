@@ -182,10 +182,6 @@ def to_phylozoo_dot(graph: MixedMultiGraph, **kwargs: Any) -> str:
             if node_data:
                 node_attrs.update(node_data)
 
-        # Use node_id as label if no label attribute
-        if "label" not in node_attrs:
-            node_attrs["label"] = str(node)
-
         node_id_str = _escape_dot_string(str(node))
         attrs_str = _format_dot_attributes(node_attrs)
 
@@ -509,8 +505,12 @@ def _parse_dot_attributes(attrs_str: str) -> dict[str, Any]:
         key = key.strip()
         value = value.strip().strip("\"'")
 
-        # Try to convert to appropriate type
-        if value.lower() == "true":
+        # A ``label`` is a display string and must stay one: numeric-converting it
+        # (e.g. ``label=1`` -> ``int`` 1) would leave nodes with non-string labels,
+        # which downstream label validation rejects. Keep it verbatim.
+        if key == "label":
+            attrs[key] = value
+        elif value.lower() == "true":
             attrs[key] = True
         elif value.lower() == "false":
             attrs[key] = False
