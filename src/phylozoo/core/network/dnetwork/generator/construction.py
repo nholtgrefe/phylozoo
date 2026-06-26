@@ -12,7 +12,11 @@ from typing import Any, Iterable, Iterator
 import networkx as nx
 
 from ....primitives.d_multigraph import DirectedMultiGraph
-from ....primitives.d_multigraph.isomorphism import is_isomorphic, _get_graph_invariant
+from ....primitives.d_multigraph.isomorphism import (
+    is_isomorphic,
+    _get_graph_invariant,
+    _get_graph_wl_hash,
+)
 from .....utils.validation import no_validation
 from .base import DirectedGenerator
 from .side import Side, DirEdgeSide, HybridSide, NodeSide
@@ -398,26 +402,21 @@ def gambette_step(generators: Iterable[DirectedGenerator]) -> set[DirectedGenera
     :func:`all_level_k_generators`, or pass the complete level-(k-1) set here.
     """
     result: list[DirectedGenerator] = []
-    invariant_groups: dict[
-        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...]], list[DirectedGenerator]
-    ] = {}
+    groups: dict[Any, list[DirectedGenerator]] = {}
 
     for prev_gen in generators:
         for new_gen in _apply_rules(prev_gen):
-            invariant = _get_graph_invariant(new_gen.graph)
-            candidate_group = invariant_groups.get(invariant)
-            is_duplicate = False
-            if candidate_group is not None:
-                for existing_gen in candidate_group:
-                    if is_isomorphic(new_gen.graph, existing_gen.graph):
-                        is_duplicate = True
-                        break
+            # Strong dedup key: cheap invariant + Weisfeiler-Lehman hash. Both are
+            # isomorphism-invariant, so isomorphic candidates share a key, and the
+            # exact (VF2) check below runs only within a (now small) key group.
+            key = (_get_graph_invariant(new_gen.graph), _get_graph_wl_hash(new_gen.graph))
+            group = groups.get(key)
+            is_duplicate = group is not None and any(
+                is_isomorphic(new_gen.graph, existing.graph) for existing in group
+            )
             if not is_duplicate:
                 result.append(new_gen)
-                if candidate_group is None:
-                    invariant_groups[invariant] = [new_gen]
-                else:
-                    candidate_group.append(new_gen)
+                groups.setdefault(key, []).append(new_gen)
 
     return set(result)
 

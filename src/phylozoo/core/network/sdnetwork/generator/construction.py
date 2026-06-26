@@ -10,7 +10,11 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from ....primitives.m_multigraph import MixedMultiGraph
-from ....primitives.m_multigraph.isomorphism import is_isomorphic, _get_graph_invariant
+from ....primitives.m_multigraph.isomorphism import (
+    is_isomorphic,
+    _get_graph_invariant,
+    _get_graph_wl_hash,
+)
 from ....primitives.m_multigraph.transformations import suppress_degree2_node
 from ...dnetwork.generator.base import DirectedGenerator
 from ...dnetwork.generator.construction import all_level_k_generators as all_level_k_dgenerators
@@ -135,27 +139,20 @@ def semidirect_generators(
     pass the complete set of level-k directed generators here.
     """
     result: list[SemiDirectedGenerator] = []
-    invariant_groups: dict[
-        tuple[int, int, tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]],
-        list[SemiDirectedGenerator],
-    ] = {}
+    groups: dict[Any, list[SemiDirectedGenerator]] = {}
 
     for d_gen in d_generators:
         sd_gen = dgenerator_to_sdgenerator(d_gen)
-        invariant = _get_graph_invariant(sd_gen.graph)
-        candidate_group = invariant_groups.get(invariant)
-        is_duplicate = False
-        if candidate_group is not None:
-            for existing_gen in candidate_group:
-                if is_isomorphic(sd_gen.graph, existing_gen.graph):
-                    is_duplicate = True
-                    break
+        # Strong dedup key: cheap invariant + Weisfeiler-Lehman hash (both
+        # isomorphism-invariant); VF2 confirms exactness within a key group.
+        key = (_get_graph_invariant(sd_gen.graph), _get_graph_wl_hash(sd_gen.graph))
+        group = groups.get(key)
+        is_duplicate = group is not None and any(
+            is_isomorphic(sd_gen.graph, existing.graph) for existing in group
+        )
         if not is_duplicate:
             result.append(sd_gen)
-            if candidate_group is None:
-                invariant_groups[invariant] = [sd_gen]
-            else:
-                candidate_group.append(sd_gen)
+            groups.setdefault(key, []).append(sd_gen)
 
     return set(result)
 

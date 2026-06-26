@@ -43,6 +43,19 @@ Added
   rebuilding from level 0. Both accept mixed-level inputs (``gambette_step`` also
   accepts level-0 generators) and assume their inputs are valid.
 
+Changed
+"""""""
+
+* Generator enumeration now deduplicates with a Weisfeiler-Lehman graph hash added
+  to the cheap-invariant key (new helpers ``_get_graph_wl_hash`` on the directed
+  and mixed multigraph isomorphism modules; multiplicity- and direction-aware via a
+  simple-graph encoding). This splits isomorphism candidates into far finer groups,
+  so the exact VF2 check runs only within tiny groups — the level-4 directed
+  enumeration drops from ~276 s to ~6 s (~44x), and the full level-4 semi-directed
+  enumeration from ~285 s to ~9 s. Output is identical (1993 directed / 307
+  semi-directed level-4 generators); exactness is unchanged, since the hash is only
+  a grouping key and VF2 remains the final check.
+
 Fixed
 """""
 

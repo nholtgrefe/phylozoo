@@ -7,6 +7,7 @@ MixedMultiGraph instances.
 
 from __future__ import annotations
 
+import warnings
 from typing import Any, TypeVar
 
 import networkx as nx
@@ -253,3 +254,37 @@ def _get_graph_invariant(
         undirected_degrees,
         sorted_multiplicities,
     )
+
+
+def _get_graph_wl_hash(graph: MixedMultiGraph, iterations: int = 3) -> str:
+    """
+    Weisfeiler-Lehman hash of a mixed multi-graph, for fast isomorphism filtering.
+
+    A much stronger refinement of :func:`_get_graph_invariant`: isomorphic graphs
+    always share this hash (non-isomorphic graphs only rarely collide), so it groups
+    isomorphism candidates far more finely before the exact (VF2) check is run.
+
+    The graph is taken in the same directed representation that the isomorphism check
+    uses (:func:`_to_digraph_for_isomorphism` — undirected edges as bidirectional
+    pairs), then collapsed to a *simple* graph whose edges carry a per-pair
+    multiplicity label, since networkx's WL hash does not accept multigraphs and a
+    plain collapse would discard both multiplicity and the directed/undirected split.
+
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
+    >>> g1 = MixedMultiGraph(directed_edges=[(1, 2)], undirected_edges=[(2, 3)])
+    >>> g2 = MixedMultiGraph(directed_edges=[(4, 5)], undirected_edges=[(5, 6)])
+    >>> _get_graph_wl_hash(g1) == _get_graph_wl_hash(g2)
+    True
+    """
+    m = _to_digraph_for_isomorphism(graph)
+    simple: nx.DiGraph = nx.DiGraph()
+    simple.add_nodes_from(m.nodes())
+    for u, v in {(u, v) for u, v, _ in m.edges(keys=True)}:
+        simple.add_edge(u, v, mult=str(m.number_of_edges(u, v)))
+    with warnings.catch_warnings():
+        # networkx notes that directed-graph hashes changed in v3.5 (in/out edges
+        # tracked separately) — that fixed behaviour is exactly what we rely on.
+        warnings.filterwarnings("ignore", message="The hashes produced for directed graphs")
+        return nx.weisfeiler_lehman_graph_hash(simple, edge_attr="mult", iterations=iterations)

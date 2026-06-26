@@ -7,6 +7,7 @@ DirectedMultiGraph instances.
 
 from __future__ import annotations
 
+import warnings
 from typing import Any, TypeVar
 
 import networkx as nx
@@ -194,3 +195,35 @@ def _get_graph_invariant(
     sorted_multiplicities = tuple(sorted(edge_multiplicities))
 
     return (num_nodes, num_edges, in_degrees, out_degrees, sorted_multiplicities)
+
+
+def _get_graph_wl_hash(graph: DirectedMultiGraph, iterations: int = 3) -> str:
+    """
+    Weisfeiler-Lehman hash of a directed multi-graph, for fast isomorphism filtering.
+
+    A much stronger refinement of :func:`_get_graph_invariant`: isomorphic graphs
+    always share this hash (non-isomorphic graphs only rarely collide), so it groups
+    isomorphism candidates far more finely before the exact (VF2) check is run.
+
+    Parallel edges are encoded as a per-pair multiplicity label on a *simple* graph,
+    since networkx's WL hash does not accept multigraphs and a plain collapse would
+    silently discard multiplicity.
+
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
+    >>> g1 = DirectedMultiGraph(edges=[(1, 2), (1, 2), (2, 3)])
+    >>> g2 = DirectedMultiGraph(edges=[(4, 5), (4, 5), (5, 6)])  # isomorphic relabeling
+    >>> _get_graph_wl_hash(g1) == _get_graph_wl_hash(g2)
+    True
+    """
+    m = graph._graph
+    simple: nx.DiGraph = nx.DiGraph()
+    simple.add_nodes_from(m.nodes())
+    for u, v in {(u, v) for u, v, _ in m.edges(keys=True)}:
+        simple.add_edge(u, v, mult=str(m.number_of_edges(u, v)))
+    with warnings.catch_warnings():
+        # networkx notes that directed-graph hashes changed in v3.5 (in/out edges
+        # tracked separately) — that fixed behaviour is exactly what we rely on.
+        warnings.filterwarnings("ignore", message="The hashes produced for directed graphs")
+        return nx.weisfeiler_lehman_graph_hash(simple, edge_attr="mult", iterations=iterations)
