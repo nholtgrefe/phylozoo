@@ -449,7 +449,7 @@ class SemiDirectedGenerator(Generic[T]):
         child slot is still **free** — that is, it has no directed out-edge *and*
         no incident undirected edge — so a single pendant leaf can be
         attached to it.
-        
+
         The level-1 generator's single bidirected self-loop node is always a
         hybrid side.
 

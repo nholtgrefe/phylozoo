@@ -1,9 +1,11 @@
 DOT
 ===
 
-DOT is the Graphviz format for graph visualization. PhyloZoo supports **standard DOT**
-for directed graphs and **PhyloZoo-DOT** (``pzdot``) for semi-directed networks,
-where the distinction between directed and undirected edges is preserved.
+DOT is the Graphviz graph-description language. PhyloZoo uses it in two flavours:
+
+- **DOT** (``dot``): standard Graphviz, parseable by any DOT tool.
+- **PhyloZoo-DOT** (``phylozoo-dot``): a compact PhyloZoo dialect for
+  semi-directed/mixed structures.
 
 .. seealso::
    `DOT (graph description language) <https://en.wikipedia.org/wiki/DOT_(graph_description_language)>`_ — Wikipedia
@@ -11,28 +13,25 @@ where the distinction between directed and undirected edges is preserved.
 Classes and extensions
 ----------------------
 
-**DOT:** :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`,
-:class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` (default format).
-Extensions: ``.dot``, ``.gv``
+**DOT** (``.dot``, ``.gv``):
 
-**PhyloZoo-DOT:** :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`,
-:class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` (default format).
-Extensions: ``.pzdot``
+- :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph` (default),
+  :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` — directed only.
+- :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` — mixed
+  graphs, with undirected edges encoded via ``dir=none`` (see below).
 
-Structure
----------
+**PhyloZoo-DOT** (``.pzdot``):
 
-Both formats use a declarative syntax with node and edge declarations. Nodes can
-have attributes (e.g. labels); edges can have attributes (e.g. gamma, branch length).
-The main difference is that standard DOT uses ``digraph`` and ``->`` for directed
-edges only, while PhyloZoo-DOT uses ``graph`` with both ``->`` (directed) and ``--``
-(undirected) to represent semi-directed networks.
+- :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph` (default),
+  :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`.
 
-DOT (standard)
-^^^^^^^^^^^^^^
+Parallel (multi-)edges are encoded in both flavours with an explicit
+``key=<int>`` attribute.
 
-Standard DOT uses ``digraph`` for directed graphs. Node names in the output use
-labels where available for readability.
+Standard DOT
+------------
+
+Standard DOT uses ``digraph`` and ``->``. A purely directed graph writes directly:
 
 .. code-block:: text
 
@@ -40,28 +39,67 @@ labels where available for readability.
        root -> u1;
        root -> u2;
        u1 -> h [label="gamma=0.6"];
-       u2 -> h [label="gamma=0.4"];
-       h -> leaf1 [label="A"];
+   }
+
+A **mixed** graph is still written as a ``digraph``; its **undirected** edges
+carry ``dir=none`` — Graphviz's own marker for an edge drawn without arrowheads.
+The file is therefore valid DOT (it opens in any Graphviz tool) and round-trips
+losslessly, since ``dir=none`` is read back as an undirected edge:
+
+.. code-block:: text
+
+   digraph {
+       1 -> 2;                 // directed
+       1 -> 2 [key=1];         // parallel directed edge
+       2 -> 3 [dir=none];      // undirected
    }
 
 PhyloZoo-DOT
-^^^^^^^^^^^^
+------------
 
-PhyloZoo-DOT uses ``graph`` (not ``digraph``) and represents undirected edges with
-``--`` and directed edges with ``->``, so that both edge types can be represented
-in one file.
+PhyloZoo-DOT instead uses a ``graph`` block and distinguishes edge types
+syntactically — ``->`` for directed and ``--`` for undirected — which is compact
+and human-readable:
 
 .. code-block:: text
 
    graph {
-       node1 -- node2 [dir=none];
-       node2 -> node3;
+       1 -> 2;                 // directed
+       2 -- 3;                 // undirected
+       3 -- 4 [key=1];         // parallel undirected edge
    }
+
+.. note::
+
+   PhyloZoo-DOT mixes ``->`` and ``--`` in one ``graph`` block, which is **not**
+   valid Graphviz DOT (a ``graph`` may not contain ``->``). Use the standard
+   ``dot`` format if the file must be read by Graphviz or another DOT tool; use
+   ``phylozoo-dot`` for compact PhyloZoo-internal storage.
 
 Examples
 --------
 
-**DOT (directed network):**
+**Mixed multigraph, both flavours:**
+
+.. code-block:: python
+
+   from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
+
+   G = MixedMultiGraph(directed_edges=[(1, 2)], undirected_edges=[(2, 3)])
+
+   G.save("graph.pzdot")                       # phylozoo-dot (default)
+   G.save("graph.dot", format="dot")           # standard, Graphviz-readable
+
+   G2 = MixedMultiGraph.load("graph.dot")       # auto-detects 'dot' from .dot
+   G3 = MixedMultiGraph.load("graph.pzdot")     # auto-detects 'phylozoo-dot'
+
+**Convert between the two flavours:**
+
+.. code-block:: python
+
+   MixedMultiGraph.convert("graph.pzdot", "graph.dot")
+
+**Directed network (standard DOT):**
 
 .. code-block:: python
 
@@ -72,22 +110,6 @@ Examples
    )
    network.save("network.dot", format="dot")
    network2 = DirectedPhyNetwork.load("network.dot", format="dot")
-
-**PhyloZoo-DOT (semi-directed network):**
-
-.. code-block:: python
-
-   from phylozoo import SemiDirectedPhyNetwork
-   network = SemiDirectedPhyNetwork(
-       directed_edges=[(5, 4, {"gamma": 0.6})],
-       undirected_edges=[(4, 1), (4, 2)],
-       nodes=[
-           (1, {"label": "A"}),
-           (2, {"label": "B"})
-       ]
-   )
-   network.save("network.pzdot", format="phylozoo-dot")
-   network2 = SemiDirectedPhyNetwork.load("network.pzdot", format="phylozoo-dot")
 
 See also
 --------

@@ -10,6 +10,20 @@ Version History
 0.2.6
 ^^^^^
 
+Added
+"""""
+
+* Standard Graphviz ``dot`` format for
+  :class:`~phylozoo.core.primitives.m_multigraph.MixedMultiGraph`, alongside the
+  existing ``phylozoo-dot`` (which remains the default). Undirected edges are
+  written as ``u -> v [dir=none]`` inside a ``digraph``, so — unlike
+  ``phylozoo-dot``, which mixes ``->`` and ``--`` in one ``graph`` block and is not
+  valid DOT — the output opens in any Graphviz tool and round-trips losslessly,
+  including parallel directed and undirected edges. The DOT scaffolding (escaping,
+  attribute formatting/parsing, node-id coercion and document parsing) is now
+  shared between the directed- and mixed-multigraph handlers in a new
+  :mod:`phylozoo.utils.io.format_utils.dot` module.
+
 Fixed
 """""
 

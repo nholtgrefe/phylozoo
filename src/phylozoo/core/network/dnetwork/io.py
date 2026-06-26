@@ -14,13 +14,13 @@ from __future__ import annotations
 from typing import Any
 
 from phylozoo.utils.io import FormatRegistry
+from phylozoo.utils.io.format_utils.dot import (
+    escape_dot_string as _escape_dot_string,
+    format_dot_attributes as _format_dot_attributes,
+)
 from .base import DirectedPhyNetwork
 from ._enewick import to_enewick, from_enewick
-from ...primitives.d_multigraph.io import (
-    _escape_dot_string,
-    _format_dot_attributes,
-    from_dot as dmgraph_from_dot,
-)
+from ...primitives.d_multigraph.io import from_dot as dmgraph_from_dot
 
 # Register eNewick format handlers with FormatRegistry
 FormatRegistry.register(

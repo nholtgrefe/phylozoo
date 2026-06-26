@@ -20,3 +20,10 @@ Phylip
 .. automodule:: phylozoo.utils.io.format_utils.phylip
    :members:
    :show-inheritance:
+
+Dot
+---
+
+.. automodule:: phylozoo.utils.io.format_utils.dot
+   :members:
+   :show-inheritance:

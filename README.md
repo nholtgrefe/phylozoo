@@ -36,4 +36,4 @@ For detailed documentation, installation instructions, tutorials, and API refere
 
 If you use PhyloZoo in your research, please cite:
 
-> Niels Holtgrefe. PhyloZoo: a unified framework for phylogenetic network analysis in Python. *Forthcoming, source code available at https://github.com/nholtgrefe/phylozoo*, 2026.
+> Niels Holtgrefe. PhyloZoo: a unified framework for phylogenetic network analysis in Python. bioRxiv:[10.64898/2026.06.09.731120](https://doi.org/10.64898/2026.06.09.731120), 2026.

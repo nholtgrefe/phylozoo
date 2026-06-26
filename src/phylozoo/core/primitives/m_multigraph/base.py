@@ -112,7 +112,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
 
     # I/O format configuration
     _default_format = "phylozoo-dot"
-    _supported_formats = ["phylozoo-dot"]
+    _supported_formats = ["phylozoo-dot", "dot"]
 
     def __init__(
         self,

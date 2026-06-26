@@ -581,7 +581,7 @@ class TestDirectedPhyNetworkDOTIO:
 
         malformed = "not a valid digraph"
 
-        with pytest.raises(PhyloZooParseError, match="Could not find digraph"):
+        with pytest.raises(PhyloZooParseError, match="Could not find graph declaration"):
             DirectedPhyNetwork.from_string(malformed, format="dot")
 
     def test_empty_dot_string(self) -> None:

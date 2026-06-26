@@ -55,8 +55,8 @@ Citing PhyloZoo
 
 If you use *PhyloZoo* in your research, please cite the package as follows:
 
-    Niels Holtgrefe. PhyloZoo: a unified framework for phylogenetic network analysis in Python.
-    *Forthcoming; source code available at https://github.com/nholtgrefe/phylozoo*, 2026.
+   Niels Holtgrefe. PhyloZoo: a unified framework for phylogenetic network analysis in Python. 
+   bioRxiv:10.64898/2026.06.09.731120, 2026.
     
 If applicable, please also make sure to track down any relevant references for the algorithms you are using.
 

@@ -204,7 +204,8 @@ def subnetwork(
                 else:
                     _MISS2 = _updown_cache.get((leaf2, leaf1), _MISS_SENTINEL)
                     path_vertices = (
-                        _MISS2 if _MISS2 is not _MISS_SENTINEL
+                        _MISS2
+                        if _MISS2 is not _MISS_SENTINEL
                         else updown_path_vertices(network._graph, leaf1, leaf2)
                     )
             else:

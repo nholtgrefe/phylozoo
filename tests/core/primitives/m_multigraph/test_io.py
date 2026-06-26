@@ -416,7 +416,7 @@ class TestPhyloZooDOTRoundTrip:
     def test_roundtrip_preserves_edges_including_parallel(self) -> None:
         """Directed and undirected edges, with parallel multiplicities, round-trip."""
         G = MixedMultiGraph(
-            directed_edges=[(1, 2), (1, 2)],            # parallel directed
+            directed_edges=[(1, 2), (1, 2)],  # parallel directed
             undirected_edges=[(3, 4), (3, 4), (2, 3)],  # parallel undirected
         )
         G2 = MixedMultiGraph.from_string(G.to_string("phylozoo-dot"), "phylozoo-dot")
@@ -439,3 +439,58 @@ class TestPhyloZooDOTRoundTrip:
         labels = {data["label"] for _, data in G.nodes(data=True) if "label" in data}
         assert labels == {"1", "2"}
         assert all(isinstance(lbl, str) for lbl in labels)
+
+
+class TestMixedMultiGraphStandardDOTIO:
+    """The standard ``dot`` format for MixedMultiGraph (digraph + dir=none)."""
+
+    @staticmethod
+    def _dsig(g: MixedMultiGraph) -> list:
+        return sorted(g.directed_edges_iter(keys=True))
+
+    @staticmethod
+    def _usig(g: MixedMultiGraph) -> list:
+        return sorted((tuple(sorted((a, b))), k) for a, b, k in g.undirected_edges_iter(keys=True))
+
+    def test_dot_is_a_supported_format(self) -> None:
+        assert "dot" in MixedMultiGraph._supported_formats
+        assert MixedMultiGraph._default_format == "phylozoo-dot"
+
+    def test_to_dot_uses_digraph_with_dir_none(self) -> None:
+        """Undirected edges become ``-> [dir=none]`` inside a ``digraph``."""
+        G = MixedMultiGraph(directed_edges=[(1, 2)], undirected_edges=[(2, 3)])
+        dot_str = G.to_string("dot")
+        assert dot_str.lstrip().startswith("digraph")
+        assert "1 -> 2" in dot_str
+        assert "2 -> 3 [dir=none]" in dot_str
+        assert "--" not in dot_str  # undirected is encoded via dir=none, not '--'
+
+    def test_round_trip_directed_and_undirected_with_parallel(self) -> None:
+        G = MixedMultiGraph(
+            directed_edges=[(1, 2), (1, 2)],  # parallel directed
+            undirected_edges=[(3, 4), (3, 4), (2, 3)],  # parallel undirected
+        )
+        G2 = MixedMultiGraph.from_string(G.to_string("dot"), "dot")
+        assert self._dsig(G) == self._dsig(G2)
+        assert self._usig(G) == self._usig(G2)
+
+    def test_no_spurious_node_labels(self) -> None:
+        G = MixedMultiGraph(directed_edges=[(1, 2)], undirected_edges=[(2, 3)])
+        G2 = MixedMultiGraph.from_string(G.to_string("dot"), "dot")
+        assert all(data == {} for _, data in G2.nodes(data=True))
+
+    def test_pzdot_and_dot_describe_the_same_graph(self) -> None:
+        """Loading a graph via ``phylozoo-dot`` and via ``dot`` yields the same edges."""
+        G = MixedMultiGraph(directed_edges=[(1, 2), (4, 5)], undirected_edges=[(2, 3), (3, 1)])
+        via_pz = MixedMultiGraph.from_string(G.to_string("phylozoo-dot"), "phylozoo-dot")
+        via_dot = MixedMultiGraph.from_string(G.to_string("dot"), "dot")
+        assert self._dsig(via_pz) == self._dsig(via_dot)
+        assert self._usig(via_pz) == self._usig(via_dot)
+
+    def test_dot_output_is_valid_graphviz(self) -> None:
+        """The ``dot`` output parses with Graphviz (unlike ``phylozoo-dot``)."""
+        pgv = pytest.importorskip("pygraphviz")
+        G = MixedMultiGraph(directed_edges=[(1, 2), (1, 2)], undirected_edges=[(2, 3)])
+        pgv.AGraph(string=G.to_string("dot"))  # must not raise
+        with pytest.raises(Exception):
+            pgv.AGraph(string=G.to_string("phylozoo-dot"))  # mixed -> / -- is not valid DOT
