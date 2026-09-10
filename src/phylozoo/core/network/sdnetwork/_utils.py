@@ -125,10 +125,14 @@ def _suppress_deg2_nodes(
         if not degree2_nodes:
             break
 
+        # Track which nodes are still present. Only suppression removes nodes, so this
+        # set stays in sync, and it keeps the membership test O(1).
+        present_nodes = set(graph.nodes())
+
         # Process each degree-2 node
         for node in degree2_nodes:
             # Defensive check: node may have been removed by previous suppression
-            if node not in graph.nodes():
+            if node not in present_nodes:
                 continue
 
             # Verify degree is still 2
@@ -161,6 +165,7 @@ def _suppress_deg2_nodes(
 
             # Suppress degree-2 node
             mm_suppress_degree2_node(graph, node, merged_attrs=merged_attrs)
+            present_nodes.discard(node)
 
 
 def _merge_attrs_for_parallel_identification_mixed(

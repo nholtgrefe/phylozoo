@@ -802,6 +802,37 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         nodes_set = set(self._undirected.nodes()) | set(self._directed.nodes())
         return self.NodeView(nodes_set, self.nodes_iter)
 
+    def has_node(self, node: T) -> bool:
+        """
+        Check whether a node is in the graph.
+
+        Prefer this over ``node in graph.nodes()``: :meth:`nodes` materialises a
+        fresh set of every node on each call, so membership tested that way costs
+        O(number of nodes), which makes any loop over nodes quadratic.
+
+        Parameters
+        ----------
+        node : T
+            Node identifier to look for.
+
+        Returns
+        -------
+        bool
+            True if the node is in the graph, False otherwise.
+
+        Examples
+        --------
+        >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+        >>> G = MixedMultiGraph()
+        >>> G.add_undirected_edge(1, 2)
+        0
+        >>> G.has_node(1)
+        True
+        >>> G.has_node(3)
+        False
+        """
+        return node in self._undirected or node in self._directed
+
     @property
     def edges(self) -> "EdgeView":
         """

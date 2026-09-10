@@ -95,7 +95,7 @@ def identify_vertices(
 
     # Check that all vertices exist
     for v in vertices_list:
-        if v not in graph.nodes():
+        if not graph.has_node(v):
             raise PhyloZooValueError(f"Vertex {v} not found in graph")
 
     # Before merging, check if identification would create conflicting edge types
@@ -330,7 +330,7 @@ def orient_away_from_vertex(graph: "MixedMultiGraph", root: T) -> "DirectedMulti
     >>> list(dm.edges())
     [(1, 2), (2, 3)]
     """
-    if root not in graph.nodes():
+    if not graph.has_node(root):
         raise PhyloZooValueError(f"Root vertex {root} not found in graph")
 
     # Create a new DirectedMultiGraph
@@ -537,7 +537,7 @@ def suppress_degree2_node(
     [(1, 3)]
     """
     # Check that node exists
-    if node not in graph.nodes():
+    if not graph.has_node(node):
         raise PhyloZooValueError(f"Node {node} not found in graph")
 
     # Verify node is degree-2 using the public API
@@ -700,9 +700,9 @@ def identify_parallel_edge(
     True
     """
     # Check that nodes exist
-    if u not in graph.nodes():
+    if not graph.has_node(u):
         raise PhyloZooValueError(f"Node {u} not found in graph")
-    if v not in graph.nodes():
+    if not graph.has_node(v):
         raise PhyloZooValueError(f"Node {v} not found in graph")
 
     # Check if there are any edges between u and v
@@ -851,9 +851,12 @@ def subgraph(graph: "MixedMultiGraph", nodes: Iterable[T]) -> "MixedMultiGraph":
     if not nodes_set:
         return MixedMultiGraph()
 
-    # Validate nodes exist in source graph
+    # Validate nodes exist in source graph. graph.nodes() rebuilds a set on every
+    # call, so materialise it once: testing membership against the view directly
+    # would make this loop quadratic in the number of nodes.
+    existing_nodes = set(graph.nodes())
     for n in nodes_set:
-        if n not in graph.nodes():
+        if n not in existing_nodes:
             raise PhyloZooValueError(f"Node {n} not found in graph")
 
     new_graph: Any = MixedMultiGraph()

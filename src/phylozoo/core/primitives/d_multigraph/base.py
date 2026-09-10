@@ -669,6 +669,37 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         nodes_set = set(self._graph.nodes())
         return self.NodeView(nodes_set, self.nodes_iter)
 
+    def has_node(self, node: T) -> bool:
+        """
+        Check whether a node is in the graph.
+
+        Prefer this over ``node in graph.nodes()``: :meth:`nodes` materialises a
+        fresh set of every node on each call, so membership tested that way costs
+        O(number of nodes), which makes any loop over nodes quadratic.
+
+        Parameters
+        ----------
+        node : T
+            Node identifier to look for.
+
+        Returns
+        -------
+        bool
+            True if the node is in the graph, False otherwise.
+
+        Examples
+        --------
+        >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+        >>> G = DirectedMultiGraph()
+        >>> G.add_edge(1, 2)
+        0
+        >>> G.has_node(1)
+        True
+        >>> G.has_node(3)
+        False
+        """
+        return node in self._graph
+
     @property
     def edges(self) -> "EdgeView":
         """

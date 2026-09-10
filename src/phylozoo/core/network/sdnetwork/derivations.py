@@ -32,13 +32,70 @@ from ...primitives.m_multigraph.transformations import (
     subgraph as mm_subgraph,
     orient_away_from_vertex,
 )
-from ...primitives.m_multigraph.features import updown_path_vertices
 from ...primitives.m_multigraph import MixedMultiGraph
 from ....core.distance import DistanceMatrix
 from ....utils.exceptions import PhyloZooValueError, PhyloZooError
 from ....utils.validation import no_validation
 
-_MISS_SENTINEL: object = object()
+
+class _RootingContext:
+    """
+    A rooted view of a semi-directed network, reused across ``subnetwork`` calls.
+
+    The vertices lying on up-down paths between a set of leaves are exactly the
+    vertices lying on paths from those leaves' lowest stable ancestor down to them,
+    in any valid rooting. Deriving them that way costs one traversal per leaf,
+    whereas enumerating the up-down paths themselves is exponential in the number
+    of reticulations.
+
+    The rooting, its dominator tree and the per-leaf ancestor sets are computed
+    once and cached, so callers that take many subnetworks of the same network
+    (e.g. :func:`k_taxon_subnetworks`) pay for them only once.
+    """
+
+    __slots__ = ("rooted", "dag", "idom", "depth", "_ancestors")
+
+    def __init__(self, network: SemiDirectedPhyNetwork) -> None:
+        with no_validation():
+            self.rooted = to_d_network(network)
+        self.dag = self.rooted._graph._graph
+        root = self.rooted.root_node
+        self.idom: dict[Any, Any] = nx.immediate_dominators(self.dag, root)
+        self.depth: dict[Any, int] = {root: 0}
+        for node in nx.topological_sort(self.dag):
+            if node != root:
+                self.depth[node] = self.depth[self.idom[node]] + 1
+        self._ancestors: dict[Any, set[Any]] = {}
+
+    def _ancestors_of(self, node: Any) -> set[Any]:
+        cached = self._ancestors.get(node)
+        if cached is None:
+            cached = nx.ancestors(self.dag, node) | {node}
+            self._ancestors[node] = cached
+        return cached
+
+    def _lsa(self, nodes: list[Any]) -> Any:
+        """Lowest stable ancestor of ``nodes``: their LCA in the dominator tree."""
+        current = nodes[0]
+        for other in nodes[1:]:
+            first, second = current, other
+            while self.depth[first] > self.depth[second]:
+                first = self.idom[first]
+            while self.depth[second] > self.depth[first]:
+                second = self.idom[second]
+            while first != second:
+                first, second = self.idom[first], self.idom[second]
+            current = first
+        return current
+
+    def node_set(self, leaf_nodes: list[Any]) -> set[Any]:
+        """Vertices on up-down paths between ``leaf_nodes``."""
+        closure: set[Any] = set()
+        for leaf in leaf_nodes:
+            closure |= self._ancestors_of(leaf)
+        lsa = self._lsa(leaf_nodes)
+        at_or_below_lsa = nx.descendants(self.dag, lsa) | {lsa}
+        return closure & at_or_below_lsa
 
 
 def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
@@ -117,7 +174,7 @@ def subnetwork(
     taxa: list[str],
     suppress_2_blobs: bool = False,
     identify_parallel_edges: bool = False,
-    _updown_cache: dict[tuple, set] | None = None,
+    _rooting: "_RootingContext | None" = None,
 ) -> SemiDirectedPhyNetwork:
     """
     Extract the subnetwork induced by a subset of taxa (leaf labels).
@@ -188,31 +245,9 @@ def subnetwork(
             raise PhyloZooValueError(f"Taxon label '{t}' not found in network")
         leaf_nodes.append(node_id)
 
-    # Collect all vertices on up-down paths between any pair of leaves
-    # Note: updown_path_vertices handles the single-leaf case (returns {x} when x == y)
-    nodes_set: set[Any] = set()
-    if len(leaf_nodes) == 1:
-        # Single leaf case: updown_path_vertices(leaf, leaf) returns {leaf}
-        nodes_set = updown_path_vertices(network._graph, leaf_nodes[0], leaf_nodes[0])
-    else:
-        for leaf1, leaf2 in itertools.combinations(leaf_nodes, 2):
-            if _updown_cache is not None:
-                # Use explicit sentinel to avoid false miss when the cached set is empty.
-                _MISS = _updown_cache.get((leaf1, leaf2), _MISS_SENTINEL)
-                if _MISS is not _MISS_SENTINEL:
-                    path_vertices = _MISS
-                else:
-                    _MISS2 = _updown_cache.get((leaf2, leaf1), _MISS_SENTINEL)
-                    path_vertices = (
-                        _MISS2
-                        if _MISS2 is not _MISS_SENTINEL
-                        else updown_path_vertices(network._graph, leaf1, leaf2)
-                    )
-            else:
-                path_vertices = updown_path_vertices(network._graph, leaf1, leaf2)
-            nodes_set.update(path_vertices)
-        # Also include all leaves themselves (they should already be included, but ensure)
-        nodes_set.update(leaf_nodes)
+    # Collect the vertices lying on up-down paths between the requested leaves.
+    context = _rooting if _rooting is not None else _RootingContext(network)
+    nodes_set: set[Any] = context.node_set(leaf_nodes)
 
     # Create induced MixedMultiGraph — mm_subgraph always returns a fresh object,
     # so no additional copy is needed before mutation.
@@ -301,14 +336,9 @@ def k_taxon_subnetworks(
             f"k ({k}) cannot exceed the number of taxa ({num_taxa}) in the network"
         )
 
-    # Pre-compute all pairwise updown-path vertex sets once and reuse them.
-    # For n taxa and k-taxon subsets this reduces updown_path_vertices calls
-    # from C(n,k)·C(k,2) to C(n,2) — a ~C(n,k)/n speedup for large n.
-    all_leaf_nodes = [network.get_node_id(t) for t in all_taxa]
-    updown_cache: dict[tuple, set] = {
-        (l1, l2): updown_path_vertices(network._graph, l1, l2)
-        for l1, l2 in itertools.combinations(all_leaf_nodes, 2)
-    }
+    # Root the network (and build its dominator tree) once, then reuse it for every
+    # subset: this is what makes the per-subset work proportional to the subset size.
+    rooting = _RootingContext(network)
 
     # Generate all combinations of k taxa
     for taxa_combination in itertools.combinations(all_taxa, k):
@@ -317,7 +347,7 @@ def k_taxon_subnetworks(
             list(taxa_combination),
             suppress_2_blobs=suppress_2_blobs,
             identify_parallel_edges=identify_parallel_edges,
-            _updown_cache=updown_cache,
+            _rooting=rooting,
         )
 
 
