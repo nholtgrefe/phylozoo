@@ -704,7 +704,7 @@ def updown_path_vertices(graph: "MixedMultiGraph", x: T, y: T) -> set[T]:
     """
     import networkx as nx
 
-    if x not in graph.nodes() or y not in graph.nodes():
+    if not graph.has_node(x) or not graph.has_node(y):
         return set()
 
     if x == y:
@@ -721,12 +721,16 @@ def updown_path_vertices(graph: "MixedMultiGraph", x: T, y: T) -> set[T]:
     # Collect all vertices on up-down paths
     result: set[T] = set()
 
+    # Hoisted: graph.nodes() rebuilds a set of every node on each call, so testing
+    # the early-termination condition inside the loop cost more than it saved.
+    total_nodes = len(graph.nodes())
+
     for path in all_paths:
         if _is_updown_path(graph, path, x, y):
             result.update(path)
             # Early termination: if we've found all vertices in the graph, we're done
             # (This is unlikely but can help in some cases)
-            if len(result) == len(graph.nodes()):
+            if len(result) == total_nodes:
                 break
 
     return result

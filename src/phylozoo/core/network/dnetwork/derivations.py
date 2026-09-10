@@ -571,7 +571,7 @@ def displayed_trees(
             # Remove all degree-1 nodes (excluding leaves and root)
             for node in degree1_nodes:
                 # Double-check node still exists and is still degree-1
-                if node in tree_graph.nodes() and tree_graph.degree(node) == 1:
+                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
                     tree_graph.remove_node(node)
 
         # Suppress all degree-2 nodes

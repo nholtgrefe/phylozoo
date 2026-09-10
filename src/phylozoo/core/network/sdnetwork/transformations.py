@@ -126,7 +126,7 @@ def _identify_parallel_edges_inplace(
                 parallel_directed.append((u, v))
 
         for u, v in parallel_directed:
-            if u not in graph.nodes() or v not in graph.nodes():
+            if not graph.has_node(u) or not graph.has_node(v):
                 continue
             if graph._directed.number_of_edges(u, v) <= 1:
                 continue
@@ -145,7 +145,7 @@ def _identify_parallel_edges_inplace(
                 parallel_undirected.append((u, v))
 
         for u, v in parallel_undirected:
-            if u not in graph.nodes() or v not in graph.nodes():
+            if not graph.has_node(u) or not graph.has_node(v):
                 continue
             if graph._undirected.number_of_edges(u, v) <= 1:
                 continue

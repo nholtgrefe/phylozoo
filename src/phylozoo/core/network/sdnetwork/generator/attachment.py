@@ -80,7 +80,7 @@ def _attach_leaves_to_node_side(
                 f"got {len(taxa)}."
             )
 
-    if side.node not in graph.nodes():
+    if not graph.has_node(side.node):
         raise PhyloZooValueError(
             f"Node {side.node!r} from side {side} does not exist in generator graph."
         )

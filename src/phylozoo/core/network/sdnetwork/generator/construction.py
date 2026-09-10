@@ -100,7 +100,7 @@ def dgenerator_to_sdgenerator(d_generator: DirectedGenerator) -> SemiDirectedGen
     # The root node in a generator has in-degree 0 and typically out-degree 2
     # After conversion, if it's degree-2, it should be suppressed
     root_node = d_generator.root_node
-    if root_node in mixed_graph.nodes() and mixed_graph.degree(root_node) == 2:
+    if mixed_graph.has_node(root_node) and mixed_graph.degree(root_node) == 2:
         suppress_degree2_node(mixed_graph, root_node, merged_attrs=None)
 
     # Create and return SemiDirectedGenerator
