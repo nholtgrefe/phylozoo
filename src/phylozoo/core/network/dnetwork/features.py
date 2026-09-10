@@ -6,7 +6,6 @@ phylogenetic networks (e.g., LSA node, blobs, omnians, etc.).
 """
 
 import warnings
-from collections import deque
 from functools import lru_cache
 from typing import Any, TypeVar
 
@@ -84,57 +83,49 @@ def lsa_node(network: DirectedPhyNetwork) -> T:
         parents = list(network.parents(leaf))
         return parents[0] if parents else leaf  # type: ignore[no-any-return]
 
-    # Find the LSA: the lowest node through which ALL paths from root to leaves pass
-    # This means for each leaf, the LSA must be on ALL simple paths from root to that leaf
+    # Find the LSA: the lowest node through which ALL paths from root to leaves pass.
+    #
+    # The nodes lying on *every* root-to-leaf path are exactly the dominators of that
+    # leaf, so the LSA is the lowest common ancestor of all leaves in the dominator
+    # tree. Computing that tree with Lengauer-Tarjan is near-linear, whereas
+    # enumerating the paths themselves is exponential in the number of reticulations.
     root = network.root_node
     dag = network._graph._graph
 
-    # For each leaf, find all nodes that appear on ALL simple paths from root to that leaf
-    # The LSA must be in the intersection of all these sets
-    nodes_on_all_paths_to_each_leaf = []
+    idom: dict[T, T] = nx.immediate_dominators(dag, root)
+
+    # Depth in the dominator tree, memoised iteratively (the chain can be long).
+    depths: dict[T, int] = {root: 0}
+
+    def _depth(node: T) -> int:
+        chain: list[T] = []
+        current = node
+        while current not in depths:
+            chain.append(current)
+            current = idom[current]
+        for ancestor in reversed(chain):
+            depths[ancestor] = depths[idom[ancestor]] + 1
+        return depths[node]
 
     for leaf in leaves:
-        # Find all simple paths from root to this leaf
-        try:
-            all_paths = list(nx.all_simple_paths(dag, root, leaf))
-        except nx.NetworkXNoPath:
+        if leaf not in idom:
             raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
+        _depth(leaf)
 
-        if not all_paths:
-            raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
+    # Fold pairwise lowest-common-ancestors over the leaves.
+    leaf_iter = iter(leaves)
+    lsa: T = next(leaf_iter)
+    for leaf in leaf_iter:
+        first, second = lsa, leaf
+        while depths[first] > depths[second]:
+            first = idom[first]
+        while depths[second] > depths[first]:
+            second = idom[second]
+        while first != second:
+            first, second = idom[first], idom[second]
+        lsa = first
 
-        # Find nodes that appear on ALL paths to this leaf
-        # Start with nodes from the first path
-        nodes_on_all_paths = set(all_paths[0])
-        # Intersect with nodes from each subsequent path
-        for path in all_paths[1:]:
-            nodes_on_all_paths &= set(path)
-
-        nodes_on_all_paths_to_each_leaf.append(nodes_on_all_paths)
-
-    # Find intersection: nodes that are on ALL paths to ALL leaves
-    lsa_candidates = nodes_on_all_paths_to_each_leaf[0]
-    for node_set in nodes_on_all_paths_to_each_leaf[1:]:
-        lsa_candidates &= node_set
-
-    if not lsa_candidates:
-        raise PhyloZooAlgorithmError("No node found on all paths from root to all leaves")
-
-    # Find the deepest node (maximum depth from root) among candidates
-    # Compute depths using BFS from root (use deque for O(1) popleft)
-    depths: dict[T, int] = {}
-    queue = deque([root])
-    depths[root] = 0
-
-    while queue:
-        current = queue.popleft()
-        for child in network.children(current):
-            if child not in depths:
-                depths[child] = depths[current] + 1
-                queue.append(child)
-
-    # Return the deepest node among LSA candidates
-    return max(lsa_candidates, key=lambda node: depths.get(node, 0))  # type: ignore[no-any-return]
+    return lsa
 
 
 @lru_cache(maxsize=128)

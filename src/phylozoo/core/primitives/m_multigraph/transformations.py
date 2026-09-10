@@ -397,17 +397,18 @@ def orient_away_from_vertex(graph: "MixedMultiGraph", root: T) -> "DirectedMulti
                             dm.add_edge(current, v, key=key, **data)
 
             # Incoming edges: u -> current (keep as-is; multiple in-edges give hybrid nodes, which is fine)
-            for u, v, key, data in graph._directed.edges(keys=True, data=True):
-                if v == current:  # Incoming edge
-                    if u not in visited:
-                        visited.add(u)
+            # in_edges is answered from the predecessor index, so this is O(indegree)
+            # rather than a scan over every directed edge in the graph.
+            for u, _v, key, data in graph._directed.in_edges(current, keys=True, data=True):
+                if u not in visited:
+                    visited.add(u)
+                    dm.add_edge(u, current, key=key, **data)
+                    # Add to directed queue
+                    directed_queue.append(u)
+                else:
+                    # Already visited, but add edge if not present
+                    if not dm.has_edge(u, current, key=key):
                         dm.add_edge(u, current, key=key, **data)
-                        # Add to directed queue
-                        directed_queue.append(u)
-                    else:
-                        # Already visited, but add edge if not present
-                        if not dm.has_edge(u, current, key=key):
-                            dm.add_edge(u, current, key=key, **data)
 
         # Process directed queue (continue BFS from vertices reached via directed edges)
         while directed_queue:
