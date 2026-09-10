@@ -494,3 +494,52 @@ class TestMixedMultiGraphStandardDOTIO:
         pgv.AGraph(string=G.to_string("dot"))  # must not raise
         with pytest.raises(Exception):
             pgv.AGraph(string=G.to_string("phylozoo-dot"))  # mixed -> / -- is not valid DOT
+
+
+class TestNonDefaultEdgeKeyRoundTrip:
+    """A lone edge whose key is not 0 must keep that key through a round-trip.
+
+    Regression test: the writers used to emit ``key=`` only for edges that were
+    actually parallel, so a single edge carrying a non-zero key (which happens
+    whenever a parallel edge was removed, e.g. during generator construction)
+    silently came back as key 0.
+    """
+
+    @staticmethod
+    def _dsig(g: MixedMultiGraph) -> list:
+        return sorted(g.directed_edges_iter(keys=True))
+
+    @staticmethod
+    def _usig(g: MixedMultiGraph) -> list:
+        return sorted((tuple(sorted((a, b))), k) for a, b, k in g.undirected_edges_iter(keys=True))
+
+    @staticmethod
+    def _graph_with_orphaned_key() -> MixedMultiGraph:
+        """Build a graph holding a directed and an undirected edge with key 1 only."""
+        graph = MixedMultiGraph()
+        graph.add_directed_edge(1, 2, key=0)
+        graph.add_directed_edge(1, 2, key=1)
+        graph.add_undirected_edge(2, 3, key=0)
+        graph.add_undirected_edge(2, 3, key=1)
+        # Drop the key-0 edges: what remains is a single edge with key 1 in each case.
+        graph.remove_edge(1, 2, key=0)
+        graph.remove_edge(2, 3, key=0)
+        return graph
+
+    @pytest.mark.parametrize("fmt", ["phylozoo-dot", "dot"])
+    def test_lone_non_zero_key_survives_round_trip(self, fmt: str) -> None:
+        graph = self._graph_with_orphaned_key()
+        assert self._dsig(graph) == [(1, 2, 1)]
+        assert self._usig(graph) == [((2, 3), 1)]
+
+        restored = MixedMultiGraph.from_string(graph.to_string(fmt), fmt)
+        assert self._dsig(restored) == self._dsig(graph)
+        assert self._usig(restored) == self._usig(graph)
+
+    @pytest.mark.parametrize("fmt", ["phylozoo-dot", "dot"])
+    def test_parallel_edges_still_round_trip(self, fmt: str) -> None:
+        """The ordinary parallel-edge case keeps working."""
+        graph = MixedMultiGraph(directed_edges=[(1, 2), (1, 2)], undirected_edges=[(2, 3), (2, 3)])
+        restored = MixedMultiGraph.from_string(graph.to_string(fmt), fmt)
+        assert self._dsig(restored) == self._dsig(graph)
+        assert self._usig(restored) == self._usig(graph)

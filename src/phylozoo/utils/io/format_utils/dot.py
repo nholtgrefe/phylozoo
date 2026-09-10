@@ -14,7 +14,10 @@ the helpers below (mirroring how :mod:`~phylozoo.utils.io.format_utils.nexus` an
 * ``phylozoo-dot`` for ``MixedMultiGraph`` — the legacy PhyloZoo dialect using a
   ``graph`` block with both ``->`` (directed) and ``--`` (undirected) edges.
 
-Parallel (multi-)edges are encoded with an explicit ``key=<int>`` attribute.
+Edge keys are encoded with an explicit ``key=<int>`` attribute. It is written
+whenever an edge is parallel *or* its key is not 0, so that a lone edge left
+holding a non-zero key (e.g. after a parallel sibling was removed) keeps it
+across a round-trip. Edges with the default key 0 are written without it.
 
 :func:`parse_dot_document` parses all three: it accepts either header, treats an
 edge as **undirected** when it is written with ``--`` or carries ``dir=none``, and

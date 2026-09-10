@@ -144,11 +144,11 @@ def to_dot(network: DirectedPhyNetwork, **kwargs: Any) -> str:
         u_str = _escape_dot_string(u_name)
         v_str = _escape_dot_string(v_name)
 
-        # Include key in edge attributes if there are parallel edges
+        # Include key for parallel edges, and for a lone edge carrying a non-zero key
         edge_attrs = dict(data) if data else {}
 
         # Add key as attribute if there are multiple edges between u and v
-        if network._graph._graph.number_of_edges(u, v) > 1:
+        if key != 0 or network._graph._graph.number_of_edges(u, v) > 1:
             edge_attrs["key"] = key
 
         attrs_str = _format_dot_attributes(edge_attrs)

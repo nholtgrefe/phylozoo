@@ -16,7 +16,8 @@ The following format handlers are defined and registered:
   an edge drawn without arrowheads). This *is* valid DOT, so the file opens in any
   Graphviz tool, and it round-trips losslessly (``dir=none`` <-> undirected).
 
-Both formats encode parallel (multi-)edges with an explicit ``key`` attribute and
+Both formats encode edge keys with an explicit ``key`` attribute -- written for
+parallel edges and for any edge whose key is not 0, so keys survive a round-trip -- and
 share their reader and all low-level scaffolding with
 :mod:`phylozoo.utils.io.format_utils.dot` (which is also used by
 :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`).
@@ -109,13 +110,13 @@ def to_phylozoo_dot(graph: MixedMultiGraph, **kwargs: Any) -> str:
 
     for u, v, key, data in graph.undirected_edges_iter(keys=True, data=True):
         edge_attrs = dict(data) if data else {}
-        if graph._undirected.number_of_edges(u, v) > 1:
+        if key != 0 or graph._undirected.number_of_edges(u, v) > 1:
             edge_attrs["key"] = key
         lines.append(dot_edge_line(u, v, edge_attrs, arrow="--"))
 
     for u, v, key, data in graph.directed_edges_iter(keys=True, data=True):
         edge_attrs = dict(data) if data else {}
-        if graph._directed.number_of_edges(u, v) > 1:
+        if key != 0 or graph._directed.number_of_edges(u, v) > 1:
             edge_attrs["key"] = key
         lines.append(dot_edge_line(u, v, edge_attrs, arrow="->"))
 
@@ -170,13 +171,13 @@ def to_dot(graph: MixedMultiGraph, **kwargs: Any) -> str:
 
     for u, v, key, data in graph.directed_edges_iter(keys=True, data=True):
         edge_attrs = dict(data) if data else {}
-        if graph._directed.number_of_edges(u, v) > 1:
+        if key != 0 or graph._directed.number_of_edges(u, v) > 1:
             edge_attrs["key"] = key
         lines.append(dot_edge_line(u, v, edge_attrs, arrow="->"))
 
     for u, v, key, data in graph.undirected_edges_iter(keys=True, data=True):
         edge_attrs = dict(data) if data else {}
-        if graph._undirected.number_of_edges(u, v) > 1:
+        if key != 0 or graph._undirected.number_of_edges(u, v) > 1:
             edge_attrs["key"] = key
         edge_attrs["dir"] = "none"
         lines.append(dot_edge_line(u, v, edge_attrs, arrow="->"))

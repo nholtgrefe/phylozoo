@@ -33,7 +33,8 @@ DOT format supports:
 - Node attributes (label, shape, color, etc.)
 - Edge attributes (label, weight, color, etc.)
 - Graph attributes
-- Parallel edges (multigraph support), encoded with an explicit ``key`` attribute
+- Parallel edges (multigraph support), encoded with an explicit ``key`` attribute,
+  also written for a non-parallel edge whose key is not 0 so that keys round-trip
 
 Edge-list format:
 - Simple text format: one edge per line
@@ -94,7 +95,7 @@ def to_dot(graph: DirectedMultiGraph, **kwargs: Any) -> str:
     -----
     The DOT format includes a ``digraph`` declaration, node declarations with
     attributes, ``->`` edge declarations, graph attributes (if any) and parallel
-    edges (encoded with a ``key`` attribute).
+    edges (encoded with a ``key`` attribute, also written whenever a key is not 0).
     """
     lines = []
 
@@ -115,7 +116,7 @@ def to_dot(graph: DirectedMultiGraph, **kwargs: Any) -> str:
     # Edge declarations
     for u, v, key, data in graph.edges_iter(keys=True, data=True):
         edge_attrs = dict(data) if data else {}
-        if graph._graph.number_of_edges(u, v) > 1:
+        if key != 0 or graph._graph.number_of_edges(u, v) > 1:
             edge_attrs["key"] = key
         lines.append(dot_edge_line(u, v, edge_attrs, arrow="->"))
 
@@ -217,7 +218,7 @@ def to_edgelist(graph: DirectedMultiGraph, **kwargs: Any) -> str:
     - One edge per line
     - Format: `u v` or `u v key` or `u v key attr1=value1 attr2=value2`
     - Uses node_id as the label/name
-    - Includes edge keys for parallel edges
+    - Includes edge keys for parallel edges, and for any edge whose key is not 0
     - Includes edge attributes if present
     """
     lines = []
@@ -225,8 +226,8 @@ def to_edgelist(graph: DirectedMultiGraph, **kwargs: Any) -> str:
     for u, v, key, data in graph.edges_iter(keys=True, data=True):
         line_parts = [str(u), str(v)]
 
-        # Add key if there are parallel edges
-        if graph._graph.number_of_edges(u, v) > 1:
+        # Add key for parallel edges, and for a lone edge carrying a non-zero key
+        if key != 0 or graph._graph.number_of_edges(u, v) > 1:
             line_parts.append(str(key))
 
         # Add attributes

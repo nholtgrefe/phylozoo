@@ -33,8 +33,10 @@ Generators (:class:`~phylozoo.core.network.sdnetwork.generator.base.SemiDirected
 formats of their underlying graph, so they can be saved and loaded directly — no need
 to route through ``generator.graph``.
 
-Parallel (multi-)edges are encoded in both flavours with an explicit
-``key=<int>`` attribute.
+Edge keys are encoded in both flavours with an explicit ``key=<int>`` attribute.
+It is written for parallel (multi-)edges, and also for a single edge whose key is
+not ``0`` — which happens once a parallel sibling has been removed — so that keys
+survive a round-trip. Edges carrying the default key ``0`` are written without it.
 
 Standard DOT
 ------------
