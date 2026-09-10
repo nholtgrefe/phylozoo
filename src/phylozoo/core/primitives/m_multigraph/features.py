@@ -337,44 +337,53 @@ def source_components(
     # Get all connected components of the undirected graph
     undirected_components = list(nx.connected_components(graph._undirected))
 
-    for component in undirected_components:
-        component_set = set(component)
+    # Index every node by its component, so each edge list below can be bucketed in a
+    # single pass instead of being rescanned once per component. Nodes absent from the
+    # undirected graph get a unique negative id, so they never share a component.
+    component_of: dict[T, int] = {}
+    for index, component in enumerate(undirected_components):
+        for node in component:
+            component_of[node] = index
 
-        # Check if there are any directed edges pointing into this component
-        # (i.e., directed edges (u, v) where u is not in component and v is in component)
-        has_incoming_edges = False
-        for u, v, key in graph._directed.edges(keys=True):
-            if u not in component_set and v in component_set:
-                has_incoming_edges = True
-                break
+    next_standalone_id = 0
 
-        # If no incoming edges, this is a source component
-        if not has_incoming_edges:
-            # Collect nodes in the component
-            nodes = list(component)
+    def _component_id(node: T) -> int:
+        nonlocal next_standalone_id
+        found = component_of.get(node)
+        if found is None:
+            next_standalone_id -= 1
+            found = next_standalone_id
+            component_of[node] = found
+        return found
 
-            # Collect undirected edges within the component (including all parallel edges with keys)
-            undirected_edges: list[tuple[T, T, int]] = []
-            for u, v, key in graph._undirected.edges(keys=True):
-                if u in component_set and v in component_set:
-                    # Include all parallel edges (each with its key)
-                    # Normalize to avoid duplicates from undirected representation
-                    # Use string comparison to handle mixed types (e.g., int and str node IDs)
-                    if str(u) <= str(v):
-                        edge = (u, v, key)
-                    else:
-                        edge = (v, u, key)
-                    undirected_edges.append(edge)
+    # One pass over the directed edges: record which components are pointed into, and
+    # bucket the edges leaving each component.
+    has_incoming: set[int] = set()
+    outgoing_by_component: dict[int, list[tuple[T, T, int]]] = {}
+    for u, v, key in graph._directed.edges(keys=True):
+        tail, head = _component_id(u), _component_id(v)
+        if tail != head:
+            has_incoming.add(head)
+            outgoing_by_component.setdefault(tail, []).append((u, v, key))
 
-            # Collect directed edges (u, v, key) with u in component and v not in component
-            # (includes all parallel edges with keys)
-            outgoing_edges: list[tuple[T, T, int]] = []
-            for u, v, key in graph._directed.edges(keys=True):
-                if u in component_set and v not in component_set:
-                    # Include all parallel edges (each with its key)
-                    outgoing_edges.append((u, v, key))
+    # One pass over the undirected edges (both endpoints share a component by definition).
+    undirected_by_component: dict[int, list[tuple[T, T, int]]] = {}
+    for u, v, key in graph._undirected.edges(keys=True):
+        # Normalize to avoid duplicates from undirected representation.
+        # Use string comparison to handle mixed types (e.g., int and str node IDs).
+        edge = (u, v, key) if str(u) <= str(v) else (v, u, key)
+        undirected_by_component.setdefault(_component_id(u), []).append(edge)
 
-            source_comps.append((nodes, undirected_edges, outgoing_edges))
+    for index, component in enumerate(undirected_components):
+        if index in has_incoming:
+            continue
+        source_comps.append(
+            (
+                list(component),
+                undirected_by_component.get(index, []),
+                outgoing_by_component.get(index, []),
+            )
+        )
 
     return source_comps
 
