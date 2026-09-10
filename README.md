@@ -28,6 +28,38 @@ To install the recommended version that includes vizualization, do:
 pip install phylozoo[viz]
 ```
 
+## Quickstart
+
+Build a small rooted network with a hybrid node, inspect it, save it and plot it:
+
+```python
+import phylozoo as pz
+
+# A rooted network on four taxa with one hybrid node (edges are parent-child tuples)
+network = pz.DirectedPhyNetwork(
+    edges=[
+        ("root", "u1"), ("root", "u2"),
+        ("u1", "A"), ("u1", "x"), ("x", "B"),
+        ("x", "h"), ("u2", "h"),        # the two edges into the hybrid node h
+        ("u2", "D"), ("h", "C"),
+    ],
+)
+
+print(network.leaves)                            # {'A', 'B', 'C', 'D'}
+print(pz.dnetwork.classifications.level(network))  # 1
+
+# Save network to file (eNewick format)
+network.save("my_network.enewick")               # ((A,(B,(C)#H1)),(D,#H1));
+
+# Plot the network
+from phylozoo.viz import plot
+
+plot(network, show=True)
+```
+
+See the [quickstart tutorial](https://nholtgrefe.github.io/phylozoo/tutorials/quickstart.html)
+for a longer tour of what PhyloZoo can do.
+
 ## Documentation
 
 For detailed documentation, installation instructions, tutorials, and API reference, visit the **[PhyloZoo docs](https://nholtgrefe.github.io/phylozoo/)**.
