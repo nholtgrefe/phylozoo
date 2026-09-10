@@ -382,17 +382,58 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
                     "the chosen root is not the LSA node of the oriented network."
                 )
 
-            # Step 6: Convert back to semi-directed using to_sd_network
-            try:
-                sd_roundtrip = to_sd_network(d_network)
-            except ValueError as e:
-                raise PhyloZooNetworkStructureError(
-                    f"Semi-directed network constraint validation failed: "
-                    f"conversion back to semi-directed failed: {e}"
-                )
+            # Step 6: Compare the orientation against the original network.
+            #
+            # ``to_sd_network`` would undirect exactly the non-hybrid edges of the
+            # orientation and then suppress degree-2 nodes; ``to_lsa_network`` cannot
+            # fire here because step 5 already established that the root is the LSA.
+            # So as long as no degree-2 node would be suppressed -- guaranteed once
+            # ``_validate_degree_constraints`` has run, since internal nodes then have
+            # degree >= 3 -- the round-trip is equivalent to the edge comparison below,
+            # and we can skip building a second directed and semi-directed network.
+            suppressible = any(
+                oriented_dm.indegree(node) + oriented_dm.outdegree(node) == 2
+                for node in oriented_dm.nodes()
+            )
+            sd_roundtrip = None
+            if suppressible:
+                # Degree-2 nodes would be suppressed, changing the node set; fall back
+                # to the explicit round-trip so the comparison stays exact.
+                try:
+                    sd_roundtrip = to_sd_network(d_network)
+                except ValueError as e:
+                    raise PhyloZooNetworkStructureError(
+                        f"Semi-directed network constraint validation failed: "
+                        f"conversion back to semi-directed failed: {e}"
+                    )
 
         # Step 7: Compare structure only (nodes, directed edges, undirected edges)
-        if set(self._graph.nodes()) != set(sd_roundtrip._graph.nodes()):
+        if sd_roundtrip is not None:
+            roundtrip_nodes = set(sd_roundtrip._graph.nodes())
+            roundtrip_directed = {
+                (u, v, key if key is not None else 0)
+                for u, v, key in sd_roundtrip._graph.directed_edges_iter(keys=True)
+            }
+            roundtrip_undirected = {
+                ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
+                for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
+            }
+        else:
+            roundtrip_nodes = set(oriented_dm.nodes())
+            roundtrip_directed = set()
+            roundtrip_undirected = set()
+            for u, v, key in oriented_dm.edges(keys=True):
+                normalized_key = key if key is not None else 0
+                # A hybrid node keeps its incoming edges directed; every other edge
+                # becomes undirected.
+                if oriented_dm.indegree(v) >= 2 and oriented_dm.outdegree(v) == 1:
+                    roundtrip_directed.add((u, v, normalized_key))
+                else:
+                    roundtrip_undirected.add(
+                        ((u, v) if str(u) <= str(v) else (v, u)) + (normalized_key,)
+                    )
+
+        if set(self._graph.nodes()) != roundtrip_nodes:
             raise PhyloZooNetworkStructureError(
                 "Semi-directed network constraint validation failed: "
                 "nodes do not match after round-trip conversion"
@@ -401,10 +442,6 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         orig_directed = {
             (u, v, key if key is not None else 0)
             for u, v, key in self._graph.directed_edges_iter(keys=True)
-        }
-        roundtrip_directed = {
-            (u, v, key if key is not None else 0)
-            for u, v, key in sd_roundtrip._graph.directed_edges_iter(keys=True)
         }
         if orig_directed != roundtrip_directed:
             raise PhyloZooNetworkStructureError(
@@ -415,10 +452,6 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         orig_undirected = {
             ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
             for u, v, key in self._graph.undirected_edges_iter(keys=True)
-        }
-        roundtrip_undirected = {
-            ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
-            for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
         }
         if orig_undirected != roundtrip_undirected:
             raise PhyloZooNetworkStructureError(
