@@ -124,7 +124,7 @@ Quartet Distance Computation
 
 The quartet module provides functions for computing distance matrices from quartet profile sets.
 This quartet distance metric was first defined for trees and their quartets :cite:`Rhodes2019`,
-then extended to networks for the NANUQ algorithm :cite:`Allman2019`, and later further explored in various forms in :cite:`Holtgrefe2025a` (for the Squirrel algorithm), :cite:`Allman2025` (for the NANUQ+ algorithm), and :cite:`Holtgrefe2025b` (for level-2 networks).
+then extended to networks for the NANUQ algorithm :cite:`Allman2019`, and later further explored in various forms in :cite:`Holtgrefe2025Squirrel` (for the Squirrel algorithm), :cite:`Allman2025` (for the NANUQ+ algorithm), and :cite:`Holtgrefe2025b` (for level-2 networks).
 
 Quartet Distance
 ^^^^^^^^^^^^^^^^
@@ -186,7 +186,7 @@ The rho vector must satisfy :math:`\rho_a \leq \rho_o` and :math:`\rho_c \leq \r
 Common rho vector values:
 
 - **NANUQ**: :math:`(0.0, 1.0, 0.5, 1.0)` :cite:`Allman2019`, :cite:`Holtgrefe2025b`
-- **Squirrel/MONAD**: :math:`(0.5, 1.0, 0.5, 1.0)` :cite:`Holtgrefe2025a`, :cite:`Allman2025`
+- **Squirrel/MONAD**: :math:`(0.5, 1.0, 0.5, 1.0)` :cite:`Holtgrefe2025Squirrel`, :cite:`Allman2025`
 
 See Also
 --------
