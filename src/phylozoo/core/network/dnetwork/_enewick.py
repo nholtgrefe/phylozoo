@@ -941,14 +941,16 @@ def _get_first_edge_data(network: "DirectedPhyNetwork", u: T, v: T) -> dict[str,
     dict[str, Any]
         Edge data dictionary.
     """
-    # Use incident_child_edges to get all edges from u
-    for edge_tuple in network.incident_child_edges(u, keys=True, data=True):
-        if len(edge_tuple) == 4:
-            edge_u, edge_v, key, data = edge_tuple
-            if edge_v == v:
-                return dict(data) if data else {}
-
-    return {}
+    # Look the edge up directly. Scanning every edge leaving u instead would make
+    # writing quadratic in the out-degree, and this is called once per edge.
+    graph = network._graph._graph
+    if u not in graph:
+        return {}
+    parallel_edges = graph[u].get(v)
+    if not parallel_edges:
+        return {}
+    data = parallel_edges[next(iter(parallel_edges))]
+    return dict(data) if data else {}
 
 
 def _format_edge_attributes(edge_data: dict[str, Any] | None) -> str:

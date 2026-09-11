@@ -970,9 +970,11 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
 
         # Auto-generate key if not provided
         if key is None:
-            if u in self._graph and v in self._graph[u]:
-                existing_keys = set(self._graph[u][v].keys())
-                key = max(existing_keys) + 1 if existing_keys else 0
+            # has_edge tests a plain adjacency dict; `v in self._graph[u]` would go
+            # through a Mapping view whose __contains__ is markedly slower, and this
+            # runs on every edge added.
+            if self._graph.has_edge(u, v):
+                key = max(self._graph[u][v]) + 1
             else:
                 key = 0
 
