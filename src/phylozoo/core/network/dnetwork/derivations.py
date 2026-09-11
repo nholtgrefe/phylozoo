@@ -656,11 +656,15 @@ def _switching_distance_matrix(
     combined_graph = switching_graph._combined
 
     # Look each branch length up once, rather than once per path that crosses it.
+    # The lookup carries the edge key: the original network may hold parallel edges
+    # between u and v even though the switching keeps only one of them, and an unkeyed
+    # lookup cannot say which one is meant.
     branch_length: dict[tuple[Any, Any], float] = {}
-    for u, v in combined_graph.edges():
-        bl = original_network.get_branch_length(u, v)
+    for u, v, key in combined_graph.edges(keys=True):
+        bl = original_network.get_branch_length(u, v, key)
         if bl is None:
-            bl = original_network.get_branch_length(v, u)
+            # The combined view is undirected, so it may report the edge either way round.
+            bl = original_network.get_branch_length(v, u, key)
         if bl is None:
             bl = 1.0  # Default when no branch length is recorded
         branch_length[(u, v)] = bl
@@ -684,6 +688,94 @@ def _switching_distance_matrix(
                     queue.append((neighbour, distance + branch_length[(node, neighbour)]))
 
     return distance_matrix
+
+
+def _hybrid_blob_groups(network: DirectedPhyNetwork) -> list[list[Any]]:
+    """
+    Group the hybrid nodes of a network by the blob that contains them.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+
+    Returns
+    -------
+    list[list[Any]]
+        One list of hybrid nodes per blob that contains at least one hybrid.
+
+    Notes
+    -----
+    This is what makes the blob decomposition in :func:`distances` possible. The
+    stretch of a path that lies inside a blob depends only on that blob's hybrid
+    choices, and different blobs are switched independently, so the groups returned
+    here can be enumerated separately instead of jointly.
+
+    Correctness does not require the grouping to be maximal -- only that hybrids in
+    different groups never interact. A finer grouping stays correct and merely
+    enumerates more combinations than necessary.
+    """
+    hybrid_nodes = list(network.hybrid_nodes)
+    if not hybrid_nodes:
+        return []
+
+    remaining = set(hybrid_nodes)
+    groups: list[list[Any]] = []
+    for blob in blobs(network, trivial=False, leaves=False):
+        members = [hybrid for hybrid in hybrid_nodes if hybrid in blob and hybrid in remaining]
+        if members:
+            groups.append(members)
+            remaining.difference_update(members)
+
+    # A hybrid no blob claimed gets a group of its own, which is always safe.
+    groups.extend([hybrid] for hybrid in hybrid_nodes if hybrid in remaining)
+    return groups
+
+
+def _switching_matrix_for_choices(
+    network: DirectedPhyNetwork,
+    all_taxa: list[str],
+    hybrid_parent_edges: dict[Any, list[tuple[Any, Any, int]]],
+    choices: dict[Any, tuple[Any, Any, int]],
+) -> np.ndarray:
+    """
+    Distance matrix of the switching that keeps exactly the parent edges in ``choices``.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    all_taxa : list[str]
+        Taxon labels, in the order used for the matrix rows and columns.
+    hybrid_parent_edges : dict
+        Maps each hybrid node to all of its parent edges as ``(u, v, key)``.
+    choices : dict
+        Maps each hybrid node to the single parent edge to keep.
+
+    Returns
+    -------
+    numpy.ndarray
+        The pairwise distance matrix for that switching.
+    """
+    switching_graph = network._graph.copy()
+    for hybrid, keep in choices.items():
+        for u, v, key in hybrid_parent_edges[hybrid]:
+            if (u, v, key) != keep:
+                switching_graph.remove_edge(u, v, key=key)
+    return _switching_distance_matrix(switching_graph, all_taxa, network)
+
+
+def _hybrid_edge_weight(
+    network: DirectedPhyNetwork,
+    hybrid: Any,
+    edge: tuple[Any, Any, int],
+    indegree: int,
+) -> float:
+    """
+    Probability of keeping ``edge`` at ``hybrid``: its gamma, or 1/indegree if unset.
+    """
+    gamma = network.get_gamma(edge[0], edge[1], edge[2])
+    return float(gamma) if gamma is not None else 1.0 / indegree
 
 
 def distances(
@@ -742,43 +834,76 @@ def distances(
     if n == 1:
         return DistanceMatrix(np.array([[0.0]]), labels=all_taxa)
 
-    # Initialize aggregation arrays based on mode
-    if mode == "shortest":
-        result = np.full((n, n), np.inf, dtype=np.float64)
-    elif mode == "longest":
-        result = np.zeros((n, n), dtype=np.float64)
-    elif mode == "average":
-        weighted_sum = np.zeros((n, n), dtype=np.float64)
-        prob_sum = 0.0
-    else:
+    if mode not in ("shortest", "longest", "average"):
         raise PhyloZooValueError(
             f"Invalid mode: {mode}. Must be 'shortest', 'longest', or 'average'"
         )
 
-    # Iterate through all switchings
-    for switching_graph in _switchings(network, probability=(mode == "average")):
-        # Get probability if mode is 'average'
-        prob = 1.0
+    # The aggregation still ranges over switchings, but only a small covering set of
+    # them is actually evaluated: one arbitrary reference switching, plus, for each
+    # blob, every switching that differs from the reference inside that blob alone.
+    # That is 1 + sum_b 2**r_b switchings instead of the prod_b 2**r_b that exist,
+    # where r_b is the number of reticulations in blob b.
+    #
+    # Those switchings cover the rest because the stretch of a leaf-to-leaf path inside
+    # a blob changes only when that blob's own hybrid choices change. Each evaluated
+    # switching therefore exposes a single blob's contribution in isolation, as its
+    # difference from the reference, and *any* switching's distance matrix equals the
+    # reference plus the sum of the relevant per-blob differences. The aggregate over
+    # all switchings then follows without visiting them: each mode aggregates one
+    # blob's differences at a time -- elementwise minimum, maximum or gamma-weighted
+    # mean -- and the per-blob results are summed onto the reference. Minimum and
+    # maximum are valid here for the same reason the mean is: blobs are switched
+    # independently, and a sum of independently chosen terms is optimised term by term.
+    #
+    # The work is therefore exponential in the network's level rather than in its total
+    # number of reticulations. A network with 20 reticulations spread over 10 level-2
+    # blobs evaluates 41 switchings instead of 2**20. For a single-blob (level-r)
+    # network the covering set is every switching and nothing is saved.
+    hybrid_parent_edges: dict[Any, list[tuple[Any, Any, int]]] = {
+        hybrid: list(network.incident_parent_edges(hybrid, keys=True))
+        for hybrid in network.hybrid_nodes
+    }
+    reference = {hybrid: edges[0] for hybrid, edges in hybrid_parent_edges.items()}
+    # ``base`` stays fixed: every per-blob difference is measured against this one
+    # reference switching, while ``result`` accumulates them.
+    base = _switching_matrix_for_choices(network, all_taxa, hybrid_parent_edges, reference)
+    result = base.copy()
+
+    for group in _hybrid_blob_groups(network):
+        group_edges = [hybrid_parent_edges[hybrid] for hybrid in group]
+        # Accumulated per element, never stacked: a blob with r reticulations has 2**r
+        # local switchings, and holding that many n x n matrices at once is not viable.
+        aggregate: np.ndarray | None = None
+        weight_sum = 0.0
+        for combination in itertools.product(*group_edges):
+            choices = dict(reference)
+            choices.update(zip(group, combination))
+            delta = (
+                _switching_matrix_for_choices(network, all_taxa, hybrid_parent_edges, choices)
+                - base
+            )
+            if mode == "shortest":
+                aggregate = delta if aggregate is None else np.minimum(aggregate, delta)
+            elif mode == "longest":
+                aggregate = delta if aggregate is None else np.maximum(aggregate, delta)
+            else:
+                weight = 1.0
+                for hybrid, edge in zip(group, combination):
+                    weight *= _hybrid_edge_weight(
+                        network, hybrid, edge, len(hybrid_parent_edges[hybrid])
+                    )
+                weight_sum += weight
+                delta *= weight
+                aggregate = delta if aggregate is None else aggregate + delta
+        if aggregate is None:
+            continue
         if mode == "average":
-            prob = switching_graph._graph.graph.get("probability", 1.0)
-            if prob is None:
-                prob = 1.0
-
-        # Compute full distance matrix for this switching
-        switching_matrix = _switching_distance_matrix(switching_graph, all_taxa, network)
-
-        # Update aggregation based on mode
-        if mode == "shortest":
-            result = np.minimum(result, switching_matrix)
-        elif mode == "longest":
-            result = np.maximum(result, switching_matrix)
-        elif mode == "average":
-            weighted_sum += switching_matrix * prob
-            prob_sum += prob
-
-    # For 'average' mode, divide by sum of probabilities
-    if mode == "average":
-        result = weighted_sum / prob_sum
+            # Normalising per blob matches normalising globally: the total weight of
+            # all switchings factorises over the blobs.
+            if weight_sum > 0.0:
+                aggregate = aggregate / weight_sum
+        result = result + aggregate
 
     # Ensure diagonal is 0.0
     np.fill_diagonal(result, 0.0)

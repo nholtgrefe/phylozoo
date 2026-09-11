@@ -2256,3 +2256,167 @@ class TestPruneDegree1NodesMixed:
         graph = self._graph([("a", "L1")])
         _prune_degree1_nodes(graph, {"L1", "a"})
         assert set(graph.nodes()) == {"a", "L1"}
+
+
+class TestDistancesBlobDecompositionSD:
+    """`distances` enumerates each blob's switchings separately; results must not change.
+
+    The reference is the definition itself: aggregate over every global switching.
+    The networks are built with reticulations in *different* blobs, which is exactly
+    the case the decomposition changes.
+    """
+
+    @staticmethod
+    def _brute_force(network, taxa, mode):
+        """Aggregate over all global switchings, i.e. the unoptimised definition."""
+        from phylozoo.core.network.sdnetwork.derivations import _switching_distance_matrix
+
+        size = len(taxa)
+        result = np.full((size, size), np.inf) if mode == "shortest" else np.zeros((size, size))
+        weighted, weight_total = np.zeros((size, size)), 0.0
+        for graph in _switchings(network, probability=(mode == "average")):
+            matrix = _switching_distance_matrix(graph, taxa, network)
+            if mode == "shortest":
+                result = np.minimum(result, matrix)
+            elif mode == "longest":
+                result = np.maximum(result, matrix)
+            else:
+                weight = graph._directed.graph.get("probability", 1.0) or 1.0
+                weighted += matrix * weight
+                weight_total += weight
+        if mode == "average":
+            result = weighted / weight_total
+        np.fill_diagonal(result, 0.0)
+        return result
+
+    @staticmethod
+    def _two_blob_network():
+        """Two level-1 blobs, obtained by semi-directing a two-blob rooted network."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        from phylozoo.core.network.dnetwork.derivations import to_sd_network
+
+        labels = ["A", "B", "C", "D", "E", "F"]
+        directed = DirectedPhyNetwork(
+            edges=[
+                ("rho", "a0"),
+                ("rho", "b0"),
+                ("a0", "a1"),
+                ("a0", "a2"),
+                ("a1", "ha"),
+                ("a2", "ha"),
+                ("a1", "A"),
+                ("a2", "B"),
+                ("ha", "C"),
+                ("b0", "b1"),
+                ("b0", "b2"),
+                ("b1", "hb"),
+                ("b2", "hb"),
+                ("b1", "D"),
+                ("b2", "E"),
+                ("hb", "F"),
+            ],
+            nodes=[(name, {"label": name}) for name in labels],
+        )
+        with no_validation():
+            return to_sd_network(directed)
+
+    def test_network_really_has_two_blobs(self):
+        """Guard the premise: if this became single-blob the tests below would be vacuous."""
+        from phylozoo.core.network.sdnetwork.derivations import _hybrid_blob_groups
+
+        groups = _hybrid_blob_groups(self._two_blob_network())
+        assert len(groups) == 2
+        assert sorted(len(group) for group in groups) == [1, 1]
+
+    @pytest.mark.parametrize("mode", ["shortest", "longest", "average"])
+    def test_matches_full_enumeration_across_blobs(self, mode):
+        network = self._two_blob_network()
+        taxa = sorted(network.taxa)
+        got = np.asarray(distances(network, mode=mode)._matrix)
+        assert np.allclose(got, self._brute_force(network, taxa, mode))
+
+    @pytest.mark.parametrize("mode", ["shortest", "longest", "average"])
+    def test_tree_has_no_hybrids_to_group(self, mode):
+        from phylozoo.core.network.sdnetwork.derivations import _hybrid_blob_groups
+
+        network = SemiDirectedPhyNetwork(
+            undirected_edges=[(3, 1), (3, 2), (3, 4)],
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"}), (4, {"label": "C"})],
+        )
+        assert _hybrid_blob_groups(network) == []
+        taxa = sorted(network.taxa)
+        got = np.asarray(distances(network, mode=mode)._matrix)
+        assert np.allclose(got, self._brute_force(network, taxa, mode))
+
+    def test_shortest_at_most_average_at_most_longest(self):
+        network = self._two_blob_network()
+        shortest = np.asarray(distances(network, mode="shortest")._matrix)
+        average = np.asarray(distances(network, mode="average")._matrix)
+        longest = np.asarray(distances(network, mode="longest")._matrix)
+        assert np.all(shortest <= average + 1e-12)
+        assert np.all(average <= longest + 1e-12)
+
+    def test_blobs_are_enumerated_separately_not_jointly(self):
+        """With k independent blobs the work is sum(2**r_b), not prod(2**r_b)."""
+        from phylozoo.core.network.sdnetwork import derivations
+
+        network = self._two_blob_network()
+        calls = []
+        original = derivations._switching_matrix_for_choices
+
+        def counting(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        derivations._switching_matrix_for_choices = counting
+        try:
+            distances(network, mode="average")
+        finally:
+            derivations._switching_matrix_for_choices = original
+        # 1 reference + 2 local switchings per blob x 2 blobs; never the 4 global ones
+        assert len(calls) == 5
+
+
+class TestDistancesWithParallelEdgesSD:
+    """Branch lengths must be looked up by edge key when parallel edges exist.
+
+    An unkeyed lookup raises ``PhyloZooValueError: Multiple parallel edges exist``,
+    even though a switching keeps only one of the parallel edges and the network
+    constrains them all to share a branch length.
+    """
+
+    @staticmethod
+    def _network():
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        from phylozoo.core.network.dnetwork.derivations import to_sd_network
+
+        directed = DirectedPhyNetwork(
+            edges=[
+                ("r", "u"),
+                ("r", "B"),
+                {"u": "u", "v": "h", "key": 0, "branch_length": 2.0},
+                {"u": "u", "v": "h", "key": 1, "branch_length": 2.0},
+                ("h", "C"),
+                ("u", "A"),
+            ],
+            nodes=[(name, {"label": name}) for name in ("A", "B", "C")],
+        )
+        with no_validation():
+            return to_sd_network(directed)
+
+    def test_network_really_has_parallel_edges(self):
+        """Guard the premise, so this cannot quietly stop testing what it claims to."""
+        network = self._network()
+        parents = list(network.incident_parent_edges("h", keys=True))
+        assert len(parents) == 2
+        assert {edge[0] for edge in parents} == {"u"}
+
+    @pytest.mark.parametrize("mode", ["shortest", "longest", "average"])
+    def test_distances_does_not_raise_on_parallel_edges(self, mode):
+        distances(self._network(), mode=mode)
+
+    @pytest.mark.parametrize("mode", ["shortest", "longest", "average"])
+    def test_parallel_edge_branch_length_is_used(self, mode):
+        """A -- u -- h -- C is 1.0 + 2.0 + 1.0; the 2.0 comes from the parallel edge."""
+        matrix = distances(self._network(), mode=mode)
+        assert matrix.get_distance("A", "C") == pytest.approx(4.0)
