@@ -103,18 +103,16 @@ def quartet_distance(
     # Create mapping from taxon to index
     taxon_to_index = {taxon: i for i, taxon in enumerate(taxa)}
 
-    # Iterate over all 4-taxon combinations
-    for four_taxa in itertools.combinations(taxa, 4):
-        four_taxa_set = frozenset(four_taxa)
-        profile = profileset.get_profile(four_taxa_set)
+    rho_c, rho_s, rho_a, rho_o = (float(value) for value in rho)
 
-        if profile is None:
-            raise PhyloZooValueError(
-                f"No profile found for 4-taxon set {four_taxa_set}. " "Profile set must be dense."
-            )
-
-        # Validate profile: must have 1 or 2 quartets, all resolved
-        num_quartets = len(profile.quartets)
+    # The set is dense, so its profiles are exactly the C(n, 4) taxon sets; walk them
+    # directly. Each profile's six pair contributions follow from its split(s)
+    # alone: with one quartet a pair is on the same side or split; with two, the
+    # profile fixes one circular ordering, in which a pair is adjacent exactly when
+    # the two splits disagree about it and opposite when both splits separate it.
+    for four_taxa_set, (profile, _profile_weight) in profileset.profiles.items():
+        quartets = list(profile.quartets)
+        num_quartets = len(quartets)
         if num_quartets == 0:
             raise PhyloZooValueError(f"Profile for {four_taxa_set} has no quartets")
         if num_quartets > 2:
@@ -122,26 +120,34 @@ def quartet_distance(
                 f"Profile for {four_taxa_set} has {num_quartets} quartets. "
                 "Each profile must contain exactly 1 or 2 quartets."
             )
-
-        # Check all quartets are resolved
-        for quartet in profile.quartets:
+        sides: list[set[str]] = []
+        for quartet in quartets:
             if not quartet.is_resolved():
                 raise PhyloZooValueError(
                     f"Profile for {four_taxa_set} contains unresolved quartet (star tree). "
                     "All quartets must be resolved."
                 )
+            sides.append(quartet.split.set1)  # type: ignore[union-attr]
 
-        # Compute rho-distance for each pair of leaves using the profile
-        for leaf1, leaf2 in itertools.combinations(four_taxa, 2):
-            rho_dist = _rho_distance(profile, leaf1, leaf2, rho)
-
-            # Get indices
-            i = taxon_to_index[leaf1]
-            j = taxon_to_index[leaf2]
-
-            delta = 2 * rho_dist
-            D[i, j] += delta
-            D[j, i] += delta  # Symmetric matrix
+        if num_quartets == 1:
+            side = sides[0]
+            for leaf1, leaf2 in itertools.combinations(four_taxa_set, 2):
+                same_side = (leaf1 in side) == (leaf2 in side)
+                delta = 2.0 * (rho_c if same_side else rho_s)
+                i, j = taxon_to_index[leaf1], taxon_to_index[leaf2]
+                D[i, j] += delta
+                D[j, i] += delta
+        else:
+            first, second = sides
+            for leaf1, leaf2 in itertools.combinations(four_taxa_set, 2):
+                together_first = (leaf1 in first) == (leaf2 in first)
+                together_second = (leaf1 in second) == (leaf2 in second)
+                # Both splits separating the pair puts it across the four-cycle.
+                opposite = not together_first and not together_second
+                delta = 2.0 * (rho_o if opposite else rho_a)
+                i, j = taxon_to_index[leaf1], taxon_to_index[leaf2]
+                D[i, j] += delta
+                D[j, i] += delta
 
     # Add constant 2*n - 4 to all off-diagonal entries
     constant = 2 * n - 4

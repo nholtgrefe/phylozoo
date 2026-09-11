@@ -548,19 +548,29 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         as a method to get iterators or node data.
         """
 
-        def __init__(self, items: set[T], callable_func: Callable[..., Any]):
+        def __init__(self, graph: "DirectedMultiGraph", callable_func: Callable[..., Any]):
             """
             Initialize a node view.
 
             Parameters
             ----------
-            items : set[T]
-                Set of nodes.
+            graph : DirectedMultiGraph
+                The graph whose nodes are viewed. The node set is only materialised
+                when a set operation needs it, so ``graph.nodes(...)`` and
+                ``node in graph.nodes`` stay O(1) to set up.
             callable_func : callable
                 Function to call when used as method.
             """
-            self._items = items
+            self._graph = graph
             self._callable_func = callable_func
+            self._items_cache: set[T] | None = None
+
+        @property
+        def _items(self) -> set[T]:
+            """The node set, built on first use and reused by this view."""
+            if self._items_cache is None:
+                self._items_cache = set(self._graph._graph.nodes())
+            return self._items_cache
 
         def __call__(self, data: bool | str = False):
             """
@@ -586,7 +596,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
 
         def __contains__(self, item: T) -> bool:
             """Check if node in view."""
-            return item in self._items
+            return item in self._graph._graph
 
         def __repr__(self) -> str:
             """String representation."""
@@ -594,7 +604,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
 
         def __len__(self) -> int:
             """Number of nodes."""
-            return len(self._items)
+            return len(self._graph._graph)
 
         def __or__(self, other):
             """Union with other set."""
@@ -616,19 +626,29 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         as a method to get iterators with keys or data.
         """
 
-        def __init__(self, items: list[tuple[T, T]], callable_func: Callable[..., Any]):
+        def __init__(self, graph: "DirectedMultiGraph", callable_func: Callable[..., Any]):
             """
             Initialize an edge view.
 
             Parameters
             ----------
-            items : list[tuple[T, T]]
-                List of edges.
+            graph : DirectedMultiGraph
+                The graph whose edges are viewed. The edge list is only materialised
+                when iterated or printed, so ``graph.edges(...)`` and ``len`` stay
+                O(1) to set up.
             callable_func : callable
                 Function to call when used as method.
             """
-            self._items = items
+            self._graph = graph
             self._callable_func = callable_func
+            self._items_cache: list[tuple[T, T]] | None = None
+
+        @property
+        def _items(self) -> list[tuple[T, T]]:
+            """The edge list, built on first use and reused by this view."""
+            if self._items_cache is None:
+                self._items_cache = list(self._graph._graph.edges())
+            return self._items_cache
 
         def __call__(self, keys: bool = False, data: bool | str = False):
             """
@@ -655,8 +675,13 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
             return iter(self._items)
 
         def __contains__(self, item: tuple[T, T]) -> bool:
-            """Check if edge in view."""
-            return item in self._items
+            """Check if edge in view (as a ``(u, v)`` pair, like the list it stands for)."""
+            if not isinstance(item, tuple) or len(item) != 2:
+                return False
+            try:
+                return self._graph._graph.has_edge(*item)
+            except TypeError:
+                return False
 
         def __repr__(self) -> str:
             """String representation."""
@@ -664,7 +689,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
 
         def __len__(self) -> int:
             """Number of edges."""
-            return len(self._items)
+            return self._graph._graph.number_of_edges()
 
     @property
     def nodes(self) -> "NodeView":
@@ -690,8 +715,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.nodes(data=True))  # Method call with data
         [(1, {}), (2, {}), (3, {})]
         """
-        nodes_set = set(self._graph.nodes())
-        return self.NodeView(nodes_set, self.nodes_iter)
+        return self.NodeView(self, self.nodes_iter)
 
     def has_node(self, node: T) -> bool:
         """
@@ -755,8 +779,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.edges(keys=True, data=True))  # With keys and data
         [(1, 2, 0, {}), (2, 3, 0, {})]
         """
-        edges_list = list(self._graph.edges())
-        return self.EdgeView(edges_list, self.edges_iter)
+        return self.EdgeView(self, self.edges_iter)
 
     # ========== Node Operations ==========
 

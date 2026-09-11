@@ -706,19 +706,30 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         as a method to get iterators or node data.
         """
 
-        def __init__(self, items: set[T], callable_func: Callable[..., Any]):
+        def __init__(self, graph: "MixedMultiGraph", callable_func: Callable[..., Any]):
             """
             Initialize a node view.
 
             Parameters
             ----------
-            items : set[T]
-                Set of nodes.
+            graph : MixedMultiGraph
+                The graph whose nodes are viewed. The node set is only materialised
+                when a set operation needs it, so ``graph.nodes(...)`` and
+                ``node in graph.nodes`` stay O(1) to set up.
             callable_func : callable
                 Function to call when used as method.
             """
-            self._items = items
+            self._graph = graph
             self._callable_func = callable_func
+            self._items_cache: set[T] | None = None
+
+        @property
+        def _items(self) -> set[T]:
+            """The node set, built on first use and reused by this view."""
+            if self._items_cache is None:
+                graph = self._graph
+                self._items_cache = set(graph._undirected.nodes()) | set(graph._directed.nodes())
+            return self._items_cache
 
         def __call__(self, data: bool | str = False):
             """
@@ -744,7 +755,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
 
         def __contains__(self, item: T) -> bool:
             """Check if node in view."""
-            return item in self._items
+            return item in self._graph._undirected or item in self._graph._directed
 
         def __repr__(self) -> str:
             """String representation."""
@@ -774,19 +785,37 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         as a method to get iterators with keys or data.
         """
 
-        def __init__(self, items: list[tuple[T, T]], callable_func: Callable[..., Any]):
+        def __init__(
+            self,
+            build_items: Callable[[], list[tuple[T, T]]],
+            callable_func: Callable[..., Any],
+            count: Callable[[], int],
+        ):
             """
             Initialize an edge view.
 
             Parameters
             ----------
-            items : list[tuple[T, T]]
-                List of edges.
+            build_items : callable
+                Returns the list of edges. Only invoked when the view is iterated,
+                printed or tested for membership, so ``graph.edges(...)`` and ``len``
+                stay O(1) to set up.
             callable_func : callable
                 Function to call when used as method.
+            count : callable
+                Returns the number of edges without building the list.
             """
-            self._items = items
+            self._build_items = build_items
             self._callable_func = callable_func
+            self._count = count
+            self._items_cache: list[tuple[T, T]] | None = None
+
+        @property
+        def _items(self) -> list[tuple[T, T]]:
+            """The edge list, built on first use and reused by this view."""
+            if self._items_cache is None:
+                self._items_cache = self._build_items()
+            return self._items_cache
 
         def __call__(self, keys: bool = False, data: bool | str = False):
             """
@@ -822,7 +851,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
 
         def __len__(self) -> int:
             """Number of edges."""
-            return len(self._items)
+            return self._count()
 
     @property
     def nodes(self) -> "NodeView":
@@ -848,8 +877,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.nodes(data=True))  # Method call with data
         [(1, {}), (2, {}), (3, {})]
         """
-        nodes_set = set(self._undirected.nodes()) | set(self._directed.nodes())
-        return self.NodeView(nodes_set, self.nodes_iter)
+        return self.NodeView(self, self.nodes_iter)
 
     def has_node(self, node: T) -> bool:
         """
@@ -907,9 +935,17 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.edges())  # Method call
         [(1, 2), (2, 3)]
         """
-        edges_list = list(self._undirected.edges())
-        edges_list.extend(self._directed.edges())
-        return self.EdgeView(edges_list, self.edges_iter)
+
+        def build_items() -> list[tuple[T, T]]:
+            edges_list = list(self._undirected.edges())
+            edges_list.extend(self._directed.edges())
+            return edges_list
+
+        return self.EdgeView(
+            build_items,
+            self.edges_iter,
+            lambda: self._undirected.number_of_edges() + self._directed.number_of_edges(),
+        )
 
     # ========== Node Operations ==========
 
@@ -1333,8 +1369,11 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.directed_edges(keys=True, data=True))  # With keys and data
         [(1, 2, 0, {'weight': 1.0}), (1, 2, 1, {'weight': 2.0})]
         """
-        edges_list = list(self._directed.edges())
-        return self.EdgeView(edges_list, self.directed_edges_iter)
+        return self.EdgeView(
+            lambda: list(self._directed.edges()),
+            self.directed_edges_iter,
+            self._directed.number_of_edges,
+        )
 
     # ========== Undirected Edge Operations ==========
 
@@ -1548,8 +1587,11 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.undirected_edges(keys=True, data=True))  # With keys and data
         [(1, 2, 0, {'weight': 1.0}), (1, 2, 1, {'weight': 2.0})]
         """
-        edges_list = list(self._undirected.edges())
-        return self.EdgeView(edges_list, self.undirected_edges_iter)
+        return self.EdgeView(
+            lambda: list(self._undirected.edges()),
+            self.undirected_edges_iter,
+            self._undirected.number_of_edges,
+        )
 
     # ========== Query Operations ==========
 
