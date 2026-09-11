@@ -1164,6 +1164,42 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
             f"edges={self.number_of_edges()})"
         )
 
+    def all_degrees(self) -> dict[T, tuple[int, int]]:
+        """
+        In- and out-degree of every node, in a single pass.
+
+        :meth:`indegree` and :meth:`outdegree` each look the node up individually, so
+        asking for both per node repeats that work. Callers that need degrees for the
+        whole graph -- classification, validation, degree-2 suppression -- should take
+        them from here instead.
+
+        Returns
+        -------
+        dict[T, tuple[int, int]]
+            Maps each node to ``(indegree, outdegree)``. The total degree of a node is
+            the sum of the two.
+
+        Examples
+        --------
+        >>> G = DirectedMultiGraph()
+        >>> _ = G.add_edge(1, 2)
+        >>> _ = G.add_edge(2, 3)
+        >>> degrees = G.all_degrees()
+        >>> degrees[1]
+        (0, 1)
+        >>> degrees[2]
+        (1, 1)
+        >>> sum(degrees[2])  # total degree
+        2
+
+        See Also
+        --------
+        degree : Total degree of a single node.
+        """
+        in_degree = self._graph.in_degree
+        out_degree = self._graph.out_degree
+        return {node: (in_degree(node), out_degree(node)) for node in self._graph.nodes}
+
     def degree(self, v: T) -> int:
         """
         Return the total degree of vertex v.

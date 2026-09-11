@@ -1651,3 +1651,79 @@ class TestGenerateNodeIds:
         assert node_ids[0] == 101
         assert node_ids[-1] == 1100
         assert node_ids == list(range(101, 1101))
+
+
+class TestAllDegrees:
+    """DirectedMultiGraph.all_degrees: every node's in/out degree in one pass."""
+
+    def test_matches_the_per_node_accessors(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(2, 3)
+        G.add_edge(4, 3)
+        G.add_node(9)  # isolated
+
+        degrees = G.all_degrees()
+        assert set(degrees) == set(G.nodes())
+        for node in G.nodes():
+            incoming, outgoing = degrees[node]
+            assert incoming == G.indegree(node)
+            assert outgoing == G.outdegree(node)
+            assert incoming + outgoing == G.degree(node)
+
+    def test_known_values(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(2, 3)
+        assert G.all_degrees() == {1: (0, 1), 2: (1, 1), 3: (1, 0)}
+
+    def test_isolated_node_is_zero(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_node("lonely")
+        assert G.all_degrees() == {"lonely": (0, 0)}
+
+    def test_counts_parallel_edges(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(1, 2)  # parallel
+        degrees = G.all_degrees()
+        assert degrees[1] == (0, 2)
+        assert degrees[2] == (2, 0)
+
+    def test_empty_graph(self) -> None:
+        assert DirectedMultiGraph().all_degrees() == {}
+
+    def test_reflects_mutations(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_edge(2, 3)
+        assert G.all_degrees()[2] == (1, 1)
+        G.remove_edge(1, 2, key=0)
+        assert G.all_degrees()[2] == (0, 1)
+        G.remove_node(3)
+        assert 3 not in G.all_degrees()
+
+
+class TestHasNodeDirected:
+    """DirectedMultiGraph.has_node: O(1) membership without materialising the node set."""
+
+    def test_present_and_absent(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge("a", "b")
+        assert G.has_node("a")
+        assert G.has_node("b")
+        assert not G.has_node("missing")
+
+    def test_agrees_with_nodes_view(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        G.add_node(3)
+        for node in list(G.nodes()) + [99, "nope"]:
+            assert G.has_node(node) == (node in set(G.nodes()))
+
+    def test_after_removal(self) -> None:
+        G = DirectedMultiGraph()
+        G.add_edge(1, 2)
+        assert G.has_node(1)
+        G.remove_node(1)
+        assert not G.has_node(1)

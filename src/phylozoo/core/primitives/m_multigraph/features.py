@@ -695,7 +695,13 @@ def _updown_reachable(graph: "MixedMultiGraph", x: T, y: T) -> bool:
     >>> _ = G.add_directed_edge(2, 3)
     >>> _updown_reachable(G, 1, 3)
     True
-    >>> _updown_reachable(G, 3, 1)
+    >>> _updown_reachable(G, 3, 1)  # the relation is symmetric
+    True
+    >>> # the two parents of a hybrid have no up-down path between them
+    >>> H = MixedMultiGraph()
+    >>> _ = H.add_directed_edge('x', 'm')
+    >>> _ = H.add_directed_edge('y', 'm')
+    >>> _updown_reachable(H, 'x', 'y')
     False
     """
     directed, undirected = graph._directed, graph._undirected
@@ -760,7 +766,11 @@ def has_updown_path(graph: "MixedMultiGraph", x: T, y: T) -> bool:
     >>> _ = G.add_directed_edge(2, 3)
     >>> has_updown_path(G, 1, 3)
     True
-    >>> has_updown_path(G, 3, 1)
+    >>> # the two parents of a hybrid have no up-down path between them
+    >>> H = MixedMultiGraph()
+    >>> _ = H.add_directed_edge('x', 'm')
+    >>> _ = H.add_directed_edge('y', 'm')
+    >>> has_updown_path(H, 'x', 'y')
     False
 
     See Also

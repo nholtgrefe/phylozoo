@@ -318,9 +318,7 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
             raise PhyloZooNetworkStructureError("Source component is empty")
 
         # Local imports to avoid circular dependencies
-        from ...network.dnetwork.derivations import to_sd_network
-        from ...network.dnetwork import DirectedPhyNetwork
-        from ...network.dnetwork.classifications import is_lsa_network
+        from ._utils import _root_is_lsa
 
         # Step 2: Pick a non-leaf vertex r from the source component
         internal_in_component = [node for node in nodes_in_component if node in self.internal_nodes]
@@ -340,98 +338,40 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
                 f"orienting away from root location {root} failed: {e}"
             )
 
-        # Step 4: Build a DirectedPhyNetwork from the oriented graph
-        directed_edges: list[dict[str, Any]] = []
-        for u, v, key, data in oriented_dm.edges(keys=True, data=True):
-            edge_dict: dict[str, Any] = {"u": u, "v": v}
-            if key != 0:
-                edge_dict["key"] = key
-            if data:
-                edge_dict.update(data)
-            directed_edges.append(edge_dict)
-
-        oriented_leaves: set[Any] = {
-            node for node in oriented_dm.nodes() if oriented_dm.outdegree(node) == 0
-        }
-        taxa_mapping: dict[Any, str] = {
-            leaf: self.get_label(leaf) or str(leaf) for leaf in oriented_leaves
-        }
-
         with no_validation(methods=["validate", "_validate_*"]):
-            try:
-                nodes = (
-                    [(leaf, {"label": label}) for leaf, label in taxa_mapping.items()]
-                    if taxa_mapping
-                    else None
-                )
-                d_network = DirectedPhyNetwork(
-                    edges=directed_edges,
-                    nodes=nodes,
-                )
-            except ValueError as e:
-                raise PhyloZooNetworkStructureError(
-                    f"Semi-directed network constraint validation failed: "
-                    f"oriented network is not a valid DirectedPhyNetwork: {e}"
-                )
-
-            # Step 5: Check if r is the LSA of the DirectedPhyNetwork
-            # If not, raise error immediately
-            if not is_lsa_network(d_network):
+            # Step 5: Check that r is the LSA of the orientation. This is decided on
+            # the oriented multigraph itself -- the lowest node every root-to-leaf path
+            # passes through is the leaves' lowest common ancestor in the dominator
+            # tree -- rather than by building a DirectedPhyNetwork to ask it.
+            if not _root_is_lsa(oriented_dm, root):
                 raise PhyloZooNetworkStructureError(
                     "Semi-directed network constraint validation failed: "
                     "the chosen root is not the LSA node of the oriented network."
                 )
 
             # Step 6: Compare the orientation against the original network.
-            #
-            # ``to_sd_network`` would undirect exactly the non-hybrid edges of the
-            # orientation and then suppress degree-2 nodes; ``to_lsa_network`` cannot
-            # fire here because step 5 already established that the root is the LSA.
-            # So as long as no degree-2 node would be suppressed -- guaranteed once
-            # ``_validate_degree_constraints`` has run, since internal nodes then have
-            # degree >= 3 -- the round-trip is equivalent to the edge comparison below,
-            # and we can skip building a second directed and semi-directed network.
-            suppressible = any(
-                oriented_dm.indegree(node) + oriented_dm.outdegree(node) == 2
-                for node in oriented_dm.nodes()
-            )
-            sd_roundtrip = None
-            if suppressible:
-                # Degree-2 nodes would be suppressed, changing the node set; fall back
-                # to the explicit round-trip so the comparison stays exact.
-                try:
-                    sd_roundtrip = to_sd_network(d_network)
-                except ValueError as e:
+            for node in oriented_dm.nodes():
+                if oriented_dm.indegree(node) + oriented_dm.outdegree(node) == 2:
                     raise PhyloZooNetworkStructureError(
-                        f"Semi-directed network constraint validation failed: "
-                        f"conversion back to semi-directed failed: {e}"
+                        "Semi-directed network constraint validation failed: "
+                        f"node {node} has degree 2, so the node set would not survive "
+                        "conversion back to semi-directed."
                     )
 
         # Step 7: Compare structure only (nodes, directed edges, undirected edges)
-        if sd_roundtrip is not None:
-            roundtrip_nodes = set(sd_roundtrip._graph.nodes())
-            roundtrip_directed = {
-                (u, v, key if key is not None else 0)
-                for u, v, key in sd_roundtrip._graph.directed_edges_iter(keys=True)
-            }
-            roundtrip_undirected = {
-                ((u, v) if str(u) <= str(v) else (v, u)) + (key if key is not None else 0,)
-                for u, v, key in sd_roundtrip._graph.undirected_edges_iter(keys=True)
-            }
-        else:
-            roundtrip_nodes = set(oriented_dm.nodes())
-            roundtrip_directed = set()
-            roundtrip_undirected = set()
-            for u, v, key in oriented_dm.edges(keys=True):
-                normalized_key = key if key is not None else 0
-                # A hybrid node keeps its incoming edges directed; every other edge
-                # becomes undirected.
-                if oriented_dm.indegree(v) >= 2 and oriented_dm.outdegree(v) == 1:
-                    roundtrip_directed.add((u, v, normalized_key))
-                else:
-                    roundtrip_undirected.add(
-                        ((u, v) if str(u) <= str(v) else (v, u)) + (normalized_key,)
-                    )
+        roundtrip_nodes = set(oriented_dm.nodes())
+        roundtrip_directed = set()
+        roundtrip_undirected = set()
+        for u, v, key in oriented_dm.edges(keys=True):
+            normalized_key = key if key is not None else 0
+            # A hybrid node keeps its incoming edges directed; every other edge
+            # becomes undirected.
+            if oriented_dm.indegree(v) >= 2 and oriented_dm.outdegree(v) == 1:
+                roundtrip_directed.add((u, v, normalized_key))
+            else:
+                roundtrip_undirected.add(
+                    ((u, v) if str(u) <= str(v) else (v, u)) + (normalized_key,)
+                )
 
         if set(self._graph.nodes()) != roundtrip_nodes:
             raise PhyloZooNetworkStructureError(

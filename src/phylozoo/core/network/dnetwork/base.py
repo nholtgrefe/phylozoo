@@ -1350,8 +1350,8 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         """
         return {
             v
-            for v in self._graph.nodes
-            if self._graph.indegree(v) >= 2 and self._graph.outdegree(v) == 1
+            for v, (indegree, outdegree) in self._graph.all_degrees().items()
+            if indegree >= 2 and outdegree == 1
         }
 
     @cached_property
@@ -1409,11 +1409,8 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         leaves = self.leaves
         return {
             v
-            for v in self._graph.nodes
-            if v != root
-            and v not in leaves
-            and self._graph.indegree(v) == 1
-            and self._graph.outdegree(v) >= 2
+            for v, (indegree, outdegree) in self._graph.all_degrees().items()
+            if v != root and v not in leaves and indegree == 1 and outdegree >= 2
         }
 
     @cached_property

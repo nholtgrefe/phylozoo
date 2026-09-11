@@ -21,6 +21,76 @@ if TYPE_CHECKING:
     from .sd_phynetwork import SemiDirectedPhyNetwork
 
 
+def _root_is_lsa(oriented_graph: Any, root: Any) -> bool:
+    """
+    Check whether ``root`` is the lowest stable ancestor of an orientation's leaves.
+
+    The LSA is the lowest node lying on every root-to-leaf path, which is exactly the
+    leaves' lowest common ancestor in the dominator tree. Deciding it here avoids
+    building a :class:`DirectedPhyNetwork` purely to ask the same question.
+
+    Parameters
+    ----------
+    oriented_graph : DirectedMultiGraph
+        A graph whose edges are all oriented away from ``root``.
+    root : Any
+        The node the graph was oriented away from.
+
+    Returns
+    -------
+    bool
+        True if ``root`` is the LSA of the graph's leaves.
+
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+    >>> G = DirectedMultiGraph()
+    >>> _ = G.add_edge(1, 2)
+    >>> _ = G.add_edge(1, 3)
+    >>> _root_is_lsa(G, 1)
+    True
+    >>> H = DirectedMultiGraph()
+    >>> _ = H.add_edge(1, 2)
+    >>> _ = H.add_edge(2, 3)
+    >>> _ = H.add_edge(2, 4)
+    >>> _root_is_lsa(H, 1)  # node 2 is the LSA, not the root
+    False
+    """
+    dag = oriented_graph._graph
+    leaves = [node for node in dag.nodes() if dag.out_degree(node) == 0]
+    if not leaves:
+        return False
+    if len(leaves) == 1:
+        # A single leaf's LSA is its parent, so the root qualifies only for the
+        # degenerate one-edge case.
+        return bool(list(dag.predecessors(leaves[0])) == [root])
+
+    idom = nx.immediate_dominators(dag, root)
+    depth: dict[Any, int] = {root: 0}
+    for node in nx.topological_sort(dag):
+        if node != root:
+            parent = idom.get(node)
+            if parent is None:
+                continue  # unreachable from the root
+            depth[node] = depth[parent] + 1
+
+    current = leaves[0]
+    if current not in depth:
+        return False
+    for other in leaves[1:]:
+        if other not in depth:
+            return False
+        first, second = current, other
+        while depth[first] > depth[second]:
+            first = idom[first]
+        while depth[second] > depth[first]:
+            second = idom[second]
+        while first != second:
+            first, second = idom[first], idom[second]
+        current = first
+    return bool(current == root)
+
+
 class _RootingContext:
     """
     A rooted view of a semi-directed network, reused across ``subnetwork`` calls.
@@ -180,13 +250,14 @@ def _suppress_deg2_nodes(
         # Find all degree-2 nodes that can be suppressed
         # Only consider nodes where outdegree != 2 and indegree != 2
         # (to avoid ambiguous suppression directions)
+        degrees = graph.all_degrees()
         degree2_nodes = [
             node
-            for node in graph.nodes()
+            for node, (undirected, incoming, outgoing) in degrees.items()
             if node not in exclude_nodes
-            and graph.degree(node) == 2
-            and graph.outdegree(node) != 2
-            and graph.indegree(node) != 2
+            and undirected + incoming + outgoing == 2
+            and outgoing != 2
+            and incoming != 2
         ]
 
         if not degree2_nodes:

@@ -103,12 +103,11 @@ def _suppress_deg2_nodes(
     # Iteratively suppress degree-2 nodes until no more remain
     while True:
         # Find all degree-2 nodes (indegree=1 and outdegree=1)
+        degrees = graph.all_degrees()
         degree2_nodes = [
             node
-            for node in graph.nodes()
-            if node not in exclude_nodes
-            and graph._graph.in_degree(node) == 1
-            and graph._graph.out_degree(node) == 1
+            for node, (incoming_count, outgoing_count) in degrees.items()
+            if node not in exclude_nodes and incoming_count == 1 and outgoing_count == 1
         ]
 
         if not degree2_nodes:

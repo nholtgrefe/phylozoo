@@ -22,6 +22,7 @@ from phylozoo.core.primitives.m_multigraph.features import (
     number_of_connected_components,
     source_components,
     updown_path_vertices,
+    has_updown_path,
 )
 from phylozoo.core.primitives.m_multigraph.transformations import (
     identify_vertices,
@@ -2790,3 +2791,131 @@ class TestGenerateNodeIds:
         assert node_ids[0] == 101
         assert node_ids[-1] == 1100
         assert node_ids == list(range(101, 1101))
+
+
+class TestAllDegrees:
+    """MixedMultiGraph.all_degrees: every node's degrees in one pass."""
+
+    def test_matches_the_per_node_accessors(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        G.add_directed_edge(3, 4)
+        G.add_directed_edge(5, 4)
+        G.add_node(9)  # isolated
+
+        degrees = G.all_degrees()
+        assert set(degrees) == set(G.nodes())
+        for node in G.nodes():
+            undirected, incoming, outgoing = degrees[node]
+            assert undirected == G.undirected_degree(node)
+            assert incoming == G.indegree(node)
+            assert outgoing == G.outdegree(node)
+            assert undirected + incoming + outgoing == G.degree(node)
+
+    def test_known_values(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        assert G.all_degrees() == {1: (1, 0, 0), 2: (1, 0, 1), 3: (0, 1, 0)}
+
+    def test_isolated_node_is_all_zero(self) -> None:
+        G = MixedMultiGraph()
+        G.add_node("lonely")
+        assert G.all_degrees() == {"lonely": (0, 0, 0)}
+
+    def test_counts_parallel_edges(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(1, 2)  # parallel
+        G.add_directed_edge(3, 4)
+        G.add_directed_edge(3, 4)  # parallel
+        degrees = G.all_degrees()
+        assert degrees[1] == (2, 0, 0)
+        assert degrees[3] == (0, 0, 2)
+        assert degrees[4] == (0, 2, 0)
+
+    def test_empty_graph(self) -> None:
+        assert MixedMultiGraph().all_degrees() == {}
+
+    def test_reflects_mutations(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_undirected_edge(2, 3)
+        assert G.all_degrees()[2] == (2, 0, 0)
+        G.remove_edge(1, 2, key=0)
+        assert G.all_degrees()[2] == (1, 0, 0)
+        G.remove_node(3)
+        assert 3 not in G.all_degrees()
+
+
+class TestHasNode:
+    """MixedMultiGraph.has_node: O(1) membership without materialising the node set."""
+
+    def test_present_and_absent(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge("a", "b")
+        G.add_directed_edge("c", "d")
+        for node in ("a", "b", "c", "d"):
+            assert G.has_node(node)
+        assert not G.has_node("missing")
+
+    def test_agrees_with_nodes_view(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        G.add_node(4)
+        for node in list(G.nodes()) + [99, "nope"]:
+            assert G.has_node(node) == (node in set(G.nodes()))
+
+    def test_after_removal(self) -> None:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        assert G.has_node(1)
+        G.remove_node(1)
+        assert not G.has_node(1)
+
+
+class TestHasUpdownPath:
+    """has_updown_path agrees with updown_path_vertices but decides it in linear time."""
+
+    @staticmethod
+    def _graph() -> MixedMultiGraph:
+        G = MixedMultiGraph()
+        G.add_undirected_edge(1, 2)
+        G.add_directed_edge(2, 3)
+        G.add_undirected_edge(3, 4)
+        return G
+
+    def test_matches_updown_path_vertices(self) -> None:
+        G = self._graph()
+        for x in G.nodes():
+            for y in G.nodes():
+                expected = y in updown_path_vertices(G, x, y)
+                assert has_updown_path(G, x, y) == expected, (x, y)
+
+    def test_is_symmetric(self) -> None:
+        """Reversing an up-down path gives an up-down path, so the relation is symmetric."""
+        G = self._graph()
+        for x in G.nodes():
+            for y in G.nodes():
+                assert has_updown_path(G, x, y) == has_updown_path(G, y, x), (x, y)
+
+    def test_hybrid_parents_have_no_updown_path(self) -> None:
+        """Two parents of the same hybrid are not joined by an up-down path."""
+        G = MixedMultiGraph()
+        G.add_directed_edge("x", "m")
+        G.add_directed_edge("y", "m")
+        G.add_undirected_edge("m", "leaf")
+        assert not has_updown_path(G, "x", "y")
+        assert not has_updown_path(G, "y", "x")
+        assert updown_path_vertices(G, "x", "y") == set()
+        # but each parent does reach the hybrid and below it
+        assert has_updown_path(G, "x", "m")
+        assert has_updown_path(G, "x", "leaf")
+
+    def test_same_vertex_and_missing_vertices(self) -> None:
+        G = self._graph()
+        assert has_updown_path(G, 1, 1)
+        assert not has_updown_path(G, 1, "absent")
+        assert not has_updown_path(G, "absent", 1)

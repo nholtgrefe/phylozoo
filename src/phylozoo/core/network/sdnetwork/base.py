@@ -562,24 +562,26 @@ class MixedPhyNetwork(Generic[T]):
         PhyloZooNetworkDegreeError
             If any degree constraints are violated.
         """
+        # Take every node's degrees in one pass; asking the graph per node would
+        # repeat the sub-graph lookups for each of the two checks below.
+        degrees = self._graph.all_degrees()
+
         # 1. Check that all internal nodes have degree >= 3
-        internal_nodes = self.internal_nodes
-        for node in internal_nodes:
-            degree = self._graph.degree(node)
-            if degree < 3:
+        for node in self.internal_nodes:
+            total_degree = sum(degrees[node])
+            if total_degree < 3:
                 raise PhyloZooNetworkDegreeError(
-                    f"Internal node {node} has degree {degree}, but all internal nodes "
+                    f"Internal node {node} has degree {total_degree}, but all internal nodes "
                     f"must have degree >= 3."
                 )
 
         # 2. Check that each node has indegree either 0 or total_degree-1
         # This constraint applies to all nodes (including leaves)
-        for node in self._graph.nodes:
-            indegree = self._graph.indegree(node)
-            total_degree = self._graph.degree(node)
-            if indegree != 0 and indegree != total_degree - 1:
+        for node, (undirected_count, incoming, outgoing) in degrees.items():
+            total_degree = undirected_count + incoming + outgoing
+            if incoming != 0 and incoming != total_degree - 1:
                 raise PhyloZooNetworkDegreeError(
-                    f"Node {node} has indegree {indegree} and total degree {total_degree}. "
+                    f"Node {node} has indegree {incoming} and total degree {total_degree}. "
                     f"Each node must have indegree either 0 or total_degree-1."
                 )
 

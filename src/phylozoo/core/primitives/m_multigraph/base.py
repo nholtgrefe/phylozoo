@@ -1639,6 +1639,55 @@ class MixedMultiGraph(IOMixin, Generic[T]):
             ")"
         )
 
+    def all_degrees(self) -> dict[T, tuple[int, int, int]]:
+        """
+        Undirected, in- and out-degree of every node, in a single pass.
+
+        :meth:`degree`, :meth:`indegree` and :meth:`outdegree` each look the node up
+        in a sub-graph, so asking for all three per node costs several lookups. Callers
+        that need degrees for the whole graph -- validation and degree-2 suppression,
+        say -- should take them from here instead.
+
+        Returns
+        -------
+        dict[T, tuple[int, int, int]]
+            Maps each node to ``(undirected_degree, indegree, outdegree)``. The total
+            degree of a node is the sum of the three.
+
+        Examples
+        --------
+        >>> G = MixedMultiGraph()
+        >>> _ = G.add_undirected_edge(1, 2)
+        >>> _ = G.add_directed_edge(2, 3)
+        >>> degrees = G.all_degrees()
+        >>> degrees[1]
+        (1, 0, 0)
+        >>> degrees[2]
+        (1, 0, 1)
+        >>> degrees[3]
+        (0, 1, 0)
+        >>> sum(degrees[2])  # total degree
+        2
+
+        See Also
+        --------
+        degree : Total degree of a single node.
+        """
+        undirected = self._undirected
+        directed = self._directed
+        undirected_degree = undirected.degree
+        in_degree = directed.in_degree
+        out_degree = directed.out_degree
+
+        result: dict[T, tuple[int, int, int]] = {}
+        for node in self.nodes:
+            result[node] = (
+                undirected_degree(node) if node in undirected else 0,
+                in_degree(node) if node in directed else 0,
+                out_degree(node) if node in directed else 0,
+            )
+        return result
+
     def degree(self, v: T) -> int:
         """
         Return the total degree of vertex v.
