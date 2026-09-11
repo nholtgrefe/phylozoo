@@ -25,7 +25,7 @@ from ...split import Split, SplitSystem, WeightedSplitSystem
 from ...quartet import Quartet, QuartetProfile, QuartetProfileSet
 from ...primitives.partition import Partition
 from .sd_phynetwork import SemiDirectedPhyNetwork
-from ._utils import _RootingContext, _suppress_deg2_nodes, _subdivide_edge
+from ._utils import _RootingContext, _prune_degree1_nodes, _suppress_deg2_nodes, _subdivide_edge
 from .conversions import sdnetwork_from_graph
 from ...primitives.m_multigraph.transformations import (
     identify_vertices as mm_identify_vertices,
@@ -480,6 +480,7 @@ def _displayed_tree_graphs(
         The graph of one displayed tree. Each is a fresh object owned by the caller.
     """
     original_leaves = network.leaves
+    keep_nodes = set(original_leaves)
 
     for tree_graph in _switchings(network, probability=probability):
         # _switchings yields a fresh graph per switching and nothing else sees it,
@@ -487,21 +488,7 @@ def _displayed_tree_graphs(
         _undirect_switching(tree_graph)
 
         # Exhaustively remove degree-1 nodes that are not leaves
-        while True:
-            degree1_nodes = [
-                node
-                for node in tree_graph.nodes()
-                if tree_graph.degree(node) == 1 and node not in original_leaves
-            ]
-
-            if not degree1_nodes:
-                break
-
-            # Remove all degree-1 nodes (excluding leaves)
-            for node in degree1_nodes:
-                # Double-check node still exists and is still degree-1
-                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
-                    tree_graph.remove_node(node)
+        _prune_degree1_nodes(tree_graph, keep_nodes)
 
         # Suppress all degree-2 nodes
         _suppress_deg2_nodes(tree_graph, exclude_nodes=None)
@@ -1242,52 +1229,39 @@ def _root_sd_network_at(
 
         # Use _subdivide_edge helper to subdivide the edge
         # This returns a new MixedMultiGraph with the subdivided edge
-        graph_copy, subdiv_node = _subdivide_edge(network, u, v, key)
+        source_graph, subdiv_node = _subdivide_edge(network, u, v, key)
 
         # Root vertex is the subdivision node
         root_vertex = subdiv_node
     else:
-        # root_location is a node - copy the graph
-        graph_copy = network._graph.copy()
-        if root_location not in graph_copy.nodes():
+        # root_location is a node. No copy is needed: orient_away_from_vertex only
+        # reads its input and builds a fresh DirectedMultiGraph, so the network's own
+        # graph is never touched. Attributes are filtered on that result below.
+        source_graph = network._graph
+        if not source_graph.has_node(root_location):
             raise PhyloZooValueError(f"Node {root_location} not found in the network")
         root_vertex = root_location
 
-    # Step 2: Filter attributes
-    # Remove all graph attributes
-    graph_copy._directed.graph.clear()
-    graph_copy._undirected.graph.clear()
-
-    # Filter node attributes: only keep 'label'
-    allowed_node_attrs = {"label"}
-    for node in graph_copy.nodes():
-        if node in graph_copy._directed.nodes:
-            for attr_key in list(graph_copy._directed.nodes[node].keys()):
-                if attr_key not in allowed_node_attrs:
-                    del graph_copy._directed.nodes[node][attr_key]
-        if node in graph_copy._undirected.nodes:
-            for attr_key in list(graph_copy._undirected.nodes[node].keys()):
-                if attr_key not in allowed_node_attrs:
-                    del graph_copy._undirected.nodes[node][attr_key]
-
-    # Filter edge attributes: only keep 'gamma' and 'branch_length'
-    allowed_edge_attrs = {"gamma", "branch_length"}
-    for u, v, key, data in graph_copy._directed.edges(keys=True, data=True):
-        for attr_key in list(data.keys()):
-            if attr_key not in allowed_edge_attrs:
-                del graph_copy._directed[u][v][key][attr_key]
-    for u, v, key, data in graph_copy._undirected.edges(keys=True, data=True):
-        for attr_key in list(data.keys()):
-            if attr_key not in allowed_edge_attrs:
-                del graph_copy._undirected[u][v][key][attr_key]
-
-    # Step 3: Orient the graph away from root vertex
+    # Step 2: Orient the graph away from root vertex
     try:
-        oriented_dm = orient_away_from_vertex(graph_copy, root_vertex)
+        oriented_dm = orient_away_from_vertex(source_graph, root_vertex)
     except PhyloZooError as e:
         raise PhyloZooValueError(
             f"Failed to orient network away from root location {root_location}: {e}"
         )
+
+    # Step 3: Filter attributes on the oriented graph. It is a fresh object that only
+    # this function holds, and orient_away_from_vertex re-packs attributes into new
+    # dicts, so editing them here cannot affect the source network.
+    oriented_dm._graph.graph.clear()
+    for _node, node_attrs in oriented_dm._graph.nodes(data=True):
+        for attr_key in [key for key in node_attrs if key != "label"]:
+            del node_attrs[attr_key]
+    allowed_edge_attrs = {"gamma", "branch_length"}
+    for _u, _v, _key, edge_attrs in oriented_dm._graph.edges(keys=True, data=True):
+        for attr_key in [key for key in edge_attrs if key not in allowed_edge_attrs]:
+            del edge_attrs[attr_key]
+    oriented_dm._combined_cache = None
 
     # Step 4: Convert to DirectedPhyNetwork
     try:

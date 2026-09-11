@@ -1714,3 +1714,45 @@ class TestPartitionFromBlob:
         assert {"C"} in partition
         assert {"D"} in partition
         assert {"E", "F"} in partition
+
+
+class TestPruneDegree1Nodes:
+    """Directly exercise the worklist prune used when building displayed trees."""
+
+    def _graph(self, edges):
+        from phylozoo.core.primitives.d_multigraph.base import DirectedMultiGraph
+
+        graph = DirectedMultiGraph()
+        for u, v in edges:
+            graph.add_edge(u, v)
+        return graph
+
+    def test_removes_chain_exposed_by_earlier_removal(self):
+        """A whole pendant chain goes, not just its tip: removal exposes new degree-1 nodes."""
+        from phylozoo.core.network.dnetwork._utils import _prune_degree1_nodes
+
+        graph = self._graph([("r", "a"), ("a", "L1"), ("r", "b"), ("b", "c"), ("c", "d")])
+        _prune_degree1_nodes(graph, {"r", "L1"})
+        assert set(graph.nodes()) == {"r", "a", "L1"}
+
+    def test_keeps_protected_nodes_however_low_their_degree(self):
+        from phylozoo.core.network.dnetwork._utils import _prune_degree1_nodes
+
+        graph = self._graph([("r", "x"), ("x", "L1")])
+        _prune_degree1_nodes(graph, {"r", "L1"})
+        assert set(graph.nodes()) == {"r", "x", "L1"}
+
+    def test_two_adjacent_degree1_nodes_leave_one_behind(self):
+        """Removing one of a connected pair drops the other to degree 0, which is not pruned."""
+        from phylozoo.core.network.dnetwork._utils import _prune_degree1_nodes
+
+        graph = self._graph([("a", "b")])
+        _prune_degree1_nodes(graph, set())
+        assert len(list(graph.nodes())) == 1
+
+    def test_no_degree1_nodes_is_a_noop(self):
+        from phylozoo.core.network.dnetwork._utils import _prune_degree1_nodes
+
+        graph = self._graph([("r", "L1"), ("r", "L2")])
+        _prune_degree1_nodes(graph, {"r", "L1", "L2"})
+        assert set(graph.nodes()) == {"r", "L1", "L2"}

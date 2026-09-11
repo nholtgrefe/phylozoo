@@ -6,6 +6,7 @@ including edge attribute merging, degree-2 node suppression, and the rooting
 context that lets repeated subnetwork extractions share one rooted view.
 """
 
+from collections import deque
 from typing import TYPE_CHECKING, Any
 
 import networkx as nx
@@ -588,3 +589,40 @@ def _subdivide_edge(
         graph_copy.add_undirected_edge(subdiv_node, v, **second_attrs)
 
     return graph_copy, subdiv_node
+
+
+def _prune_degree1_nodes(graph: Any, keep: "set[Any] | frozenset[Any]") -> None:
+    """
+    Exhaustively remove degree-1 nodes that are not in ``keep``.
+
+    Removing a degree-1 node can expose a new degree-1 node, so the removal has to
+    be repeated until nothing changes. This uses a worklist rather than rescanning
+    every node each round: a degree-1 node has exactly one incident edge, so
+    removing it lowers exactly one other node's degree by exactly one, and that
+    node is the only one that can newly become degree-1. Total cost is O(V + E)
+    instead of one degree computation per node per round.
+
+    The graph is modified in place.
+
+    Parameters
+    ----------
+    graph : DirectedMultiGraph or MixedMultiGraph
+        The graph to prune. Modified in place.
+    keep : set
+        Nodes that must never be removed, however low their degree.
+    """
+    degrees = {node: sum(counts) for node, counts in graph.all_degrees().items()}
+    queue = deque(node for node, degree in degrees.items() if degree == 1 and node not in keep)
+    while queue:
+        node = queue.popleft()
+        # The queue can hold stale entries: a node whose degree has since changed,
+        # or one already removed (absent from ``degrees``).
+        if degrees.get(node) != 1 or node in keep:
+            continue
+        neighbor = next(iter(graph.neighbors(node)), None)
+        graph.remove_node(node)
+        del degrees[node]
+        if neighbor is not None and neighbor in degrees:
+            degrees[neighbor] -= 1
+            if degrees[neighbor] == 1 and neighbor not in keep:
+                queue.append(neighbor)

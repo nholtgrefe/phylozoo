@@ -25,7 +25,7 @@ from ...split import Split, SplitSystem, WeightedSplitSystem
 from ...quartet import QuartetProfileSet
 from ...triplet import Triplet, TripletProfile, TripletProfileSet
 from ...primitives.partition import Partition
-from ._utils import _suppress_deg2_nodes as dm_suppress_deg2_nodes
+from ._utils import _prune_degree1_nodes, _suppress_deg2_nodes as dm_suppress_deg2_nodes
 from ..sdnetwork._utils import _suppress_deg2_nodes as mm_suppress_deg2_nodes
 from ...primitives.d_multigraph.transformations import identify_vertices as dm_identify_vertices
 from ...primitives.d_multigraph.transformations import subgraph as dm_subgraph
@@ -521,29 +521,14 @@ def _displayed_tree_graphs(
     """
     original_leaves = network.leaves
     original_root = network.root_node
+    keep_nodes = set(original_leaves) | {original_root}
 
     for tree_graph in _switchings(network, probability=probability):
         # _switchings yields a fresh graph per switching and nothing else sees it,
         # so it can be reshaped in place rather than copied again.
 
         # Exhaustively remove degree-1 nodes that are not leaves or root
-        while True:
-            degree1_nodes = [
-                node
-                for node in tree_graph.nodes()
-                if tree_graph.degree(node) == 1
-                and node not in original_leaves
-                and node != original_root
-            ]
-
-            if not degree1_nodes:
-                break
-
-            # Remove all degree-1 nodes (excluding leaves and root)
-            for node in degree1_nodes:
-                # Double-check node still exists and is still degree-1
-                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
-                    tree_graph.remove_node(node)
+        _prune_degree1_nodes(tree_graph, keep_nodes)
 
         # Suppress all degree-2 nodes
         dm_suppress_deg2_nodes(tree_graph, exclude_nodes=None)

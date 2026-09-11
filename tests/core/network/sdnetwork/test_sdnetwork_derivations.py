@@ -2218,3 +2218,41 @@ class TestSwitchingIsUndirected:
             profiles = list(displayed_quartets(parent))
 
         assert len(profiles) == 70  # C(8, 4)
+
+
+class TestPruneDegree1NodesMixed:
+    """The mixed-graph counterpart of the displayed-tree prune."""
+
+    def _graph(self, undirected, directed=()):
+        from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+
+        graph = MixedMultiGraph()
+        for u, v in undirected:
+            graph.add_undirected_edge(u, v)
+        for u, v in directed:
+            graph.add_directed_edge(u, v)
+        return graph
+
+    def test_removes_chain_exposed_by_earlier_removal(self):
+        from phylozoo.core.network.sdnetwork._utils import _prune_degree1_nodes
+
+        # The b-c-d chain is pruned tip-first; m survives because two leaves keep it
+        # at degree 2. Without the cascade only d would go.
+        graph = self._graph([("m", "L1"), ("m", "L2"), ("m", "b"), ("b", "c"), ("c", "d")])
+        _prune_degree1_nodes(graph, {"L1", "L2"})
+        assert set(graph.nodes()) == {"m", "L1", "L2"}
+
+    def test_counts_directed_and_undirected_degree_together(self):
+        """A node with one undirected and one directed edge has degree 2 and stays."""
+        from phylozoo.core.network.sdnetwork._utils import _prune_degree1_nodes
+
+        graph = self._graph([("x", "L1")], directed=[("x", "L2")])
+        _prune_degree1_nodes(graph, {"L1", "L2"})
+        assert set(graph.nodes()) == {"x", "L1", "L2"}
+
+    def test_keeps_protected_nodes(self):
+        from phylozoo.core.network.sdnetwork._utils import _prune_degree1_nodes
+
+        graph = self._graph([("a", "L1")])
+        _prune_degree1_nodes(graph, {"L1", "a"})
+        assert set(graph.nodes()) == {"a", "L1"}
