@@ -21,9 +21,6 @@ def hamming_distances(msa: MSA) -> DistanceMatrix:
     they differ, normalized by the number of positions where both sequences have
     valid nucleotides (i.e., excluding positions with gaps or unknown characters).
 
-    This function uses vectorized numpy operations for efficiency, making it
-    suitable for large alignments.
-
     Parameters
     ----------
     msa : MSA
@@ -55,53 +52,47 @@ def hamming_distances(msa: MSA) -> DistanceMatrix:
     unknown character (N). Only positions where both sequences have valid
     nucleotides (A, C, G, T) are considered.
 
-    This implementation uses vectorized numpy operations for maximum efficiency
-    on large alignments.
+    Site columns are processed in blocks so the float indicator arrays stay small
+    even for very long alignments.
+
+    All pairwise counts are computed as matrix products of 0/1 indicator arrays,
+    so the O(n^2 L) work runs in BLAS rather than in a Python loop over pairs.
     """
     # Get coded array (shape: num_taxa, sequence_length)
     coded_array = msa.coded_array
-    num_taxa = msa.num_taxa
+    num_taxa, sequence_length = coded_array.shape
 
-    # Create mask for valid positions (>= 0 means valid nucleotide, < 0 means gap/unknown)
-    valid_mask = coded_array >= 0  # Shape: (num_taxa, sequence_length)
+    # For a pair (i, j) the normalised distance is
+    #     (both_valid - matches) / both_valid
+    # where both_valid counts sites at which both sequences carry a valid code and
+    # matches counts the sites at which they carry the *same* valid code. Both counts
+    # are inner products of 0/1 indicator rows, so every pair at once is a matrix
+    # product: V @ V.T for validity and, per code c, I_c @ I_c.T for identity. This
+    # hands the O(n^2 L) work to BLAS instead of a Python loop over pairs.
+    # Columns are processed in blocks to bound the size of the indicator arrays. The
+    # indicators are float32 for bandwidth; every partial sum inside a block is an
+    # integer at most block_columns <= 2**24, so the products are exact. The running
+    # totals are float64.
+    matches = np.zeros((num_taxa, num_taxa), dtype=np.float64)
+    both_valid = np.zeros((num_taxa, num_taxa), dtype=np.float64)
+    codes_present = np.unique(coded_array[coded_array >= 0])
+    block_columns = max(1024, min(sequence_length, 2**24, 8_000_000 // max(num_taxa, 1)))
 
-    # Initialize distance matrix
-    distance_matrix = np.zeros((num_taxa, num_taxa), dtype=np.float64)
+    for start in range(0, sequence_length, block_columns):
+        block = coded_array[:, start : start + block_columns]
+        valid = (block >= 0).astype(np.float32)
+        both_valid += valid @ valid.T
+        for code in codes_present:
+            indicator = (block == code).astype(np.float32)
+            matches += indicator @ indicator.T
 
-    # Compute distances using vectorized operations
-    # For each pair (i, j), we need:
-    # 1. Positions where both sequences are valid
-    # 2. Count of differences at those positions
-    # 3. Normalize by number of valid positions
-
-    # Use broadcasting for efficiency: compare all pairs at once
-    for i in range(num_taxa):
-        seq_i = coded_array[i, :]
-        valid_i = valid_mask[i, :]
-
-        # Compare with all sequences j > i
-        for j in range(i + 1, num_taxa):
-            seq_j = coded_array[j, :]
-            valid_j = valid_mask[j, :]
-
-            # Positions where both sequences have valid nucleotides
-            both_valid = valid_i & valid_j
-
-            if not np.any(both_valid):
-                # No valid positions to compare
-                distance_matrix[i, j] = 0.0
-                distance_matrix[j, i] = 0.0
-                continue
-
-            # Count differences at valid positions (vectorized)
-            differences = np.sum(seq_i[both_valid] != seq_j[both_valid])
-            valid_count = np.sum(both_valid)
-
-            # Normalized Hamming distance
-            normalized_distance = differences / valid_count if valid_count > 0 else 0.0
-
-            distance_matrix[i, j] = normalized_distance
-            distance_matrix[j, i] = normalized_distance
+    # Pairs with no jointly valid site get distance 0, as before.
+    with np.errstate(divide="ignore", invalid="ignore"):
+        distance_matrix = np.where(both_valid > 0, (both_valid - matches) / both_valid, 0.0)
+    # Make the result exactly symmetric with a zero diagonal (BLAS products are
+    # symmetric only up to rounding), mirroring the pairwise fill of the loop version.
+    distance_matrix = np.triu(distance_matrix, k=1)
+    distance_matrix = distance_matrix + distance_matrix.T
 
     # Create DistanceMatrix with taxa labels
     return DistanceMatrix(distance_matrix, labels=list(msa.taxa_order))

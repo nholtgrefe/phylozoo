@@ -5,7 +5,6 @@ This module provides functions for classifying split systems, such as checking
 pairwise compatibility.
 """
 
-import itertools
 from typing import TYPE_CHECKING, TypeVar
 
 from ...utils.exceptions import PhyloZooValueError
@@ -164,10 +163,20 @@ def is_pairwise_compatible(system: SplitSystem) -> bool:
     >>> is_pairwise_compatible(system2)
     False
     """
-    # Use itertools.combinations to check all pairs
-    for split1, split2 in itertools.combinations(system, 2):
-        if not is_compatible(split1, split2):
-            return False
+    # Every split in a SplitSystem covers the same elements, so compatibility of
+    # A|B and C|D reduces to one of A&C, A&D, B&C, B&D being empty. Encoding each
+    # set1 as a bitmask over the elements turns each of those tests into a single
+    # integer AND, instead of frozenset subset checks that walk the elements.
+    position = {element: bit for bit, element in enumerate(system.elements)}
+    full = (1 << len(position)) - 1
+    masks = [sum(1 << position[element] for element in split.set1) for split in system]
+
+    for i, a in enumerate(masks):
+        not_a = full ^ a
+        for c in masks[i + 1 :]:
+            not_c = full ^ c
+            if a & c and a & not_c and not_a & c and not_a & not_c:
+                return False
 
     return True
 

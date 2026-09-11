@@ -232,11 +232,13 @@ def split_decomposition(
 
     # Internal representation: frozensets of matrix row indices.
     # Canonical split key: frozenset({s1, s2}) so that s1|s2 == s2|s1.
-    # current_splits maps canonical_key -> (s1: frozenset[int], s2: frozenset[int])
-    current_splits: dict[frozenset, tuple[frozenset, frozenset]] = {}
+    # current_splits maps canonical_key -> (s1, s2, alpha) with s1, s2 frozensets of
+    # row indices and alpha the split's isolation index on the current subset. The
+    # index is carried along so the final splits need not be re-evaluated.
+    current_splits: dict[frozenset, tuple[frozenset, frozenset, float]] = {}
 
     for i in range(1, n):
-        new_splits: dict[frozenset, tuple[frozenset, frozenset]] = {}
+        new_splits: dict[frozenset, tuple[frozenset, frozenset, float]] = {}
 
         # --- Test trivial split {0,...,i-1} | {i} ---
         s1_triv = frozenset(range(i))
@@ -248,10 +250,10 @@ def split_decomposition(
             np.array(sorted(s2_triv), dtype=np.int64),
         )
         if alpha > _ATOL:
-            new_splits[key_triv] = (s1_triv, s2_triv)
+            new_splits[key_triv] = (s1_triv, s2_triv, float(alpha))
 
         # --- Extend each d-split of the previous subset ---
-        for s1, s2 in current_splits.values():
+        for s1, s2, _previous_alpha in current_splits.values():
             # Option A: add i to s1
             ext1 = s1 | frozenset({i})
             key_a = frozenset([ext1, s2])
@@ -262,7 +264,7 @@ def split_decomposition(
                     np.array(sorted(s2), dtype=np.int64),
                 )
                 if alpha > _ATOL:
-                    new_splits[key_a] = (ext1, s2)
+                    new_splits[key_a] = (ext1, s2, float(alpha))
 
             # Option B: add i to s2
             ext2 = s2 | frozenset({i})
@@ -274,20 +276,13 @@ def split_decomposition(
                     np.array(sorted(ext2), dtype=np.int64),
                 )
                 if alpha > _ATOL:
-                    new_splits[key_b] = (s1, ext2)
+                    new_splits[key_b] = (s1, ext2, float(alpha))
 
         current_splits = new_splits
 
     # Build WeightedSplitSystem from the d-splits of the full set
     weighted_splits: dict[Split, float] = {}
-    for s1_idx, s2_idx in current_splits.values():
-        alpha = float(
-            _compute_isolation_index_nb(
-                matrix,
-                np.array(sorted(s1_idx), dtype=np.int64),
-                np.array(sorted(s2_idx), dtype=np.int64),
-            )
-        )
+    for s1_idx, s2_idx, alpha in current_splits.values():
         set1_labels = {labels[j] for j in s1_idx}
         set2_labels = {labels[j] for j in s2_idx}
         weighted_splits[Split(set1_labels, set2_labels)] = alpha
@@ -297,10 +292,10 @@ def split_decomposition(
 
         system = WeightedSplitSystem(weighted_splits)
         d1_raw = distances_from_splitsystem(system)
-        d1_matrix = np.array(
-            [[d1_raw.get_distance(labels[r], labels[c]) for c in range(n)] for r in range(n)],
-            dtype=np.float64,
-        )
+        # Reorder d1 from its own (sorted) label order to ours with one fancy index
+        # rather than one get_distance call per matrix entry.
+        order = np.array([d1_raw.get_index(label) for label in labels], dtype=np.intp)
+        d1_matrix = d1_raw.np_array[np.ix_(order, order)]
     else:
         system = WeightedSplitSystem()
         d1_matrix = np.zeros((n, n), dtype=np.float64)

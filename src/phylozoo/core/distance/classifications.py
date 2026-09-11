@@ -380,6 +380,119 @@ def _check_four_point_condition(matrix: np.ndarray, n: int, atol: float) -> bool
     return True
 
 
+def _additive_tree_distances(matrix: np.ndarray, atol: float) -> np.ndarray | None:
+    """
+    Reconstruct the tree an additive matrix must come from and return its distances.
+
+    Taxa are inserted one at a time. For the new taxon ``x`` and a fixed anchor leaf
+    ``a``, the three-point formula ``(d(a,x) + d(a,b) - d(b,x)) / 2`` gives, for any
+    inserted leaf ``b``, the distance from ``a`` to the point where ``x``'s path leaves
+    the ``a``-``b`` path. That point is ``x``'s true attachment point exactly when it
+    lies on the ``a``-``b`` path, and it is the farthest such point over all ``b``, so
+    the ``b`` maximising the formula pins it down. The path is then split there and
+    ``x`` hung off it with the remaining length.
+
+    Returns the leaf-to-leaf distances of the reconstructed tree, or ``None`` when
+    an attachment position falls outside the tree by more than ``atol``, which
+    already rules out additivity.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Square, symmetric, non-negative matrix (float64).
+    atol : float
+        Absolute tolerance for placing attachment points on existing nodes.
+
+    Returns
+    -------
+    np.ndarray | None
+        Distances between all leaves in the reconstructed tree, indexed like
+        ``matrix``; ``None`` if the reconstruction breaks down.
+    """
+    n = matrix.shape[0]
+    # adjacency: node -> {neighbour: edge length}; leaves are 0..n-1, internal nodes n, n+1, ...
+    adjacency: dict[int, dict[int, float]] = {
+        0: {1: float(matrix[0, 1])},
+        1: {0: float(matrix[0, 1])},
+    }
+    next_internal = n
+    anchor = 0
+
+    for x in range(2, n):
+        # Choose the inserted leaf whose path from the anchor reaches farthest towards x.
+        inserted = np.arange(1, x)
+        positions = 0.5 * (matrix[anchor, x] + matrix[anchor, inserted] - matrix[inserted, x])
+        best = int(np.argmax(positions))
+        b = int(inserted[best])
+        position = float(positions[best])
+
+        # Walk the unique anchor -> b path, recording cumulative distance from the anchor.
+        parent: dict[int, int] = {anchor: -1}
+        stack = [anchor]
+        while stack:
+            node = stack.pop()
+            if node == b:
+                break
+            for neighbour in adjacency[node]:
+                if neighbour not in parent:
+                    parent[neighbour] = node
+                    stack.append(neighbour)
+        path = [b]
+        while path[-1] != anchor:
+            path.append(parent[path[-1]])
+        path.reverse()
+        cumulative = [0.0]
+        for u, v in zip(path, path[1:]):
+            cumulative.append(cumulative[-1] + adjacency[u][v])
+        path_length = cumulative[-1]
+
+        pendant = float(matrix[anchor, x]) - position
+        if position < -atol or position > path_length + atol or pendant < -atol:
+            return None
+        position = min(max(position, 0.0), path_length)
+        pendant = max(pendant, 0.0)
+
+        # Locate the attachment point on the path: an existing node, or a new one that
+        # subdivides an edge.
+        attach: int | None = None
+        for index, distance in enumerate(cumulative):
+            if abs(distance - position) <= atol:
+                attach = path[index]
+                break
+        if attach is None:
+            index = int(np.searchsorted(cumulative, position)) - 1
+            u, v = path[index], path[index + 1]
+            new_node = next_internal
+            next_internal += 1
+            first = position - cumulative[index]
+            second = adjacency[u][v] - first
+            del adjacency[u][v]
+            del adjacency[v][u]
+            adjacency[new_node] = {u: first, v: second}
+            adjacency[u][new_node] = first
+            adjacency[v][new_node] = second
+            attach = new_node
+
+        adjacency[x] = {attach: pendant}
+        adjacency[attach][x] = pendant
+
+    # Leaf-to-leaf distances of the reconstructed tree: one traversal per leaf.
+    result = np.zeros((n, n), dtype=np.float64)
+    for source in range(n):
+        distance_to = {source: 0.0}
+        stack = [source]
+        while stack:
+            node = stack.pop()
+            base = distance_to[node]
+            for neighbour, length in adjacency[node].items():
+                if neighbour not in distance_to:
+                    distance_to[neighbour] = base + length
+                    stack.append(neighbour)
+        for target in range(n):
+            result[source, target] = distance_to[target]
+    return result
+
+
 def is_tree_metric(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool:
     """
     Check if the distance matrix is a tree metric.
@@ -393,6 +506,11 @@ def is_tree_metric(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool
     is attained by at least two of them :cite:`Bandelt1992`.  Equivalently,
     the split decomposition has zero residual and all d-splits are pairwise
     compatible.
+
+    The check runs in O(n^2): the tree an additive matrix must come from is
+    reconstructed by inserting taxa one by one, and the matrix is a tree metric
+    exactly when that tree reproduces it. Matrices with negative entries fall
+    back to testing every quartet.
 
     Parameters
     ----------
@@ -432,7 +550,23 @@ def is_tree_metric(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool
     n = len(distance_matrix)
     if n < 4:
         return True
-    return bool(_check_four_point_condition(distance_matrix._matrix, n, atol))
+    matrix = distance_matrix._matrix
+
+    # The four-point condition is equivalent to additivity, and additivity can be
+    # settled in O(n^2): rebuild the tree the matrix would have to come from and see
+    # whether that tree reproduces every entry. Only for matrices with negative
+    # entries -- where "tree" with non-negative lengths and the bare four-point
+    # inequality can part ways -- is the exhaustive O(n^4) quartet check used.
+    if np.any(matrix < -atol):
+        return bool(_check_four_point_condition(matrix, n, atol))
+    tree_distances = _additive_tree_distances(matrix, atol)
+    if tree_distances is None:
+        return False
+    # Rebuilding path lengths accumulates rounding of order eps * n * |d|; an
+    # ``atol`` below that is finer than the data can resolve, so it is floored there.
+    # At ordinary magnitudes the floor is far below 1e-10 and ``atol`` governs.
+    tolerance = max(atol, 4.0 * np.finfo(np.float64).eps * n * float(np.abs(matrix).max()))
+    return bool(np.all(np.abs(tree_distances - matrix) <= tolerance))
 
 
 def is_totally_decomposable(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool:

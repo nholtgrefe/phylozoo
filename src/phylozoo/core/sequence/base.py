@@ -462,8 +462,13 @@ class MSA(IOMixin):
         idx = self._taxa_to_index[taxon]
         coded_seq = self._coded_array[idx, :]
 
-        # Decode using reverse lookup
-        return "".join(self._reverse_lookup.get(int(code), "N") for code in coded_seq)
+        # Decode through a 256-entry byte table instead of a per-character Python
+        # loop: codes are int8, so viewing them as uint8 maps -1 to slot 255. Unknown
+        # codes fall through to "N", as before.
+        table = np.full(256, ord("N"), dtype=np.uint8)
+        for code, char in self._reverse_lookup.items():
+            table[code & 0xFF] = ord(char)
+        return table[coded_seq.view(np.uint8)].tobytes().decode("ascii")
 
     def get_sequences(self) -> dict[str, str]:
         """
@@ -520,4 +525,6 @@ class MSA(IOMixin):
         Returns a new instance with the same data. The copy shares no mutable
         state with the original.
         """
-        return MSA(sequences=self.get_sequences())
+        # Copy the coded array directly rather than decoding every sequence to a
+        # string and re-encoding it; from_coded_array copies the array itself.
+        return MSA.from_coded_array(self._coded_array, self._taxa_order)
