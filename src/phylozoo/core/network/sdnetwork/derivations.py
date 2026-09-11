@@ -478,6 +478,43 @@ def _switchings(
         yield switching_graph
 
 
+def _undirect_switching(switching_graph: MixedMultiGraph) -> None:
+    """
+    Undirect every edge of a switching, in place.
+
+    A switching keeps exactly one parent edge per hybrid node, so afterwards no edge
+    is a reticulation edge any more and the displayed tree it yields is undirected.
+    Leaving the kept edges directed lets a node that was the tail of two hybrid edges
+    retain two outgoing directed edges; degree-2 suppression cannot orient such a node
+    and raises.
+
+    ``gamma`` is dropped along with the direction: it is an inheritance probability at
+    a reticulation, is meaningless once the edge is an ordinary tree edge, and is
+    rejected by validation on an undirected edge.
+
+    Parameters
+    ----------
+    switching_graph : MixedMultiGraph
+        The switching to undirect. **Modified in place.**
+
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> G = MixedMultiGraph()
+    >>> _ = G.add_directed_edge(1, 2, gamma=0.7)
+    >>> _ = G.add_undirected_edge(2, 3)
+    >>> _undirect_switching(G)
+    >>> list(G.directed_edges_iter())
+    []
+    >>> sorted(tuple(sorted(e)) for e in G.undirected_edges_iter())
+    [(1, 2), (2, 3)]
+    """
+    for u, v, key, data in list(switching_graph.directed_edges_iter(keys=True, data=True)):
+        attrs = {name: value for name, value in (data or {}).items() if name != "gamma"}
+        switching_graph.remove_directed_edge(u, v, key=key)
+        switching_graph.add_undirected_edge(u, v, key=key, **attrs)
+
+
 def displayed_trees(
     network: SemiDirectedPhyNetwork, probability: bool = False
 ) -> Iterator[SemiDirectedPhyNetwork]:
@@ -526,6 +563,8 @@ def displayed_trees(
         # Work on a copy to avoid modifying the switching
         tree_graph = switching_graph.copy()
 
+        _undirect_switching(tree_graph)
+
         # Exhaustively remove degree-1 nodes that are not leaves
         while True:
             degree1_nodes = [
@@ -540,7 +579,7 @@ def displayed_trees(
             # Remove all degree-1 nodes (excluding leaves)
             for node in degree1_nodes:
                 # Double-check node still exists and is still degree-1
-                if node in tree_graph.nodes() and tree_graph.degree(node) == 1:
+                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
                     tree_graph.remove_node(node)
 
         # Suppress all degree-2 nodes

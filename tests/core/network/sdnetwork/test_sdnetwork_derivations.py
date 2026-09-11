@@ -2101,3 +2101,120 @@ class TestPartitionFromBlob:
         assert {"C"} in partition
         assert {"D"} in partition
         assert {"E"} in partition
+
+
+class TestSwitchingIsUndirected:
+    """A switching yields an undirected displayed tree.
+
+    Regression tests: switchings used to keep the surviving hybrid edges directed.
+    Once a hybrid keeps a single parent edge that edge is an ordinary tree edge, and
+    leaving it directed let a node that was the tail of two hybrid edges hold two
+    outgoing directed edges -- which degree-2 suppression cannot orient, so
+    ``displayed_trees`` raised ``PhyloZooValueError``.
+    """
+
+    # A level-3 network on 8 taxa whose (L0, L3, L5, L7) subnetwork reproduced the
+    # crash: node i2 is the tail of two hybrid edges and sits on a leafless branch.
+    REPRO_EDGES = [
+        ("i0", "L3"),
+        ("i0", "L5"),
+        ("i1", "L1"),
+        ("i1", "L6"),
+        ("i2", "m502"),
+        ("i2", "m504"),
+        ("i3", "i0"),
+        ("i3", "m503"),
+        ("i4", "i2"),
+        ("i4", "m500"),
+        ("i5", "L7"),
+        ("i5", "i3"),
+        ("i6", "i4"),
+        ("i6", "m501"),
+        ("m500", "L2"),
+        ("m500", "m501"),
+        ("m501", "m505"),
+        ("m502", "L4"),
+        ("m502", "m503"),
+        ("m503", "L0"),
+        ("m504", "i1"),
+        ("m504", "m505"),
+        ("m505", "i5"),
+    ]
+
+    def test_undirect_switching_removes_direction_and_gamma(self) -> None:
+        """The helper leaves no directed edge, and drops gamma with the direction."""
+        from phylozoo.core.primitives.m_multigraph import MixedMultiGraph
+        from phylozoo.core.network.sdnetwork.derivations import _undirect_switching
+
+        graph = MixedMultiGraph()
+        graph.add_directed_edge("p", "h", gamma=0.7, branch_length=1.5)
+        graph.add_directed_edge("q", "h", gamma=0.3)
+        graph.add_undirected_edge("h", "A")
+
+        _undirect_switching(graph)
+
+        assert list(graph.directed_edges_iter()) == []
+        assert sorted(tuple(sorted(e)) for e in graph.undirected_edges_iter()) == [
+            ("A", "h"),
+            ("h", "p"),
+            ("h", "q"),
+        ]
+        for _u, _v, _key, data in graph.undirected_edges_iter(keys=True, data=True):
+            assert "gamma" not in (data or {})
+        # attributes that remain meaningful are preserved
+        lengths = [
+            (data or {}).get("branch_length")
+            for _u, _v, _key, data in graph.undirected_edges_iter(keys=True, data=True)
+        ]
+        assert 1.5 in lengths
+
+    def test_displayed_trees_are_undirected(self) -> None:
+        """Every displayed tree of a network with hybrids comes back fully undirected."""
+        net = SemiDirectedPhyNetwork(
+            directed_edges=[("p", "h"), ("q", "h")],
+            undirected_edges=[
+                ("h", "A"),
+                ("p", "r"),
+                ("q", "r"),
+                ("r", "C"),
+                ("p", "D"),
+                ("q", "E"),
+            ],
+            nodes=[
+                ("A", {"label": "A"}),
+                ("C", {"label": "C"}),
+                ("D", {"label": "D"}),
+                ("E", {"label": "E"}),
+            ],
+        )
+        trees = list(displayed_trees(net, probability=True))
+        assert trees
+        for tree in trees:
+            assert list(tree._graph.directed_edges_iter()) == []
+            assert set(tree.taxa) == {"A", "C", "D", "E"}
+
+    def test_displayed_trees_on_leafless_branch_subnetwork(self) -> None:
+        """The 4-taxon subnetwork that used to crash now yields its displayed trees."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        from phylozoo.core.network.dnetwork.derivations import to_sd_network
+
+        with no_validation():
+            parent = to_sd_network(DirectedPhyNetwork(edges=self.REPRO_EDGES))
+            sub = subnetwork(parent, ["L0", "L3", "L5", "L7"])
+            trees = list(displayed_trees(sub, probability=True))
+
+        assert trees
+        for tree in trees:
+            assert list(tree._graph.directed_edges_iter()) == []
+            assert set(tree.taxa) == {"L0", "L3", "L5", "L7"}
+
+    def test_displayed_quartets_on_repro_network(self) -> None:
+        """``displayed_quartets`` completes on the network that used to raise."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        from phylozoo.core.network.dnetwork.derivations import to_sd_network
+
+        with no_validation():
+            parent = to_sd_network(DirectedPhyNetwork(edges=self.REPRO_EDGES))
+            profiles = list(displayed_quartets(parent))
+
+        assert len(profiles) == 70  # C(8, 4)
