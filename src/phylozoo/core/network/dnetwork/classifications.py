@@ -723,38 +723,48 @@ def is_ultrametric(network: "DirectedPhyNetwork") -> bool:
             if not all(abs(bl - first_bl) < 1e-10 for bl in branch_lengths):
                 return False  # Not ultrametric if parallel edges have different branch lengths
 
-    # Step 3: Compute distances for all paths from root to each leaf
-    distances: list[float] = []
+    # Step 3: Compare root-to-leaf distances.
+    #
+    # Rather than enumerating every root-to-leaf path -- of which there are
+    # exponentially many in the number of reticulations -- propagate the shortest
+    # and longest distance to each node in topological order. At a leaf, shortest
+    # == longest exactly when every path to it has the same length, so comparing
+    # those values across the leaves is equivalent to comparing every path
+    # individually, and costs one pass over the network.
+    shortest: dict[Any, float] = {root: 0.0}
+    longest: dict[Any, float] = {root: 0.0}
 
+    for node in nx.topological_sort(nx_graph):
+        if node not in shortest:
+            continue  # not reachable from the root
+        for child in nx_graph.successors(node):
+            edges_data = nx_graph[node].get(child, {})
+            if not edges_data:
+                raise PhyloZooAlgorithmError(f"Edge ({node}, {child}) not found in graph")
+            first_key = next(iter(edges_data))
+            bl = edges_data[first_key].get("branch_length")
+            if bl is None:
+                raise PhyloZooValueError(f"Edge ({node}, {child}) lacks a branch_length")
+            low, high = shortest[node] + bl, longest[node] + bl
+            if child not in shortest:
+                shortest[child], longest[child] = low, high
+            else:
+                shortest[child] = min(shortest[child], low)
+                longest[child] = max(longest[child], high)
+
+    # Check that every leaf sits at the same distance, by every path
+    reference: float | None = None
     for leaf in leaves:
-        # Find all paths from root to leaf
-        paths = list(nx.all_simple_paths(nx_graph, root, leaf))
-        if not paths:
+        if leaf not in shortest:
             raise PhyloZooAlgorithmError(f"No path from root {root} to leaf {leaf}")
+        if abs(longest[leaf] - shortest[leaf]) >= 1e-10:
+            return False  # this leaf is reachable by paths of differing length
+        if reference is None:
+            reference = shortest[leaf]
+        elif abs(shortest[leaf] - reference) >= 1e-10:
+            return False
 
-        for path in paths:
-            # Sum branch lengths along the path
-            total_distance = 0.0
-            for i in range(len(path) - 1):
-                u, v = path[i], path[i + 1]
-                # Get branch length (if parallel edges exist, they all have the same length)
-                # Use the first edge's branch length
-                edges_data = nx_graph[u].get(v, {})
-                if not edges_data:
-                    raise PhyloZooAlgorithmError(f"Edge ({u}, {v}) not found in graph")
-                first_key = next(iter(edges_data))
-                bl = edges_data[first_key].get("branch_length")
-                if bl is None:
-                    raise PhyloZooValueError(f"Edge ({u}, {v}) lacks a branch_length")
-                total_distance += bl
-            distances.append(total_distance)
-
-    # Check if all distances are equal
-    if not distances:
-        return True
-
-    first_distance = distances[0]
-    return all(abs(d - first_distance) < 1e-10 for d in distances)
+    return True
 
 
 @lru_cache(maxsize=128)
@@ -843,14 +853,17 @@ def is_normal(network: "DirectedPhyNetwork") -> bool:
     # Get the underlying NetworkX graph
     nx_graph = network._graph._graph
 
-    # For each hybrid edge, check if there's an alternative path
+    # For each hybrid edge, check if there's an alternative path. The edge is removed
+    # and restored in place rather than copying the whole graph per hybrid edge, which
+    # made this O(reticulations * (V + E)) in copying alone.
     for u, v, key in hybrid_edges:
-        # Create a copy of the graph without this specific edge
-        graph_without_edge = nx_graph.copy()
-        graph_without_edge.remove_edge(u, v, key)
-
-        # Check if there's still a path from u to v
-        if nx.has_path(graph_without_edge, u, v):
+        edge_data = dict(nx_graph.edges[u, v, key])
+        nx_graph.remove_edge(u, v, key)
+        try:
+            has_alternative = nx.has_path(nx_graph, u, v)
+        finally:
+            nx_graph.add_edge(u, v, key=key, **edge_data)
+        if has_alternative:
             return False
 
     return True
