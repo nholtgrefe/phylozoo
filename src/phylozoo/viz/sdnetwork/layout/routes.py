@@ -40,8 +40,8 @@ def compute_radial_routes(
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> positions = {3: (0.0, 0.0), 1: (1.0, 0.0), 2: (0.0, 1.0)}
     >>> routes = compute_radial_routes(net, positions)

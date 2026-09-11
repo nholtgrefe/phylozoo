@@ -113,8 +113,7 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
     ...     nodes=[(1, {'label': 'A'})]
     ... )
     >>> net2.taxa  # 2 and 4 are auto-labeled
-    {'A', '2', '4'}
-
+    {'4', 'A', '2'}
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = DirectedPhyNetwork(
     ...     edges=[

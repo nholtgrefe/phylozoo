@@ -368,7 +368,7 @@ class CircularSetOrdering(Partition[T]):
         >>> cso.are_neighbors({1, 2}, {3})
         True
         >>> cso.are_neighbors({1, 2}, {4})
-        True  # Wrap-around
+        True
         >>> cso.are_neighbors({1, 2}, {4})
         True
         """
@@ -409,8 +409,8 @@ class CircularSetOrdering(Partition[T]):
         --------
         >>> cso = CircularSetOrdering([{1}, {2}, {3}, {4}, {5}])
         >>> subs = list(cso.suborderings(size=2))
-        >>> len(subs)
-        10  # C(5,2) = 10 combinations
+        >>> len(subs)  # C(5,2) = 10 combinations
+        10
         """
         for comb in itertools.combinations(self._setorder, size):
             yield CircularSetOrdering([set(s) for s in comb])
@@ -431,9 +431,8 @@ class CircularSetOrdering(Partition[T]):
         --------
         >>> cso = CircularSetOrdering([{1, 2}, {3}])
         >>> reps = list(cso.representative_orderings())
-        >>> len(reps)
-        2  # 2 choices from first set * 1 choice from second set
-
+        >>> len(reps)  # 2 choices from first set * 1 choice from second set
+        2
         Notes
         -----
         The number of representative orderings grows exponentially with the number
@@ -652,8 +651,8 @@ class CircularOrdering(CircularSetOrdering[T]):
         >>> co = CircularOrdering([1, 2, 3, 4])
         >>> co.are_neighbors(1, 2)
         True
-        >>> co.are_neighbors(1, 4)
-        True  # Wrap-around
+        >>> co.are_neighbors(1, 4)  # Wrap-around
+        True
         """
         return super().are_neighbors({elt1}, {elt2})
 
@@ -679,7 +678,7 @@ class CircularOrdering(CircularSetOrdering[T]):
         >>> co = CircularOrdering([1, 2, 3, 4, 5])
         >>> subs = list(co.suborderings(size=2))
         >>> len(subs)
-        10  # C(5,2) = 10 combinations
+        10
         """
         for comb in itertools.combinations(self._order, size):
             yield CircularOrdering(list(comb))

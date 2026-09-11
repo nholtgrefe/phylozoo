@@ -55,30 +55,30 @@ def is_isomorphic(
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
     >>> net1 = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> net2 = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(4, 5), (4, 6)],
-    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'})]
+    ...     undirected_edges=[(4, 5), (4, 6), (4, 100)],
+    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> is_isomorphic(net1, net2)
     True
     >>> # Different labels: not isomorphic
     >>> net3 = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(4, 5), (4, 6)],
-    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'C'})]
+    ...     undirected_edges=[(4, 5), (4, 6), (4, 100)],
+    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'C'}), (100, {'label': 'B'})]
     ... )
     >>> is_isomorphic(net1, net3)
     False
     >>> # With additional node attributes
     >>> net4 = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A', 'type': 'leaf'}), (2, {'label': 'B', 'type': 'leaf'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A', 'type': 'leaf'}), (2, {'label': 'B', 'type': 'leaf'}), (100, {'label': 'C'})]
     ... )
     >>> net5 = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(4, 5), (4, 6)],
-    ...     nodes=[(5, {'label': 'A', 'type': 'leaf'}), (6, {'label': 'B', 'type': 'leaf'})]
+    ...     undirected_edges=[(4, 5), (4, 6), (4, 100)],
+    ...     nodes=[(5, {'label': 'A', 'type': 'leaf'}), (6, {'label': 'B', 'type': 'leaf'}), (100, {'label': 'C'})]
     ... )
     >>> is_isomorphic(net4, net5, node_attrs=['type'])
     True

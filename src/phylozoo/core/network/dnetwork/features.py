@@ -348,7 +348,7 @@ def cut_edges(network: DirectedPhyNetwork) -> set[tuple[T, T, int]]:
 
     Examples
     --------
-    >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3)], nodes=[(3, {'label': 'A'})])
+    >>> net = DirectedPhyNetwork(edges=[(1, 2), (2, 3), (2, 100)], nodes=[(3, {'label': 'A'}), (100, {'label': 'B'})])
     >>> edges = cut_edges(net)
     >>> (1, 2, 0) in edges and (2, 3, 0) in edges
     True

@@ -46,6 +46,7 @@ def is_lsa_network(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> is_lsa_network(net)
     True
@@ -74,6 +75,7 @@ def has_parallel_edges(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> has_parallel_edges(net)
     False
@@ -104,6 +106,7 @@ def level(network: "DirectedPhyNetwork") -> int:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> level(net)
     0
@@ -151,6 +154,7 @@ def vertex_level(network: "DirectedPhyNetwork") -> int:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> vertex_level(net)
     0
@@ -188,6 +192,7 @@ def reticulation_number(network: "DirectedPhyNetwork") -> int:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> reticulation_number(net)
     0
@@ -219,6 +224,7 @@ def is_binary(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> is_binary(net)
     True
@@ -267,6 +273,7 @@ def is_tree(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> is_tree(net)
     True
@@ -297,6 +304,7 @@ def is_simple(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> is_simple(net)
     True
@@ -332,6 +340,7 @@ def is_galled(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> # Network with no hybrid nodes (galled)
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
@@ -347,8 +356,8 @@ def is_galled(network: "DirectedPhyNetwork") -> bool:
     ...         (5, 4), (6, 4),  # Both lead to hybrid 4
     ...         (4, 8),  # Hybrid to tree node
     ...         (8, 1), (8, 2)  # Tree node to leaves
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     , (5, 100), (6, 101)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'})]
     ... )
     >>> is_galled(net)
     True
@@ -423,6 +432,7 @@ def is_stackfree(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> # Network with no hybrids (stack-free)
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
@@ -438,8 +448,8 @@ def is_stackfree(network: "DirectedPhyNetwork") -> bool:
     ...         (5, 4), (6, 4),  # Both lead to hybrid 4
     ...         (4, 8),  # Hybrid to tree node
     ...         (8, 1), (8, 2)  # Tree node to leaves
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     , (5, 100), (6, 101)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'})]
     ... )
     >>> is_stackfree(net)
     True
@@ -501,6 +511,7 @@ def is_treechild(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> # Tree (tree-child)
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
@@ -516,8 +527,8 @@ def is_treechild(network: "DirectedPhyNetwork") -> bool:
     ...         (5, 4), (6, 4),  # Both lead to hybrid 4
     ...         (4, 8),  # Hybrid to tree node
     ...         (8, 1), (8, 2)  # Tree node to leaves
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     , (5, 100), (6, 101)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'})]
     ... )
     >>> is_treechild(net)
     True
@@ -592,6 +603,7 @@ def is_treebased(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> is_treebased(net)
     True
@@ -662,6 +674,7 @@ def is_ultrametric(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> # Tree with equal distances (ultrametric)
     >>> net = DirectedPhyNetwork(
     ...     edges=[
@@ -793,6 +806,7 @@ def is_normal(network: "DirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> # Tree (normal)
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
@@ -808,8 +822,8 @@ def is_normal(network: "DirectedPhyNetwork") -> bool:
     ...         (5, 4), (6, 4),  # Both lead to hybrid 4
     ...         (4, 8),  # Hybrid to tree node
     ...         (8, 1), (8, 2)  # Tree node to leaves
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     , (5, 100), (6, 101)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'})]
     ... )
     >>> is_normal(net)
     True
@@ -822,8 +836,8 @@ def is_normal(network: "DirectedPhyNetwork") -> bool:
     ...         (5, 4), (5, 9), (6, 4),  # Tree nodes lead to hybrid 4
     ...         (9, 4),  # This creates a shortcut: path 5 -> 9 -> 4 bypasses edge (5, 4)
     ...         (4, 1)  # Hybrid to leaf
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'})]
+    ...     , (6, 100), (9, 101)],
+    ...     nodes=[(1, {'label': 'A'}), (100, {'label': 'B'}), (101, {'label': 'C'})]
     ... )
     >>> is_normal(net)
     False

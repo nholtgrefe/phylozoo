@@ -579,11 +579,11 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> G.add_undirected_edge(2, 3, weight=2.0)
         0
         >>> list(G.incident_undirected_edges(2))
-        [(1, 2), (2, 3)]
+        [(2, 1), (2, 3)]
         >>> list(G.incident_undirected_edges(2, keys=True, data=True))
-        [(1, 2, 0, {'weight': 1.0}), (2, 3, 0, {'weight': 2.0})]
+        [(2, 1, 0, {'weight': 1.0}), (2, 3, 0, {'weight': 2.0})]
         >>> list(G.incident_undirected_edges(2, data='weight'))
-        [(1, 2, 1.0), (2, 3, 2.0)]
+        [(2, 1, 1.0), (2, 3, 2.0)]
         """
         return self._undirected.edges(v, keys=keys, data=data)  # type: ignore[no-any-return]
 
@@ -669,7 +669,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> G.add_undirected_edge(1, 2, weight=1.0)
         0
         >>> G[1]
-        {2: {0: {'weight': 1.0}}}
+        AdjacencyView({2: {0: {'weight': 1.0}}})
         """
         # Return combined adjacency (has all edges)
         return self._combined[v]

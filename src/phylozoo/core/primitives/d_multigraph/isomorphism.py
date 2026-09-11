@@ -79,8 +79,8 @@ def is_isomorphic(
     >>> # Multiple node attributes
     >>> G1.add_node(1, type='leaf')
     >>> G2.add_node(4, type='leaf')
-    >>> is_isomorphic(G1, G2, node_attrs=['label', 'type'])
-    False  # Still false because label 'C' != 'A'
+    >>> is_isomorphic(G1, G2, node_attrs=['label', 'type'])  # Still false because label 'C' != 'A'
+    False
     >>> # Edge attributes
     >>> G3 = DirectedMultiGraph(edges=[{'u': 1, 'v': 2, 'weight': 1.0}])
     >>> G4 = DirectedMultiGraph(edges=[{'u': 3, 'v': 4, 'weight': 1.0}])

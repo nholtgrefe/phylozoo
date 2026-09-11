@@ -206,8 +206,8 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6)],
-    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'})]
+    ...     undirected_edges=[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6), (1, 100), (2, 101), (3, 102), (4, 103)],
+    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'}), (102, {'label': 'E'}), (103, {'label': 'F'})]
     ... )
     >>> result = suppress_2_blobs(net)
     >>> result.validate()  # Should not raise

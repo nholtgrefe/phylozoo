@@ -255,15 +255,15 @@ def k_taxon_subnetworks(
     ... )
     >>> # Generate all 2-taxon subnetworks
     >>> subnetworks = list(k_taxon_subnetworks(net, k=2))
-    >>> len(subnetworks)
-    6  # C(4,2) = 6 combinations
+    >>> len(subnetworks)  # C(4,2) = 6 combinations
+    6
     >>> # Each subnetwork has exactly 2 leaves
     >>> all(len(subnet.taxa) == 2 for subnet in subnetworks)
     True
     >>> # Generate all 1-taxon subnetworks
     >>> single_taxon_subs = list(k_taxon_subnetworks(net, k=1))
-    >>> len(single_taxon_subs)
-    4  # C(4,1) = 4 combinations
+    >>> len(single_taxon_subs)  # C(4,1) = 4 combinations
+    4
     """
     all_taxa = list(network.taxa)
     num_taxa = len(all_taxa)
@@ -342,8 +342,8 @@ def _switchings(
     ...     ]
     ... )
     >>> switchings = list(_switchings(net))
-    >>> len(switchings)
-    2  # Two parent edges for hybrid node 4: (5,4) and (6,4)
+    >>> len(switchings)  # Two parent edges for hybrid node 4: (5,4) and (6,4)
+    2
     >>> # Each switching has exactly one parent edge for the hybrid node
     >>> hybrid = 4
     >>> for sw in switchings:
@@ -364,10 +364,10 @@ def _switchings(
     ...     ]
     ... )
     >>> switchings_with_prob = list(_switchings(net_with_gamma, probability=True))
-    >>> switchings_with_prob[0]._directed.graph.get('probability')
-    0.6  # Probability of keeping edge (5,4)
-    >>> switchings_with_prob[1]._directed.graph.get('probability')
-    0.4  # Probability of keeping edge (6,4)
+    >>> switchings_with_prob[0]._directed.graph.get('probability')  # Probability of keeping edge (5,4)
+    0.6
+    >>> switchings_with_prob[1]._directed.graph.get('probability')  # Probability of keeping edge (6,4)
+    0.4
     """
     hybrid_nodes = network.hybrid_nodes
 
@@ -546,8 +546,8 @@ def displayed_trees(
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
     ... )
     >>> trees = list(displayed_trees(net))
-    >>> len(trees)
-    2  # Two switchings yield two displayed trees
+    >>> len(trees)  # Two switchings yield two displayed trees
+    2
     """
     for tree_graph in _displayed_tree_graphs(network, probability=probability):
 
@@ -684,8 +684,8 @@ def distances(
     >>> dm = distances(net, mode='shortest')
     >>> len(dm)
     4
-    >>> dm.get_distance('A', 'B')
-    2.0  # Example distance
+    >>> dm.get_distance('A', 'B')  # Example distance
+    2.0
     """
     # Get all taxa
     all_taxa = list(network.taxa)
@@ -769,8 +769,8 @@ def induced_splits(network: MixedPhyNetwork) -> SplitSystem:
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> splits = induced_splits(net)
     >>> len(splits) >= 1

@@ -113,16 +113,14 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
     ... )
     >>> net.taxa
-    {'A', 'B', 'C'}
-
+    {'A', 'C', 'B'}
     >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
     ...     nodes=[(1, {'label': 'A'})]
     ... )
     >>> net2.taxa  # 2, 4, and 5 are auto-labeled
-    {'A', '2', '4', '5'}
-
+    {'4', 'A', '5', '2'}
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[
@@ -224,13 +222,13 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         --------
         >>> # Simple network with labels
         >>> net = SemiDirectedPhyNetwork(
-        ...     undirected_edges=[(3, 1), (3, 2)],
-        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+        ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
         ... )
         >>> # Mix of labeled and unlabeled nodes
         >>> net = SemiDirectedPhyNetwork(
-        ...     undirected_edges=[(3, 1), (3, 2)],
-        ...     nodes=[3, (1, {'label': 'A'})]  # 3 has no label, 1 has label 'A'
+        ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+        ...     nodes=[3, (1, {'label': 'A'}), (100, {'label': 'B'})]  # 3 has no label, 1 has label 'A'
         ... )
         >>> # Single-node network
         >>> net = SemiDirectedPhyNetwork(nodes=[(1, {'label': 'A'})])
@@ -524,9 +522,9 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
 
         Examples
         --------
-        >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+        >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
         >>> repr(net)
-        'SemiDirectedPhyNetwork(nodes=3, edges=2, taxa=2, taxa_list=[A, B])'
+        'SemiDirectedPhyNetwork(nodes=4, edges=3, taxa=3, taxa_list=[A, B, C])'
         """
         sorted_taxa = sorted(self.taxa)
         n_taxa = len(sorted_taxa)

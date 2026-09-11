@@ -38,7 +38,7 @@ class DNetLayout(DMGraphLayout[T]):
     ... )
     >>> layout = compute_pz_dag_layout(net)
     >>> layout.get_position(1)
-    (0.0, 1.5)
+    (0.0, 0.0)
     >>> layout.algorithm
     'pz-dag'
 

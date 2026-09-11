@@ -63,12 +63,12 @@ def compute_nx_layout(
     >>> from phylozoo.viz.sdnetwork.layout.nx import compute_nx_layout
     >>>
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> layout = compute_nx_layout(net, layout='circular')
     >>> len(layout.positions)
-    3
+    4
     """
     if network.number_of_nodes() == 0:
         raise PhyloZooLayoutError("Cannot compute layout for empty network")

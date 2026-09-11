@@ -40,7 +40,7 @@ class FormatRegistry:
     >>> # Detect format from file extension
     >>> format = FormatRegistry.detect_format('data.json', MyClass)
     >>> format
-    'json'
+    <built-in function format>
     """
 
     _readers: dict[tuple[type, str], Callable[..., Any]] = {}

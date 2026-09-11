@@ -32,8 +32,8 @@ class SDNetLayout(MGraphLayout[T]):
     >>> from phylozoo.viz.sdnetwork.layout import compute_pz_radial_layout
     >>>
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> layout = compute_pz_radial_layout(net)
     >>> layout.get_position(1)

@@ -512,7 +512,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         >>> G.add_edge(1, 2, weight=1.0)
         0
         >>> G[1]
-        {2: {0: {'weight': 1.0}}}
+        AdjacencyView({2: {0: {'weight': 1.0}}})
         """
         return self._graph[v]
 

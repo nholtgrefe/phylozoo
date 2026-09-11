@@ -47,8 +47,8 @@ def to_enewick(sd_network: "SemiDirectedPhyNetwork", **kwargs: Any) -> str:
     >>> from phylozoo.core.network.sdnetwork.io import to_enewick
     >>>
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> enewick_str = to_enewick(net)
     >>> ';' in enewick_str
@@ -159,8 +159,8 @@ def to_phylozoo_dot(sd_network: "SemiDirectedPhyNetwork", **kwargs: Any) -> str:
     >>> from phylozoo.core.network.sdnetwork.io import to_phylozoo_dot
     >>>
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> dot_str = to_phylozoo_dot(net)
     >>> 'graph' in dot_str

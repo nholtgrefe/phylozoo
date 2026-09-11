@@ -55,8 +55,7 @@ class DistanceMatrix(IOMixin):
     >>> len(dm)
     3
     >>> dm.get_distance('A', 'B')
-    1.0
-
+    np.float64(1.0)
     >>> # Default labels (0, 1, 2, ...)
     >>> dm2 = DistanceMatrix(matrix)
     >>> dm2.labels

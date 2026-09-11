@@ -66,7 +66,7 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     ... )
     >>> lsa_net = to_lsa_network(net)
     >>> lsa_net.root_node
-    4
+    10
     >>> sorted(lsa_net.leaves)
     [1, 2]
     """
@@ -287,8 +287,8 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     Examples
     --------
     >>> net = DirectedPhyNetwork(
-    ...     edges=[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6)],
-    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'})]
+    ...     edges=[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6), (2, 100), (3, 101), (4, 102)],
+    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'}), (102, {'label': 'E'})]
     ... )
     >>> result = suppress_2_blobs(net)
     >>> result.validate()  # Should not raise

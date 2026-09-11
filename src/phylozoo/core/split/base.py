@@ -40,7 +40,7 @@ class Split(Partition[T]):
     >>> split.is_trivial()
     False
     >>> split.elements
-    {1, 2, 3, 4}
+    frozenset({1, 2, 3, 4})
     >>> split2 = Split({1}, {2, 3, 4})
     >>> split2.is_trivial()
     True

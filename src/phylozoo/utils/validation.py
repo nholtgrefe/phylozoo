@@ -11,6 +11,7 @@ Suppression can be specified at two levels:
 
 Examples
 --------
+>>> from phylozoo.core.network.dnetwork.generator import DirectedGenerator
 >>> @validation_aware(allowed=["validate", "_check_inner"], default=["validate"])
 ... class MyClass:
 ...     def __init__(self) -> None:
@@ -41,7 +42,7 @@ Examples
 >>> with no_validation(methods=["_check_inner"]):
 ...     obj.validate()
 >>> (obj.validate_calls, obj.check_calls)
-(2, 1)
+(3, 1)
 >>> # Suppress both validate and its inner call
 >>> with no_validation(methods=["validate"]):
 ...     obj.validate()
@@ -76,7 +77,7 @@ Examples
 >>> obj.validate()
 True
 >>> (obj.validate_calls, obj.check_calls)
-(3, 2)
+(4, 2)
 """
 
 from __future__ import annotations
@@ -147,6 +148,7 @@ def no_validation(
 
     Examples
     --------
+    >>> from phylozoo.core.network.dnetwork.generator import DirectedGenerator
     >>> # Suppress all validation (uses class defaults)
     >>> with no_validation():
     ...     obj = MyClass()

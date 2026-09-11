@@ -37,6 +37,7 @@ def has_parallel_edges(network: "MixedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo.core.network.sdnetwork import MixedPhyNetwork
     >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})])
     >>> has_parallel_edges(net)
     False
@@ -68,7 +69,7 @@ def level(network: "SemiDirectedPhyNetwork") -> int:
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
     >>> level(net)
     0
     """
@@ -116,7 +117,7 @@ def vertex_level(network: "SemiDirectedPhyNetwork") -> int:
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
     >>> vertex_level(net)
     0
     """
@@ -154,7 +155,7 @@ def reticulation_number(network: "SemiDirectedPhyNetwork") -> int:
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
     >>> reticulation_number(net)
     0
     """
@@ -186,6 +187,7 @@ def is_binary(network: "MixedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo.core.network.sdnetwork import MixedPhyNetwork
     >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 4)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})])
     >>> is_binary(net)
     True
@@ -223,7 +225,8 @@ def is_tree(network: "MixedPhyNetwork") -> bool:
 
     Examples
     --------
-    >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> from phylozoo.core.network.sdnetwork import MixedPhyNetwork
+    >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
     >>> is_tree(net)
     True
     """
@@ -255,7 +258,7 @@ def is_simple(network: "SemiDirectedPhyNetwork") -> bool:
     Examples
     --------
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
-    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
+    >>> net = SemiDirectedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
     >>> is_simple(net)
     True
     """
@@ -291,10 +294,11 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import SemiDirectedPhyNetwork
     >>> # Network with no hybrid nodes (galled)
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> is_galled(net)
     True
@@ -308,8 +312,8 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
     ...         (7, 5), (7, 6),  # Root to tree nodes
     ...         (4, 8),  # Hybrid to tree node
     ...         (8, 1), (8, 2)  # Tree node to leaves
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     , (5, 100), (6, 101), (7, 102)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'}), (102, {'label': 'E'})]
     ... )
     >>> is_galled(net)
     True
@@ -323,8 +327,8 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
     ...     undirected_edges=[
     ...         (9, 5), (9, 6),  # Root to tree nodes
     ...         (7, 1)  # Hybrid 7 to leaf
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'})]
+    ...     , (5, 100), (6, 101), (9, 102)],
+    ...     nodes=[(1, {'label': 'A'}), (100, {'label': 'B'}), (101, {'label': 'C'}), (102, {'label': 'D'})]
     ... )
     >>> is_galled(net)
     False
@@ -387,6 +391,7 @@ def is_stackfree(network: "SemiDirectedPhyNetwork") -> bool:
 
     Examples
     --------
+    >>> from phylozoo import SemiDirectedPhyNetwork
     >>> # Network with no hybrids (stack-free)
     >>> net = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
@@ -404,8 +409,8 @@ def is_stackfree(network: "SemiDirectedPhyNetwork") -> bool:
     ...         (7, 5), (7, 6),  # Root to tree nodes
     ...         (4, 8),  # Hybrid to tree node
     ...         (8, 1), (8, 2)  # Tree node to leaves
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     , (5, 100), (6, 101), (7, 102)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'}), (101, {'label': 'D'}), (102, {'label': 'E'})]
     ... )
     >>> is_stackfree(net)
     True
@@ -419,8 +424,8 @@ def is_stackfree(network: "SemiDirectedPhyNetwork") -> bool:
     ...     undirected_edges=[
     ...         (9, 5), (9, 6),  # Root to tree nodes
     ...         (7, 1)  # Hybrid 7 to leaf
-    ...     ],
-    ...     nodes=[(1, {'label': 'A'})]
+    ...     , (5, 100), (6, 101), (9, 102)],
+    ...     nodes=[(1, {'label': 'A'}), (100, {'label': 'B'}), (101, {'label': 'C'}), (102, {'label': 'D'})]
     ... )
     >>> is_stackfree(net)
     False

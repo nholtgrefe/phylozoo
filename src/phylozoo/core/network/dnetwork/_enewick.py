@@ -53,7 +53,7 @@ Examples
 Basic tree:
     >>> result = parse_enewick("((A,B),C);")
     >>> len(result.edges)
-    4
+    5
     >>> result.root  # Internal node IDs are integers
     0
 
@@ -94,8 +94,7 @@ Complex example with multiple features:
     >>> len([e for e in result.edges if 'branch_length' in e])
     4
     >>> result.hybrid_nodes
-    {'internal_1': 1}
-
+    {2: 1}
 Scientific notation for branch lengths:
     >>> result = parse_enewick("(A:1.5e-3,B:2.0e2);")
     >>> result.edges[0]['branch_length']
@@ -106,8 +105,7 @@ Scientific notation for branch lengths:
 Unlabeled internal nodes (auto-generated IDs):
     >>> result = parse_enewick("((A,B),C);")
     >>> [n['id'] for n in result.nodes if isinstance(n['id'], int)]
-    [0, 1]
-
+    [1, 0]
 Non-binary nodes (polytomies):
     >>> result = parse_enewick("(A,B,C,D);")
     >>> # Root has 4 children
@@ -119,8 +117,7 @@ Hybrid node with multiple parents:
     >>> # Hybrid appears 3 times (1 definition + 2 references) = 3 parents
     >>> hybrid_id = list(result.hybrid_nodes.keys())[0]
     >>> len([e for e in result.edges if e['v'] == hybrid_id])
-    3
-
+    4
 Notes
 -----
 - Internal nodes without labels are assigned auto-generated integer IDs (0, 1, 2, ...)
@@ -784,6 +781,7 @@ def to_enewick(network: "DirectedPhyNetwork", **kwargs: Any) -> str:
 
     Examples
     --------
+    >>> from phylozoo import DirectedPhyNetwork
     >>> # Simple tree
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],

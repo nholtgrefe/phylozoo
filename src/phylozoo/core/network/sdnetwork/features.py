@@ -181,13 +181,13 @@ def k_blobs(
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
     >>> # Tree network: leaves are 1-blobs, internal nodes are 2-blobs or more
     >>> net = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(3, 1), (3, 2)],
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
+    ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> sorted([sorted(b) for b in k_blobs(net, k=1)])
-    [[1], [2]]
+    [[1], [2], [100]]
     >>> sorted([sorted(b) for b in k_blobs(net, k=2)])
-    [[3]]
+    []
     """
     # Check for invalid parameter combination
     if not trivial and leaves:

@@ -61,7 +61,7 @@ class Partition(Generic[T]):
     >>> partition.get_part(3)
     frozenset({3, 4})
     >>> partition.parts  # Read-only tuple
-    (frozenset({1, 2}), frozenset({3, 4}), frozenset({5}))
+    (frozenset({5}), frozenset({1, 2}), frozenset({3, 4}))
     """
 
     __slots__ = ("_parts", "_elements", "_initialized")
@@ -286,8 +286,8 @@ class Partition(Generic[T]):
         Examples
         --------
         >>> partition = Partition([{3, 4}, {1, 2}])
-        >>> list(partition)
-        [frozenset({1, 2}), frozenset({3, 4})]  # Always sorted, regardless of input order
+        >>> list(partition)  # Always sorted, regardless of input order
+        [frozenset({1, 2}), frozenset({3, 4})]
         """
         # Parts are already stored in sorted order, so just iterate
         return iter(self._parts)
@@ -399,8 +399,8 @@ class Partition(Generic[T]):
         --------
         >>> partition = Partition([{1}, {2}, {3}, {4}, {5}])
         >>> subparts = list(partition.subpartitions(size=2))
-        >>> len(subparts)
-        10  # C(5,2) = 10
+        >>> len(subparts)  # C(5,2) = 10
+        10
         """
         for comb in itertools.combinations(self._parts, size):
             yield Partition([set(part) for part in comb])
@@ -421,8 +421,8 @@ class Partition(Generic[T]):
         --------
         >>> partition = Partition([{1, 2}, {3, 4}])
         >>> reps = list(partition.representative_partitions())
-        >>> len(reps)
-        4  # 2 choices from first part * 2 choices from second part
+        >>> len(reps)  # 2 choices from first part * 2 choices from second part
+        4
         >>> reps[0]
         Partition([{1}, {3}])
         """
