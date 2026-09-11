@@ -515,6 +515,60 @@ def _undirect_switching(switching_graph: MixedMultiGraph) -> None:
         switching_graph.add_undirected_edge(u, v, key=key, **attrs)
 
 
+def _displayed_tree_graphs(
+    network: SemiDirectedPhyNetwork, probability: bool = False
+) -> Iterator[MixedMultiGraph]:
+    """
+    Yield the underlying graph of each displayed tree.
+
+    This is the shared core of :func:`displayed_trees`: it applies a switching,
+    undirects it, prunes non-leaf degree-1 nodes and suppresses degree-2 nodes,
+    yielding the resulting graph. Callers that only need to read a displayed tree's
+    topology can use this directly and skip building a network object per tree.
+
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The semi-directed phylogenetic network.
+    probability : bool, optional
+        If True, each yielded graph carries the switching's probability in its
+        ``probability`` graph attribute. By default False.
+
+    Yields
+    ------
+    MixedMultiGraph
+        The graph of one displayed tree. Each is a fresh object owned by the caller.
+    """
+    original_leaves = network.leaves
+
+    for tree_graph in _switchings(network, probability=probability):
+        # _switchings yields a fresh graph per switching and nothing else sees it,
+        # so it can be reshaped in place rather than copied again.
+        _undirect_switching(tree_graph)
+
+        # Exhaustively remove degree-1 nodes that are not leaves
+        while True:
+            degree1_nodes = [
+                node
+                for node in tree_graph.nodes()
+                if tree_graph.degree(node) == 1 and node not in original_leaves
+            ]
+
+            if not degree1_nodes:
+                break
+
+            # Remove all degree-1 nodes (excluding leaves)
+            for node in degree1_nodes:
+                # Double-check node still exists and is still degree-1
+                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
+                    tree_graph.remove_node(node)
+
+        # Suppress all degree-2 nodes
+        _suppress_deg2_nodes(tree_graph, exclude_nodes=None)
+
+        yield tree_graph
+
+
 def displayed_trees(
     network: SemiDirectedPhyNetwork, probability: bool = False
 ) -> Iterator[SemiDirectedPhyNetwork]:
@@ -555,36 +609,7 @@ def displayed_trees(
     >>> len(trees)
     2  # Two switchings yield two displayed trees
     """
-    # Get original network's leaves for reference
-    original_leaves = network.leaves
-
-    # Iterate through all switchings
-    for switching_graph in _switchings(network, probability=probability):
-        # _switchings yields a fresh graph per switching and nothing else sees it,
-        # so it can be reshaped in place rather than copied again.
-        tree_graph = switching_graph
-
-        _undirect_switching(tree_graph)
-
-        # Exhaustively remove degree-1 nodes that are not leaves
-        while True:
-            degree1_nodes = [
-                node
-                for node in tree_graph.nodes()
-                if tree_graph.degree(node) == 1 and node not in original_leaves
-            ]
-
-            if not degree1_nodes:
-                break
-
-            # Remove all degree-1 nodes (excluding leaves)
-            for node in degree1_nodes:
-                # Double-check node still exists and is still degree-1
-                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
-                    tree_graph.remove_node(node)
-
-        # Suppress all degree-2 nodes
-        _suppress_deg2_nodes(tree_graph, exclude_nodes=None)
+    for tree_graph in _displayed_tree_graphs(network, probability=probability):
 
         # Convert back to SemiDirectedPhyNetwork
         # Note: sdnetwork_from_graph already copies graph attributes, so probability
@@ -1093,6 +1118,57 @@ def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
     return WeightedSplitSystem(split_weights)
 
 
+def _quartet_split_from_tree_graph(tree_graph: MixedMultiGraph) -> "Split | None":
+    """
+    Read the 2|2 split of a four-leaf tree directly from its graph.
+
+    A four-leaf unrooted tree is either resolved -- exactly one internal edge, whose
+    removal separates the leaves 2|2 -- or a star, which has none.
+
+    Parameters
+    ----------
+    tree_graph : MixedMultiGraph
+        Graph of a displayed tree on four leaves.
+
+    Returns
+    -------
+    Split | None
+        The 2|2 split, or None when the tree is a star.
+    """
+    labels: dict[Any, str] = {}
+    for node in tree_graph.nodes():
+        if tree_graph.degree(node) == 1:
+            label = tree_graph._undirected.nodes.get(node, {}).get("label")
+            labels[node] = str(label) if label is not None else str(node)
+    if len(labels) != 4:
+        return None
+
+    adjacency: dict[Any, list[Any]] = {node: [] for node in tree_graph.nodes()}
+    for u, v, _key in tree_graph.undirected_edges_iter(keys=True):
+        adjacency[u].append(v)
+        adjacency[v].append(u)
+
+    for u, v, _key in tree_graph.undirected_edges_iter(keys=True):
+        if u in labels or v in labels:
+            continue  # a pendant edge can only cut off a single leaf
+        # Walk the component containing u without crossing the edge (u, v)
+        seen = {u}
+        stack = [u]
+        while stack:
+            node = stack.pop()
+            for neighbour in adjacency[node]:
+                if neighbour in seen or (node == u and neighbour == v):
+                    continue
+                seen.add(neighbour)
+                stack.append(neighbour)
+        if v in seen:
+            continue  # not a cut edge (parallel edges keep both sides connected)
+        side = {labels[leaf] for leaf in labels if leaf in seen}
+        if len(side) == 2:
+            return Split(side, set(labels.values()) - side)
+    return None
+
+
 def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
     """
     Compute quartet profile set from all displayed trees of the network.
@@ -1156,25 +1232,15 @@ def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
         # Collect quartets with their weights for this 4-taxon set
         quartet_weights: dict[Quartet, float] = {}
 
-        # Get all displayed trees of the subnetwork with probabilities
-        for displayed_tree in displayed_trees(quartet_subnet, probability=True):
-            # Get probability of this displayed tree
-            prob = displayed_tree.get_network_attribute("probability")
+        # Read each displayed tree's quartet straight off its graph: a 4-leaf tree has
+        # at most one 2|2 split, so building a network object per tree (and deriving
+        # its whole split system) is unnecessary here.
+        for tree_graph in _displayed_tree_graphs(quartet_subnet, probability=True):
+            prob = tree_graph._undirected.graph.get("probability")
             if prob is None:
                 prob = 1.0
 
-            # Extract quartet from the displayed tree (4-leaf tree)
-            # For a 4-leaf tree, induced_splits gives us the splits
-            # A resolved 4-leaf tree has exactly one non-trivial split (2|2)
-            # A star 4-leaf tree has no non-trivial splits
-            tree_splits = induced_splits(displayed_tree)
-
-            # Find the non-trivial split (2|2 split) if it exists
-            quartet_split: Split | None = None
-            for split in tree_splits.splits:
-                if not split.is_trivial and len(split.set1) == 2 and len(split.set2) == 2:
-                    quartet_split = split
-                    break
+            quartet_split = _quartet_split_from_tree_graph(tree_graph)
 
             # Create quartet from split or as star tree
             if quartet_split is not None:
