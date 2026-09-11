@@ -69,7 +69,6 @@ class Partition(Generic[T]):
     def __init__(self, parts: list[set[T]]) -> None:
         # Convert to frozensets, compute elements, and validate in one pass
         parts_frozen: list[frozenset] = []
-        elements_set: set[T] = set()
         total_size: int = 0
 
         for part in parts:
@@ -84,22 +83,21 @@ class Partition(Generic[T]):
                 )
 
             parts_frozen.append(part_frozen)
-            part_size = len(part_frozen)
-            total_size += part_size
+            total_size += len(part_frozen)
 
-            # Check for overlaps during element collection (early validation)
-            for elt in part_frozen:
-                if elt in elements_set:
-                    raise PhyloZooValueError("Invalid partition: sets overlap")
-                elements_set.add(elt)
+        # Union the parts in one C-level pass, straight into the frozenset that gets
+        # stored -- no intermediate mutable set to copy afterwards.
+        elements: frozenset = frozenset().union(*parts_frozen)
 
-        # Validate total size matches (catches any remaining edge cases)
-        if total_size != len(elements_set):
+        # Any overlap makes the union smaller than the parts' combined size, so this
+        # single check catches every overlapping case, replacing a per-element Python
+        # loop that mattered when parts hold thousands of taxa.
+        if total_size != len(elements):
             raise PhyloZooValueError("Invalid partition: sets overlap")
 
         # Store in canonical form
         self._parts: tuple = self._canonical_form(tuple(parts_frozen))
-        self._elements: frozenset = frozenset(elements_set)
+        self._elements: frozenset = elements
         self._initialized: bool = True
 
     @staticmethod
@@ -140,7 +138,22 @@ class Partition(Generic[T]):
                 element_keys.sort()
                 return (len(part), tuple(element_keys))
 
-        return tuple(sorted(parts, key=sort_key))
+        # Sorting by (size, sorted_elements) is the same as grouping by size and only
+        # breaking ties within a group by elements. Sizes alone usually settle the order,
+        # so the element sort -- the expensive half, O(k log k) in the part's size -- is
+        # computed only for the parts that genuinely tie.
+        by_size: dict[int, list] = {}
+        for part in parts:
+            by_size.setdefault(len(part), []).append(part)
+
+        ordered: list = []
+        for size in sorted(by_size):
+            group = by_size[size]
+            if len(group) == 1:
+                ordered.append(group[0])
+            else:
+                ordered.extend(sorted(group, key=sort_key))
+        return tuple(ordered)
 
     def __setattr__(self, name: str, value: Any) -> None:
         """

@@ -973,6 +973,11 @@ def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
         # Need at least 2 taxa for splits
         return SplitSystem()
 
+    # Built once: the complement below is taken for every edge, and rebuilding this
+    # set per edge is what made the traversal quadratic in the taxon count.
+    all_taxa_set = frozenset(all_taxa)
+    total_taxa = len(all_taxa_set)
+
     # Step 3: Single DFS traversal to compute splits
     # In a tree, every edge is a cut-edge, so we can efficiently compute splits
     splits: set[Split] = set()
@@ -1007,8 +1012,8 @@ def induced_splits(network: DirectedPhyNetwork) -> SplitSystem:
 
                 # For edge (node, neighbor), create split
                 # Split: (leaves in neighbor's subtree, all other leaves)
-                if neighbor_leaves and len(neighbor_leaves) < len(all_taxa):
-                    other_leaves = set(all_taxa) - neighbor_leaves
+                if neighbor_leaves and len(neighbor_leaves) < total_taxa:
+                    other_leaves = all_taxa_set - neighbor_leaves
                     if other_leaves:  # Both sides must have at least one leaf
                         split = Split(neighbor_leaves, other_leaves)
                         splits.add(split)
