@@ -329,7 +329,7 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
     >>> is_galled(net)
     False
     """
-    from ...primitives.m_multigraph.features import updown_path_vertices
+    from ...primitives.m_multigraph.features import has_updown_path
 
     if network.number_of_nodes() == 0:
         return True
@@ -357,10 +357,10 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
         for h1 in hybrids_in_blob:
             for h2 in hybrids_in_blob:
                 if h1 != h2:
-                    # Check if there's an up-down path from h1 to h2
-                    # If h2 is in the vertices on up-down paths from h1, then h1 is ancestral to h2
-                    path_vertices = updown_path_vertices(network._graph, h1, h2)
-                    if h2 in path_vertices:
+                    # Check if there's an up-down path from h1 to h2; only existence
+                    # matters here, so stop at the first one rather than collecting
+                    # every vertex on every such path.
+                    if has_updown_path(network._graph, h1, h2):
                         return False
 
     return True

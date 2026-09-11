@@ -654,6 +654,127 @@ def _is_updown_path(graph: "MixedMultiGraph", path: list[T], x: T, y: T) -> bool
     return True
 
 
+def _updown_reachable(graph: "MixedMultiGraph", x: T, y: T) -> bool:
+    """
+    Decide whether an up-down path from ``x`` to ``y`` exists.
+
+    Walks upward from ``x`` (against directed edges, either way along undirected ones)
+    to collect every reachable peak, then downward from those peaks; ``y`` is reported
+    reachable when it lies in that set.
+
+    This is exact, not merely necessary. One direction is immediate: a real up-down
+    path climbs to a peak and descends, so its peak lies in the upward set and ``y``
+    in the downward one. For the converse, take an upward path ``x..p`` and a downward
+    path ``p..y`` and let ``u`` be the first vertex of the upward path that occurs
+    anywhere on the downward one. Everything before ``u`` is then absent from the
+    downward path, so splicing the two at ``u`` yields a *simple* path that climbs to
+    ``u`` and descends to ``y``.
+
+    Note this settles existence only. Deciding which vertices lie on some up-down path
+    is a different question -- see :func:`updown_path_vertices`.
+
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The mixed multigraph to analyse.
+    x : T
+        Source vertex.
+    y : T
+        Target vertex.
+
+    Returns
+    -------
+    bool
+        False if no up-down path from ``x`` to ``y`` can exist, True if one may.
+
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> G = MixedMultiGraph()
+    >>> _ = G.add_undirected_edge(1, 2)
+    >>> _ = G.add_directed_edge(2, 3)
+    >>> _updown_reachable(G, 1, 3)
+    True
+    >>> _updown_reachable(G, 3, 1)
+    False
+    """
+    directed, undirected = graph._directed, graph._undirected
+
+    peaks = {x}
+    stack = [x]
+    while stack:
+        node = stack.pop()
+        for above in directed.predecessors(node):
+            if above not in peaks:
+                peaks.add(above)
+                stack.append(above)
+        for above in undirected.neighbors(node):
+            if above not in peaks:
+                peaks.add(above)
+                stack.append(above)
+
+    reachable = set(peaks)
+    stack = list(peaks)
+    while stack:
+        node = stack.pop()
+        if node == y:
+            return True
+        for below in directed.successors(node):
+            if below not in reachable:
+                reachable.add(below)
+                stack.append(below)
+        for below in undirected.neighbors(node):
+            if below not in reachable:
+                reachable.add(below)
+                stack.append(below)
+    return y in reachable
+
+
+def has_updown_path(graph: "MixedMultiGraph", x: T, y: T) -> bool:
+    """
+    Check whether an up-down path exists between two vertices.
+
+    Equivalent to ``y in updown_path_vertices(graph, x, y)``, but decided by two
+    graph traversals instead of enumerating paths, so it runs in O(V + E) rather
+    than exponential time. Callers that only need existence should prefer this.
+
+    Parameters
+    ----------
+    graph : MixedMultiGraph
+        The mixed multigraph to analyse.
+    x : T
+        Source vertex.
+    y : T
+        Target vertex.
+
+    Returns
+    -------
+    bool
+        True if at least one up-down path from ``x`` to ``y`` exists.
+
+    Examples
+    --------
+    >>> from phylozoo.core.primitives.m_multigraph.base import MixedMultiGraph
+    >>> G = MixedMultiGraph()
+    >>> _ = G.add_undirected_edge(1, 2)
+    >>> _ = G.add_directed_edge(2, 3)
+    >>> has_updown_path(G, 1, 3)
+    True
+    >>> has_updown_path(G, 3, 1)
+    False
+
+    See Also
+    --------
+    updown_path_vertices : All vertices lying on up-down paths between two vertices.
+    """
+
+    if not graph.has_node(x) or not graph.has_node(y):
+        return False
+    if x == y:
+        return True
+    return _updown_reachable(graph, x, y)
+
+
 def updown_path_vertices(graph: "MixedMultiGraph", x: T, y: T) -> set[T]:
     """
     Find all vertices on up-down paths between two vertices x and y.
@@ -709,6 +830,13 @@ def updown_path_vertices(graph: "MixedMultiGraph", x: T, y: T) -> set[T]:
 
     if x == y:
         return {x}
+
+    # No up-down path at all means no vertices to collect, and that is decidable in
+    # linear time -- skip the (exponential) enumeration below entirely. Note the
+    # converse does not let us skip it: knowing a path exists says nothing about which
+    # vertices lie on one.
+    if not _updown_reachable(graph, x, y):
+        return set()
 
     # Use NetworkX to find all simple paths in the combined graph
     # The combined graph treats all edges as undirected for path finding
