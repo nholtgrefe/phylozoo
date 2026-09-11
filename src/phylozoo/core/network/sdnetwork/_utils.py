@@ -2,19 +2,86 @@
 Internal utilities for semi-directed and mixed network operations.
 
 This module provides internal helper functions for network transformations,
-including edge attribute merging and degree-2 node suppression.
+including edge attribute merging, degree-2 node suppression, and the rooting
+context that lets repeated subnetwork extractions share one rooted view.
 """
 
 from typing import TYPE_CHECKING, Any
+
+import networkx as nx
 
 from ...primitives.m_multigraph.transformations import (
     suppress_degree2_node as mm_suppress_degree2_node,
 )
 from phylozoo.utils.exceptions import PhyloZooValueError
+from phylozoo.utils.validation import no_validation
 
 if TYPE_CHECKING:
     from ...primitives.m_multigraph.base import MixedMultiGraph
     from .sd_phynetwork import SemiDirectedPhyNetwork
+
+
+class _RootingContext:
+    """
+    A rooted view of a semi-directed network, reused across ``subnetwork`` calls.
+
+    The vertices lying on up-down paths between a set of leaves are exactly the
+    vertices lying on paths from those leaves' lowest stable ancestor down to them,
+    in any valid rooting. Deriving them that way costs one traversal per leaf,
+    whereas enumerating the up-down paths themselves is exponential in the number
+    of reticulations.
+
+    The rooting, its dominator tree and the per-leaf ancestor sets are computed
+    once and cached, so callers that take many subnetworks of the same network
+    (e.g. :func:`k_taxon_subnetworks`) pay for them only once.
+    """
+
+    __slots__ = ("rooted", "dag", "idom", "depth", "_ancestors")
+
+    def __init__(self, network: "SemiDirectedPhyNetwork") -> None:
+        # Imported here rather than at module scope: derivations imports this module.
+        from .derivations import to_d_network
+
+        with no_validation():
+            self.rooted = to_d_network(network)
+        self.dag = self.rooted._graph._graph
+        root = self.rooted.root_node
+        self.idom: dict[Any, Any] = nx.immediate_dominators(self.dag, root)
+        self.depth: dict[Any, int] = {root: 0}
+        for node in nx.topological_sort(self.dag):
+            if node != root:
+                self.depth[node] = self.depth[self.idom[node]] + 1
+        self._ancestors: dict[Any, set[Any]] = {}
+
+    def _ancestors_of(self, node: Any) -> set[Any]:
+        cached = self._ancestors.get(node)
+        if cached is None:
+            cached = nx.ancestors(self.dag, node) | {node}
+            self._ancestors[node] = cached
+        return cached
+
+    def _lsa(self, nodes: list[Any]) -> Any:
+        """Lowest stable ancestor of ``nodes``: their LCA in the dominator tree."""
+        current = nodes[0]
+        for other in nodes[1:]:
+            first, second = current, other
+            while self.depth[first] > self.depth[second]:
+                first = self.idom[first]
+            while self.depth[second] > self.depth[first]:
+                second = self.idom[second]
+            while first != second:
+                first, second = self.idom[first], self.idom[second]
+            current = first
+        return current
+
+    def node_set(self, leaf_nodes: list[Any]) -> set[Any]:
+        """Vertices on up-down paths between ``leaf_nodes``."""
+        closure: set[Any] = set()
+        for leaf in leaf_nodes:
+            closure |= self._ancestors_of(leaf)
+        lsa = self._lsa(leaf_nodes)
+        at_or_below_lsa = nx.descendants(self.dag, lsa) | {lsa}
+        return closure & at_or_below_lsa
 
 
 def _merge_attrs_for_degree2_suppression_mixed(

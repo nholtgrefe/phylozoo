@@ -265,8 +265,7 @@ def identify_vertices(
                 graph._undirected.nodes[first_vertex][attr_name] = attr_value
             if first_vertex in graph._directed.nodes():
                 graph._directed.nodes[first_vertex][attr_name] = attr_value
-            if first_vertex in graph._combined.nodes():
-                graph._combined.nodes[first_vertex][attr_name] = attr_value
+            graph._combined_cache = None
         # Remove attributes not in merged_attrs
         attrs_to_remove = set(first_vertex_attrs.keys()) - set(merged_attrs.keys())
         for attr_name in attrs_to_remove:
@@ -280,11 +279,7 @@ def identify_vertices(
                 and attr_name in graph._directed.nodes[first_vertex]
             ):
                 del graph._directed.nodes[first_vertex][attr_name]
-            if (
-                first_vertex in graph._combined.nodes()
-                and attr_name in graph._combined.nodes[first_vertex]
-            ):
-                del graph._combined.nodes[first_vertex][attr_name]
+            graph._combined_cache = None
     # Otherwise, first vertex's attributes are already preserved
 
 

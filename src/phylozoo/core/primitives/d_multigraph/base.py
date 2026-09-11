@@ -123,16 +123,16 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         """
         # Initialize graphs with attributes if provided
         self._graph: nx.MultiDiGraph
-        self._combined: nx.MultiGraph
+        # _combined is the undirected view of _graph, built on demand; see the
+        # _combined property below.
+        self._combined_cache: nx.MultiGraph | None = None
         if attributes:
             # Warn on Python keyword attribute names
             for attr_key in attributes:
                 warn_on_keyword(attr_key, "Graph attribute key")
             self._graph = nx.MultiDiGraph(**attributes)
-            self._combined = nx.MultiGraph(**attributes)
         else:
             self._graph = nx.MultiDiGraph()
-            self._combined = nx.MultiGraph()
 
         # Load edges if given
         if edges:
@@ -153,6 +153,30 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
                     raise PhyloZooValueError(f"Invalid edge format: {edge}")
 
     # ========== NetworkX Compatibility Methods ==========
+
+    @property
+    def _combined(self) -> nx.MultiGraph:
+        """
+        The undirected view of the graph, built on demand.
+
+        Every directed edge appears here as an undirected one, which is what the
+        connectivity algorithms operate on. It is derived entirely from
+        :attr:`_graph`, so it is rebuilt lazily after a change rather than kept in
+        step with every mutation, and copies need not carry it.
+
+        Returns
+        -------
+        nx.MultiGraph
+            The combined view. Treat it as read-only; it is discarded on the next
+            mutation.
+        """
+        combined = self._combined_cache
+        if combined is None:
+            combined = nx.MultiGraph(**self._graph.graph)
+            combined.add_nodes_from(self._graph.nodes(data=True))
+            combined.add_edges_from(self._graph.edges(keys=True, data=True))
+            self._combined_cache = combined
+        return combined
 
     def nodes_iter(self, data: bool | str = False) -> Iterator[T] | Iterator[tuple[T, Any]]:
         """
@@ -769,7 +793,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
             warn_on_none_value(attr_value, f"Attribute '{attr_name}'")
 
         self._graph.add_node(v, **attr)
-        self._combined.add_node(v, **attr)
+        self._combined_cache = None
 
     def add_nodes_from(self, nodes: list[T] | set[T], **attr: Any) -> None:
         """
@@ -790,7 +814,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         3
         """
         self._graph.add_nodes_from(nodes, **attr)
-        self._combined.add_nodes_from(nodes, **attr)
+        self._combined_cache = None
 
     def remove_node(self, v: T) -> None:
         """
@@ -815,7 +839,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         [1, 3]
         """
         self._graph.remove_node(v)
-        self._combined.remove_node(v)
+        self._combined_cache = None
 
     def generate_node_ids(self, count: int) -> Iterator[int]:
         """
@@ -939,10 +963,10 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         # Ensure nodes exist
         if u not in self._graph:
             self._graph.add_node(u)
-            self._combined.add_node(u)
+            self._combined_cache = None
         if v not in self._graph:
             self._graph.add_node(v)
-            self._combined.add_node(v)
+            self._combined_cache = None
 
         # Auto-generate key if not provided
         if key is None:
@@ -954,7 +978,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
 
         # Add to both graph and combined graph
         self._graph.add_edge(u, v, key=key, **attr)
-        self._combined.add_edge(u, v, key=key, **attr)
+        self._combined_cache = None
 
         return key
 
@@ -1018,7 +1042,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
             raise PhyloZooValueError(f"Edge ({u}, {v}, {key}) does not exist.")
 
         self._graph.remove_edge(u, v, key)
-        self._combined.remove_edge(u, v, key)
+        self._combined_cache = None
 
     def remove_edges_from(self, edges: list[tuple[T, T] | tuple[T, T, int]]) -> None:
         """
@@ -1301,7 +1325,6 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         graph_attrs = self._graph.graph.copy() if self._graph.graph else None
         new_graph: Any = DirectedMultiGraph(attributes=graph_attrs)
         new_graph._graph = self._graph.copy()
-        new_graph._combined = self._combined.copy()
         return new_graph  # type: ignore[no-any-return]
 
     def clear(self) -> None:
@@ -1322,7 +1345,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         0
         """
         self._graph.clear()
-        self._combined.clear()
+        self._combined_cache = None
 
     def set_graph_attribute(self, key: str, value: Any) -> None:
         """
@@ -1348,4 +1371,4 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         0.5
         """
         self._graph.graph[key] = value
-        self._combined.graph[key] = value
+        self._combined_cache = None

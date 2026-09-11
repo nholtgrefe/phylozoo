@@ -132,7 +132,8 @@ def multidigraph_to_mixedmultigraph(graph: nx.MultiDiGraph) -> "MixedMultiGraph"
     # Add all edges directly to preserve keys (bypass mutual exclusivity checks)
     for u, v, key, data in graph.edges(keys=True, data=True):
         mg._directed.add_edge(u, v, key=key, **data)
-        mg._combined.add_edge(u, v, key=key, **data)
+    # _directed was written behind the API's back, so drop the derived view explicitly.
+    mg._combined_cache = None
     return mg  # type: ignore[no-any-return]
 
 
@@ -172,5 +173,6 @@ def directedmultigraph_to_mixedmultigraph(graph: "DirectedMultiGraph") -> "Mixed
     # Add all edges directly to preserve keys (bypass mutual exclusivity checks)
     for u, v, key, data in graph.edges(keys=True, data=True):
         mg._directed.add_edge(u, v, key=key, **data)
-        mg._combined.add_edge(u, v, key=key, **data)
+    # _directed was written behind the API's back, so drop the derived view explicitly.
+    mg._combined_cache = None
     return mg  # type: ignore[no-any-return]

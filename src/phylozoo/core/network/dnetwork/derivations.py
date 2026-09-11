@@ -142,7 +142,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
             label = working._node_to_label[node]
             mixed._undirected.nodes[node]["label"] = label
             mixed._directed.nodes[node]["label"] = label
-            mixed._combined.nodes[node]["label"] = label
+            mixed._combined_cache = None
 
     # Convert the mixed graph to a semi-directed network
     return sdnetwork_from_graph(mixed, network_type="semi-directed")
@@ -495,6 +495,62 @@ def _switchings(
         yield switching_graph
 
 
+def _displayed_tree_graphs(
+    network: DirectedPhyNetwork, probability: bool = False
+) -> Iterator[DirectedMultiGraph]:
+    """
+    Yield the underlying graph of each displayed tree.
+
+    Shared core of :func:`displayed_trees`: applies a switching, prunes degree-1
+    nodes that are neither leaves nor the root, and suppresses degree-2 nodes.
+    Callers that only read a displayed tree's topology can use this and skip
+    building a network object per tree.
+
+    Parameters
+    ----------
+    network : DirectedPhyNetwork
+        The directed phylogenetic network.
+    probability : bool, optional
+        If True, each yielded graph carries the switching's probability in its
+        ``probability`` graph attribute. By default False.
+
+    Yields
+    ------
+    DirectedMultiGraph
+        The graph of one displayed tree. Each is a fresh object owned by the caller.
+    """
+    original_leaves = network.leaves
+    original_root = network.root_node
+
+    for tree_graph in _switchings(network, probability=probability):
+        # _switchings yields a fresh graph per switching and nothing else sees it,
+        # so it can be reshaped in place rather than copied again.
+
+        # Exhaustively remove degree-1 nodes that are not leaves or root
+        while True:
+            degree1_nodes = [
+                node
+                for node in tree_graph.nodes()
+                if tree_graph.degree(node) == 1
+                and node not in original_leaves
+                and node != original_root
+            ]
+
+            if not degree1_nodes:
+                break
+
+            # Remove all degree-1 nodes (excluding leaves and root)
+            for node in degree1_nodes:
+                # Double-check node still exists and is still degree-1
+                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
+                    tree_graph.remove_node(node)
+
+        # Suppress all degree-2 nodes
+        dm_suppress_deg2_nodes(tree_graph, exclude_nodes=None)
+
+        yield tree_graph
+
+
 def displayed_trees(
     network: DirectedPhyNetwork,
     probability: bool = False,
@@ -552,36 +608,7 @@ def displayed_trees(
     >>> len(trees)
     2  # Two switchings yield two displayed trees
     """
-    # Get original network's leaves and root for reference
-    original_leaves = network.leaves
-    original_root = network.root_node
-
-    # Iterate through all switchings
-    for switching_graph in _switchings(network, probability=probability):
-        # Work on a copy to avoid modifying the switching
-        tree_graph = switching_graph.copy()
-
-        # Exhaustively remove degree-1 nodes that are not leaves or root
-        while True:
-            degree1_nodes = [
-                node
-                for node in tree_graph.nodes()
-                if tree_graph.degree(node) == 1
-                and node not in original_leaves
-                and node != original_root
-            ]
-
-            if not degree1_nodes:
-                break
-
-            # Remove all degree-1 nodes (excluding leaves and root)
-            for node in degree1_nodes:
-                # Double-check node still exists and is still degree-1
-                if tree_graph.has_node(node) and tree_graph.degree(node) == 1:
-                    tree_graph.remove_node(node)
-
-        # Suppress all degree-2 nodes
-        dm_suppress_deg2_nodes(tree_graph, exclude_nodes=None)
+    for tree_graph in _displayed_tree_graphs(network, probability=probability):
 
         # Convert back to DirectedPhyNetwork
         # Note: dnetwork_from_graph already copies graph attributes, so probability
@@ -1160,9 +1187,11 @@ def displayed_triplets(network: DirectedPhyNetwork) -> TripletProfileSet:
         triplet_weights: dict[Triplet, float] = {}
 
         # Get all displayed trees of the subnetwork with probabilities
-        for displayed_tree in displayed_trees(triplet_subnet, probability=True):
-            # Get probability of this displayed tree
-            prob = displayed_tree.get_network_attribute("probability")
+        for tree_graph in _displayed_tree_graphs(triplet_subnet, probability=True):
+            # Read the topology straight off the graph: a rooted three-leaf tree needs
+            # no network object, only its root and which leaves hang directly off it.
+            graph = tree_graph._graph
+            prob = graph.graph.get("probability")
             if prob is None:
                 prob = 1.0
 
@@ -1170,29 +1199,28 @@ def displayed_triplets(network: DirectedPhyNetwork) -> TripletProfileSet:
             # The displayed tree may have a single-child path from the topological
             # root down to the first branching node; the rooted topology of the
             # triplet is determined by what hangs below that branching node.
-            root = displayed_tree.root_node
-            while displayed_tree.outdegree(root) == 1:
-                root = next(displayed_tree.children(root))
+            root = next(node for node in graph.nodes() if graph.in_degree(node) == 0)
+            while graph.out_degree(root) == 1:
+                root = next(iter(graph.successors(root)))
 
             # A star has all 3 leaves as direct root-children, and a binary
             # triplet has exactly one leaf as a direct root-child (the outgroup)
             # and the other two as siblings under an internal node.
-            leaf_nodes = displayed_tree.leaves
-            direct_leaves = [
-                leaf for leaf in leaf_nodes if root in set(displayed_tree.parents(leaf))
-            ]
+            leaf_nodes = [node for node in graph.nodes() if graph.out_degree(node) == 0]
+            root_children = set(graph.successors(root))
+            direct_leaves = [leaf for leaf in leaf_nodes if leaf in root_children]
+
+            def _label(node: Any, _graph: Any = graph) -> str:
+                label = _graph.nodes[node].get("label")
+                return str(label) if label is not None else str(node)
 
             if len(direct_leaves) == 3:
                 # Star triplet: all 3 leaves are root children
                 triplet = Triplet(three_taxa_set)
             elif len(direct_leaves) == 1:
                 # Binary triplet: the direct leaf is the outgroup, others form the cherry
-                outgroup_label = displayed_tree.get_label(direct_leaves[0])
-                cherry_labels = {
-                    displayed_tree.get_label(leaf)
-                    for leaf in leaf_nodes
-                    if leaf != direct_leaves[0]
-                }
+                outgroup_label = _label(direct_leaves[0])
+                cherry_labels = {_label(leaf) for leaf in leaf_nodes if leaf != direct_leaves[0]}
                 triplet = Triplet(Split({outgroup_label}, cherry_labels))
             else:
                 # Unexpected structure for a rooted 3-leaf tree

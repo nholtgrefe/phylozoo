@@ -162,18 +162,18 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         # Initialize graphs with attributes if provided
         self._undirected: nx.MultiGraph
         self._directed: nx.MultiDiGraph
-        self._combined: nx.MultiGraph
+        # _combined is derived from the two above and built on demand; see the
+        # _combined property below.
+        self._combined_cache: nx.MultiGraph | None = None
         if attributes:
             # Warn on Python keyword attribute names
             for attr_key in attributes:
                 warn_on_keyword(attr_key, "Graph attribute key")
             self._undirected = nx.MultiGraph(**attributes)
             self._directed = nx.MultiDiGraph(**attributes)
-            self._combined = nx.MultiGraph(**attributes)
         else:
             self._undirected = nx.MultiGraph()
             self._directed = nx.MultiDiGraph()
-            self._combined = nx.MultiGraph()
 
         # Load undirected edges if given (before directed edges to handle mutual exclusivity)
         if undirected_edges:
@@ -213,6 +213,34 @@ class MixedMultiGraph(IOMixin, Generic[T]):
 
     # ========== NetworkX Compatibility Methods ==========
 
+    @property
+    def _combined(self) -> nx.MultiGraph:
+        """
+        The undirected view of the whole graph, built on demand.
+
+        Every edge -- undirected or directed -- appears here as an undirected edge,
+        which is what the connectivity and path algorithms operate on. The graph is
+        derived entirely from :attr:`_undirected` and :attr:`_directed`, so it is
+        rebuilt lazily after any change rather than kept in step with every mutation:
+        most callers mutate far more often than they consult it, and copies need not
+        carry it at all.
+
+        Returns
+        -------
+        nx.MultiGraph
+            The combined view. Treat it as read-only; it is discarded on the next
+            mutation.
+        """
+        combined = self._combined_cache
+        if combined is None:
+            combined = nx.MultiGraph(**self._directed.graph)
+            combined.add_nodes_from(self._undirected.nodes(data=True))
+            combined.add_nodes_from(self._directed.nodes(data=True))
+            combined.add_edges_from(self._undirected.edges(keys=True, data=True))
+            combined.add_edges_from(self._directed.edges(keys=True, data=True))
+            self._combined_cache = combined
+        return combined
+
     def nodes_iter(self, data: bool | str = False) -> Iterator[T] | Iterator[tuple[T, Any]]:
         """
         Return an iterator over nodes.
@@ -242,8 +270,29 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> list(G.nodes_iter(data='weight'))
         [(1, 2.0), (2, 3.0)]
         """
-        # Use the combined graph for consistency - it has all nodes
-        return self._combined.nodes(data=data)
+        # Iterate the two sub-graphs directly rather than the combined view: the node
+        # set is their union, and going through _combined would make every nodes()
+        # call depend on that derived graph being materialised.
+        undirected_nodes = self._undirected.nodes
+        directed_nodes = self._directed.nodes
+
+        seen: set[T] = set()
+        ordered: list[T] = []
+        for source in (undirected_nodes, directed_nodes):
+            for node in source:
+                if node not in seen:
+                    seen.add(node)
+                    ordered.append(node)
+
+        if data is False:
+            return ordered
+
+        result = []
+        for node in ordered:
+            attrs = dict(undirected_nodes.get(node, {}))
+            attrs.update(directed_nodes.get(node, {}))
+            result.append((node, attrs) if data is True else (node, attrs.get(data)))
+        return result
 
     def edges_iter(
         self, keys: bool = False, data: bool | str = False
@@ -891,7 +940,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
 
         self._undirected.add_node(v, **attr)
         self._directed.add_node(v, **attr)
-        self._combined.add_node(v, **attr)
+        self._combined_cache = None
 
     def add_nodes_from(self, nodes: list[T] | set[T], **attr: Any) -> None:
         """
@@ -913,7 +962,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         """
         self._undirected.add_nodes_from(nodes, **attr)
         self._directed.add_nodes_from(nodes, **attr)
-        self._combined.add_nodes_from(nodes, **attr)
+        self._combined_cache = None
 
     @classmethod
     def normalize_undirected_edge(
@@ -1054,7 +1103,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         """
         self._undirected.remove_node(v)
         self._directed.remove_node(v)
-        self._combined.remove_node(v)
+        self._combined_cache = None
 
     def remove_nodes_from(self, nodes: list[T] | set[T]) -> None:
         """
@@ -1131,10 +1180,10 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         # Ensure nodes exist
         if u not in self._undirected:
             self._undirected.add_node(u)
-            self._combined.add_node(u)
+            self._combined_cache = None
         if v not in self._undirected:
             self._undirected.add_node(v)
-            self._combined.add_node(v)
+            self._combined_cache = None
 
         # Auto-generate key if not provided
         if key is None:
@@ -1151,11 +1200,11 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         if self._undirected.has_edge(u, v):
             for k in list(self._undirected[u][v].keys()):
                 self._undirected.remove_edge(u, v, key=k)
-                self._combined.remove_edge(u, v, key=k)
+                self._combined_cache = None
 
         # Now add to directed graph and combined graph
         self._directed.add_edge(u, v, key=key, **attr)
-        self._combined.add_edge(u, v, key=key, **attr)
+        self._combined_cache = None
 
         return key
 
@@ -1221,7 +1270,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
             raise ValueError(f"Directed edge ({u}, {v}, {key}) does not exist.")
 
         self._directed.remove_edge(u, v, key)
-        self._combined.remove_edge(u, v, key)
+        self._combined_cache = None
 
     def remove_directed_edges_from(self, edges: list[tuple[T, T] | tuple[T, T, int]]) -> None:
         """
@@ -1340,16 +1389,16 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         # Ensure nodes exist
         if u not in self._directed:
             self._directed.add_node(u)
-            self._combined.add_node(u)
+            self._combined_cache = None
         if v not in self._directed:
             self._directed.add_node(v)
-            self._combined.add_node(v)
+            self._combined_cache = None
 
         # Remove any directed edges between u and v (mutual exclusivity)
         if self._directed.has_edge(u, v):
             for k in list(self._directed[u][v].keys()):
                 self._directed.remove_edge(u, v, key=k)
-                self._combined.remove_edge(u, v, key=k)
+                self._combined_cache = None
 
         # Auto-generate key if not provided
         if key is None:
@@ -1361,7 +1410,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
 
         # Add to both undirected and combined graphs
         self._undirected.add_edge(u, v, key=key, **attr)
-        self._combined.add_edge(u, v, key=key, **attr)
+        self._combined_cache = None
 
         return key
 
@@ -1427,12 +1476,12 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         # Try undirected first
         if self._undirected.has_edge(u, v, key):
             self._undirected.remove_edge(u, v, key)
-            self._combined.remove_edge(u, v, key)
+            self._combined_cache = None
             removed = True
         # Then try directed
         elif self._directed.has_edge(u, v, key):
             self._directed.remove_edge(u, v, key)
-            self._combined.remove_edge(u, v, key)
+            self._combined_cache = None
             removed = True
 
         if not removed:
@@ -1799,7 +1848,6 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         new_graph: Any = MixedMultiGraph(attributes=graph_attrs)
         new_graph._undirected = self._undirected.copy()
         new_graph._directed = self._directed.copy()
-        new_graph._combined = self._combined.copy()
         return new_graph  # type: ignore[no-any-return]
 
     def clear(self) -> None:
@@ -1821,7 +1869,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         """
         self._undirected.clear()
         self._directed.clear()
-        self._combined.clear()
+        self._combined_cache = None
 
     def set_graph_attribute(self, key: str, value: Any) -> None:
         """
@@ -1850,4 +1898,4 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         """
         self._directed.graph[key] = value
         self._undirected.graph[key] = value
-        self._combined.graph[key] = value
+        self._combined_cache = None
