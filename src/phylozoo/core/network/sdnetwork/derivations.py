@@ -560,8 +560,9 @@ def displayed_trees(
 
     # Iterate through all switchings
     for switching_graph in _switchings(network, probability=probability):
-        # Work on a copy to avoid modifying the switching
-        tree_graph = switching_graph.copy()
+        # _switchings yields a fresh graph per switching and nothing else sees it,
+        # so it can be reshaped in place rather than copied again.
+        tree_graph = switching_graph
 
         _undirect_switching(tree_graph)
 
@@ -1141,12 +1142,16 @@ def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
     # Collect profiles for each 4-taxon set
     profiles: list[QuartetProfile] = []
 
+    # Root the network (and build its dominator tree) once and reuse it for every
+    # 4-taxon set; otherwise each subnetwork call re-roots the whole network.
+    rooting = _RootingContext(network)
+
     # Iterate through all combinations of 4 taxa
     for four_taxa in itertools.combinations(taxa_list, 4):
         four_taxa_set = frozenset(four_taxa)
 
         # Get subnetwork induced by these 4 taxa
-        quartet_subnet = subnetwork(network, list(four_taxa))
+        quartet_subnet = subnetwork(network, list(four_taxa), _rooting=rooting)
 
         # Collect quartets with their weights for this 4-taxon set
         quartet_weights: dict[Quartet, float] = {}
