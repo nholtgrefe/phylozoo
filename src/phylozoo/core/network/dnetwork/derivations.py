@@ -6,6 +6,7 @@ phylogenetic networks (e.g., splits, quartets, distances, blobtrees, subnetworks
 """
 
 import itertools
+from collections import deque
 from typing import Any, Iterator, Literal
 
 import numpy as np
@@ -263,14 +264,19 @@ def subnetwork(
             raise PhyloZooValueError(f"Taxon label '{t}' not found in network")
         leaf_nodes.append(node_id)
 
-    # Collect all ancestors (and the leaves themselves)
-    import networkx as nx
-
+    # Collect all ancestors (and the leaves themselves). The union of the leaves'
+    # ancestor sets is just the set of nodes that reach any of them, so one traversal
+    # of the reversed graph suffices -- calling nx.ancestors once per leaf re-walks
+    # the shared upper part of the network once for every leaf.
     dag = working_net._graph._graph
-    nodes_set: set[Any] = set()
-    for leaf in leaf_nodes:
-        nodes_set.add(leaf)
-        nodes_set.update(nx.ancestors(dag, leaf))
+    nodes_set: set[Any] = set(leaf_nodes)
+    stack: list[Any] = list(leaf_nodes)
+    while stack:
+        node = stack.pop()
+        for parent in dag.predecessors(node):
+            if parent not in nodes_set:
+                nodes_set.add(parent)
+                stack.append(parent)
 
     # Create induced DirectedMultiGraph using existing utility
     induced_dm = dm_subgraph(working_net._graph, nodes_set)
@@ -637,34 +643,33 @@ def _switching_distance_matrix(
     # Use the combined graph view for path finding (treats all edges as undirected)
     combined_graph = switching_graph._combined
 
-    # Compute pairwise distances
-    for i, leaf1 in enumerate(leaf_nodes):
-        for j, leaf2 in enumerate(leaf_nodes):
-            if i == j:
-                distance_matrix[i, j] = 0.0
-                continue
+    # Look each branch length up once, rather than once per path that crosses it.
+    branch_length: dict[tuple[Any, Any], float] = {}
+    for u, v in combined_graph.edges():
+        bl = original_network.get_branch_length(u, v)
+        if bl is None:
+            bl = original_network.get_branch_length(v, u)
+        if bl is None:
+            bl = 1.0  # Default when no branch length is recorded
+        branch_length[(u, v)] = bl
+        branch_length[(v, u)] = bl
 
-            # Find the unique path between the two leaves
-            path = nx.shortest_path(combined_graph, leaf1, leaf2)
-
-            # Sum branch lengths along the path
-            total_distance = 0.0
-            for k in range(len(path) - 1):
-                u, v = path[k], path[k + 1]
-
-                # Get branch length from the original network
-                bl = original_network.get_branch_length(u, v)
-                if bl is None:
-                    bl = original_network.get_branch_length(v, u)
-
-                # Default to 1.0 if no branch length found
-                if bl is None:
-                    bl = 1.0
-
-                total_distance += bl
-
-            distance_matrix[i, j] = total_distance
-            distance_matrix[j, i] = total_distance  # Symmetric
+    # A switching is a tree, so the path between two leaves is unique and a single
+    # traversal from one leaf yields its distance to every other node at once. This
+    # replaces a shortest-path computation per ordered pair of leaves.
+    leaf_index = {leaf: i for i, leaf in enumerate(leaf_nodes)}
+    for i, source in enumerate(leaf_nodes):
+        visited = {source}
+        queue: deque[tuple[Any, float]] = deque([(source, 0.0)])
+        while queue:
+            node, distance = queue.popleft()
+            target = leaf_index.get(node)
+            if target is not None:
+                distance_matrix[i, target] = distance
+            for neighbour in combined_graph.neighbors(node):
+                if neighbour not in visited:
+                    visited.add(neighbour)
+                    queue.append((neighbour, distance + branch_length[(node, neighbour)]))
 
     return distance_matrix
 
@@ -957,8 +962,6 @@ def split_from_cutedge(
     graph_copy.remove_edge(u, v, key)
 
     # Check if removal disconnects the graph
-    import networkx as nx
-
     components = list(nx.weakly_connected_components(graph_copy._graph))
     if len(components) != 2:
         raise PhyloZooValueError(
@@ -1284,8 +1287,6 @@ def partition_from_blob(
         graph_copy.remove_node(node)
 
     # Find weakly connected components (for directed graphs)
-    import networkx as nx
-
     components = list(nx.weakly_connected_components(graph_copy._graph))
 
     # Check that removing blob disconnects the network (at least 2 components)
