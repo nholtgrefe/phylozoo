@@ -380,7 +380,12 @@ class TestApplyRules:
 
         # Should not raise any errors
         results = list(_apply_rules(gen1))
-        assert len(results) == 12  # Known number from previous testing
+        # The level-1 generator has three sides (two parallel edge sides, one hybrid
+        # side). R1 over unordered pairs with repetition, minus the hybrid-with-itself
+        # pair, gives 6 - 1 = 5; R2 over (side, edge side) pairs whose source is not
+        # reachable from the edge gives 4. Before R1 was restricted to unordered pairs
+        # this was 12, the extra 3 being the mirror images of R1 pairs.
+        assert len(results) == 9
 
 
 class TestAllLevelKGenerators:

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Iterator
 
+import itertools
+
 import networkx as nx
 
 from ....primitives.d_multigraph import DirectedMultiGraph
@@ -280,9 +282,11 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
     """
     Apply R1 and R2 rules to all applicable sides of a generator.
 
-    This function applies R1 to all pairs of sides and R2 to all hybrid sides,
-    yielding all level-k generators that can be constructed from this level-(k-1) generator,
-    not up to isomorphism.
+    This function applies R1 to all unordered pairs of sides and R2 to all
+    (side, edge side) pairs, yielding all level-k generators that can be constructed
+    from this level-(k-1) generator. The results are not deduplicated up to
+    isomorphism, except that the two orders of an R1 pair -- which give the same
+    graph -- are not both yielded.
 
     Parameters
     ----------
@@ -329,20 +333,16 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
         # (i.e., there's a path from target2 to source1)
         return (target2, source1) in node_reachability
 
-    # Apply R1 to all pairs of sides (including same side if it's an edge side)
-    # Skip pairs where both are hybrid sides and they are the same (X = Y)
-    for side_x in sides:
-        for side_y in sides:
-            # Skip if X = Y and both are hybrid sides
-            if (
-                side_x == side_y
-                and isinstance(side_x, HybridSide)
-                and isinstance(side_y, HybridSide)
-            ):
-                continue
-
-            new_gen = _apply_R1(generator, side_x, side_y)
-            yield new_gen
+    # Apply R1 to all unordered pairs of sides (including a side with itself if it
+    # is an edge side). R1 hangs the new hybrid under X and Y symmetrically, so
+    # (X, Y) and (Y, X) build the same graph; yielding both would only hand
+    # gambette_step a duplicate to detect and discard.
+    # Skip the pair where X = Y is a hybrid side.
+    for side_x, side_y in itertools.combinations_with_replacement(sides, 2):
+        if side_x == side_y and isinstance(side_x, HybridSide):
+            continue
+        new_gen = _apply_R1(generator, side_x, side_y)
+        yield new_gen
 
     # Apply R2 to all pairs: side_x (any side) and side_y (edge side only),
     # including same sides. Skip if side_x is reachable from side_y.
