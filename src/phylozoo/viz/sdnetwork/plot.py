@@ -74,7 +74,7 @@ def plot_sdnetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
-    >>> ax = plot(net)
+    >>> ax = plot(net, layout='spring')  # the default 'neato' needs pygraphviz
     """
     if style is None:
         style = default_style()

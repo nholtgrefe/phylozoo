@@ -46,7 +46,9 @@ jobs:
           cache: pip
 
       - name: Install ruff and black
-        run: pip install ruff black
+        # Pinned: newer ruff releases change the default rule set, which would fail the
+        # check on code that is clean under the version the repository is linted with.
+        run: pip install "ruff==0.14.7" "black==26.5.1"
 
       - name: Run ruff
         run: ruff check src tests
