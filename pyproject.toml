@@ -80,7 +80,8 @@ version = {attr = "phylozoo.__version__"}
 where = ["src"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# "src/phylozoo" is included so that the docstring examples run as doctests too.
+testpaths = ["tests", "src/phylozoo"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -89,6 +90,7 @@ addopts = [
     "--strict-markers",
     "--tb=short",
     "--import-mode=importlib",
+    "--doctest-modules",
 ]
 filterwarnings = [
     "ignore:Empty network.*no nodes.*:UserWarning",
