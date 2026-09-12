@@ -19,6 +19,7 @@ from ....primitives.m_multigraph.transformations import suppress_degree2_node
 from ...dnetwork.generator.base import DirectedGenerator
 from ...dnetwork.generator.construction import all_level_k_generators as all_level_k_dgenerators
 from .base import SemiDirectedGenerator
+from .....utils.validation import no_validation
 from phylozoo.utils.exceptions import PhyloZooValueError
 
 
@@ -142,7 +143,11 @@ def semidirect_generators(
     groups: dict[Any, list[SemiDirectedGenerator]] = {}
 
     for d_gen in d_generators:
-        sd_gen = dgenerator_to_sdgenerator(d_gen)
+        # The input is a valid directed generator, so its semi-direction is valid by
+        # construction; results are documented as unvalidated (call validate() to
+        # check one), matching the directed side's gambette_step.
+        with no_validation(classes=["SemiDirectedGenerator"]):
+            sd_gen = dgenerator_to_sdgenerator(d_gen)
         # Strong dedup key: cheap invariant + Weisfeiler-Lehman hash (both
         # isomorphism-invariant); VF2 confirms exactness within a key group.
         key = (_get_graph_invariant(sd_gen.graph), _get_graph_wl_hash(sd_gen.graph))
