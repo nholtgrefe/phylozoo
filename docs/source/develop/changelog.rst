@@ -4,6 +4,108 @@ Changelog
 Version History
 ---------------
 
+0.3
+~~~
+
+0.3.0
+^^^^^
+
+A performance release: the fundamental operations were profiled on networks of up
+to :math:`10^5` leaves and the algorithmic bottlenecks removed, without changing
+results. Every docstring example is now executed as a test.
+
+Added
+"""""
+
+* ``copy`` keyword on :func:`~phylozoo.core.network.dnetwork.conversions.dnetwork_from_graph`
+  and :func:`~phylozoo.core.network.sdnetwork.conversions.sdnetwork_from_graph`.
+  With ``copy=False`` the network adopts the given graph instead of rebuilding it
+  (the caller must not use the graph afterwards); label validation, leaf
+  auto-labelling and :meth:`validate` run exactly as before. All internal
+  transformations use it, which removes one full graph construction from every
+  conversion, subnetwork and displayed tree.
+* :meth:`has_node` and :meth:`all_degrees` on
+  :class:`~phylozoo.core.primitives.d_multigraph.DirectedMultiGraph` and
+  :class:`~phylozoo.core.primitives.m_multigraph.MixedMultiGraph` (``all_degrees``
+  returns every node's in-/out-/undirected degree in one pass), and
+  :func:`~phylozoo.core.primitives.m_multigraph.features.has_updown_path` (linear-time
+  existence test for an up-down path, without enumerating paths).
+* Docstring examples run as doctests in the normal ``pytest`` run
+  (``--doctest-modules`` and ``src/phylozoo`` in ``testpaths``); see the
+  :doc:`Testing guide <testing>`. About 120 stale examples were repaired, and
+  examples that wrote files now write into a temporary directory.
+* README quickstart, and a manual section on
+  :ref:`validation inside library functions <validation-inside-library-functions>`.
+
+Changed
+"""""""
+
+* **Derived networks are no longer re-validated.** Functions that build a new
+  network from an already valid one — ``subnetwork``, ``to_sd_network``,
+  ``to_d_network`` (with an automatically chosen root), ``tree_of_blobs``,
+  ``displayed_trees``, ``to_lsa_network``, ``suppress_2_blobs``,
+  ``identify_parallel_edges``, ``binary_resolution`` and the generator enumeration —
+  construct their result inside :func:`~phylozoo.utils.validation.no_validation`,
+  since it is valid by construction. Constructors, parsers and functions whose result
+  depends on caller input (e.g. ``to_d_network`` with an explicit ``root_location``,
+  ``root_at_outgroup``) still validate. Roughly halves the default cost of
+  ``to_sd_network``, ``displayed_trees`` and ``suppress_2_blobs``.
+* :func:`~phylozoo.core.network.dnetwork.derivations.distances` and
+  :func:`~phylozoo.core.network.dnetwork.derivations.displayed_splits` (both
+  representations) no longer enumerate all :math:`\prod_b 2^{r_b}` switchings. A
+  path's stretch inside a blob depends only on that blob's hybrid choices, so only a
+  reference switching plus each blob's local switchings are evaluated
+  (:math:`1 + \sum_b 2^{r_b}`) and aggregated per blob — for all three distance modes,
+  since a sum of independently chosen terms is minimised or maximised term by term.
+  The cost is exponential in the *level*, not in the number of reticulations: 20
+  reticulations in 20 blobs take 1.6 s instead of :math:`2^{20}` switchings. Both
+  functions share one switching machinery that walks the network's cached graph with
+  removed edges instead of copying a switching graph per switching (single-blob
+  ``distances`` 2.7x faster; the semi-directed matrix computation, which used one
+  shortest-path call per ordered leaf pair, is ~20x faster).
+* :func:`~phylozoo.core.distance.classifications.is_tree_metric` is
+  :math:`O(n^2)` instead of :math:`O(n^4)`: the tree an additive matrix must come from
+  is reconstructed by inserting taxa one by one, and the matrix is a tree metric
+  exactly when that tree reproduces it (n=500: 4.2 s to 0.26 s).
+  :func:`~phylozoo.core.split.algorithms.tree_from_splitsystem` inserts compatible
+  splits as clusters, smallest first, instead of searching cut-vertices per split
+  (n=120: 2.1 s to 0.025 s).
+  :func:`~phylozoo.core.sequence.distances.hamming_distances` counts matches and valid
+  sites with (exact, blocked) matrix products instead of a pair loop (6–31x);
+  :func:`~phylozoo.core.split.classifications.is_pairwise_compatible` uses bitmasks.
+* Displayed trees / quartets / triplets: no per-tree graph copies, one shared rooting
+  for semi-directed networks, degree-1 pruning as a worklist, and quartets/triplets
+  read topology off the tree graphs instead of building network objects.
+* Semi-directed validation no longer round-trips through a directed network;
+  ``lsa_node`` uses dominators; ``subnetwork`` collects ancestors in one traversal;
+  ``is_ultrametric``, ``is_normal``, ``source_components``, ``orient_away_from_vertex``
+  and ``quartet_distance`` avoid repeated scans.
+* Primitives: the combined undirected view and the ``nodes``/``edges`` views are built
+  lazily (constructing a network no longer maintains a second graph), ``subgraph``
+  walks only the selected nodes' adjacency (extracting all blobs of a 2 000-leaf
+  network: 1.37 s to 0.03 s), and ``Split`` stores its sides as the partition's own
+  frozensets and can share one taxon set across a split system (2.9x less memory for
+  large split systems; ``split.set1``/``set2`` are now ``frozenset`` — equality with
+  plain sets is unchanged, and so is the ``repr``).
+* Generators: R1 is applied to unordered side pairs (it is symmetric), the reachability
+  matrix uses set unions, and ``semidirect_generators`` no longer re-validates its
+  by-construction-valid results (level-4 semi-direction 8.2 s to 1.2 s). Generator
+  counts are unchanged.
+
+Fixed
+"""""
+
+* ``distances()`` raised ``PhyloZooValueError: Multiple parallel edges exist`` on any
+  network with parallel edges (branch lengths were looked up without the edge key).
+* ``displayed_quartets`` on semi-directed networks crashed because a switching kept
+  the surviving hybrid edges directed; switchings are now undirected before use.
+* The DOT writers dropped non-zero edge keys on non-parallel edges, so such graphs did
+  not round-trip (the cause of an intermittently failing generator I/O test).
+* Nested :func:`~phylozoo.utils.validation.no_validation` blocks now stack as
+  documented: an inner block adds to the outer block's suppression instead of
+  replacing it when it names other methods.
+* Documentation: duplicate Squirrel citation removed.
+
 0.2
 ~~~
 
