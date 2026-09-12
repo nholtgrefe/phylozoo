@@ -122,7 +122,7 @@ def to_nexus_split_system(split_system: SplitSystem, **kwargs: Any) -> str:
     #NEXUS
     <BLANKLINE>
     BEGIN TAXA;
-        DIMENSIONS NTAX=4;
+        DIMENSIONS ntax=4;
         TAXLABELS
             1
             2
@@ -139,6 +139,7 @@ def to_nexus_split_system(split_system: SplitSystem, **kwargs: Any) -> str:
             [2] (1 3) (2 4)
         ;
     END;
+    <BLANKLINE>
 
     Notes
     -----
@@ -201,7 +202,7 @@ def to_nexus_weighted_split_system(weighted_system: WeightedSplitSystem, **kwarg
     #NEXUS
     <BLANKLINE>
     BEGIN TAXA;
-        DIMENSIONS NTAX=4;
+        DIMENSIONS ntax=4;
         TAXLABELS
             1
             2
@@ -218,6 +219,7 @@ def to_nexus_weighted_split_system(weighted_system: WeightedSplitSystem, **kwarg
             [2] (1 3) (2 4) 0.600000
         ;
     END;
+    <BLANKLINE>
 
     Notes
     -----

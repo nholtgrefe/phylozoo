@@ -383,3 +383,21 @@ def test_class_suppression_with_default_methods() -> None:
     # Test that _check can still be called directly on ClassA
     a._check()
     assert a.checked is True  # _check works when called directly
+
+
+def test_nested_contexts_with_different_methods_stack() -> None:
+    """
+    An inner block adds to the outer block's suppression instead of replacing it.
+    """
+    obj = MultiValidate()
+    with no_validation(methods=["validate"]):
+        with no_validation(methods=["_check"]):
+            obj.validate()  # still suppressed by the outer block
+    assert obj.validate_calls == 0
+    assert obj.check_calls == 0
+    with no_validation(methods=["_check"]):
+        with no_validation(methods=["validate"]):
+            obj.validate()
+        obj.validate()  # only _check suppressed again once the inner block is left
+    assert obj.validate_calls == 1
+    assert obj.check_calls == 0

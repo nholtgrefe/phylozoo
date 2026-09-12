@@ -1055,7 +1055,6 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         --------
         >>> G = DirectedMultiGraph()
         >>> key = G.add_edge(1, 2)
-        0
         >>> G.remove_edge(1, 2, key=key)
         """
         if key is None:
@@ -1342,7 +1341,7 @@ class DirectedMultiGraph(IOMixin, Generic[T]):
         >>> G._validate_synchronization()
         True
         >>> # Direct modification (BAD - don't do this!)
-        >>> G._graph.add_edge(99, 100)
+        >>> _ = G._graph.add_edge(99, 100)
         >>> G._validate_synchronization()
         False
         """

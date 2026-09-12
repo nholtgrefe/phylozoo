@@ -100,8 +100,8 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
     ...     edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> net.taxa
-    {'A', 'B'}
+    >>> sorted(net.taxa)
+    ['A', 'B']
     >>> net.root_node
     3
     >>> net.is_tree()
@@ -112,8 +112,8 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
     ...     edges=[(3, 1), (3, 2), (3, 4)],
     ...     nodes=[(1, {'label': 'A'})]
     ... )
-    >>> net2.taxa  # 2 and 4 are auto-labeled
-    {'4', 'A', '2'}
+    >>> sorted(net2.taxa)  # 2 and 4 are auto-labeled
+    ['2', '4', 'A']
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = DirectedPhyNetwork(
     ...     edges=[
@@ -860,7 +860,7 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         >>> net = DirectedPhyNetwork(
         ...     edges=[
         ...         {'u': 3, 'v': 2, 'key': 0, 'branch_length': 0.5, 'bootstrap': 0.95},
-        ...         {'u': 3, 'v': 2, 'key': 1, 'branch_length': 0.7},  # Parallel edge
+        ...         {'u': 3, 'v': 2, 'key': 1, 'branch_length': 0.5},  # Parallel edge
         ...         (2, 1)  # Tree node 2 to leaf
         ...     ],
         ...     nodes=[(1, {'label': 'A'})]
@@ -868,7 +868,7 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         >>> net.get_edge_attribute(3, 2, key=0, attr='branch_length')
         0.5
         >>> net.get_edge_attribute(3, 2, key=1, attr='branch_length')
-        0.7
+        0.5
         >>> net.get_edge_attribute(3, 2, key=0)  # Get all attributes
         {'branch_length': 0.5, 'bootstrap': 0.95}
         >>> net.get_edge_attribute(2, 1)  # Get all attributes
@@ -1166,10 +1166,12 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         --------
         >>> net = DirectedPhyNetwork(
         ...     edges=[
+        ...         (0, 1), (0, 3),  # Root to the two parents of hybrid 2
         ...         {'u': 1, 'v': 2, 'branch_length': 0.5},
-        ...         {'u': 3, 'v': 2, 'branch_length': 0.3}
+        ...         {'u': 3, 'v': 2, 'branch_length': 0.3},
+        ...         (2, 20), (1, 10), (3, 11)  # Leaves
         ...     ],
-        ...     nodes=[(2, {'label': 'A'})]
+        ...     nodes=[(20, {'label': 'A'}), (10, {'label': 'B'}), (11, {'label': 'C'})]
         ... )
         >>> list(net.incident_parent_edges(2))
         [(1, 2), (3, 2)]
@@ -1271,8 +1273,8 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         Examples
         --------
         >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-        >>> net.taxa
-        {'A', 'B'}
+        >>> sorted(net.taxa)
+        ['A', 'B']
         """
         return {self._node_to_label[leaf] for leaf in self.leaves}
 
@@ -1288,8 +1290,11 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
 
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-        >>> net.internal_nodes
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(4, 3), (4, 2), (3, 1), (3, 5)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'})]
+        ... )
+        >>> net.internal_nodes  # the root (4) and the leaves are not internal nodes
         {3}
         """
         # Handle empty network
@@ -1343,7 +1348,10 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
 
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(5, 4), (6, 4), (4, 1)], nodes=[(1, {'label': 'A'})])
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(7, 5), (7, 6), (5, 4), (6, 4), (4, 1), (5, 2), (6, 3)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+        ... )
         >>> net.hybrid_nodes
         {4}
         """
@@ -1397,8 +1405,11 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
 
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
-        >>> net.tree_nodes
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(4, 3), (4, 2), (3, 1), (3, 5)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (5, {'label': 'C'})]
+        ... )
+        >>> net.tree_nodes  # the root (4) and the leaves are not internal nodes
         {3}
         """
         # Handle empty network
@@ -1426,9 +1437,12 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
 
         Examples
         --------
-        >>> net = DirectedPhyNetwork(edges=[(3, 2), (4, 2)], nodes=[(2, {'label': 'A'})])
-        >>> net.hybrid_edges
-        {(3, 2, 0), (4, 2, 0)}
+        >>> net = DirectedPhyNetwork(
+        ...     edges=[(5, 3), (5, 4), (3, 2), (4, 2), (2, 1), (3, 6), (4, 7)],
+        ...     nodes=[(1, {'label': 'A'}), (6, {'label': 'B'}), (7, {'label': 'C'})]
+        ... )
+        >>> sorted(net.hybrid_edges)
+        [(3, 2, 0), (4, 2, 0)]
         """
         res = set()
         for v in self.hybrid_nodes:

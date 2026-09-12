@@ -24,7 +24,7 @@ def warn_on_keyword(value: Any, context: str) -> None:
 
     Examples
     --------
-    >>> warn_on_keyword("for", "Identifier")
+    >>> warn_on_keyword("for", "Identifier")  # doctest: +SKIP
     UserWarning: Identifier 'for' is a Python keyword...
     """
     try:
@@ -52,7 +52,7 @@ def warn_on_none_value(value: Any, context: str) -> None:
 
     Examples
     --------
-    >>> warn_on_none_value(None, "Attribute 'weight'")
+    >>> warn_on_none_value(None, "Attribute 'weight'")  # doctest: +SKIP
     UserWarning: Attribute 'weight' has value None (Python keyword)...
     """
     if value is None:

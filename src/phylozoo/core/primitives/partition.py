@@ -384,7 +384,9 @@ class Partition(Generic[T]):
         >>> partition.get_part(1)
         frozenset({1, 2})
         >>> partition.get_part(5)
-        ValueError: Element 5 not found in partition
+        Traceback (most recent call last):
+            ...
+        phylozoo.utils.exceptions.general.PhyloZooValueError: Element 5 not found in partition
         """
         for part in self._parts:
             if element in part:

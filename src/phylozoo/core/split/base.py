@@ -37,12 +37,12 @@ class Split(Partition[T]):
     Examples
     --------
     >>> split = Split({1, 2}, {3, 4})
-    >>> split.is_trivial()
+    >>> split.is_trivial
     False
     >>> split.elements
     frozenset({1, 2, 3, 4})
     >>> split2 = Split({1}, {2, 3, 4})
-    >>> split2.is_trivial()
+    >>> split2.is_trivial
     True
 
     Attributes

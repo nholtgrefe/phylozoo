@@ -111,15 +111,15 @@ class MixedPhyNetwork(Generic[T]):
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
     ... )
-    >>> net.taxa
-    {'A', 'C', 'B'}
+    >>> sorted(net.taxa)
+    ['A', 'B', 'C']
     >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = MixedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
     ...     nodes=[(1, {'label': 'A'})]
     ... )
-    >>> net2.taxa  # 2, 4, and 5 are auto-labeled
-    {'4', 'A', '5', '2'}
+    >>> sorted(net2.taxa)  # 2, 4, and 5 are auto-labeled
+    ['2', '4', '5', 'A']
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = MixedPhyNetwork(
     ...     undirected_edges=[
@@ -140,8 +140,8 @@ class MixedPhyNetwork(Generic[T]):
     ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
     ...         {'u': 6, 'v': 4, 'gamma': 0.4}  # Hybrid edge (Sum = 1.0)
     ...     ],
-    ...     undirected_edges=[(4, 1), (4, 2), (4, 3)],  # Tree edges
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+    ...     undirected_edges=[(4, 1), (7, 5), (7, 6), (5, 2), (6, 3), (7, 8)],  # Tree edges
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'})]
     ... )
     >>> net4.get_gamma(5, 4)
     0.6
@@ -819,7 +819,10 @@ class MixedPhyNetwork(Generic[T]):
 
         Examples
         --------
-        >>> net = MixedPhyNetwork(undirected_edges=[(3, 1)], nodes=[(1, {'label': 'A'})])
+        >>> net = MixedPhyNetwork(
+        ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        ... )
         >>> net.get_label(1)
         'A'
         >>> net.get_label(3) is None
@@ -1326,12 +1329,12 @@ class MixedPhyNetwork(Generic[T]):
         Examples
         --------
         >>> net = MixedPhyNetwork(
-        ...     directed_edges=[(1, 2)],
-        ...     undirected_edges=[(2, 3), (2, 100)],
-        ...     nodes=[(3, {'label': 'A'}), (100, {'label': 'B'})]
+        ...     directed_edges=[(5, 4), (6, 4)],
+        ...     undirected_edges=[(4, 1), (7, 5), (7, 6), (5, 2), (6, 3), (7, 8)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'})]
         ... )
-        >>> sorted(net.neighbors(2))
-        [1, 3]
+        >>> sorted(net.neighbors(4))
+        [1, 5, 6]
         """
         return self._graph.neighbors(v)
 
@@ -1395,8 +1398,8 @@ class MixedPhyNetwork(Generic[T]):
         Examples
         --------
         >>> net = MixedPhyNetwork(undirected_edges=[(3, 1), (3, 2), (3, 100)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})])
-        >>> net.taxa
-        {'A', 'B'}
+        >>> sorted(net.taxa)
+        ['A', 'B', 'C']
         """
         return {self._node_to_label[leaf] for leaf in self.leaves}
 
@@ -1447,8 +1450,8 @@ class MixedPhyNetwork(Generic[T]):
         ...     undirected_edges=[(2, 1)],
         ...     nodes=[(1, {'label': 'A'})]
         ... )
-        >>> net.hybrid_edges
-        {(3, 2, 0), (4, 2, 0)}
+        >>> sorted(net.hybrid_edges)
+        [(3, 2, 0), (4, 2, 0)]
         """
         return set(self._graph._directed.edges(keys=True))
 
@@ -1495,11 +1498,11 @@ class MixedPhyNetwork(Generic[T]):
         --------
         >>> net = MixedPhyNetwork(
         ...     directed_edges=[(5, 4), (6, 4)],
-        ...     undirected_edges=[(4, 1)],
-        ...     nodes=[(1, {'label': 'A'})]
+        ...     undirected_edges=[(4, 1), (7, 5), (7, 6), (5, 2), (6, 3), (7, 8)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'})]
         ... )
         >>> sorted(net.internal_nodes)
-        [4, 5, 6]
+        [4, 5, 6, 7]
         """
         leaves = self.leaves
         return {v for v in self._graph.nodes if v not in leaves}

@@ -101,8 +101,10 @@ class Layout(Generic[T]):
     Examples
     --------
     >>> from phylozoo.viz._types import Layout
+    >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+    >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
     >>> layout = Layout(
-    ...     network=network,
+    ...     network=net,
     ...     positions={1: (0.0, 0.0), 2: (1.0, 1.0)},
     ...     edge_routes={},
     ...     algorithm='test'
@@ -138,6 +140,8 @@ class Layout(Generic[T]):
 
         Examples
         --------
+        >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> layout = Layout(network=net, positions={1: (0.0, 0.0)}, edge_routes={})
         >>> x, y = layout.get_position(1)
         >>> isinstance(x, float)
@@ -165,6 +169,8 @@ class Layout(Generic[T]):
 
         Examples
         --------
+        >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        >>> net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])
         >>> layout = Layout(network=net, positions={}, edge_routes={})
         >>> route = layout.get_edge_route(1, 2, 0)
         >>> route is None

@@ -428,6 +428,7 @@ class CircularSetOrdering(Partition[T]):
         >>> reps = list(cso.representative_orderings())
         >>> len(reps)  # 2 choices from first set * 1 choice from second set
         2
+
         Notes
         -----
         The number of representative orderings grows exponentially with the number

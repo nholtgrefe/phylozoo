@@ -46,8 +46,10 @@ class IOMixin:
     ...     default=True
     ... )
     >>> net = MyNetwork("test_data")
-    >>> net.save('network.enewick')
-    >>> net2 = MyNetwork.load('network.enewick')
+    >>> import os, tempfile
+    >>> path = os.path.join(tempfile.mkdtemp(), 'network.enewick')
+    >>> net.save(path)
+    >>> net2 = MyNetwork.load(path)
     """
 
     _default_format: str = "default"

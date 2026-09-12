@@ -53,7 +53,7 @@ Examples
 Basic tree:
     >>> result = parse_enewick("((A,B),C);")
     >>> len(result.edges)
-    5
+    4
     >>> result.root  # Internal node IDs are integers
     0
 
@@ -95,6 +95,7 @@ Complex example with multiple features:
     4
     >>> result.hybrid_nodes
     {2: 1}
+
 Scientific notation for branch lengths:
     >>> result = parse_enewick("(A:1.5e-3,B:2.0e2);")
     >>> result.edges[0]['branch_length']
@@ -106,6 +107,7 @@ Unlabeled internal nodes (auto-generated IDs):
     >>> result = parse_enewick("((A,B),C);")
     >>> [n['id'] for n in result.nodes if isinstance(n['id'], int)]
     [1, 0]
+
 Non-binary nodes (polytomies):
     >>> result = parse_enewick("(A,B,C,D);")
     >>> # Root has 4 children
@@ -117,7 +119,8 @@ Hybrid node with multiple parents:
     >>> # Hybrid appears 3 times (1 definition + 2 references) = 3 parents
     >>> hybrid_id = list(result.hybrid_nodes.keys())[0]
     >>> len([e for e in result.edges if e['v'] == hybrid_id])
-    4
+    3
+
 Notes
 -----
 - Internal nodes without labels are assigned auto-generated integer IDs (0, 1, 2, ...)
@@ -1098,13 +1101,14 @@ def from_enewick(enewick_string: str, **kwargs: Any) -> "DirectedPhyNetwork":
     >>> # Simple tree
     >>> net = from_enewick("((A,B),C);")
     >>> net.number_of_nodes()
-    4
+    5
     >>> net.number_of_edges()
-    3
+    4
 
     >>> # Tree with branch lengths
     >>> net = from_enewick("((A:0.5,B:0.3):0.1,C:0.2);")
-    >>> net.get_branch_length(0, 'A')
+    >>> a = net.get_node_id('A')
+    >>> net.get_branch_length(next(net.parents(a)), a)
     0.5
 
     Notes

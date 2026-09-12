@@ -64,12 +64,16 @@ def is_isomorphic(
     ... )
     >>> is_isomorphic(net1, net2)
     True
-    >>> # Different labels: not isomorphic
-    >>> net3 = SemiDirectedPhyNetwork(
-    ...     undirected_edges=[(4, 5), (4, 6), (4, 100)],
-    ...     nodes=[(5, {'label': 'A'}), (6, {'label': 'C'}), (100, {'label': 'B'})]
+    >>> # Same shape but the cherries pair different taxa: not isomorphic
+    >>> tree_ab = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(5, 1), (5, 2), (6, 3), (6, 4), (5, 6)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
     ... )
-    >>> is_isomorphic(net1, net3)
+    >>> tree_ac = SemiDirectedPhyNetwork(
+    ...     undirected_edges=[(5, 1), (5, 2), (6, 3), (6, 4), (5, 6)],
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'C'}), (3, {'label': 'B'}), (4, {'label': 'D'})]
+    ... )
+    >>> is_isomorphic(tree_ab, tree_ac)
     False
     >>> # With additional node attributes
     >>> net4 = SemiDirectedPhyNetwork(
@@ -85,11 +89,11 @@ def is_isomorphic(
     >>> # With edge attributes
     >>> net6 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[{'u': 3, 'v': 1, 'branch_length': 0.5}],
-    ...     nodes=[(1, {'label': 'A'})]
+    ...     nodes=[(1, {'label': 'A'}), (3, {'label': 'B'})]
     ... )
     >>> net7 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[{'u': 4, 'v': 5, 'branch_length': 0.5}],
-    ...     nodes=[(5, {'label': 'A'})]
+    ...     nodes=[(5, {'label': 'A'}), (4, {'label': 'B'})]
     ... )
     >>> is_isomorphic(net6, net7, edge_attrs=['branch_length'])
     True

@@ -215,14 +215,16 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> "SemiDirectedPhyNetwo
     >>> pzdot_str = '''graph {
     ...     1 [label="A"];
     ...     2 [label="B"];
+    ...     4 [label="C"];
     ...     3;
     ...     1 -- 3;
     ...     2 -- 3;
+    ...     4 -- 3;
     ... }'''
     >>>
     >>> net = from_phylozoo_dot(pzdot_str)
     >>> net.number_of_nodes()
-    3
+    4
 
     Notes
     -----

@@ -39,9 +39,9 @@ def read_file_safely(filepath: str | Path, encoding: str = "utf-8") -> str:
 
     Examples
     --------
-    >>> from phylozoo.utils.io import read_file_safely
-    >>> content = read_file_safely("data.txt")
-    >>> len(content) > 0
+    >>> from phylozoo.utils.io import read_file_safely  # doctest: +SKIP
+    >>> content = read_file_safely("data.txt")  # doctest: +SKIP
+    >>> len(content) > 0  # doctest: +SKIP
     True
     """
     path = Path(filepath)
@@ -77,7 +77,9 @@ def write_file_safely(filepath: str | Path, content: str, encoding: str = "utf-8
     Examples
     --------
     >>> from phylozoo.utils.io import write_file_safely
-    >>> write_file_safely("output.txt", "Hello, world!")
+    >>> import os, tempfile
+    >>> path = os.path.join(tempfile.mkdtemp(), "output.txt")
+    >>> write_file_safely(path, "Hello, world!")
     """
     path = Path(filepath)
     try:

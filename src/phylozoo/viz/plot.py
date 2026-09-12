@@ -72,7 +72,7 @@ def plot(
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
     >>> ax = plot(net)
-    >>> ax = plot(net, layout='spring', show=True)
+    >>> ax = plot(net, layout='spring', show=False)
     """
     plotter, _ = _get_plotter(obj)
     resolved_layout = resolve_layout(obj, layout)

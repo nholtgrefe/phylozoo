@@ -303,7 +303,7 @@ def _apply_rules(generator: DirectedGenerator) -> Iterator[DirectedGenerator]:
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
     >>> gen_graph = DirectedMultiGraph(edges=[(8, 4), (8, 4)])
     >>> gen1 = DirectedGenerator(gen_graph)
-    >>> level2_generators = list(apply_rules(gen1))
+    >>> level2_generators = list(_apply_rules(gen1))
     >>> len(level2_generators) > 0
     True
     """

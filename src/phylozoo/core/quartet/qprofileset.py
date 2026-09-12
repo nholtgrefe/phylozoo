@@ -475,7 +475,7 @@ class QuartetProfileSet:
         >>> profile1 = QuartetProfile({q1: 0.8, q2: 0.2})
         >>> profileset = QuartetProfileSet(profiles=[(profile1, 1.0)])
         >>> str(profileset)
-        'QuartetProfileSet({\\n  QuartetProfile({...}) [weight: 1.0]\\n})'
+        'QuartetProfileSet({\\n  QuartetProfile({\\n  Quartet(1 2 | 3 4): 0.8,\\n  Quartet(1 3 | 2 4): 0.2\\n}) [weight: 1.0]\\n})'
         """
         if len(self._profiles) == 0:
             return "QuartetProfileSet({})"

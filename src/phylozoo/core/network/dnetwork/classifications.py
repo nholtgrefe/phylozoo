@@ -367,10 +367,11 @@ def is_galled(network: "DirectedPhyNetwork") -> bool:
     ...     edges=[
     ...         (9, 5), (9, 6),  # Root to tree nodes
     ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (5, 8), (8, 2),  # Tree node 8 below 5
     ...         (4, 7), (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
-    ...         (7, 1)  # Hybrid 7 to leaf
+    ...         (7, 1), (6, 3)  # Leaves
     ...     ],
-    ...     nodes=[(1, {'label': 'A'})]
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
     ... )
     >>> is_galled(net)
     False
@@ -459,10 +460,11 @@ def is_stackfree(network: "DirectedPhyNetwork") -> bool:
     ...     edges=[
     ...         (9, 5), (9, 6),  # Root to tree nodes
     ...         (5, 4), (6, 4),  # Both lead to hybrid 4
+    ...         (5, 8), (8, 2),  # Tree node 8 below 5
     ...         (4, 7), (8, 7),  # Hybrid 4 and tree node 8 lead to hybrid 7
-    ...         (7, 1)  # Hybrid 7 to leaf
+    ...         (7, 1), (6, 3)  # Leaves
     ...     ],
-    ...     nodes=[(1, {'label': 'A'})]
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
     ... )
     >>> is_stackfree(net)
     False

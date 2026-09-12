@@ -84,6 +84,36 @@ Running Tests
 
    pytest -v
 
+Docstring Examples
+------------------
+
+The ``>>>`` examples in the docstrings are tests as well. ``pytest`` is configured
+(``--doctest-modules`` and ``src/phylozoo`` in ``testpaths`` in ``pyproject.toml``) to
+execute every example and compare its printed output with the line below it, so a
+plain ``pytest`` run covers both ``tests/`` and the examples in ``src/``. To run only
+the examples:
+
+.. code-block:: bash
+
+   pytest src/phylozoo
+   pytest src/phylozoo/core/split/base.py   # one module
+
+This keeps the examples in the API reference honest: an example that stops matching
+the code fails the suite. When writing one, keep in mind that
+
+* output is compared literally, so print sets and dicts in a deterministic form
+  (``sorted(net.taxa)`` rather than ``net.taxa``) and avoid NumPy scalar reprs
+  (``float(arr[0, 1])``);
+* a blank line in the expected output is written as ``<BLANKLINE>``, and a section
+  heading such as ``Notes`` must be separated from the last example by a blank line;
+* the network in an example must be valid, since constructors validate -- an invalid
+  one fails at construction and takes every later line of the example down with it;
+* examples that need external files or that only illustrate an API (pseudo-code) can be
+  excluded with ``# doctest: +SKIP`` on the ``>>>`` line, and examples that write files
+  should write into a temporary directory;
+* the same example should also exist as a regular test if it demonstrates behaviour
+  worth guarding, since doctests only check what is printed.
+
 Writing Tests
 -------------
 

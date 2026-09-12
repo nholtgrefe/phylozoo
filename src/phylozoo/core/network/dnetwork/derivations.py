@@ -70,25 +70,26 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
     >>> sdnet = to_sd_network(dnet)
-    >>> sdnet.number_of_directed_edges()
+    >>> len(sdnet.hybrid_edges)
     0
-    >>> sdnet.number_of_undirected_edges()
-    2
+    >>> len(sdnet.tree_edges)  # the root is suppressed: A and B are joined directly
+    1
 
     >>> # Network with hybrids - hybrid edges remain directed
     >>> dnet = DirectedPhyNetwork(
     ...     edges=[
     ...         (4, 1), (4, 2),  # Tree edges from root
     ...         {'u': 1, 'v': 3, 'gamma': 0.6},  # Hybrid edge
-    ...         {'u': 2, 'v': 3, 'gamma': 0.4}   # Hybrid edge
-    ...     , (1, 100), (2, 101)],
-    ...     nodes=[(3, {'label': 'C'}), (100, {'label': 'A'}), (101, {'label': 'B'})]
+    ...         {'u': 2, 'v': 3, 'gamma': 0.4},  # Hybrid edge
+    ...         (3, 102), (1, 100), (2, 101)  # Leaves
+    ...     ],
+    ...     nodes=[(102, {'label': 'C'}), (100, {'label': 'A'}), (101, {'label': 'B'})]
     ... )
     >>> sdnet = to_sd_network(dnet)
-    >>> sdnet.number_of_directed_edges()  # Hybrid edges
+    >>> len(sdnet.hybrid_edges)  # Hybrid edges
     2
-    >>> sdnet.number_of_undirected_edges()  # Tree edges
-    2
+    >>> len(sdnet.tree_edges)  # Tree edges
+    4
     """
     # Single-leaf shortcut: the LSA of a single-leaf network is that leaf,
     # so the semi-directed network collapses to a single node with no edges.
@@ -1403,7 +1404,7 @@ def displayed_quartets(network: DirectedPhyNetwork) -> QuartetProfileSet:
     Examples
     --------
     >>> net = DirectedPhyNetwork(
-    ...     edges=[(5, 4), (6, 4), (4, 1), (4, 2), (5, 3), (6, 7)],
+    ...     edges=[(8, 5), (8, 6), (5, 4), (6, 4), (4, 9), (9, 1), (9, 2), (5, 3), (6, 7)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (7, {'label': 'D'})]
     ... )
     >>> profileset = displayed_quartets(net)

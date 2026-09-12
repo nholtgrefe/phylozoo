@@ -84,7 +84,7 @@ class MSA(IOMixin):
     True
     >>> msa.get_sequence("taxon1")
     'ACGTACGT'
-    >>> msa.get_sequence("nonexistent")
+    >>> print(msa.get_sequence("nonexistent"))
     None
     """
 
@@ -453,7 +453,7 @@ class MSA(IOMixin):
         >>> msa = MSA(sequences)
         >>> msa.get_sequence("taxon1")
         'ACGT'
-        >>> msa.get_sequence("taxon3")
+        >>> print(msa.get_sequence("taxon3"))
         None
         """
         if taxon not in self._taxa_to_index:

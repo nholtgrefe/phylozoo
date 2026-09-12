@@ -210,8 +210,10 @@ def sdnetwork_from_graph(
     >>> G = nx.Graph()
     >>> G.add_edge(0, 1, branch_length=0.5)
     >>> G.add_edge(0, 2, branch_length=0.3)
+    >>> G.add_edge(0, 3, branch_length=0.2)
     >>> G.nodes[1]['label'] = 'A'
     >>> G.nodes[2]['label'] = 'B'
+    >>> G.nodes[3]['label'] = 'C'
     >>> G.graph['source'] = 'test'
     >>> net = sdnetwork_from_graph(G)
     >>> isinstance(net, SemiDirectedPhyNetwork)

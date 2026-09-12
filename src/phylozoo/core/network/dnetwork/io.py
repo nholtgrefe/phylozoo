@@ -200,8 +200,8 @@ def from_dot(dot_string: str, **kwargs: Any) -> DirectedPhyNetwork:
     >>> net = from_dot(dot_str)
     >>> net.number_of_nodes()
     3
-    >>> 'A' in net.taxa or net.get_label(list(net.leaves)[0]) == 'A'
-    True
+    >>> sorted(net.taxa)  # the DOT labels become the taxon labels
+    ['Species A', 'Species B']
 
     Notes
     -----

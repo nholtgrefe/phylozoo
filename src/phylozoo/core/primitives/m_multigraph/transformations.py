@@ -679,7 +679,7 @@ def identify_parallel_edge(
     >>> G.add_directed_edge(1, 2, label='test')
     2
     >>> identify_parallel_edge(G, 1, 2)
-    >>> G.number_of_edges(1, 2)
+    >>> sum(1 for u, v in G.edges() if (u, v) == (1, 2))
     1
     >>> # With undirected edges
     >>> G2 = MixedMultiGraph()

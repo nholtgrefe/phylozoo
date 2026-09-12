@@ -1201,7 +1201,9 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> key1 != key2
         True
         >>> G.add_undirected_edge(1, 2)  # This removes the directed edges
+        0
         >>> G.add_directed_edge(1, 2)  # This removes the undirected edge
+        0
         """
         # Warn on Python keyword identifiers
         warn_on_keyword(u, "Node id")
@@ -1294,7 +1296,6 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         --------
         >>> G = MixedMultiGraph()
         >>> key = G.add_directed_edge(1, 2)
-        0
         >>> G.remove_directed_edge(1, 2, key=key)
         """
         if key is None:
@@ -1413,7 +1414,9 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> key1 != key2
         True
         >>> G.add_directed_edge(1, 2)  # This removes the undirected edges
+        0
         >>> G.add_undirected_edge(1, 2)  # This removes the directed edge
+        0
         """
         # Warn on Python keyword identifiers
         warn_on_keyword(u, "Node id")
@@ -1507,7 +1510,6 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         --------
         >>> G = MixedMultiGraph()
         >>> key = G.add_directed_edge(1, 2)
-        0
         >>> G.remove_edge(1, 2, key=key)
         """
         removed = False
@@ -1887,7 +1889,7 @@ class MixedMultiGraph(IOMixin, Generic[T]):
         >>> G._validate_synchronization()
         True
         >>> # Direct modification (BAD - don't do this!)
-        >>> G._undirected.add_edge(99, 100)
+        >>> _ = G._undirected.add_edge(99, 100)
         >>> G._validate_synchronization()
         False
         """

@@ -728,7 +728,8 @@ def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (4, {'label': 'D'})]
     ... )
     >>> binary_net = binary_resolution(net)
-    >>> binary_net.is_binary()
+    >>> from phylozoo.core.network.dnetwork.classifications import is_binary
+    >>> is_binary(binary_net)
     True
     """
     from .classifications import has_parallel_edges, is_binary

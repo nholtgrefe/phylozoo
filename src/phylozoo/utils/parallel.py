@@ -16,10 +16,10 @@ Examples
 --------
 Basic usage with a function that accepts a ``parallel`` parameter:
 
-    >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend
+    >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend  # doctest: +SKIP
     >>>
     >>> # Use multiprocessing with 4 cores
-    >>> result = some_parallel_function(
+    >>> result = some_parallel_function(  # doctest: +SKIP
     ...     data,
     ...     parallel=ParallelConfig(
     ...         backend=ParallelBackend.MULTIPROCESSING,
@@ -28,7 +28,7 @@ Basic usage with a function that accepts a ``parallel`` parameter:
     ... )
     >>>
     >>> # Use all available cores (auto-detect)
-    >>> result = some_parallel_function(
+    >>> result = some_parallel_function(  # doctest: +SKIP
     ...     data,
     ...     parallel=ParallelConfig(
     ...         backend=ParallelBackend.MULTIPROCESSING,
@@ -37,28 +37,28 @@ Basic usage with a function that accepts a ``parallel`` parameter:
     ... )
     >>>
     >>> # Sequential execution (no parallelization)
-    >>> result = some_parallel_function(
+    >>> result = some_parallel_function(  # doctest: +SKIP
     ...     data,
     ...     parallel=ParallelConfig(backend=ParallelBackend.SEQUENTIAL)
     ... )
 
 Using with combinations/iterables:
 
-    >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend
-    >>> import itertools
+    >>> from phylozoo.utils.parallel import ParallelConfig, ParallelBackend  # doctest: +SKIP
+    >>> import itertools  # doctest: +SKIP
     >>>
-    >>> def process_quartet(indices):
+    >>> def process_quartet(indices):  # doctest: +SKIP
     ...     i, j, k, l = indices
     ...     # Process quartet...
     ...     return result
     >>>
-    >>> combinations = list(itertools.combinations(range(20), 4))
-    >>> config = ParallelConfig(
+    >>> combinations = list(itertools.combinations(range(20), 4))  # doctest: +SKIP
+    >>> config = ParallelConfig(  # doctest: +SKIP
     ...     backend=ParallelBackend.MULTIPROCESSING,
     ...     n_jobs=4
     ... )
-    >>> executor = config.get_executor()
-    >>> results = list(executor.map(process_quartet, combinations))
+    >>> executor = config.get_executor()  # doctest: +SKIP
+    >>> results = list(executor.map(process_quartet, combinations))  # doctest: +SKIP
 """
 
 from __future__ import annotations

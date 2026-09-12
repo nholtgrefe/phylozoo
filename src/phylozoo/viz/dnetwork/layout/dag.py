@@ -88,13 +88,13 @@ def compute_pz_dag_layout(
     Examples
     --------
     >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-    >>> from phylozoo.viz.dnetwork.layout import compute_dag_layout
+    >>> from phylozoo.viz.dnetwork.layout import compute_pz_dag_layout
     >>>
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> layout = compute_dag_layout(net)
+    >>> layout = compute_pz_dag_layout(net)
     >>> len(layout.positions)
     3
     """

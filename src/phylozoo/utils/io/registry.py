@@ -23,10 +23,10 @@ class FormatRegistry:
 
     Examples
     --------
-    >>> from phylozoo.utils.io import FormatRegistry
+    >>> from phylozoo.utils.io import FormatRegistry  # doctest: +SKIP
     >>>
     >>> # Register a format
-    >>> FormatRegistry.register(
+    >>> FormatRegistry.register(  # doctest: +SKIP
     ...     MyClass, 'json',
     ...     reader=from_json,
     ...     writer=to_json,
@@ -34,12 +34,12 @@ class FormatRegistry:
     ... )
     >>>
     >>> # Get handlers
-    >>> writer = FormatRegistry.get_writer(MyClass, 'json')
-    >>> reader = FormatRegistry.get_reader(MyClass, 'json')
+    >>> writer = FormatRegistry.get_writer(MyClass, 'json')  # doctest: +SKIP
+    >>> reader = FormatRegistry.get_reader(MyClass, 'json')  # doctest: +SKIP
     >>>
     >>> # Detect format from file extension
-    >>> format = FormatRegistry.detect_format('data.json', MyClass)
-    >>> format
+    >>> format = FormatRegistry.detect_format('data.json', MyClass)  # doctest: +SKIP
+    >>> format  # doctest: +SKIP
     <built-in function format>
     """
 

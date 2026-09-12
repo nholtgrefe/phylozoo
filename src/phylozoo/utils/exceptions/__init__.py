@@ -8,22 +8,22 @@ compatibility.
 
 Examples
 --------
->>> from phylozoo.utils.exceptions import PhyloZooError, PhyloZooNetworkError
+>>> from phylozoo.utils.exceptions import PhyloZooError, PhyloZooNetworkError  # doctest: +SKIP
 >>>
 >>> # Catch all PhyloZoo errors
->>> try:
+>>> try:  # doctest: +SKIP
 ...     network.validate()
 ... except PhyloZooError as e:
 ...     print(f"PhyloZoo error: {e}")
 >>>
 >>> # Catch specific domain errors
->>> try:
+>>> try:  # doctest: +SKIP
 ...     network.validate()
 ... except PhyloZooNetworkError as e:
 ...     print(f"Network error: {e}")
 >>>
 >>> # Still works with built-in exceptions (backward compatible)
->>> try:
+>>> try:  # doctest: +SKIP
 ...     network.validate()
 ... except ValueError as e:
 ...     print(f"Value error: {e}")

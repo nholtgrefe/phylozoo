@@ -46,6 +46,7 @@ def hamming_distances(msa: MSA) -> DistanceMatrix:
     0.0
     >>> dm.get_distance("taxon1", "taxon3")  # 4 differences out of 8 positions
     0.5
+
     Notes
     -----
     The normalization excludes positions where either sequence has a gap (-) or

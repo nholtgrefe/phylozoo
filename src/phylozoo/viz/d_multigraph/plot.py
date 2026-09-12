@@ -67,7 +67,7 @@ def plot_dmgraph(
     Examples
     --------
     >>> from phylozoo.core.primitives.d_multigraph import DirectedMultiGraph
-    >>> from phylozoo.viz import plot_dmgraph
+    >>> from phylozoo.viz.d_multigraph.plot import plot_dmgraph
     >>>
     >>> G = DirectedMultiGraph(edges=[(1, 2), (2, 3)])
     >>> ax = plot_dmgraph(G, layout='circular')

@@ -170,7 +170,7 @@ class SplitSystem(IOMixin):
         >>> split2 = Split({1, 3}, {2, 4})
         >>> system = SplitSystem([split1, split2])
         >>> str(system)
-        'SplitSystem({\\n  Split(1 2 | 3 4),\\n  Split(1 3 | 2 4)\\n})'
+        'SplitSystem({\\n  Split({1, 2}, {3, 4}),\\n  Split({1, 3}, {2, 4})\\n})'
         """
         n = len(self._splits)
         if n == 0:

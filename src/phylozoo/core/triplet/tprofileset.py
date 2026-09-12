@@ -475,7 +475,7 @@ class TripletProfileSet:
         >>> profile1 = TripletProfile({t1: 0.8, t2: 0.2})
         >>> profileset = TripletProfileSet(profiles=[(profile1, 1.0)])
         >>> str(profileset)
-        'TripletProfileSet({\\n  TripletProfile({...}) [weight: 1.0]\\n})'
+        'TripletProfileSet({\\n  TripletProfile({\\n  Triplet(1 | 2 3): 0.8,\\n  Triplet(2 | 1 3): 0.2\\n}) [weight: 1.0]\\n})'
         """
         if len(self._profiles) == 0:
             return "TripletProfileSet({})"

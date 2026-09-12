@@ -112,15 +112,15 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
     ... )
-    >>> net.taxa
-    {'A', 'C', 'B'}
+    >>> sorted(net.taxa)
+    ['A', 'B', 'C']
     >>> # Partial labels - uncovered leaves get auto-generated labels
     >>> net2 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 4), (3, 5)],
     ...     nodes=[(1, {'label': 'A'})]
     ... )
-    >>> net2.taxa  # 2, 4, and 5 are auto-labeled
-    {'4', 'A', '5', '2'}
+    >>> sorted(net2.taxa)  # 2, 4, and 5 are auto-labeled
+    ['2', '4', '5', 'A']
     >>> # Network with branch lengths and bootstrap support
     >>> net3 = SemiDirectedPhyNetwork(
     ...     undirected_edges=[
@@ -141,8 +141,8 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
     ...         {'u': 5, 'v': 4, 'gamma': 0.6},  # Hybrid edge
     ...         {'u': 6, 'v': 4, 'gamma': 0.4}  # Hybrid edge (Sum = 1.0)
     ...     ],
-    ...     undirected_edges=[(4, 1), (4, 2), (4, 3)],  # Tree edges
-    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'})]
+    ...     undirected_edges=[(4, 1), (7, 5), (7, 6), (5, 2), (6, 3), (7, 8)],  # Tree edges
+    ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (3, {'label': 'C'}), (8, {'label': 'D'})]
     ... )
     >>> net4.get_gamma(5, 4)
     0.6

@@ -102,7 +102,10 @@ def compute_hybrid_routes(
     Examples
     --------
     >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-    >>> net = DirectedPhyNetwork(edges=[(3, 2), (4, 2)])
+    >>> net = DirectedPhyNetwork(
+    ...     edges=[(5, 3), (5, 4), (3, 2), (4, 2), (2, 1), (3, 6), (4, 7)],
+    ...     nodes=[(1, {'label': 'A'}), (6, {'label': 'B'}), (7, {'label': 'C'})]
+    ... )
     >>> positions = {3: (0.0, 0.0), 4: (1.0, 0.0), 2: (0.5, 1.0)}
     >>> routes = compute_hybrid_routes(net, positions, {(4, 2, 0)})
     >>> len(routes)

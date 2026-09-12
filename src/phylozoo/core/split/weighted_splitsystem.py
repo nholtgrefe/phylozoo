@@ -258,7 +258,7 @@ class WeightedSplitSystem(SplitSystem):
         >>> split2 = Split({1, 3}, {2, 4})
         >>> system = WeightedSplitSystem({split1: 2.5, split2: 1.0})
         >>> str(system)
-        'WeightedSplitSystem({\\n  Split(1 2 | 3 4): 2.5,\\n  Split(1 3 | 2 4): 1.0\\n})'
+        'WeightedSplitSystem({\\n  Split({1, 2}, {3, 4}): 2.5,\\n  Split({1, 3}, {2, 4}): 1.0\\n})'
         """
         n = len(self._splits)
         if n == 0:

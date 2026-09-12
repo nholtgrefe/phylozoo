@@ -541,8 +541,8 @@ def is_tree_metric(distance_matrix: DistanceMatrix, atol: float = 1e-10) -> bool
     >>> is_tree_metric(dm)
     True
     >>>
-    >>> # Not a tree metric (incompatible splits)
-    >>> bad = np.array([[0, 1, 2, 2], [1, 0, 2, 2], [2, 2, 0, 1], [2, 2, 1, 0]], dtype=float)
+    >>> # Not a tree metric (violates the four-point condition)
+    >>> bad = np.array([[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0]], dtype=float)
     >>> dm2 = DistanceMatrix(bad)
     >>> is_tree_metric(dm2)
     False

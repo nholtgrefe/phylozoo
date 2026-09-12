@@ -262,8 +262,8 @@ def cut_edges(network: MixedPhyNetwork) -> set[tuple[T, T, int]]:
     >>> from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork
     >>> net = SemiDirectedPhyNetwork(
     ...     directed_edges=[{'u': 5, 'v': 4, 'gamma': 0.6}, {'u': 6, 'v': 4, 'gamma': 0.4}],
-    ...     undirected_edges=[(4, 2), (5, 8), (6, 9), (5, 10), (6, 11)],
-    ...     nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'})]
+    ...     undirected_edges=[(4, 2), (5, 8), (6, 9), (5, 10), (6, 11), (7, 5), (7, 6), (7, 12)],
+    ...     nodes=[(2, {'label': 'A'}), (8, {'label': 'B'}), (9, {'label': 'C'}), (10, {'label': 'D'}), (11, {'label': 'E'}), (12, {'label': 'F'})]
     ... )
     >>> edges = cut_edges(net)
     >>> len(edges) > 0
@@ -359,7 +359,7 @@ def root_locations(
     >>> node_locs, undir_locs, dir_locs = root_locations(net)
     >>> 3 in node_locs  # Node 3 is a valid root location
     True
-    >>> (3, 1, 0) in undir_locs  # Edge (3, 1) is also a valid root location
+    >>> (1, 3, 0) in undir_locs  # Edge {1, 3} too (endpoints are reported normalised)
     True
     """
     # Find source components

@@ -325,9 +325,10 @@ def is_galled(network: "SemiDirectedPhyNetwork") -> bool:
     ...         (4, 7), (8, 7)  # Hybrid 4 and tree node 8 lead to hybrid 7
     ...     ],
     ...     undirected_edges=[
-    ...         (9, 5), (9, 6),  # Root to tree nodes
-    ...         (7, 1)  # Hybrid 7 to leaf
-    ...     , (5, 100), (6, 101), (9, 102)],
+    ...         (9, 5), (9, 6), (9, 102),  # Tree edges around node 9
+    ...         (5, 8), (8, 100),  # Tree node 8 below 5
+    ...         (7, 1), (6, 101)  # Leaves
+    ...     ],
     ...     nodes=[(1, {'label': 'A'}), (100, {'label': 'B'}), (101, {'label': 'C'}), (102, {'label': 'D'})]
     ... )
     >>> is_galled(net)
@@ -422,9 +423,10 @@ def is_stackfree(network: "SemiDirectedPhyNetwork") -> bool:
     ...         (4, 7), (8, 7)  # Hybrid 4 and tree node 8 lead to hybrid 7
     ...     ],
     ...     undirected_edges=[
-    ...         (9, 5), (9, 6),  # Root to tree nodes
-    ...         (7, 1)  # Hybrid 7 to leaf
-    ...     , (5, 100), (6, 101), (9, 102)],
+    ...         (9, 5), (9, 6), (9, 102),  # Tree edges around node 9
+    ...         (5, 8), (8, 100),  # Tree node 8 below 5
+    ...         (7, 1), (6, 101)  # Leaves
+    ...     ],
     ...     nodes=[(1, {'label': 'A'}), (100, {'label': 'B'}), (101, {'label': 'C'}), (102, {'label': 'D'})]
     ... )
     >>> is_stackfree(net)
