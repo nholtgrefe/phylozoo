@@ -132,7 +132,7 @@ File Input/Output
 Validation on Construction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Every :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` is validated at construction time using the :meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.validate` method. Validation
+Every :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` you construct, parse or load is validated using the :meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.validate` method. Validation
 guarantees that the object represents a well-defined phylogenetic network:
 
 - the graph is weakly connected,
@@ -144,7 +144,9 @@ guarantees that the object represents a well-defined phylogenetic network:
 
 By default, invalid networks cannot be constructed. Validation can be disabled for
 performance-critical operations or when working with intermediate network states that
-may temporarily violate validation rules. 
+may temporarily violate validation rules. Networks that PhyloZoo derives from an already
+validated network (subnetworks, conversions, displayed trees, ...) are not re-validated,
+since they are valid by construction; see :ref:`validation-inside-library-functions`. 
 See the :doc:`Validation documentation <../../../utils/validation>`
 for details on how to disable validation.
 

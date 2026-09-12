@@ -78,6 +78,7 @@ with one undirected self-loop (bidirected edge).
 
 .. note::
    Upon construction, a generator is validated using :meth:`~phylozoo.core.network.sdnetwork.generator.base.SemiDirectedGenerator.validate` to ensure it has a valid structure that adheres to the definition of a semi-directed generator.
+   The generators produced by the enumeration functions are valid by construction and are not re-validated; call :meth:`validate` on one to check it explicitly.
    For details on PhyloZoo's validation system and how to disable it for performance reasons, see
    :doc:`Validation <../../../utils/validation>`.
 

@@ -17,6 +17,7 @@ For example, these checks cover connectivity, the absence of forbidden cycles, c
 
 By default, validation runs automatically at the end of object construction so that invalid objects are rejected as soon as they are created. 
 For some classes, validation is expensive, and it can therefore be disabled; for performance, or when building objects in stages.
+PhyloZoo itself also skips it inside functions that derive a new object from one that has already been validated; see :ref:`validation-inside-library-functions` below.
 
 If a check fails, a domain‑specific exception is raised (such as :class:`~phylozoo.utils.exceptions.network.PhyloZooNetworkStructureError` or :class:`~phylozoo.utils.exceptions.network.PhyloZooNetworkDegreeError`). 
 See :doc:`Exceptions <exceptions>` for the full exception hierarchy.
@@ -128,6 +129,26 @@ After constructing the networks, you can still validate them individually if nee
        except PhyloZooNetworkError as e:
            print(f"Invalid network: {net}, error: {e}")
 
+
+.. _validation-inside-library-functions:
+
+Validation inside library functions
+-----------------------------------
+
+Validation guards the entry points of PhyloZoo: constructors, parsers and any function
+whose result depends on input that could be wrong. Functions that derive a new object
+from an already validated one, such as
+:func:`~phylozoo.core.network.dnetwork.derivations.subnetwork` or
+:func:`~phylozoo.core.network.dnetwork.derivations.to_sd_network`, build their result
+inside :func:`~phylozoo.utils.validation.no_validation`: it is valid by construction, and
+for large networks re-validating it can cost more than the operation itself. Functions
+whose result depends on a caller's choice, such as
+:func:`~phylozoo.core.network.sdnetwork.derivations.to_d_network` with an explicit
+``root_location``, still validate it.
+
+Derived objects are therefore valid provided their input was; an invalid input built
+under :func:`~phylozoo.utils.validation.no_validation` propagates silently. Call
+:meth:`validate` on any object to check it explicitly.
 
 Using the decorator for your own classes
 ----------------------------------------
