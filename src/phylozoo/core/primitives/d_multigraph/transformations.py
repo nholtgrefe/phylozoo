@@ -463,27 +463,27 @@ def subgraph(graph: "DirectedMultiGraph", nodes: Iterable[T]) -> "DirectedMultiG
     if not nodes_set:
         return DirectedMultiGraph()
 
-    # Validate nodes exist in source graph. graph.nodes() rebuilds a set on every
-    # call, so materialise it once: testing membership against the view directly
-    # would make this loop quadratic in the number of nodes.
-    existing_nodes = set(graph.nodes())
+    # Validate nodes exist in source graph
     for n in nodes_set:
-        if n not in existing_nodes:
+        if not graph.has_node(n):
             raise PhyloZooValueError(f"Node {n} not found in graph")
 
     new_graph: Any = DirectedMultiGraph()
 
     # Preserve node attributes
+    node_attrs = graph._graph.nodes
     for n in nodes_set:
-        attrs = dict(graph._graph.nodes[n]) if n in graph._graph.nodes else {}
-        new_graph.add_node(n, **attrs)
+        new_graph.add_node(n, **dict(node_attrs[n]))
 
-    # Preserve edges (including keys and data) where both endpoints are in nodes_set
-    for u, v, key, data in graph._graph.edges(keys=True, data=True):
-        if u in nodes_set and v in nodes_set:
-            # data can be None; ensure dict
-            edge_data = dict(data) if data else {}
-            # Preserve the same key where possible
-            new_graph.add_edge(u, v, key=key, **edge_data)
+    # Preserve edges (including keys and data) where both endpoints are in nodes_set.
+    # Walk the selected nodes' own out-adjacency rather than every edge of the source
+    # graph: the cost is then the size of the induced subgraph, not of the whole graph,
+    # which matters when many small subgraphs are cut from one large graph.
+    successors = graph._graph.succ
+    for u in nodes_set:
+        for v, key_dict in successors[u].items():
+            if v in nodes_set:
+                for key, data in key_dict.items():
+                    new_graph.add_edge(u, v, key=key, **(dict(data) if data else {}))
 
     return new_graph  # type: ignore[no-any-return]

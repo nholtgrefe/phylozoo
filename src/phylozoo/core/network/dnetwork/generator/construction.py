@@ -51,38 +51,25 @@ def _get_node_reachability_matrix(
     - Only stores True values; use .get(key, False) to check reachability.
     """
     graph = generator.graph._graph  # NetworkX MultiDiGraph
-    nodes = list(graph.nodes())
 
     # Compute node-to-node reachability using topological sort (DAG optimization)
     topo_order = list(nx.topological_sort(graph))
 
-    # Use a set of reachable pairs for faster lookups, then convert to dict
-    reachable_pairs: set[tuple[Any, Any]] = set()
-
-    # Initialize: each node is reachable from itself
-    for node in nodes:
-        reachable_pairs.add((node, node))
-
-    # Process in reverse topological order
-    # For each node v, compute which nodes are reachable from v
-    # by taking union of reachable nodes from all successors of v
+    # Process in reverse topological order: the nodes reachable from v are v itself
+    # plus everything reachable from its successors, whose sets are already final.
+    # A set union per successor keeps this O(V * E) instead of scanning every node
+    # for every successor.
+    reachable_from: dict[Any, set[Any]] = {}
     for v in reversed(topo_order):
         reachable_from_v: set[Any] = {v}
-
-        # Add all nodes reachable from successors of v
         for successor in graph.successors(v):
-            reachable_from_v.add(successor)
-            # Add all nodes reachable from successor
-            for node in nodes:
-                if (successor, node) in reachable_pairs:
-                    reachable_from_v.add(node)
-
-        # Store reachability from v
-        for target in reachable_from_v:
-            reachable_pairs.add((v, target))
+            reachable_from_v |= reachable_from[successor]
+        reachable_from[v] = reachable_from_v
 
     # Convert to dict with True values only (missing keys indicate False)
-    return {pair: True for pair in reachable_pairs}
+    return {
+        (source, target): True for source, targets in reachable_from.items() for target in targets
+    }
 
 
 def _apply_R1(

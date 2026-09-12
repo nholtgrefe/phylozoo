@@ -846,38 +846,45 @@ def subgraph(graph: "MixedMultiGraph", nodes: Iterable[T]) -> "MixedMultiGraph":
     if not nodes_set:
         return MixedMultiGraph()
 
-    # Validate nodes exist in source graph. graph.nodes() rebuilds a set on every
-    # call, so materialise it once: testing membership against the view directly
-    # would make this loop quadratic in the number of nodes.
-    existing_nodes = set(graph.nodes())
+    # Validate nodes exist in source graph
     for n in nodes_set:
-        if n not in existing_nodes:
+        if not graph.has_node(n):
             raise PhyloZooValueError(f"Node {n} not found in graph")
 
     new_graph: Any = MixedMultiGraph()
 
     # Preserve node attributes
+    undirected_nodes = graph._undirected.nodes
+    directed_nodes = graph._directed.nodes
     for n in nodes_set:
         node_attrs: dict[str, Any] = {}
-        if n in graph._undirected.nodes():
-            node_attrs.update(dict(graph._undirected.nodes[n]))
-        if n in graph._directed.nodes():
-            node_attrs.update(dict(graph._directed.nodes[n]))
-        if node_attrs:
-            new_graph.add_node(n, **node_attrs)
-        else:
-            new_graph.add_node(n)
+        if n in undirected_nodes:
+            node_attrs.update(undirected_nodes[n])
+        if n in directed_nodes:
+            node_attrs.update(directed_nodes[n])
+        new_graph.add_node(n, **node_attrs)
 
-    # Preserve undirected edges (keys and data) where both endpoints are in nodes_set
-    for u, v, key, data in graph._undirected.edges(keys=True, data=True):
-        if u in nodes_set and v in nodes_set:
-            edge_data = dict(data) if data else {}
-            new_graph.add_undirected_edge(u, v, key=key, **edge_data)
-
-    # Preserve directed edges (keys and data) where both endpoints are in nodes_set
-    for u, v, key, data in graph._directed.edges(keys=True, data=True):
-        if u in nodes_set and v in nodes_set:
-            edge_data = dict(data) if data else {}
-            new_graph.add_directed_edge(u, v, key=key, **edge_data)
+    # Preserve edges (keys and data) with both endpoints in nodes_set. Walk the
+    # selected nodes' own adjacency rather than every edge of the source graph, so
+    # the cost is the size of the induced subgraph, not of the whole graph. Undirected
+    # edges are met from both ends and deduplicated on their normalised form; they are
+    # added before the directed ones, as before.
+    undirected_adj = graph._undirected.adj
+    seen: set[Any] = set()
+    for u in nodes_set:
+        for v, key_dict in undirected_adj[u].items():
+            if v in nodes_set:
+                for key, data in key_dict.items():
+                    normalised = graph.normalize_undirected_edge(u, v, key)
+                    if normalised in seen:
+                        continue
+                    seen.add(normalised)
+                    new_graph.add_undirected_edge(u, v, key=key, **(dict(data) if data else {}))
+    successors = graph._directed.succ
+    for u in nodes_set:
+        for v, key_dict in successors[u].items():
+            if v in nodes_set:
+                for key, data in key_dict.items():
+                    new_graph.add_directed_edge(u, v, key=key, **(dict(data) if data else {}))
 
     return new_graph  # type: ignore[no-any-return]

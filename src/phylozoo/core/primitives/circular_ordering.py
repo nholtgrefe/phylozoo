@@ -89,7 +89,6 @@ class CircularSetOrdering(Partition[T]):
         # Convert to frozensets, compute elements, and validate in one pass
         # (using optimized Partition approach)
         parts_frozen: list[frozenset] = []
-        elements_set: set[T] = set()
         total_size: int = 0
 
         for part in setorder:
@@ -104,24 +103,20 @@ class CircularSetOrdering(Partition[T]):
                 )
 
             parts_frozen.append(part_frozen)
-            part_size = len(part_frozen)
-            total_size += part_size
+            total_size += len(part_frozen)
 
-            # Check for overlaps during element collection (early validation)
-            for elt in part_frozen:
-                if elt in elements_set:
-                    raise PhyloZooValueError("Invalid partition: sets overlap")
-                elements_set.add(elt)
-
-        # Validate total size matches
-        if total_size != len(elements_set):
+        # Union the parts in one C-level pass, as Partition does. Any overlap makes the
+        # union smaller than the parts' combined size, so this single check catches
+        # every overlapping case.
+        elements: frozenset = frozenset().union(*parts_frozen)
+        if total_size != len(elements):
             raise PhyloZooValueError("Invalid partition: sets overlap")
 
         # Store parts in original order (not sorted, unlike Partition)
         # We need to preserve order for circular ordering
         self._initialized = False
         object.__setattr__(self, "_parts", tuple(parts_frozen))
-        object.__setattr__(self, "_elements", frozenset(elements_set))
+        object.__setattr__(self, "_elements", elements)
         object.__setattr__(self, "_initialized", True)
 
         # Compute and store canonical ordering (lexicographically smallest rotation)
