@@ -107,7 +107,9 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     # Convert back to appropriate network type
     # Preserve the input type (SemiDirectedPhyNetwork or MixedPhyNetwork)
     network_type = "semi-directed" if isinstance(network, SemiDirectedPhyNetwork) else "mixed"
-    return sdnetwork_from_graph(working_graph, network_type=network_type, copy=False)
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return sdnetwork_from_graph(working_graph, network_type=network_type, copy=False)
 
 
 def subnetwork(
@@ -542,7 +544,11 @@ def displayed_trees(
         # Convert back to SemiDirectedPhyNetwork
         # Note: sdnetwork_from_graph already copies graph attributes, so probability
         # is automatically preserved from the switching graph.
-        displayed_tree = sdnetwork_from_graph(tree_graph, network_type="semi-directed", copy=False)
+        # Valid by construction from a valid input network, so validation is not re-run.
+        with no_validation():
+            displayed_tree = sdnetwork_from_graph(
+                tree_graph, network_type="semi-directed", copy=False
+            )
 
         yield displayed_tree
 
@@ -1488,6 +1494,7 @@ def displayed_quartets(network: SemiDirectedPhyNetwork) -> QuartetProfileSet:
 def _root_sd_network_at(
     network: SemiDirectedPhyNetwork,
     root_location: RootLocation,
+    validate: bool = True,
 ) -> "DirectedPhyNetwork":
     """
     Root a semi-directed network at the specified location.
@@ -1503,6 +1510,11 @@ def _root_sd_network_at(
         The root location. Can be:
         - A node (T): node in the network
         - An edge (tuple[T, T, int]): edge in the network as (u, v, key)
+    validate : bool, optional
+        Whether to validate the resulting directed network. A user-supplied root
+        location may be invalid, and that is detected by this validation; a location
+        taken from :func:`root_locations` yields a valid network by construction, so
+        callers may pass False. By default True.
 
     Returns
     -------
@@ -1562,7 +1574,10 @@ def _root_sd_network_at(
 
     # Step 4: Convert to DirectedPhyNetwork
     try:
-        return dnetwork_from_graph(oriented_dm, copy=False)
+        if validate:
+            return dnetwork_from_graph(oriented_dm, copy=False)
+        with no_validation():
+            return dnetwork_from_graph(oriented_dm, copy=False)
     except PhyloZooError as e:
         raise PhyloZooValueError(f"Failed to convert oriented network to DirectedPhyNetwork: {e}")
 
@@ -1609,7 +1624,9 @@ def to_d_network(
     >>> d_net.root_node
     3
     """
-    # If no root location provided, find one using root_locations
+    # A root location chosen here comes from root_locations and gives a valid network
+    # by construction; only a user-supplied location needs the result validated.
+    user_supplied = root_location is not None
     if root_location is None:
         node_locs: Any
         undir_edge_locs: Any
@@ -1622,8 +1639,7 @@ def to_d_network(
             raise PhyloZooValueError("No valid root locations found for the network")
         root_location = all_valid_locations[0]
 
-    # Call the helper function to perform the rooting
-    return _root_sd_network_at(network, root_location)
+    return _root_sd_network_at(network, root_location, validate=user_supplied)
 
 
 def root_at_outgroup(

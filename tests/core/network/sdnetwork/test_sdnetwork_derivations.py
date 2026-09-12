@@ -2566,3 +2566,79 @@ class TestSwitchingMachinerySD:
         lengths = _branch_lengths(network)
         assert lengths[(3, 1, 0)] == 0.5 and lengths[(1, 3, 0)] == 0.5
         assert lengths[(3, 2, 0)] == 1.0 and lengths[(2, 3, 0)] == 1.0
+
+
+class TestTransformationsDoNotRevalidateSD:
+    """Transformations of a valid semi-directed network do not re-run validation."""
+
+    @staticmethod
+    def _networks():
+        from tests.fixtures.sd_networks import get_all_networks
+
+        return [
+            net for net in get_all_networks() if len(net.taxa) >= 4 and len(net.hybrid_nodes) <= 5
+        ][:12]
+
+    @staticmethod
+    def _transformations():
+        import itertools
+
+        from phylozoo.core.network.sdnetwork.transformations import (
+            identify_parallel_edges,
+            suppress_2_blobs,
+        )
+
+        half = lambda net: sorted(net.taxa)[: max(2, len(net.taxa) // 2)]  # noqa: E731
+        return {
+            "to_d_network": lambda net: [to_d_network(net)],
+            "tree_of_blobs": lambda net: [tree_of_blobs(net)],
+            "subnetwork": lambda net: [subnetwork(net, half(net))],
+            "k_taxon_subnetworks": lambda net: list(
+                itertools.islice(k_taxon_subnetworks(net, 4), 4)
+            ),
+            "identify_parallel_edges": lambda net: [identify_parallel_edges(net)],
+            "suppress_2_blobs": lambda net: [suppress_2_blobs(net)],
+            "displayed_trees": lambda net: list(itertools.islice(displayed_trees(net), 4)),
+        }
+
+    @pytest.mark.parametrize("name", sorted(_transformations.__func__().keys()))
+    def test_results_are_valid(self, name):
+        transform = self._transformations()[name]
+        for network in self._networks():
+            for result in transform(network):
+                result.validate()
+
+    @pytest.mark.parametrize("name", sorted(_transformations.__func__().keys()))
+    def test_no_validation_runs_during_transformation(self, name, monkeypatch):
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+
+        from phylozoo.utils.validation import _validation_disabled
+
+        calls = []
+        for cls in (DirectedPhyNetwork, SemiDirectedPhyNetwork, MixedPhyNetwork):
+            original = cls.validate
+
+            def counting(self, _original=original):
+                # The wrapper on validate() returns early under no_validation(); count
+                # only calls made while validation is actually enabled.
+                if not _validation_disabled.get():
+                    calls.append(type(self).__name__)
+                return _original(self)
+
+            monkeypatch.setattr(cls, "validate", counting)
+        transform = self._transformations()[name]
+        for network in self._networks()[:4]:
+            transform(network)
+        assert calls == []
+
+    def test_user_supplied_root_location_is_still_validated(self):
+        """A user-chosen root can be invalid; that is caught by validating the result."""
+        from phylozoo.utils.exceptions import PhyloZooValueError
+
+        network = TestDistancesBlobDecompositionSD._two_blob_network()
+        # The pendant edge below hybrid ``ha`` (leaf C) lies outside the source
+        # component, so it is never a valid root location.
+        leaf_c = network.get_node_id("C")
+        edge = next(e for e in network._graph.undirected_edges_iter(keys=True) if leaf_c in e[:2])
+        with pytest.raises(PhyloZooValueError):
+            to_d_network(network, root_location=edge)

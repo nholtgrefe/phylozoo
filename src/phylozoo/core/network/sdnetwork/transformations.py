@@ -23,6 +23,7 @@ from ...primitives.m_multigraph.transformations import (
     identify_parallel_edge as mm_identify_parallel_edge,
     identify_vertices as mm_identify_vertices,
 )
+from ....utils.validation import no_validation
 
 T = TypeVar("T")
 
@@ -90,7 +91,9 @@ def identify_parallel_edges(network: SemiDirectedPhyNetwork) -> SemiDirectedPhyN
 
     working_graph = network._graph.copy()
     _identify_parallel_edges_inplace(working_graph)
-    return sdnetwork_from_graph(working_graph, network_type="semi-directed", copy=False)
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return sdnetwork_from_graph(working_graph, network_type="semi-directed", copy=False)
 
 
 def _identify_parallel_edges_inplace(
@@ -274,4 +277,6 @@ def suppress_2_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     # Create and return new network from the modified graph (will be validated)
     # Return same type as input
     network_type = "semi-directed" if isinstance(network, SemiDirectedPhyNetwork) else "mixed"
-    return sdnetwork_from_graph(working_graph, network_type=network_type, copy=False)
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return sdnetwork_from_graph(working_graph, network_type=network_type, copy=False)

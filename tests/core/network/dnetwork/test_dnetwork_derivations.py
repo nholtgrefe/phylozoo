@@ -2167,3 +2167,82 @@ class TestSwitchingMachinery:
         lengths = _branch_lengths(network)
         assert lengths[("r", "x", 0)] == 2.5 and lengths[("x", "r", 0)] == 2.5
         assert lengths[("x", "A", 0)] == 1.0 and lengths[("A", "x", 0)] == 1.0
+
+
+class TestTransformationsDoNotRevalidate:
+    """Transformations of a valid network build results without re-running validation.
+
+    The results are valid by construction, so these tests validate them explicitly
+    (that is where correctness is now checked) and assert that no validation ran
+    during the transformation itself.
+    """
+
+    @staticmethod
+    def _networks():
+        from tests.fixtures.directed_networks import get_all_networks
+
+        return [
+            net for net in get_all_networks() if len(net.taxa) >= 4 and len(net.hybrid_nodes) <= 5
+        ][:12]
+
+    @staticmethod
+    def _transformations():
+        import itertools
+
+        from phylozoo.core.network.dnetwork.derivations import (
+            k_taxon_subnetworks,
+            subnetwork,
+            to_sd_network,
+            tree_of_blobs,
+        )
+        from phylozoo.core.network.dnetwork.transformations import (
+            binary_resolution,
+            identify_parallel_edges,
+            suppress_2_blobs,
+            to_lsa_network,
+        )
+
+        half = lambda net: sorted(net.taxa)[: max(2, len(net.taxa) // 2)]  # noqa: E731
+        return {
+            "to_sd_network": lambda net: [to_sd_network(net)],
+            "tree_of_blobs": lambda net: [tree_of_blobs(net)],
+            "subnetwork": lambda net: [subnetwork(net, half(net))],
+            "k_taxon_subnetworks": lambda net: list(
+                itertools.islice(k_taxon_subnetworks(net, 3), 4)
+            ),
+            "to_lsa_network": lambda net: [to_lsa_network(net)],
+            "identify_parallel_edges": lambda net: [identify_parallel_edges(net)],
+            "suppress_2_blobs": lambda net: [suppress_2_blobs(net)],
+            "binary_resolution": lambda net: [binary_resolution(net)],
+            "displayed_trees": lambda net: list(itertools.islice(displayed_trees(net), 4)),
+        }
+
+    @pytest.mark.parametrize("name", sorted(_transformations.__func__().keys()))
+    def test_results_are_valid(self, name):
+        transform = self._transformations()[name]
+        for network in self._networks():
+            for result in transform(network):
+                result.validate()  # raises if the construction were ever wrong
+
+    @pytest.mark.parametrize("name", sorted(_transformations.__func__().keys()))
+    def test_no_validation_runs_during_transformation(self, name, monkeypatch):
+        from phylozoo.core.network.sdnetwork.sd_phynetwork import SemiDirectedPhyNetwork
+
+        from phylozoo.utils.validation import _validation_disabled
+
+        calls = []
+        for cls in (DirectedPhyNetwork, SemiDirectedPhyNetwork):
+            original = cls.validate
+
+            def counting(self, _original=original):
+                # The wrapper on validate() returns early under no_validation(); count
+                # only calls made while validation is actually enabled.
+                if not _validation_disabled.get():
+                    calls.append(type(self).__name__)
+                return _original(self)
+
+            monkeypatch.setattr(cls, "validate", counting)
+        transform = self._transformations()[name]
+        for network in self._networks()[:4]:
+            transform(network)
+        assert calls == []

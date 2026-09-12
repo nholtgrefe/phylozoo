@@ -20,6 +20,7 @@ from ...primitives.d_multigraph.transformations import (
     identify_vertices as dm_identify_vertices,
 )
 from ....utils.exceptions import PhyloZooValueError, PhyloZooAlgorithmError
+from ....utils.validation import no_validation
 
 if TYPE_CHECKING:
     from ...primitives.d_multigraph import DirectedMultiGraph
@@ -114,11 +115,13 @@ def to_lsa_network(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
                 new_nodes.append((node, {"label": label}))
 
     # Create new network, preserving graph attributes
-    return DirectedPhyNetwork(
-        edges=new_edges,
-        nodes=new_nodes if new_nodes else None,
-        attributes=network.get_network_attribute() if network.get_network_attribute() else None,
-    )
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return DirectedPhyNetwork(
+            edges=new_edges,
+            nodes=new_nodes if new_nodes else None,
+            attributes=network.get_network_attribute() if network.get_network_attribute() else None,
+        )
 
 
 def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -244,7 +247,9 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         )
 
     # Create and return new network from the modified graph
-    return dnetwork_from_graph(working_graph, copy=False)
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return dnetwork_from_graph(working_graph, copy=False)
 
 
 def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -349,7 +354,9 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
 
     # Create and return new network from the modified graph (will be validated)
-    return dnetwork_from_graph(working_graph, copy=False)
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return dnetwork_from_graph(working_graph, copy=False)
 
 
 def _compute_caterpillar_gammas(
@@ -754,4 +761,6 @@ def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     _binary_resolve_hybrid_nodes(working_graph, has_branch_lengths)
 
     # Create and return new network from the modified graph
-    return dnetwork_from_graph(working_graph, copy=False)
+    # Valid by construction from a valid input network, so validation is not re-run.
+    with no_validation():
+        return dnetwork_from_graph(working_graph, copy=False)
