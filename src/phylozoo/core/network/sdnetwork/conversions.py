@@ -13,6 +13,7 @@ import networkx as nx
 
 from .base import MixedPhyNetwork
 from .sd_phynetwork import SemiDirectedPhyNetwork
+from ....utils.exceptions.utils import warn_on_keyword, warn_on_none_value
 from ...primitives.m_multigraph import MixedMultiGraph
 from ...primitives.m_multigraph.conversions import (
     graph_to_mixedmultigraph,
@@ -24,7 +25,10 @@ T = TypeVar("T")
 
 
 def _sdnetwork_from_mmgraph(
-    graph: MixedMultiGraph[T], network_type: Literal["semi-directed", "mixed"] = "semi-directed"
+    graph: MixedMultiGraph[T],
+    network_type: Literal["semi-directed", "mixed"] = "semi-directed",
+    *,
+    copy: bool = True,
 ) -> SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]:
     """
     Internal helper to create a SemiDirectedPhyNetwork or MixedPhyNetwork from a MixedMultiGraph.
@@ -37,11 +41,21 @@ def _sdnetwork_from_mmgraph(
         Type of network to create. 'semi-directed' creates a SemiDirectedPhyNetwork,
         'mixed' creates a MixedPhyNetwork.
 
+    copy : bool, optional
+        If True, the network is rebuilt from the graph's edges and nodes and never
+        shares state with ``graph``. If False, the network adopts ``graph`` itself:
+        the same label checks, leaf auto-labelling and :meth:`validate` run, but the
+        graph is not constructed a second time. Only pass False for a graph the
+        caller owns and will not touch again. By default True.
+
     Returns
     -------
     SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]
         A new phylogenetic network with edges and labels from the graph.
     """
+    if not copy:
+        return _adopt_mmgraph(graph, network_type)
+
     # Extract directed edges
     directed_edges: list[dict[str, Any]] = []
     for u, v, key, data in graph.directed_edges_iter(keys=True, data=True):
@@ -88,9 +102,58 @@ def _sdnetwork_from_mmgraph(
         )
 
 
+def _adopt_mmgraph(
+    graph: MixedMultiGraph[T],
+    network_type: Literal["semi-directed", "mixed"],
+) -> SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]:
+    """
+    Build a network around an existing MixedMultiGraph without rebuilding it.
+
+    Performs the constructor's steps after graph construction, on the graph as
+    given: the per-node checks ``add_node`` would make, the mirroring of each node's
+    undirected-side attributes onto the directed side that re-adding the nodes used
+    to do, label registration with the same string/uniqueness validation, leaf
+    auto-labelling, and :meth:`validate`.
+
+    Parameters
+    ----------
+    graph : MixedMultiGraph[T]
+        The graph the network takes ownership of.
+    network_type : Literal['semi-directed', 'mixed']
+        Which network class to build.
+
+    Returns
+    -------
+    SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]
+        The network wrapping ``graph``.
+    """
+    cls = SemiDirectedPhyNetwork if network_type == "semi-directed" else MixedPhyNetwork
+    network = cls.__new__(cls)
+    network._graph = graph
+    network._node_to_label = {}
+    network._label_to_node = {}
+    undirected_nodes = graph._undirected.nodes
+    directed = graph._directed
+    for node in graph.nodes():
+        attrs = undirected_nodes[node]
+        warn_on_keyword(node, "Node id")
+        for attr_name, attr_value in attrs.items():
+            warn_on_keyword(attr_name, "Attribute name")
+            warn_on_none_value(attr_value, f"Attribute '{attr_name}'")
+        # add_node(node, **attrs) set these on both sub-graphs; keep that invariant.
+        directed.add_node(node, **attrs)
+        if "label" in attrs:
+            network._add_label_to_dicts(node, attrs["label"])
+    graph._combined_cache = None
+    network._auto_label_unlabeled_leaves()
+    network.validate()
+    return network
+
+
 def sdnetwork_from_graph(
     graph: nx.Graph | nx.MultiGraph | MixedMultiGraph[T],
     network_type: Literal["semi-directed", "mixed"] = "semi-directed",
+    copy: bool = True,
 ) -> SemiDirectedPhyNetwork[T] | MixedPhyNetwork[T]:
     """
     Create a SemiDirectedPhyNetwork or MixedPhyNetwork from a NetworkX Graph, MultiGraph, or phylozoo
@@ -108,6 +171,13 @@ def sdnetwork_from_graph(
     network_type : Literal['semi-directed', 'mixed'], default='semi-directed'
         Type of network to create. 'semi-directed' creates a SemiDirectedPhyNetwork,
         'mixed' creates a MixedPhyNetwork.
+    copy : bool, optional
+        Only relevant when ``graph`` is a MixedMultiGraph. If True, the network is
+        built from a fresh copy of the graph's contents. If False, the network takes
+        ownership of ``graph`` itself and the caller must not use or modify it
+        afterwards; this skips one full graph construction. Validation is the same
+        either way. NetworkX inputs are always converted into a new graph.
+        By default True.
 
     Returns
     -------
@@ -159,6 +229,8 @@ def sdnetwork_from_graph(
             mmgraph = multigraph_to_mixedmultigraph(graph)
         else:
             mmgraph = graph_to_mixedmultigraph(graph)
+        # The converted graph is brand new and owned here, so it can be adopted.
+        copy = False
     elif isinstance(graph, MixedMultiGraph):
         mmgraph = graph
     else:
@@ -167,4 +239,4 @@ def sdnetwork_from_graph(
         )
 
     # Convert MixedMultiGraph to network
-    return _sdnetwork_from_mmgraph(mmgraph, network_type=network_type)
+    return _sdnetwork_from_mmgraph(mmgraph, network_type=network_type, copy=copy)

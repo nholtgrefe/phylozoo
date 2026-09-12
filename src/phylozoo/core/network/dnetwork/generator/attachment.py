@@ -255,4 +255,4 @@ def attach_leaves_to_generator(
             raise PhyloZooValueError(f"Unsupported side type {type(side)} in side_taxa mapping.")
 
     # Convert the augmented graph into a full DirectedPhyNetwork
-    return dnetwork_from_graph(graph)
+    return dnetwork_from_graph(graph, copy=False)

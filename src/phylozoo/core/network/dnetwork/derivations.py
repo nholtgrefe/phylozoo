@@ -145,7 +145,7 @@ def to_sd_network(d_network: DirectedPhyNetwork) -> SemiDirectedPhyNetwork:
             mixed._combined_cache = None
 
     # Convert the mixed graph to a semi-directed network
-    return sdnetwork_from_graph(mixed, network_type="semi-directed")
+    return sdnetwork_from_graph(mixed, network_type="semi-directed", copy=False)
 
 
 def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -204,7 +204,7 @@ def tree_of_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
             dm_identify_vertices(working_graph, blob_sorted)
 
     # Convert back to DirectedPhyNetwork
-    return dnetwork_from_graph(working_graph)
+    return dnetwork_from_graph(working_graph, copy=False)
 
 
 def subnetwork(
@@ -281,14 +281,14 @@ def subnetwork(
     # Create induced DirectedMultiGraph using existing utility
     induced_dm = dm_subgraph(working_net._graph, nodes_set)
 
-    # Work on a mutable copy for transformations
-    working_dm = induced_dm.copy()
+    # dm_subgraph returns a fresh graph, so it can be reshaped in place.
+    working_dm = induced_dm
 
     # First pass: suppress all degree-2 nodes (directed suppression semantics)
     dm_suppress_deg2_nodes(working_dm, exclude_nodes=None)
 
     # Convert to DirectedPhyNetwork for higher-level transformations
-    result_net = dnetwork_from_graph(working_dm)
+    result_net = dnetwork_from_graph(working_dm, copy=False)
 
     # Optional post-processing steps
     if suppress_2_blobs:
@@ -598,7 +598,7 @@ def displayed_trees(
         # Convert back to DirectedPhyNetwork
         # Note: dnetwork_from_graph already copies graph attributes, so probability
         # is automatically preserved from the switching graph.
-        displayed_tree = dnetwork_from_graph(tree_graph)
+        displayed_tree = dnetwork_from_graph(tree_graph, copy=False)
 
         if make_lsa:
             displayed_tree = to_lsa_network(displayed_tree)

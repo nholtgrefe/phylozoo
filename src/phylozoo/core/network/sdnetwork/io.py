@@ -274,7 +274,7 @@ def from_phylozoo_dot(pzdot_string: str, **kwargs: Any) -> "SemiDirectedPhyNetwo
                     node_data["label"] = str(label)
 
     # Convert MixedMultiGraph to SemiDirectedPhyNetwork
-    return sdnetwork_from_graph(mm_graph, network_type="semi-directed")
+    return sdnetwork_from_graph(mm_graph, network_type="semi-directed", copy=False)
 
 
 # Register format handlers with FormatRegistry

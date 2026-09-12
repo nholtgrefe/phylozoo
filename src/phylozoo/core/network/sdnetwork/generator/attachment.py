@@ -303,4 +303,4 @@ def attach_leaves_to_generator(
         else:
             raise PhyloZooValueError(f"Unsupported side type {type(side)} in side_taxa mapping.")
 
-    return sdnetwork_from_graph(graph, network_type="semi-directed")
+    return sdnetwork_from_graph(graph, network_type="semi-directed", copy=False)

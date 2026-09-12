@@ -107,7 +107,7 @@ def tree_of_blobs(network: MixedPhyNetwork) -> MixedPhyNetwork:
     # Convert back to appropriate network type
     # Preserve the input type (SemiDirectedPhyNetwork or MixedPhyNetwork)
     network_type = "semi-directed" if isinstance(network, SemiDirectedPhyNetwork) else "mixed"
-    return sdnetwork_from_graph(working_graph, network_type=network_type)
+    return sdnetwork_from_graph(working_graph, network_type=network_type, copy=False)
 
 
 def subnetwork(
@@ -204,7 +204,7 @@ def subnetwork(
         _identify_parallel_edges_inplace(working_mm, exclude_nodes=leaf_set)
 
     with no_validation():
-        result_net = sdnetwork_from_graph(working_mm, network_type="semi-directed")
+        result_net = sdnetwork_from_graph(working_mm, network_type="semi-directed", copy=False)
 
     if suppress_2_blobs:
         result_net = suppress_2_blobs_fn(result_net)
@@ -542,7 +542,7 @@ def displayed_trees(
         # Convert back to SemiDirectedPhyNetwork
         # Note: sdnetwork_from_graph already copies graph attributes, so probability
         # is automatically preserved from the switching graph.
-        displayed_tree = sdnetwork_from_graph(tree_graph, network_type="semi-directed")
+        displayed_tree = sdnetwork_from_graph(tree_graph, network_type="semi-directed", copy=False)
 
         yield displayed_tree
 
@@ -1395,7 +1395,7 @@ def _root_sd_network_at(
 
     # Step 4: Convert to DirectedPhyNetwork
     try:
-        return dnetwork_from_graph(oriented_dm)
+        return dnetwork_from_graph(oriented_dm, copy=False)
     except PhyloZooError as e:
         raise PhyloZooValueError(f"Failed to convert oriented network to DirectedPhyNetwork: {e}")
 

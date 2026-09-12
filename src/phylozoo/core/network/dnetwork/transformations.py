@@ -244,7 +244,7 @@ def identify_parallel_edges(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         )
 
     # Create and return new network from the modified graph
-    return dnetwork_from_graph(working_graph)
+    return dnetwork_from_graph(working_graph, copy=False)
 
 
 def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
@@ -349,7 +349,7 @@ def suppress_2_blobs(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
         dm_suppress_degree2_node(working_graph, first_vertex, merged_attrs=merged_attrs)
 
     # Create and return new network from the modified graph (will be validated)
-    return dnetwork_from_graph(working_graph)
+    return dnetwork_from_graph(working_graph, copy=False)
 
 
 def _compute_caterpillar_gammas(
@@ -754,4 +754,4 @@ def binary_resolution(network: DirectedPhyNetwork) -> DirectedPhyNetwork:
     _binary_resolve_hybrid_nodes(working_graph, has_branch_lengths)
 
     # Create and return new network from the modified graph
-    return dnetwork_from_graph(working_graph)
+    return dnetwork_from_graph(working_graph, copy=False)

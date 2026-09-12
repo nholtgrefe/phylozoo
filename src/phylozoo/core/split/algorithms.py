@@ -194,7 +194,7 @@ def tree_from_splitsystem(
         T.add_undirected_edge(node, child)
 
     # Convert MixedMultiGraph to SemiDirectedPhyNetwork
-    return sdnetwork_from_graph(T, network_type="semi-directed")
+    return sdnetwork_from_graph(T, network_type="semi-directed", copy=False)
 
 
 def distances_from_splitsystem(system: SplitSystem | WeightedSplitSystem) -> DistanceMatrix:
