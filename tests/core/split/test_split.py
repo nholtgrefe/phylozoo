@@ -747,3 +747,49 @@ class TestTreeFromSplitsystem:
             Split({str(x) for x in s.set1}, {str(x) for x in s.set2}) for s in system.splits
         }
         assert original_str_splits.issubset(tree_splits.splits)
+
+
+class TestSplitStorage:
+    """Sides are stored as the partition's own frozensets; the repr is unchanged."""
+
+    def test_sides_are_frozensets_equal_to_the_input(self) -> None:
+        split = Split({3, 4}, {1, 2})
+        assert isinstance(split.set1, frozenset) and isinstance(split.set2, frozenset)
+        assert {split.set1, split.set2} == {frozenset({1, 2}), frozenset({3, 4})}
+        assert split.set1 == {1, 2} or split.set1 == {3, 4}  # equality with plain sets holds
+
+    def test_sides_are_the_partition_parts_not_copies(self) -> None:
+        split = Split({1, 2}, {3, 4})
+        assert split.set1 is split.parts[0] and split.set2 is split.parts[1]
+
+    def test_repr_recreates_the_split(self) -> None:
+        split = Split({1, 2}, {3, 4})
+        assert repr(split) == "Split({1, 2}, {3, 4})"
+        assert eval(repr(split)) == split
+
+    def test_from_sides_matches_the_constructor(self) -> None:
+        elements = frozenset(range(1, 7))
+        side = frozenset({2, 5})
+        fast = Split._from_sides(side, elements - side, elements)
+        slow = Split(set(side), set(elements - side))
+        assert fast == slow and hash(fast) == hash(slow)
+        assert fast.parts == slow.parts and fast.elements == slow.elements
+        assert fast.is_trivial is False and repr(fast) == repr(slow)
+
+    def test_from_sides_shares_the_elements_set(self) -> None:
+        elements = frozenset(range(10))
+        splits = [Split._from_sides(frozenset({i}), elements - {i}, elements) for i in range(10)]
+        assert all(split.elements is elements for split in splits)
+
+    def test_from_sides_rejects_invalid_input(self) -> None:
+        from phylozoo.utils.exceptions import PhyloZooValueError
+
+        elements = frozenset({1, 2, 3, 4})
+        with pytest.raises(PhyloZooValueError):
+            Split._from_sides(frozenset(), elements, elements)  # empty side
+        with pytest.raises(PhyloZooValueError):
+            Split._from_sides(frozenset({1, 2}), frozenset({2, 3, 4}), elements)  # overlap
+        with pytest.raises(PhyloZooValueError):
+            Split._from_sides(frozenset({1}), frozenset({2, 3}), elements)  # not all elements
+        with pytest.raises(PhyloZooValueError):
+            Split._from_sides(frozenset({1, 9}), frozenset({2, 3, 4}), elements)  # outside

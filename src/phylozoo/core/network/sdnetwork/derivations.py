@@ -817,7 +817,7 @@ def _switching_splits_by_blob(
             inside = node_to_blob[up] == blob
             if only_blob is None or (inside and blob == only_blob):
                 side = frozenset(taxa_below)
-                split = Split(side, all_taxa - side)
+                split = Split._from_sides(side, all_taxa - side, all_taxa)
                 if inside:
                     blob_splits.setdefault(blob, set()).add(split)
                 else:
@@ -1104,7 +1104,9 @@ def induced_splits(network: MixedPhyNetwork) -> SplitSystem:
                 if neighbor_leaves and len(neighbor_leaves) < total_taxa:
                     other_leaves = all_taxa_set - neighbor_leaves
                     if other_leaves:  # Both sides must have at least one leaf
-                        split = Split(neighbor_leaves, other_leaves)
+                        split = Split._from_sides(
+                            frozenset(neighbor_leaves), other_leaves, all_taxa_set
+                        )
                         splits.add(split)
 
         return node_leaves
