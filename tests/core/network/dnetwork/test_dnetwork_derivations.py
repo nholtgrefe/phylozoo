@@ -1767,20 +1767,37 @@ class TestDistancesBlobDecomposition:
     """
 
     @staticmethod
+    def _switching_matrix_nx(graph, taxa, network):
+        """Leaf-to-leaf distances of one switching graph via networkx, independent of the code under test."""
+        import networkx as nx
+        import numpy as np
+
+        weighted = nx.Graph()
+        for u, v, key in graph._combined.edges(keys=True):
+            length = network.get_branch_length(u, v, key)
+            if length is None:
+                length = network.get_branch_length(v, u, key)
+            weighted.add_edge(u, v, weight=1.0 if length is None else length)
+        leaves = [network._label_to_node[taxon] for taxon in taxa]
+        matrix = np.zeros((len(taxa), len(taxa)))
+        for i, source in enumerate(leaves):
+            lengths = nx.shortest_path_length(weighted, source, weight="weight")
+            for j, target in enumerate(leaves):
+                matrix[i, j] = lengths[target]
+        return matrix
+
+    @staticmethod
     def _brute_force(network, taxa, mode):
         """Aggregate over all global switchings, i.e. the unoptimised definition."""
         import numpy as np
 
-        from phylozoo.core.network.dnetwork.derivations import (
-            _switching_distance_matrix,
-            _switchings,
-        )
+        from phylozoo.core.network.dnetwork.derivations import _switchings
 
         size = len(taxa)
         result = np.full((size, size), np.inf) if mode == "shortest" else np.zeros((size, size))
         weighted, weight_total = np.zeros((size, size)), 0.0
         for graph in _switchings(network, probability=(mode == "average")):
-            matrix = _switching_distance_matrix(graph, taxa, network)
+            matrix = TestDistancesBlobDecomposition._switching_matrix_nx(graph, taxa, network)
             if mode == "shortest":
                 result = np.minimum(result, matrix)
             elif mode == "longest":
@@ -1917,17 +1934,17 @@ class TestDistancesBlobDecomposition:
 
         network = self._two_blob_network()
         calls = []
-        original = derivations._switching_matrix_for_choices
+        original = derivations._switching_distance_matrix
 
         def counting(*args, **kwargs):
             calls.append(1)
             return original(*args, **kwargs)
 
-        derivations._switching_matrix_for_choices = counting
+        derivations._switching_distance_matrix = counting
         try:
             distances(network, mode="average")
         finally:
-            derivations._switching_matrix_for_choices = original
+            derivations._switching_distance_matrix = original
         # 1 reference + 2 local switchings per blob x 2 blobs; never the 4 global ones
         assert len(calls) == 5
 
@@ -1972,3 +1989,181 @@ class TestDistancesWithParallelEdges:
         matrix = distances(self._network(), mode=mode)
         assert matrix.get_distance("A", "C") == pytest.approx(4.0)
         assert matrix.get_distance("A", "B") == pytest.approx(3.0)
+
+
+class TestDisplayedSplitsBlobDecomposition:
+    """`displayed_splits` sums per blob instead of over displayed trees; weights must match.
+
+    The reference is the definition: accumulate each displayed tree's induced splits
+    with the tree's probability. The networks put reticulations in *different* blobs,
+    which is exactly the case the decomposition changes.
+    """
+
+    @staticmethod
+    def _by_definition(network):
+        weights = {}
+        for tree in displayed_trees(network, probability=True):
+            probability = tree.get_network_attribute("probability")
+            probability = 1.0 if probability is None else probability
+            for split in induced_splits(tree).splits:
+                weights[split] = weights.get(split, 0.0) + probability
+        return weights
+
+    @staticmethod
+    def _two_blob_network(gamma=False):
+        """Two cherries each carrying one reticulation: two level-1 blobs.
+
+        Switching a reticulation off leaves a path of degree-2 nodes whose edges repeat
+        the adjacent cut edge's split, so this also exercises the de-duplication.
+        """
+        edges = [
+            ("rho", "c1"),
+            ("rho", "c2"),
+            ("c1", "m1"),
+            ("m1", "A"),
+            ("c1", "m2"),
+            ("m2", "B"),
+            ("m1", "m2"),
+            ("c2", "m3"),
+            ("m3", "C"),
+            ("c2", "m4"),
+            ("m4", "D"),
+            ("m3", "m4"),
+        ]
+        if gamma:
+            weighted = {("m1", "m2"): 0.3, ("c1", "m2"): 0.7, ("m3", "m4"): 0.2, ("c2", "m4"): 0.8}
+            edges = [
+                {"u": u, "v": v, "gamma": weighted[(u, v)]} if (u, v) in weighted else (u, v)
+                for u, v in edges
+            ]
+        return DirectedPhyNetwork(
+            edges=edges, nodes=[(name, {"label": name}) for name in ("A", "B", "C", "D")]
+        )
+
+    def test_network_really_has_two_blobs(self):
+        from phylozoo.core.network.dnetwork.derivations import _hybrid_blob_groups
+
+        assert len(_hybrid_blob_groups(self._two_blob_network())) == 2
+
+    @pytest.mark.parametrize("gamma", [False, True])
+    def test_matches_definition_across_blobs(self, gamma):
+        network = self._two_blob_network(gamma=gamma)
+        got = displayed_splits(network)
+        want = self._by_definition(network)
+        assert set(got.splits) == set(want)
+        for split, weight in want.items():
+            assert got.get_weight(split) == pytest.approx(weight)
+
+    def test_single_blob_matches_definition(self):
+        network = DirectedPhyNetwork(
+            edges=[
+                ("rho", "u"),
+                ("rho", "w"),
+                ("u", "h1"),
+                ("w", "h1"),
+                ("u", "h2"),
+                ("w", "h2"),
+                ("u", "A"),
+                ("w", "B"),
+                ("h1", "C"),
+                ("h2", "D"),
+            ],
+            nodes=[(name, {"label": name}) for name in ("A", "B", "C", "D")],
+        )
+        got = displayed_splits(network)
+        want = self._by_definition(network)
+        assert set(got.splits) == set(want)
+        for split, weight in want.items():
+            assert got.get_weight(split) == pytest.approx(weight)
+
+    def test_tree_gives_its_splits_with_unit_weight(self):
+        network = DirectedPhyNetwork(
+            edges=[("r", "x"), ("r", "C"), ("x", "A"), ("x", "B")],
+            nodes=[(name, {"label": name}) for name in ("A", "B", "C")],
+        )
+        got = displayed_splits(network)
+        assert set(got.splits) == set(induced_splits(network).splits)
+        assert all(got.get_weight(split) == pytest.approx(1.0) for split in got.splits)
+
+
+class TestSwitchingMachinery:
+    """The pieces shared by `distances` and `displayed_splits`."""
+
+    @staticmethod
+    def _network(gamma=False):
+        return TestDistancesBlobDecomposition._two_blob_network(gamma=gamma)
+
+    def test_hybrid_parent_edges_lists_every_parent_edge(self):
+        from phylozoo.core.network.dnetwork.derivations import _hybrid_parent_edges
+
+        network = self._network()
+        parents = _hybrid_parent_edges(network)
+        assert set(parents) == set(network.hybrid_nodes)
+        for hybrid, edges in parents.items():
+            assert len(edges) == 2
+            assert all(v == hybrid for _u, v, _key in edges)
+
+    def test_plan_groups_reference_and_masses(self):
+        from phylozoo.core.network.dnetwork.derivations import _BlobSwitchings
+
+        plan = _BlobSwitchings(self._network())
+        assert len(plan.groups) == 2
+        for hybrid, edges in plan.hybrid_parent_edges.items():
+            assert plan.reference[hybrid] == edges[0]
+        # two parent edges without gammas: 1/2 each, so every group has mass 1
+        assert plan.masses == pytest.approx([1.0, 1.0])
+        assert plan.total_mass == pytest.approx(1.0)
+        assert plan.other_mass(0) == pytest.approx(plan.masses[1])
+
+    def test_local_switchings_use_gamma_weights(self):
+        from phylozoo.core.network.dnetwork.derivations import _BlobSwitchings
+
+        plan = _BlobSwitchings(self._network(gamma=True))
+        for index, group in enumerate(plan.groups):
+            switchings = list(plan.local_switchings(index))
+            assert len(switchings) == 2  # one hybrid with two parent edges
+            assert sorted(weight for _choices, weight in switchings) == pytest.approx([0.25, 0.75])
+            for choices, _weight in switchings:
+                # only this group's hybrid deviates from the reference
+                assert all(
+                    choices[h] == plan.reference[h] for h in plan.reference if h not in group
+                )
+        assert plan.total_mass == pytest.approx(1.0)
+
+    def test_removed_edges_are_the_unkept_parent_edges(self):
+        from phylozoo.core.network.dnetwork.derivations import _BlobSwitchings
+
+        plan = _BlobSwitchings(self._network())
+        removed = plan.removed_edges(plan.reference)
+        assert len(removed) == len(plan.hybrid_parent_edges)  # one dropped edge per hybrid
+        assert not any(edge in removed for edge in plan.reference.values())
+
+    def test_switching_adjacency_is_a_symmetric_tree_without_removed_edges(self):
+        from phylozoo.core.network.dnetwork.derivations import _BlobSwitchings, _switching_adjacency
+
+        network = self._network()
+        plan = _BlobSwitchings(network)
+        removed = plan.removed_edges(plan.reference)
+        adjacency = _switching_adjacency(network, removed)
+        assert set(adjacency) == set(network.nodes)
+        for node, neighbours in adjacency.items():
+            for neighbour, key in neighbours:
+                assert (node, key) in adjacency[neighbour]
+                assert (node, neighbour, key) not in removed and (
+                    neighbour,
+                    node,
+                    key,
+                ) not in removed
+        # a switching is a tree: E = V - 1
+        assert sum(len(neighbours) for neighbours in adjacency.values()) // 2 == len(adjacency) - 1
+
+    def test_branch_lengths_both_orientations_and_default(self):
+        from phylozoo.core.network.dnetwork.derivations import _branch_lengths
+
+        network = DirectedPhyNetwork(
+            edges=[{"u": "r", "v": "x", "branch_length": 2.5}, ("r", "C"), ("x", "A"), ("x", "B")],
+            nodes=[(name, {"label": name}) for name in ("A", "B", "C")],
+        )
+        lengths = _branch_lengths(network)
+        assert lengths[("r", "x", 0)] == 2.5 and lengths[("x", "r", 0)] == 2.5
+        assert lengths[("x", "A", 0)] == 1.0 and lengths[("A", "x", 0)] == 1.0

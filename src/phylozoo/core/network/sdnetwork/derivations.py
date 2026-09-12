@@ -547,88 +547,148 @@ def displayed_trees(
         yield displayed_tree
 
 
-def _switching_distance_matrix(
-    switching_graph: MixedMultiGraph,
-    taxa: list[str],
-    original_network: SemiDirectedPhyNetwork,
-) -> np.ndarray:
+def _hybrid_parent_edges(network: SemiDirectedPhyNetwork) -> dict[Any, list[tuple[Any, Any, int]]]:
+    """Map each hybrid node to all of its parent edges as ``(u, v, key)``."""
+    return {
+        hybrid: list(network.incident_parent_edges(hybrid, keys=True))
+        for hybrid in network.hybrid_nodes
+    }
+
+
+def _branch_lengths(network: SemiDirectedPhyNetwork) -> dict[tuple[Any, Any, int], float]:
     """
-    Compute the full distance matrix for all pairwise distances between taxa in a switching.
+    Branch length of every edge, keyed ``(u, v, key)`` in both orientations.
+
+    Looked up once per network rather than once per switching; edges without a
+    recorded length count as 1.0, as everywhere in the switching-based derivations.
+    """
+    lengths: dict[tuple[Any, Any, int], float] = {}
+    for u, v, key in network._graph._combined.edges(keys=True):
+        length = network.get_branch_length(u, v, key)
+        if length is None:
+            length = network.get_branch_length(v, u, key)
+        if length is None:
+            length = 1.0
+        lengths[(u, v, key)] = length
+        lengths[(v, u, key)] = length
+    return lengths
+
+
+def _switching_adjacency(
+    network: SemiDirectedPhyNetwork, removed_edges: set[tuple[Any, Any, int]]
+) -> dict[Any, list[tuple[Any, int]]]:
+    """
+    Undirected adjacency of one switching, without building the switching graph.
+
+    A switching is the network minus the parent edges it drops, so its adjacency is
+    the network's cached combined graph with ``removed_edges`` skipped. It is
+    materialised once per switching (O(V + E)) because the distance computation
+    walks it once per leaf; every switching-based traversal (distances, displayed
+    splits) uses this instead of copying the graph per switching.
 
     Parameters
     ----------
-    switching_graph : MixedMultiGraph
-        The switching graph (a tree).
-    taxa : list[str]
-        List of taxon labels.
-    original_network : SemiDirectedPhyNetwork
-        The original network (used to access branch lengths).
+    network : SemiDirectedPhyNetwork
+        The network.
+    removed_edges : set[tuple[Any, Any, int]]
+        The hybrid parent edges ``(u, v, key)`` this switching deletes.
 
     Returns
     -------
-    np.ndarray
-        A symmetric numpy array of shape (len(taxa), len(taxa)) with pairwise distances.
-        Diagonal is 0.0 (distance from a taxon to itself).
-
-    Notes
-    -----
-    The switching is a tree, so there is exactly one path between any two leaves.
-    Branch lengths are accessed from the original network. If an edge has no branch
-    length, 1.0 is used as the default.
+    dict[Any, list[tuple[Any, int]]]
+        For every node, its ``(neighbour, key)`` pairs over the surviving edges.
     """
-    n = len(taxa)
-    if n == 0:
-        return np.array([])
-    if n == 1:
-        return np.array([[0.0]])
+    combined = network._graph._combined
+    adjacency: dict[Any, list[tuple[Any, int]]] = {node: [] for node in combined.nodes()}
+    for u, v, key in combined.edges(keys=True):
+        if (u, v, key) in removed_edges or (v, u, key) in removed_edges:
+            continue
+        adjacency[u].append((v, key))
+        if u != v:
+            adjacency[v].append((u, key))
+    return adjacency
 
-    # Get leaf nodes corresponding to taxon labels
-    leaf_nodes: list[Any] = []
-    for taxon in taxa:
-        leaf_node = original_network._label_to_node.get(taxon)
-        if leaf_node is None:
-            raise PhyloZooValueError(f"Taxon '{taxon}' not found in network")
-        leaf_nodes.append(leaf_node)
 
-    # Initialize distance matrix
-    distance_matrix = np.zeros((n, n), dtype=np.float64)
+class _BlobSwitchings:
+    """
+    The covering set of switchings that blob-wise aggregation evaluates.
 
-    # Use the combined graph view for path finding (treats all edges as undirected)
-    combined_graph = switching_graph._combined
+    A switching keeps one parent edge per hybrid node. Rather than enumerating the
+    ``prod_b 2**r_b`` switchings of the whole network, the derivations built on this
+    class evaluate one arbitrary *reference* switching plus, for each blob, every
+    switching that differs from the reference inside that blob alone -- ``1 + sum_b
+    2**r_b`` in total, where ``r_b`` is the number of reticulations in blob ``b``.
 
-    # Look each branch length up once, rather than once per path that crosses it.
-    # The lookup carries the edge key: the original network may hold parallel edges
-    # between u and v even though the switching keeps only one of them, and an unkeyed
-    # lookup cannot say which one is meant.
-    branch_length: dict[tuple[Any, Any], float] = {}
-    for u, v, key in combined_graph.edges(keys=True):
-        bl = original_network.get_branch_length(u, v, key)
-        if bl is None:
-            # The combined view is undirected, so it may report the edge either way round.
-            bl = original_network.get_branch_length(v, u, key)
-        if bl is None:
-            bl = 1.0  # Default when no branch length is recorded
-        branch_length[(u, v)] = bl
-        branch_length[(v, u)] = bl
+    That set suffices because anything a leaf-to-leaf path does inside a blob (its
+    length, the splits its edges induce) changes only when that blob's own hybrid
+    choices change, and blobs are switched independently. Each evaluated switching
+    therefore exposes one blob's contribution in isolation, and the aggregate over all
+    switchings follows by combining the per-blob contributions. The work is exponential
+    in the network's level, not in its total number of reticulations; for a single-blob
+    network the covering set is every switching and nothing is saved.
 
-    # A switching is a tree, so the path between two leaves is unique and a single
-    # traversal from one leaf yields its distance to every other node at once. This
-    # replaces a shortest-path computation per ordered pair of leaves.
-    leaf_index = {leaf: i for i, leaf in enumerate(leaf_nodes)}
-    for i, source in enumerate(leaf_nodes):
-        visited = {source}
-        queue: deque[tuple[Any, float]] = deque([(source, 0.0)])
-        while queue:
-            node, distance = queue.popleft()
-            target = leaf_index.get(node)
-            if target is not None:
-                distance_matrix[i, target] = distance
-            for neighbour in combined_graph.neighbors(node):
-                if neighbour not in visited:
-                    visited.add(neighbour)
-                    queue.append((neighbour, distance + branch_length[(node, neighbour)]))
+    Attributes
+    ----------
+    hybrid_parent_edges : dict
+        Each hybrid node's parent edges.
+    reference : dict
+        The reference switching: the first parent edge of every hybrid.
+    groups : list[list[Any]]
+        Hybrid nodes grouped by blob (see :func:`_hybrid_blob_groups`).
+    masses : list[float]
+        Per group, the total gamma weight of its local switchings.
+    """
 
-    return distance_matrix
+    def __init__(self, network: SemiDirectedPhyNetwork) -> None:
+        self.network = network
+        self.hybrid_parent_edges = _hybrid_parent_edges(network)
+        self.reference = {hybrid: edges[0] for hybrid, edges in self.hybrid_parent_edges.items()}
+        self.groups = _hybrid_blob_groups(network)
+        self.masses = [
+            sum(weight for _choices, weight in self.local_switchings(index))
+            for index in range(len(self.groups))
+        ]
+
+    def weight(self, group: list[Any], combination: tuple[tuple[Any, Any, int], ...]) -> float:
+        """Gamma weight of keeping ``combination`` at the hybrids of ``group``."""
+        weight = 1.0
+        for hybrid, edge in zip(group, combination):
+            weight *= _hybrid_edge_weight(self.network, edge, len(self.hybrid_parent_edges[hybrid]))
+        return weight
+
+    def local_switchings(
+        self, index: int
+    ) -> Iterator[tuple[dict[Any, tuple[Any, Any, int]], float]]:
+        """Yield ``(choices, weight)`` for every switching of group ``index`` alone."""
+        group = self.groups[index]
+        for combination in itertools.product(
+            *(self.hybrid_parent_edges[hybrid] for hybrid in group)
+        ):
+            choices = dict(self.reference)
+            choices.update(zip(group, combination))
+            yield choices, self.weight(group, combination)
+
+    def removed_edges(self, choices: dict[Any, tuple[Any, Any, int]]) -> set[tuple[Any, Any, int]]:
+        """The parent edges the switching ``choices`` deletes."""
+        return {
+            edge
+            for hybrid, edges in self.hybrid_parent_edges.items()
+            for edge in edges
+            if edge != choices[hybrid]
+        }
+
+    @property
+    def total_mass(self) -> float:
+        """Total gamma weight of all switchings: the product of the group masses."""
+        return self.other_mass(-1)
+
+    def other_mass(self, index: int) -> float:
+        """Product of the masses of every group except ``index``."""
+        mass = 1.0
+        for other, group_mass in enumerate(self.masses):
+            if other != index:
+                mass *= group_mass
+        return mass
 
 
 def _hybrid_blob_groups(network: SemiDirectedPhyNetwork) -> list[list[Any]]:
@@ -673,50 +733,161 @@ def _hybrid_blob_groups(network: SemiDirectedPhyNetwork) -> list[list[Any]]:
     return groups
 
 
-def _switching_matrix_for_choices(
+def _switching_splits_by_blob(
     network: SemiDirectedPhyNetwork,
-    all_taxa: list[str],
-    hybrid_parent_edges: dict[Any, list[tuple[Any, Any, int]]],
-    choices: dict[Any, tuple[Any, Any, int]],
-) -> np.ndarray:
+    removed_edges: set[tuple[Any, Any, int]],
+    node_to_blob: dict[Any, int],
+    all_taxa: frozenset[str],
+    only_blob: int | None = None,
+) -> tuple[set[Split], dict[int, set[Split]]]:
     """
-    Distance matrix of the switching that keeps exactly the parent edges in ``choices``.
+    Splits induced by the edges of one switching, grouped by the blob owning each edge.
+
+    The switching is the network minus ``removed_edges`` (the parent edges it drops),
+    which is a tree, so every remaining edge induces the bipartition of the taxa
+    below it against the rest. Edges with no taxa on one side -- the ones a displayed
+    tree prunes away -- induce nothing. An edge whose endpoints lie in different blobs
+    is a cut edge of the network; otherwise it lies inside the blob both endpoints
+    share.
+
+    The traversal uses :func:`_switching_adjacency`, so no switching graph is built.
 
     Parameters
     ----------
     network : SemiDirectedPhyNetwork
-        The semi-directed phylogenetic network.
+        The network.
+    removed_edges : set[tuple[Any, Any, int]]
+        The hybrid parent edges ``(u, v, key)`` that this switching deletes.
+    node_to_blob : dict
+        Maps every node to the index of its blob; blobs partition the nodes.
+    all_taxa : frozenset[str]
+        All taxon labels of the network.
+    only_blob : int | None, optional
+        If given, build splits only for the edges inside this blob; every other edge
+        is skipped (its taxa are still accumulated). Building a split costs O(n), so
+        this is what keeps a blob's local switchings cheap. By default None.
+
+    Returns
+    -------
+    tuple[set[Split], dict[int, set[Split]]]
+        The cut-edge splits (empty when ``only_blob`` is set), and the splits of the
+        edges inside each blob considered.
+    """
+    adjacency = _switching_adjacency(network, removed_edges)
+    label_of = network._node_to_label
+    leaf_nodes = set(network.leaves)
+    total = len(all_taxa)
+
+    # Depth-first order from a leaf; reversing it visits every node after all of its
+    # descendants, so taxa sets can be accumulated upwards in one pass.
+    start = next(iter(leaf_nodes))
+    parent: dict[Any, Any] = {start: None}
+    order: list[Any] = []
+    stack = [start]
+    while stack:
+        node = stack.pop()
+        order.append(node)
+        for neighbour, _key in adjacency[node]:
+            if neighbour not in parent:
+                parent[neighbour] = node
+                stack.append(neighbour)
+
+    cut_splits: set[Split] = set()
+    blob_splits: dict[int, set[Split]] = {}
+    below: dict[Any, set[str]] = {}
+    for node in reversed(order):
+        # A node's set is needed only until it is merged into its parent's; dropping
+        # it here keeps memory at the pending frontier rather than O(n * V).
+        taxa_below = below.pop(node, set())
+        if node in leaf_nodes:
+            label = label_of.get(node)
+            if label is not None:
+                taxa_below.add(label)
+        up = parent[node]
+        if up is None:
+            continue
+        if taxa_below and len(taxa_below) < total:
+            blob = node_to_blob[node]
+            inside = node_to_blob[up] == blob
+            if only_blob is None or (inside and blob == only_blob):
+                side = frozenset(taxa_below)
+                split = Split(side, all_taxa - side)
+                if inside:
+                    blob_splits.setdefault(blob, set()).add(split)
+                else:
+                    cut_splits.add(split)
+        below.setdefault(up, set()).update(taxa_below)
+    return cut_splits, blob_splits
+
+
+def _hybrid_edge_weight(
+    network: SemiDirectedPhyNetwork,
+    edge: tuple[Any, Any, int],
+    indegree: int,
+) -> float:
+    """
+    Probability of keeping a hybrid's parent ``edge``: its gamma, or 1/indegree if unset.
+    """
+    gamma = network.get_gamma(edge[0], edge[1], edge[2])
+    return float(gamma) if gamma is not None else 1.0 / indegree
+
+
+def _switching_distance_matrix(
+    network: SemiDirectedPhyNetwork,
+    all_taxa: list[str],
+    plan: _BlobSwitchings,
+    choices: dict[Any, tuple[Any, Any, int]],
+    branch_lengths: dict[tuple[Any, Any, int], float],
+) -> np.ndarray:
+    """
+    Distance matrix of the switching that keeps exactly the parent edges in ``choices``.
+
+    A switching is a tree, so one traversal from each leaf yields its distance to
+    every other leaf. The traversal uses :func:`_switching_adjacency`, so no
+    switching graph is built.
+
+    Parameters
+    ----------
+    network : SemiDirectedPhyNetwork
+        The network.
     all_taxa : list[str]
         Taxon labels, in the order used for the matrix rows and columns.
-    hybrid_parent_edges : dict
-        Maps each hybrid node to all of its parent edges as ``(u, v, key)``.
+    plan : _BlobSwitchings
+        The switching machinery of ``network``.
     choices : dict
         Maps each hybrid node to the single parent edge to keep.
+    branch_lengths : dict
+        Output of :func:`_branch_lengths` for ``network``.
 
     Returns
     -------
     numpy.ndarray
         The pairwise distance matrix for that switching.
     """
-    switching_graph = network._graph.copy()
-    for hybrid, keep in choices.items():
-        for u, v, key in hybrid_parent_edges[hybrid]:
-            if (u, v, key) != keep:
-                switching_graph.remove_edge(u, v, key=key)
-    return _switching_distance_matrix(switching_graph, all_taxa, network)
+    n = len(all_taxa)
+    leaf_nodes: list[Any] = []
+    for taxon in all_taxa:
+        leaf_node = network._label_to_node.get(taxon)
+        if leaf_node is None:
+            raise PhyloZooValueError(f"Taxon '{taxon}' not found in network")
+        leaf_nodes.append(leaf_node)
+    leaf_index = {leaf: i for i, leaf in enumerate(leaf_nodes)}
+    adjacency = _switching_adjacency(network, plan.removed_edges(choices))
 
-
-def _hybrid_edge_weight(
-    network: SemiDirectedPhyNetwork,
-    hybrid: Any,
-    edge: tuple[Any, Any, int],
-    indegree: int,
-) -> float:
-    """
-    Probability of keeping ``edge`` at ``hybrid``: its gamma, or 1/indegree if unset.
-    """
-    gamma = network.get_gamma(edge[0], edge[1], edge[2])
-    return float(gamma) if gamma is not None else 1.0 / indegree
+    distance_matrix = np.zeros((n, n), dtype=np.float64)
+    for i, source in enumerate(leaf_nodes):
+        visited = {source}
+        queue: deque[tuple[Any, float]] = deque([(source, 0.0)])
+        while queue:
+            node, distance = queue.popleft()
+            target = leaf_index.get(node)
+            if target is not None:
+                distance_matrix[i, target] = distance
+            for neighbour, key in adjacency[node]:
+                if neighbour not in visited:
+                    visited.add(neighbour)
+                    queue.append((neighbour, distance + branch_lengths[(node, neighbour, key)]))
+    return distance_matrix
 
 
 def distances(
@@ -782,60 +953,34 @@ def distances(
             f"Invalid mode: {mode}. Must be 'shortest', 'longest', or 'average'"
         )
 
-    # The aggregation still ranges over switchings, but only a small covering set of
-    # them is actually evaluated: one arbitrary reference switching, plus, for each
-    # blob, every switching that differs from the reference inside that blob alone.
-    # That is 1 + sum_b 2**r_b switchings instead of the prod_b 2**r_b that exist,
-    # where r_b is the number of reticulations in blob b.
-    #
-    # Those switchings cover the rest because the stretch of a leaf-to-leaf path inside
-    # a blob changes only when that blob's own hybrid choices change. Each evaluated
-    # switching therefore exposes a single blob's contribution in isolation, as its
-    # difference from the reference, and *any* switching's distance matrix equals the
-    # reference plus the sum of the relevant per-blob differences. The aggregate over
-    # all switchings then follows without visiting them: each mode aggregates one
-    # blob's differences at a time -- elementwise minimum, maximum or gamma-weighted
-    # mean -- and the per-blob results are summed onto the reference. Minimum and
-    # maximum are valid here for the same reason the mean is: blobs are switched
+    # Only the covering set of switchings in _BlobSwitchings is evaluated: a reference
+    # plus each blob's local switchings. Any switching's distance matrix equals the
+    # reference matrix plus one independent difference per blob, so each mode
+    # aggregates one blob's differences at a time -- elementwise minimum, maximum or
+    # gamma-weighted mean -- and sums the per-blob results onto the reference. Minimum
+    # and maximum are valid here for the same reason the mean is: blobs are switched
     # independently, and a sum of independently chosen terms is optimised term by term.
-    #
-    # The work is therefore exponential in the network's level rather than in its total
-    # number of reticulations. A network with 20 reticulations spread over 10 level-2
-    # blobs evaluates 41 switchings instead of 2**20. For a single-blob (level-r)
-    # network the covering set is every switching and nothing is saved.
-    hybrid_parent_edges: dict[Any, list[tuple[Any, Any, int]]] = {
-        hybrid: list(network.incident_parent_edges(hybrid, keys=True))
-        for hybrid in network.hybrid_nodes
-    }
-    reference = {hybrid: edges[0] for hybrid, edges in hybrid_parent_edges.items()}
+    plan = _BlobSwitchings(network)
+    branch_lengths = _branch_lengths(network)
     # ``base`` stays fixed: every per-blob difference is measured against this one
     # reference switching, while ``result`` accumulates them.
-    base = _switching_matrix_for_choices(network, all_taxa, hybrid_parent_edges, reference)
+    base = _switching_distance_matrix(network, all_taxa, plan, plan.reference, branch_lengths)
     result = base.copy()
 
-    for group in _hybrid_blob_groups(network):
-        group_edges = [hybrid_parent_edges[hybrid] for hybrid in group]
+    for index in range(len(plan.groups)):
         # Accumulated per element, never stacked: a blob with r reticulations has 2**r
         # local switchings, and holding that many n x n matrices at once is not viable.
         aggregate: np.ndarray | None = None
         weight_sum = 0.0
-        for combination in itertools.product(*group_edges):
-            choices = dict(reference)
-            choices.update(zip(group, combination))
+        for choices, weight in plan.local_switchings(index):
             delta = (
-                _switching_matrix_for_choices(network, all_taxa, hybrid_parent_edges, choices)
-                - base
+                _switching_distance_matrix(network, all_taxa, plan, choices, branch_lengths) - base
             )
             if mode == "shortest":
                 aggregate = delta if aggregate is None else np.minimum(aggregate, delta)
             elif mode == "longest":
                 aggregate = delta if aggregate is None else np.maximum(aggregate, delta)
             else:
-                weight = 1.0
-                for hybrid, edge in zip(group, combination):
-                    weight *= _hybrid_edge_weight(
-                        network, hybrid, edge, len(hybrid_parent_edges[hybrid])
-                    )
                 weight_sum += weight
                 delta *= weight
                 aggregate = delta if aggregate is None else aggregate + delta
@@ -1150,28 +1295,50 @@ def displayed_splits(network: SemiDirectedPhyNetwork) -> WeightedSplitSystem:
     # Handle empty networks
     if network.number_of_nodes() == 0:
         return WeightedSplitSystem()
-
-    # Collect splits with their weights
-    split_weights: dict[Split, float] = {}
-
-    # Iterate through all displayed trees with probabilities
-    for displayed_tree in displayed_trees(network, probability=True):
-        # Get probability of this displayed tree
-        prob = displayed_tree.get_network_attribute("probability")
-        if prob is None:
-            prob = 1.0
-
-        # Get induced splits from this displayed tree
-        tree_splits = induced_splits(displayed_tree)
-
-        # Add each split with its weight (accumulate if split already exists)
-        for split in tree_splits.splits:
-            split_weights[split] = split_weights.get(split, 0.0) + prob
-
-    # Create weighted split system
-    if not split_weights:
+    all_taxa = frozenset(network.taxa)
+    if len(all_taxa) < 2:
         return WeightedSplitSystem()
 
+    # Only the covering set of switchings in _BlobSwitchings is evaluated. A displayed
+    # tree's splits are induced by its edges, and each edge is either a cut edge of the
+    # network -- in every displayed tree, always the same split, so it carries the whole
+    # gamma mass -- or lies inside one blob, so its split depends only on that blob's
+    # switching and its weight is a sum over that blob's local switchings alone, times
+    # the mass of every other blob.
+    #
+    # Two details keep the weights identical to summing over displayed trees. A path
+    # of degree-2 nodes created by a switching can make a blob edge repeat an adjacent
+    # cut edge's split, and a displayed tree counts each split once, so blob splits
+    # equal to a cut-edge split are dropped. And the masses are the raw gamma
+    # products, not normalised, exactly as the displayed-tree probabilities were.
+    node_to_blob: dict[Any, int] = {}
+    for index, blob in enumerate(blobs(network, trivial=True, leaves=True)):
+        for node in blob:
+            node_to_blob[node] = index
+
+    plan = _BlobSwitchings(network)
+    split_weights: dict[Split, float] = {}
+    cut_splits, _ = _switching_splits_by_blob(
+        network, plan.removed_edges(plan.reference), node_to_blob, all_taxa
+    )
+    total_mass = plan.total_mass
+    for split in cut_splits:
+        split_weights[split] = total_mass
+
+    for index, group in enumerate(plan.groups):
+        blob_id = node_to_blob[group[0]]
+        other_mass = plan.other_mass(index)
+        for choices, weight in plan.local_switchings(index):
+            _, blob_splits = _switching_splits_by_blob(
+                network, plan.removed_edges(choices), node_to_blob, all_taxa, only_blob=blob_id
+            )
+            for split in blob_splits.get(blob_id, ()):
+                if split in cut_splits:
+                    continue
+                split_weights[split] = split_weights.get(split, 0.0) + weight * other_mass
+
+    if not split_weights:
+        return WeightedSplitSystem()
     return WeightedSplitSystem(split_weights)
 
 
