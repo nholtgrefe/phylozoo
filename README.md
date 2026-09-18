@@ -52,7 +52,7 @@ print(pz.dnetwork.classifications.level(network))  # 1
 network.save("my_network.enewick")               # ((A,(B,(C)#H1)),(D,#H1));
 
 # Draw it as text (no matplotlib needed)
-network.pretty_print()
+network.preview()
 #         ┌───────────────────────● A
 #         │
 # ┌───────●       ┌───────────────● B

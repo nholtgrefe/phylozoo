@@ -495,11 +495,11 @@ underlying graph structure but is a separate instance.
 Text Drawing
 ------------
 
-:meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.pretty_print` draws
+:meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.preview` draws
 the network as text. The network is rooted first (automatically, or at ``root_location``) and drawn
 root-left / leaves-right with the ``pz-cladogram`` placement. It needs no extra dependencies (not
 even ``phylozoo[viz]``).
-:meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.to_pretty_print` returns
+:meth:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork.to_preview_string` returns
 the drawing as a string.
 
 .. code-block:: python
@@ -509,7 +509,7 @@ the drawing as a string.
        undirected_edges=[(5, 3), (5, 6), (6, 7), (4, 8), (8, 1), (8, 2)],
        nodes=[(3, {'label': 'C'}), (7, {'label': 'D'}), (1, {'label': 'A'}), (2, {'label': 'B'})],
    )
-   network.pretty_print()
+   network.preview()
 
 .. code-block:: text
 
@@ -522,7 +522,7 @@ the drawing as a string.
            └───────────────────────● D
 
 Solid lines are tree edges, dotted lines with an arrowhead are hybrid edges, ``◆`` is a hybrid
-node and ``○`` the chosen root. See :func:`phylozoo.viz.to_pretty_print` for the options.
+node and ``○`` the chosen root. See :func:`phylozoo.viz.to_preview_string` for the options.
 
 Visualization
 -------------

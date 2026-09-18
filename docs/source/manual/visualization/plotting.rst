@@ -45,8 +45,8 @@ layout-specific parameters go in ``**kwargs``:
 
 .. code-block:: python
 
-   plot(dnet)                                                # default: pz-cladogram
-   plot(dnet, layout='pz-cladogram', rectangular=True)
+   plot(dnet)                                                # default: pz-cladogram (rectangular)
+   plot(dnet, layout='pz-cladogram', rectangular=False)      # straight edges
    plot(dnet, layout='pz-layered', direction='LR')
    plot(sdnet)                                               # default: pz-unrooted
    plot(sdnet, layout='pz-unrooted', daylight=8, refine=0)
@@ -73,15 +73,15 @@ for both classes. These are the recommended layouts and the defaults.
   - ``seed`` (int or None, default 0) — Random seed for the restarts;
   - ``direction`` (str, default ``'TD'``) — ``'TD'`` (root at the top) or ``'LR'`` (root on the left);
   - ``align_leaves`` (bool, default True) — Put all leaves on the bottom layer;
-  - ``rectangular`` (bool, default False) — Draw edges as orthogonal elbows (backbone edges along the parent's layer
-    and then into the child, reticulate edges entering the hybrid sideways along its layer);
+  - ``rectangular`` (bool, default True) — Draw edges as orthogonal elbows (backbone edges along the parent's layer
+    and then into the child, reticulate edges entering the hybrid sideways along its layer); ``False`` gives straight lines;
   - ``horizontal_reticulations`` (bool or None, default None) — Lower the parent of every reticulate edge onto the
     hybrid's layer where the network allows it, so that edge is a single horizontal segment. ``None`` means on for
     ``rectangular`` drawings and off otherwise;
   - ``x_scale`` / ``y_scale`` (float, default 1.0) — Scaling factors for the coordinates.
 
-  Recommended: ``plot(net)`` for a cladogram-style picture, ``plot(net, rectangular=True)`` for the classic
-  rectangular network drawing, ``plot(net, direction='LR')`` with horizontal leaf labels for long taxon names.
+  Recommended: ``plot(net)`` for the classic rectangular network drawing, ``plot(net, rectangular=False)`` for
+  straight edges, ``plot(net, direction='LR')`` with horizontal leaf labels for long taxon names.
 * **pz-layered** (:class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` only) — Self-contained layered
   (Sugiyama) layout in the spirit of Graphviz ``dot``: longest-path layers, edges spanning several layers routed
   through bend points, layer-by-layer barycenter sweeps with adjacent swaps to reduce crossings, and a coordinate
@@ -157,12 +157,12 @@ layouts, with ``spring`` as the default.
 Text Drawings
 -------------
 
-:func:`~phylozoo.viz.to_pretty_print` (also available as the ``to_pretty_print()`` and ``pretty_print()`` methods of both
+:func:`~phylozoo.viz.to_preview_string` (also available as the ``to_preview_string()`` and ``preview()`` methods of both
 network classes) draws a network as text, root on the left and leaves on the right, without matplotlib:
 
 .. code-block:: python
 
-   >>> net.pretty_print()
+   >>> net.preview()
            ┌───────────────● B
    ┌───────●
    ○       └┄┄┄┄┄┄>◆───────● A
