@@ -86,3 +86,26 @@ class TestDefaultStyles:
 
         assert isinstance(style, DNetStyle)
         assert style.node_color == "white"
+
+
+class TestLabelPlacement:
+    """Fixed-rotation labels sit beside the node on its outward side."""
+
+    def test_fixed_rotation_alignment(self) -> None:
+        """Rightward direction -> left-aligned, vertically centred; downward -> centred, top."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        from phylozoo.viz._render import draw_label
+
+        _, ax = plt.subplots()
+        style = DNetStyle(label_rotation=0.0)
+        right = draw_label(ax, (1.0, 0.0), "x", style, anchor=(0.0, 0.0), rotation=0.0)
+        assert (right.get_ha(), right.get_va()) == ("left", "center")
+        down = draw_label(ax, (0.0, -1.0), "x", style, anchor=(0.0, 0.0), rotation=0.0)
+        assert (down.get_ha(), down.get_va()) == ("center", "top")
+        auto = draw_label(ax, (1.0, 0.0), "x", style, anchor=(0.0, 0.0), rotation=None)
+        assert (auto.get_ha(), auto.get_va()) == ("left", "center")
+        plt.close("all")

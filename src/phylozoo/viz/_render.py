@@ -264,7 +264,9 @@ def draw_label(
     rotation : float | None, optional
         Label rotation in degrees. None means auto: the label continues the
         line from the reference point through the node, reading outward, so
-        a leaf label extends its pendant edge. By default None.
+        a leaf label extends its pendant edge. A fixed value places the label
+        beside the node on its outward side (left/right, or above/below for
+        near-vertical directions). By default None.
     direction : tuple[float, float] | None, optional
         Explicit (dx, dy) direction in which to place the label. Takes
         precedence over anchor and center. By default None.
@@ -312,9 +314,14 @@ def draw_label(
             ha = "right"
         va = "center"
     else:
+        # Fixed rotation: put the label beside the node on its outward side, so a
+        # horizontal label reads "node  label" (or "label  node") rather than
+        # hanging off a corner and crossing the edge.
         angle_deg = rotation
-        ha = "center" if abs(ux) < 1e-6 else ("left" if ux > 0 else "right")
-        va = "center" if abs(uy) < 1e-6 else ("bottom" if uy > 0 else "top")
+        if abs(ux) < 0.35:
+            ha, va = "center", ("bottom" if uy > 0 else "top")
+        else:
+            ha, va = ("left" if ux > 0 else "right"), "center"
 
     return ax.text(
         x + ux * style.label_offset,
