@@ -30,6 +30,7 @@ document parsing) is shared with the mixed-multigraph formats and lives in
 :mod:`phylozoo.utils.io.format_utils.dot`.
 
 DOT format supports:
+
 - Node attributes (label, shape, color, etc.)
 - Edge attributes (label, weight, color, etc.)
 - Graph attributes
@@ -37,6 +38,7 @@ DOT format supports:
   also written for a non-parallel edge whose key is not 0 so that keys round-trip
 
 Edge-list format:
+
 - Simple text format: one edge per line
 - Format: `u v` or `u v key` or `u v key attr1=value1 attr2=value2`
 - Uses node_id as the label/name
