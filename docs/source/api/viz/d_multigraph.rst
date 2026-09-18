@@ -9,6 +9,11 @@ Plotting
 
 .. autofunction:: phylozoo.viz.d_multigraph.plot_dmgraph
 
+Layouts
+^^^^^^^
+
+.. autofunction:: phylozoo.viz.d_multigraph.layout.nx.compute_nx_layout
+
 Styling
 ^^^^^^^^
 

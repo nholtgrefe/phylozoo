@@ -35,11 +35,10 @@ def compute_nx_layout(
     graph : DirectedMultiGraph
         The graph to layout.
     layout : str, optional
-        Layout algorithm name. Supported values:
-        - NetworkX: 'spring', 'circular', 'kamada_kawai', 'planar', 'random',
-          'shell', 'spectral', 'spiral', 'bipartite'
-        - Graphviz: 'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'
-        By default 'spring'.
+        Layout algorithm name. NetworkX: 'spring', 'circular', 'kamada_kawai',
+        'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite'.
+        Graphviz (needs pygraphviz): 'dot', 'neato', 'fdp', 'sfdp', 'twopi',
+        'circo'. By default 'spring'.
     **kwargs
         Additional parameters passed to the layout algorithm.
 

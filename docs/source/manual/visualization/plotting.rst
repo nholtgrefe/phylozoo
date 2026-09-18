@@ -57,9 +57,12 @@ PhyloZoo layouts
 
 Four layouts designed for phylogenetic networks, all deterministic and needing nothing beyond
 ``phylozoo[viz]``: two rooted, layered ones for directed networks and two unrooted-style ones available
-for both classes. These are the recommended layouts and the defaults.
+for both classes. These are the recommended layouts and the defaults. Each is implemented by a
+``compute_pz_*_layout`` function (linked below and listed in the :doc:`viz API reference <../../api/viz/index>`)
+that can also be called directly to obtain node positions and edge routes without drawing.
 
-* **pz-cladogram** (:class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` only; default) — Layered drawing
+* **pz-cladogram** (:func:`~phylozoo.viz.dnetwork.layout.cladogram.compute_pz_cladogram_layout`;
+  :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` only; default) — Layered drawing
   with a tree backbone. Every node hangs below its lowest parent; the other parent edges of hybrid nodes are drawn as
   reticulate edges. Siblings are ordered by a hybrid-aware barycenter heuristic followed by a local search on the
   exact number of edge crossings, so sibling subtrees stay contiguous and reticulate edges stay short. Arrowheads are
@@ -82,7 +85,8 @@ for both classes. These are the recommended layouts and the defaults.
 
   Recommended: ``plot(net)`` for the classic rectangular network drawing, ``plot(net, rectangular=False)`` for
   straight edges, ``plot(net, direction='LR')`` with horizontal leaf labels for long taxon names.
-* **pz-layered** (:class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` only) — Self-contained layered
+* **pz-layered** (:func:`~phylozoo.viz.dnetwork.layout.layered.compute_pz_layered_layout`;
+  :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` only) — Self-contained layered
   (Sugiyama) layout in the spirit of Graphviz ``dot``: longest-path layers, edges spanning several layers routed
   through bend points, layer-by-layer barycenter sweeps with adjacent swaps to reduce crossings, and a coordinate
   pass that straightens edges. Nodes of a layer are ordered freely (no tree backbone), which gives fewer crossings on
@@ -100,7 +104,9 @@ for both classes. These are the recommended layouts and the defaults.
   - ``x_scale`` / ``y_scale`` (float, default 1.0) — Scaling factors for the coordinates.
 
   Recommended for networks with many reticulations where ``pz-cladogram`` shows long crossing reticulate edges.
-* **pz-radial** (both classes) — Circular cladogram, as in the radial network view of Dendroscope: root at the
+* **pz-radial** (:func:`~phylozoo.viz.dnetwork.layout.radial.compute_pz_radial_layout` /
+  :func:`~phylozoo.viz.sdnetwork.layout.radial.compute_pz_radial_layout`; both classes) — Circular cladogram,
+  as in the radial network view of Dendroscope: root at the
   centre, leaves evenly spaced on the outer circle, a node's radius given by its layer and its angle by the mean of
   its children. The tree backbone and the leaf order come from the ``pz-cladogram`` computation, so reticulate edges
   (straight chords) are kept short. A semi-directed network is rooted first with
@@ -112,7 +118,8 @@ for both classes. These are the recommended layouts and the defaults.
   - ``angle_direction`` (str, default ``'clockwise'``) — ``'clockwise'`` or ``'counterclockwise'``;
   - ``root_location`` (semi-directed only; node or edge, default None) — Where to root the network;
   - ``trials`` / ``seed`` — Ordering options of ``pz-cladogram``.
-* **pz-unrooted** (both classes; default for
+* **pz-unrooted** (:func:`~phylozoo.viz.dnetwork.layout.unrooted.compute_pz_unrooted_layout` /
+  :func:`~phylozoo.viz.sdnetwork.layout.unrooted.compute_pz_unrooted_layout`; both classes; default for
   :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`) — Unrooted tree-of-blobs
   layout. The network is decomposed into blobs; the tree obtained by contracting them is drawn with the equal-angle
   algorithm (rooted at its centroid), and each blob is drawn as a regular polygon whose outer cycle comes from a
@@ -152,7 +159,8 @@ way, with Graphviz attributes passed through ``args``. Several PhyloZoo layouts 
 are tuned to phylogenetic networks, so for networks the PhyloZoo layouts are the better choice. The generic
 layouts are mainly there for plotting :class:`~phylozoo.core.primitives.d_multigraph.base.DirectedMultiGraph`
 and :class:`~phylozoo.core.primitives.m_multigraph.base.MixedMultiGraph`, for which they are the only
-layouts, with ``spring`` as the default.
+layouts, with ``spring`` as the default. They are computed by the ``compute_nx_layout`` function of each
+:doc:`viz subpackage <../../api/viz/index>`.
 
 Text Drawings
 -------------
@@ -198,4 +206,5 @@ See Also
 --------
 
 - :doc:`Styling <styling>` — Colors, sizes, and appearance
+- :doc:`viz API reference <../../api/viz/index>` — Full signatures of :func:`~phylozoo.viz.plot`, every layout function and the style classes
 - :doc:`Tutorial: Plotting Networks <../../tutorials/visualization>` — End-to-end example with every layout, styling and saving

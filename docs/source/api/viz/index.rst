@@ -12,6 +12,11 @@ Plotting
 
 .. autofunction:: phylozoo.viz.plot
 
+Terminal preview
+^^^^^^^^^^^^^^^^
+
+.. autofunction:: phylozoo.viz.to_preview_string
+
 Submodules
 ^^^^^^^^^^
 
