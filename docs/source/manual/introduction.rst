@@ -74,7 +74,7 @@ see the corresponding sections in this manual:
      with customizable layouts and styling using Matplotlib. See :doc:`Plotting <visualization/plotting>` 
      for details.
    
-   * **Layout Algorithms**: Custom PhyloZoo layouts (pz-dag, pz-radial) and access to 
+   * **Layout Algorithms**: Custom PhyloZoo layouts (pz-cladogram, pz-radial) and access to 
      standard NetworkX and Graphviz layouts for various visualization needs. See 
      :doc:`Plotting <visualization/plotting>` for layout options.
 
