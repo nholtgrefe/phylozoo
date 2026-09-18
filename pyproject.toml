@@ -38,10 +38,6 @@ dependencies = [
 viz = [
     "matplotlib>=3.5.0",
 ]
-graphviz = [
-    "matplotlib>=3.5.0",
-    "pygraphviz",
-]
 test = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",

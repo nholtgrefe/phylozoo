@@ -51,6 +51,16 @@ print(pz.dnetwork.classifications.level(network))  # 1
 # Save network to file (eNewick format)
 network.save("my_network.enewick")               # ((A,(B,(C)#H1)),(D,#H1));
 
+# Draw it as text (no matplotlib needed)
+network.pretty_print()
+# ┌───────────────────────●───────● D
+# │                       v
+# ○               ┌┄┄┄┄┄┄>◆───────● C
+# │       ┌───────●
+# └───────●       └───────────────● B
+#         │
+#         └───────────────────────● A
+
 # Plot the network
 from phylozoo.viz import plot
 
