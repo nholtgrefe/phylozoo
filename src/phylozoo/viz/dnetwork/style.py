@@ -21,16 +21,14 @@ class DNetStyle(DMGraphStyle):
     This class extends DMGraphStyle with DirectedPhyNetwork-specific options,
     including support for leaves, hybrid nodes, and hybrid edges.
 
-    Attributes
-    ----------
-    arrows : str | None
-        Which edges get an arrowhead: ``'all'``, ``'hybrid'`` (only edges into
-        hybrid nodes) or ``'none'``. ``None`` (default) chooses ``'hybrid'`` for
-        the layered ``pz-cladogram`` layout, where the direction is implied by the
-        drawing, and ``'all'`` for other layouts.
-    label_rotation : float | None
-        ``None`` (default) aligns each label with the direction of its edge;
-        a float applies that fixed rotation (in degrees) to all labels.
+    Notes
+    -----
+    ``arrows`` selects which edges get an arrowhead: ``'all'``, ``'hybrid'``
+    (only edges into hybrid nodes) or ``'none'``; ``None`` (default) chooses
+    ``'hybrid'`` for the layered and radial layouts, where the direction is
+    implied by the drawing, and ``'all'`` otherwise. ``label_rotation`` of
+    ``None`` (default) aligns each label with the direction of its edge; a
+    float applies that fixed rotation (in degrees) to all labels.
 
     Examples
     --------

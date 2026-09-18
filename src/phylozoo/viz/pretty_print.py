@@ -1,5 +1,5 @@
 """
-Text (ASCII-art) drawings of phylogenetic networks.
+Pretty-printing: text drawings of phylogenetic networks.
 
 A network is drawn root-left / leaves-right on a character grid, using the
 rectangular ``pz-cladogram`` placement: tree edges as box-drawing lines, hybrid
@@ -50,7 +50,7 @@ _ROOT, _NODE, _HYBRID, _LEAF = "○", "●", "◆", "●"
 _HEADS = {"E": ">", "W": "<", "S": "v", "N": "^"}
 
 
-def to_ascii(
+def to_pretty_print(
     network: "DirectedPhyNetwork | SemiDirectedPhyNetwork",
     col_width: int | None = None,
     rows_per_leaf: int | None = None,
@@ -115,12 +115,12 @@ def to_ascii(
     Examples
     --------
     >>> from phylozoo import DirectedPhyNetwork
-    >>> from phylozoo.viz import to_ascii
+    >>> from phylozoo.viz import to_pretty_print
     >>> net = DirectedPhyNetwork(
     ...     edges=[(5, 3), (5, 4), (3, 2), (4, 2), (2, 1), (3, 6), (4, 7)],
     ...     nodes=[(1, {'label': 'A'}), (6, {'label': 'B'}), (7, {'label': 'C'})]
     ... )
-    >>> print(to_ascii(net))
+    >>> print(to_pretty_print(net))
     ┌───────────────●───────● C
     │               v
     ○       ┌┄┄┄┄┄┄>◆───────● A
@@ -143,7 +143,7 @@ def to_ascii(
             rooted = to_d_network(network, root_location=root_location)
     else:
         raise PhyloZooTypeError(
-            f"to_ascii expects a DirectedPhyNetwork or SemiDirectedPhyNetwork, got {type(network).__name__}"
+            f"to_pretty_print expects a DirectedPhyNetwork or SemiDirectedPhyNetwork, got {type(network).__name__}"
         )
     if rooted.number_of_nodes() <= 1:
         return _tiny(rooted)

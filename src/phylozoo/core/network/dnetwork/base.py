@@ -1525,19 +1525,19 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         new_net._label_to_node = self._label_to_node.copy()
         return new_net
 
-    def to_ascii(self, **kwargs: Any) -> str:
+    def to_pretty_print(self, **kwargs: Any) -> str:
         """
         Draw the network as text (root left, leaves right).
 
         Tree edges are box-drawing lines, hybrid edges dotted lines with an
         arrowhead at the hybrid node (``◆``); see
-        :func:`phylozoo.viz.to_ascii` for the options (``max_width``,
+        :func:`phylozoo.viz.to_pretty_print` for the options (``max_width``,
         ``max_leaves``, ``col_width``, ``rows_per_leaf``).
 
         Parameters
         ----------
         **kwargs
-            Passed to :func:`phylozoo.viz.to_ascii`.
+            Passed to :func:`phylozoo.viz.to_pretty_print`.
 
         Returns
         -------
@@ -1550,20 +1550,20 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         ...     edges=[(3, 1), (3, 2)],
         ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         ... )
-        >>> print(net.to_ascii())  # doctest: +SKIP
+        >>> print(net.to_pretty_print())  # doctest: +SKIP
         """
-        from phylozoo.viz.ascii import to_ascii
+        from phylozoo.viz.pretty_print import to_pretty_print
 
-        return to_ascii(self, **kwargs)
+        return to_pretty_print(self, **kwargs)
 
-    def print_ascii(self, **kwargs: Any) -> None:
+    def pretty_print(self, **kwargs: Any) -> None:
         """
-        Print the text drawing of the network; see :meth:`to_ascii`.
+        Print the text drawing of the network; see :meth:`to_pretty_print`.
 
         Parameters
         ----------
         **kwargs
-            Passed to :func:`phylozoo.viz.to_ascii`.
+            Passed to :func:`phylozoo.viz.to_pretty_print`.
 
         Examples
         --------
@@ -1571,9 +1571,9 @@ class DirectedPhyNetwork(IOMixin, Generic[T]):
         ...     edges=[(3, 1), (3, 2)],
         ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
         ... )
-        >>> net.print_ascii()  # doctest: +SKIP
+        >>> net.pretty_print()  # doctest: +SKIP
         """
-        print(self.to_ascii(**kwargs))
+        print(self.to_pretty_print(**kwargs))
 
     def __repr__(self) -> str:
         """
