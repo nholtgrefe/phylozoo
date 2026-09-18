@@ -515,6 +515,42 @@ underlying graph structure but is a separate instance.
    for details.
 
 
+Text Drawing
+------------
+
+:meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.pretty_print` draws the network as
+text, root on the left and leaves on the right. It uses the ``pz-cladogram`` placement and needs no
+extra dependencies (not even ``phylozoo[viz]``), so it is handy in a terminal, a log or a test.
+:meth:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork.to_pretty_print` returns the same drawing
+as a string.
+
+.. code-block:: python
+
+   network = DirectedPhyNetwork(
+       edges=[
+           ("root", "u1"), ("root", "u2"),
+           ("u1", "A"), ("u1", "x"), ("x", "B"),
+           ("x", "h"), ("u2", "h"),
+           ("u2", "D"), ("h", "C"),
+       ],
+   )
+   network.pretty_print()
+
+.. code-block:: text
+
+   ┌───────────────────────●───────● D
+   │                       v
+   ○               ┌┄┄┄┄┄┄>◆───────● C
+   │       ┌───────●
+   └───────●       └───────────────● B
+           │
+           └───────────────────────● A
+
+Solid lines are tree edges, dotted lines with an arrowhead are hybrid edges, ``◆`` is a hybrid
+node and ``○`` the root. Large networks are compacted automatically; see
+:func:`phylozoo.viz.to_pretty_print` for the options (``max_width``, ``max_leaves``, ``col_width``,
+``rows_per_leaf``).
+
 Visualization
 -------------
 
@@ -532,7 +568,7 @@ visualization system supports multiple layout algorithms and styling options.
 
    from phylozoo.viz import plot
    
-   # Plot network with default rectangular layout
+   # Plot network with the default pz-cladogram layout
    plot(network)
 
 For more visualization options, including different layout types,
