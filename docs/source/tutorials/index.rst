@@ -7,5 +7,5 @@ Extended tutorials for using PhyloZoo.
    :maxdepth: 2
    
    quickstart
-   visualization_sdnetwork
+   visualization
    indistinguishable_networks

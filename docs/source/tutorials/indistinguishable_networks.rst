@@ -182,4 +182,4 @@ See Also
 --------
 
 - :doc:`Plotting manual <../manual/visualization/plotting>` — plotting and layout options
-- :doc:`Tutorial: Plotting a Semi-Directed Network <visualization_sdnetwork>` — visualization example
+- :doc:`Tutorial: Plotting Networks <visualization>` — visualization example

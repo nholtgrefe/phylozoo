@@ -68,7 +68,8 @@ for both classes. These are the recommended layouts and the defaults.
 
   - ``layer_gap`` (float, default 1.0) — Spacing between layers;
   - ``leaf_gap`` (float, default 1.0) — Spacing between consecutive leaves;
-  - ``trials`` (int, default 5) — Number of ordering attempts (the first from the node order, the rest from random orders);
+  - ``trials`` (int, default 10) — Number of ordering attempts (the first from the node order, the rest from random orders
+    of the crossing-relevant nodes; trees need only one);
   - ``seed`` (int or None, default 0) — Random seed for the restarts;
   - ``direction`` (str, default ``'TD'``) — ``'TD'`` (root at the top) or ``'LR'`` (root on the left);
   - ``align_leaves`` (bool, default True) — Put all leaves on the bottom layer;
@@ -162,11 +163,11 @@ network classes) draws a network as text, root on the left and leaves on the rig
 .. code-block:: python
 
    >>> net.pretty_print()
-   ┌───────────────●───────● C
-   │               v
-   ○       ┊┄┄┄┄┄┄>◆───────● A
-   └───────●
-           └───────────────● B
+           ┌───────────────● B
+   ┌───────●
+   ○       └┄┄┄┄┄┄>◆───────● A
+   │               ^
+   └───────────────●───────● C
 
 Tree edges are box-drawing lines, hybrid edges dotted lines ending in an arrowhead at the hybrid node ``◆``;
 ``○`` is the root, ``●`` any other node; ``┼`` marks a hybrid edge crossing a tree edge. The placement is that of
@@ -197,4 +198,4 @@ See Also
 --------
 
 - :doc:`Styling <styling>` — Colors, sizes, and appearance
-- :doc:`Tutorial: Plotting a Semi-Directed Network <../../tutorials/visualization_sdnetwork>` — End-to-end example with layout and style customisation
+- :doc:`Tutorial: Plotting Networks <../../tutorials/visualization>` — End-to-end example with every layout, styling and saving

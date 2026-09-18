@@ -22,4 +22,4 @@ See Also
 --------
 
 - :doc:`API reference <../../api/viz/index>` — Complete function signatures and detailed examples
-- :doc:`Tutorial: Plotting a Semi-Directed Network <../../tutorials/visualization_sdnetwork>` — End-to-end example with layout and style customisation
+- :doc:`Tutorial: Plotting Networks <../../tutorials/visualization>` — End-to-end example with every layout, styling and saving

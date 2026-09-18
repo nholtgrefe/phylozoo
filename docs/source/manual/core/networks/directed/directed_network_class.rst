@@ -538,13 +538,13 @@ as a string.
 
 .. code-block:: text
 
-   ┌───────────────────────●───────● D
-   │                       v
-   ○               ┌┄┄┄┄┄┄>◆───────● C
-   │       ┌───────●
-   └───────●       └───────────────● B
+           ┌───────────────────────● A
            │
-           └───────────────────────● A
+   ┌───────●       ┌───────────────● B
+   │       └───────●
+   ○               └┄┄┄┄┄┄>◆───────● C
+   │                       ^
+   └───────────────────────●───────● D
 
 Solid lines are tree edges, dotted lines with an arrowhead are hybrid edges, ``◆`` is a hybrid
 node and ``○`` the root. Large networks are compacted automatically; see
