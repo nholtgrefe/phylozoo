@@ -46,7 +46,7 @@ def plot_dnetwork(
         The network to plot.
     layout : str, optional
         Layout algorithm. PhyloZoo: 'pz-cladogram' (layered with a tree backbone;
-        ``rectangular=True`` for elbow edges), 'pz-layered' (layered, dot-like),
+        ``rectangular=False`` for straight edges), 'pz-layered' (layered, dot-like),
         'pz-radial' (circular cladogram) or 'pz-unrooted' (unrooted tree of blobs).
         NetworkX: 'spring', 'circular',
         'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite'.

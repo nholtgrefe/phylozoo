@@ -511,19 +511,19 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         new_net._label_to_node = self._label_to_node.copy()
         return new_net
 
-    def to_pretty_print(self, **kwargs: Any) -> str:
+    def to_preview_string(self, **kwargs: Any) -> str:
         """
         Draw the network as text (root left, leaves right).
 
         Tree edges are box-drawing lines, hybrid edges dotted lines with an
         arrowhead at the hybrid node (``◆``); see
-        :func:`phylozoo.viz.to_pretty_print` for the options (``max_width``,
+        :func:`phylozoo.viz.to_preview_string` for the options (``max_width``,
         ``max_leaves``, ``col_width``, ``rows_per_leaf``, ``root_location``).
 
         Parameters
         ----------
         **kwargs
-            Passed to :func:`phylozoo.viz.to_pretty_print`.
+            Passed to :func:`phylozoo.viz.to_preview_string`.
 
         Returns
         -------
@@ -536,20 +536,20 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
         ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
         ... )
-        >>> print(net.to_pretty_print())  # doctest: +SKIP
+        >>> print(net.to_preview_string())  # doctest: +SKIP
         """
-        from phylozoo.viz.pretty_print import to_pretty_print
+        from phylozoo.viz.preview import to_preview_string
 
-        return to_pretty_print(self, **kwargs)
+        return to_preview_string(self, **kwargs)
 
-    def pretty_print(self, **kwargs: Any) -> None:
+    def preview(self, **kwargs: Any) -> None:
         """
-        Print the text drawing of the network; see :meth:`to_pretty_print`.
+        Print the text drawing of the network; see :meth:`to_preview_string`.
 
         Parameters
         ----------
         **kwargs
-            Passed to :func:`phylozoo.viz.to_pretty_print`.
+            Passed to :func:`phylozoo.viz.to_preview_string`.
 
         Examples
         --------
@@ -557,9 +557,9 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
         ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
         ... )
-        >>> net.pretty_print()  # doctest: +SKIP
+        >>> net.preview()  # doctest: +SKIP
         """
-        print(self.to_pretty_print(**kwargs))
+        print(self.to_preview_string(**kwargs))
 
     def __repr__(self) -> str:
         """

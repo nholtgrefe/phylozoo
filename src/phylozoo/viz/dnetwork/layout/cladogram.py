@@ -48,7 +48,7 @@ def compute_pz_cladogram_layout(
     x_scale: float = 1.0,
     y_scale: float = 1.0,
     align_leaves: bool = True,
-    rectangular: bool = False,
+    rectangular: bool = True,
     horizontal_reticulations: bool | None = None,
 ) -> DNetLayout:
     """
@@ -98,9 +98,9 @@ def compute_pz_cladogram_layout(
     align_leaves : bool, optional
         Put all leaves on the bottom layer. By default True.
     rectangular : bool, optional
-        Draw edges as orthogonal elbows instead of straight lines: backbone
-        edges run along the parent's layer and then into the child, reticulate
-        edges enter the hybrid node sideways along its layer. By default False.
+        Draw edges as orthogonal elbows (backbone edges run along the parent's
+        layer and then into the child, reticulate edges enter the hybrid node
+        sideways along its layer); ``False`` draws straight lines. By default True.
     horizontal_reticulations : bool | None, optional
         Move the parent of every reticulate edge down to its hybrid's layer
         whenever the network allows it (its other descendants are pushed down

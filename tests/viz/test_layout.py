@@ -270,7 +270,7 @@ class TestCladogramRectangular:
             == compute_pz_cladogram_layout(net, horizontal_reticulations=True).positions
         )
         plain = compute_pz_cladogram_layout(net, rectangular=True, horizontal_reticulations=False)
-        assert plain.positions == compute_pz_cladogram_layout(net).positions
+        assert plain.positions == compute_pz_cladogram_layout(net, rectangular=False).positions
 
     def test_horizontal_reticulations(self) -> None:
         """Levelled reticulate edges are single horizontal segments; layering stays valid."""

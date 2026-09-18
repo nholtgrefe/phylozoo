@@ -1,5 +1,5 @@
 """
-Tests for the pretty-print (text drawing) of networks.
+Tests for the terminal preview (text drawing) of networks.
 """
 
 import os
@@ -11,7 +11,7 @@ import pytest
 
 from phylozoo.core.network.dnetwork import DirectedPhyNetwork
 from phylozoo.utils.exceptions import PhyloZooTypeError, PhyloZooValueError
-from phylozoo.viz import to_pretty_print
+from phylozoo.viz import to_preview_string
 from tests.fixtures import directed_networks, sd_networks
 from tests.fixtures.directed_networks import (
     DTREE_LARGE_BINARY,
@@ -31,7 +31,7 @@ HEADS = set("><v^")
 GLYPHS = set("─│┌┐└┘├┤┬┴┼┄┊><v^○●◆ ")
 
 
-class TestToAscii:
+class TestPreview:
     """Structural properties of the drawing."""
 
     def test_snapshot_single_hybrid(self) -> None:
@@ -49,7 +49,7 @@ class TestToAscii:
                 "└───────────────●───────● C",
             ]
         )
-        assert to_pretty_print(net) == expected
+        assert to_preview_string(net) == expected
 
     @pytest.mark.parametrize(
         "net",
@@ -57,7 +57,7 @@ class TestToAscii:
     )
     def test_counts(self, net: DirectedPhyNetwork) -> None:
         """One root, one glyph per node, every leaf label once, one arrowhead per hybrid edge."""
-        text = to_pretty_print(net)
+        text = to_preview_string(net)
         drawing = text.replace("\n", "")
         assert drawing.count("○") == 1
         assert drawing.count("◆") == len(net.hybrid_nodes)
@@ -71,20 +71,20 @@ class TestToAscii:
         from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_PARALLEL_EDGES
 
         net = LEVEL_1_DNETWORK_PARALLEL_EDGES
-        text = to_pretty_print(net)
+        text = to_preview_string(net)
         assert sum(text.count(h) for h in HEADS) == len(net.hybrid_edges)
         assert set("┌┐└┘") & set(text)  # the detour has corners
 
     def test_tree_has_no_dotted_lines(self) -> None:
         """A tree is drawn with solid lines only."""
-        text = to_pretty_print(DTREE_LARGE_BINARY)
+        text = to_preview_string(DTREE_LARGE_BINARY)
         assert not (set(text) & (DOTTED | HEADS))
         assert "┼" not in text
 
     def test_only_known_glyphs(self) -> None:
         """Apart from labels, the drawing uses the documented character set."""
         net = LEVEL_2_DNETWORK_MULTIPLE_BLOBS
-        text = to_pretty_print(net)
+        text = to_preview_string(net)
         labels = {net.get_label(leaf) for leaf in net.leaves}
         for line in text.splitlines():
             body = line
@@ -95,16 +95,16 @@ class TestToAscii:
     def test_one_row_per_leaf_when_compact(self) -> None:
         """rows_per_leaf=1 gives exactly one line per leaf; 2 gives twice as many minus one."""
         net = DTREE_LARGE_BINARY
-        assert len(to_pretty_print(net, rows_per_leaf=1).splitlines()) == len(net.leaves)
-        assert len(to_pretty_print(net, rows_per_leaf=2).splitlines()) == 2 * len(net.leaves) - 1
+        assert len(to_preview_string(net, rows_per_leaf=1).splitlines()) == len(net.leaves)
+        assert len(to_preview_string(net, rows_per_leaf=2).splitlines()) == 2 * len(net.leaves) - 1
 
     def test_auto_compaction(self) -> None:
         """Large networks get a narrower column width and no blank rows, and fit max_width."""
         net = LEVEL_3_DNETWORK_LARGE_MANY_HYBRIDS  # > 25 leaves
-        text = to_pretty_print(net, max_width=60)
+        text = to_preview_string(net, max_width=60)
         assert len(text.splitlines()) == len(net.leaves)
         assert max(len(line) for line in text.splitlines()) <= 60 + 3  # col_width floor of 3
-        wide = to_pretty_print(net, max_width=400)
+        wide = to_preview_string(net, max_width=400)
         assert max(len(line) for line in wide.splitlines()) > max(
             len(line) for line in text.splitlines()
         )
@@ -112,47 +112,47 @@ class TestToAscii:
     def test_too_many_leaves(self) -> None:
         """Networks above max_leaves are refused with a pointer to plot()."""
         with pytest.raises(PhyloZooValueError, match="max_leaves"):
-            to_pretty_print(DTREE_LARGE_BINARY, max_leaves=5)
-        assert to_pretty_print(DTREE_LARGE_BINARY, max_leaves=len(DTREE_LARGE_BINARY.leaves))
+            to_preview_string(DTREE_LARGE_BINARY, max_leaves=5)
+        assert to_preview_string(DTREE_LARGE_BINARY, max_leaves=len(DTREE_LARGE_BINARY.leaves))
 
     def test_deterministic(self) -> None:
         """Repeated calls give the same text."""
-        assert to_pretty_print(LEVEL_2_DNETWORK_MULTIPLE_BLOBS) == to_pretty_print(
+        assert to_preview_string(LEVEL_2_DNETWORK_MULTIPLE_BLOBS) == to_preview_string(
             LEVEL_2_DNETWORK_MULTIPLE_BLOBS
         )
 
     def test_semidirected(self) -> None:
         """Semi-directed networks are rooted and drawn; root_location is honoured."""
-        text = to_pretty_print(LEVEL_1_SDNETWORK_TWO_BLOBS)
+        text = to_preview_string(LEVEL_1_SDNETWORK_TWO_BLOBS)
         assert text.count("◆") == len(LEVEL_1_SDNETWORK_TWO_BLOBS.hybrid_nodes)
         node = next(iter(LEVEL_1_SDNETWORK_TWO_BLOBS.internal_nodes))
-        rooted = to_pretty_print(LEVEL_1_SDNETWORK_TWO_BLOBS, root_location=node)
+        rooted = to_preview_string(LEVEL_1_SDNETWORK_TWO_BLOBS, root_location=node)
         assert rooted.count("○") == 1
 
     def test_tiny_networks(self) -> None:
         """Empty and single-node networks do not crash."""
-        assert to_pretty_print(SDTREE_EMPTY) == ""
-        assert to_pretty_print(SDTREE_SINGLE_NODE) == "● A"
+        assert to_preview_string(SDTREE_EMPTY) == ""
+        assert to_preview_string(SDTREE_SINGLE_NODE) == "● A"
 
     def test_methods(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """to_pretty_print() / pretty_print() methods exist on both classes."""
+        """to_preview_string() / preview() methods exist on both classes."""
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
-        assert net.to_pretty_print() == to_pretty_print(net)
-        net.pretty_print()
-        assert capsys.readouterr().out == to_pretty_print(net) + "\n"
-        assert SDTREE_LARGE_BINARY.to_pretty_print() == to_pretty_print(SDTREE_LARGE_BINARY)
+        assert net.to_preview_string() == to_preview_string(net)
+        net.preview()
+        assert capsys.readouterr().out == to_preview_string(net) + "\n"
+        assert SDTREE_LARGE_BINARY.to_preview_string() == to_preview_string(SDTREE_LARGE_BINARY)
 
     def test_wrong_type(self) -> None:
         """Other objects are rejected."""
         with pytest.raises(PhyloZooTypeError):
-            to_pretty_print("not a network")  # type: ignore[arg-type]
+            to_preview_string("not a network")  # type: ignore[arg-type]
 
     def test_all_fixtures(self) -> None:
         """Every fixture draws without error and with the right hybrid count."""
         for module in (directed_networks, sd_networks):
             for name in module.NETWORK_METADATA:
                 net = getattr(module, name)
-                text = to_pretty_print(net, trials=1)
+                text = to_preview_string(net, trials=1)
                 if net.number_of_nodes() > 1:
                     assert text.count("◆") == len(net.hybrid_nodes), name
 
@@ -161,10 +161,10 @@ class TestToAscii:
         code = (
             "import sys; sys.modules['matplotlib'] = None\n"
             "from phylozoo import DirectedPhyNetwork\n"
-            "from phylozoo.viz import to_pretty_print\n"
+            "from phylozoo.viz import to_preview_string\n"
             "net = DirectedPhyNetwork(edges=[(3, 1), (3, 2)], "
             "nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})])\n"
-            "print(to_pretty_print(net))\n"
+            "print(to_preview_string(net))\n"
         )
         src = str(Path(__file__).resolve().parents[2] / "src")
         env = dict(os.environ, PYTHONPATH=src + os.pathsep + os.environ.get("PYTHONPATH", ""))
