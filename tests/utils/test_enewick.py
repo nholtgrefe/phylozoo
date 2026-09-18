@@ -232,10 +232,106 @@ class TestHybridNodes:
         hybrid_numbers = sorted(result.hybrid_nodes.values())
         assert hybrid_numbers == [1, 2]
 
-    def test_hybrid_reference_before_definition_error(self) -> None:
-        """Hybrid reference before definition should raise error."""
-        with pytest.raises(ENewickParseError, match="found before definition"):
-            parse_enewick("(#H1,(A,B)#H1);")
+    def test_hybrid_reference_before_definition(self) -> None:
+        """A bare #Hk may precede its definition; both orders give the same structure."""
+        first = parse_enewick("(#H1,(A,B)#H1);")
+        second = parse_enewick("((A,B)#H1,#H1);")
+        for result in (first, second):
+            (hybrid_id,) = result.hybrid_nodes
+            assert len([e for e in result.edges if e["v"] == hybrid_id]) == 2
+            assert sorted(e["v"] for e in result.edges if e["u"] == hybrid_id) == ["A", "B"]
+            assert len(result.nodes) == 4
+
+    def test_hybrid_reference_before_definition_network(self) -> None:
+        """Reference-first and definition-first strings load as isomorphic networks."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+        from phylozoo.core.network.dnetwork.isomorphism import is_isomorphic
+
+        ref_first = (
+            "(N,((C,((K,(F1,F2)),(D,(B,#H26)))),"
+            "(H,(J,(G,(A2,(A4,((A3,A1),(A6,(A6B)#H26)))))))));"
+        )
+        def_first = (
+            "(N,((C,((K,(F1,F2)),(D,(B,(A6B)#H26)))),"
+            "(H,(J,(G,(A2,(A4,((A3,A1),(A6,#H26)))))))));"
+        )
+        net_a = DirectedPhyNetwork.from_string(ref_first, format="enewick")
+        net_b = DirectedPhyNetwork.from_string(def_first, format="enewick")
+        assert len(net_a.hybrid_nodes) == 1
+        assert is_isomorphic(net_a, net_b)
+
+    def test_hybrid_label_and_attributes_after_reference(self) -> None:
+        """A definition that follows a bare reference supplies the label and comment."""
+        result = parse_enewick("(#H1,(A,B)X[note]#H1);")
+        (hybrid_id,) = result.hybrid_nodes
+        hybrid = next(n for n in result.nodes if n["id"] == hybrid_id)
+        assert hybrid["label"] == "X"
+        assert hybrid["comment"] == "note"
+        leaf = parse_enewick("((#H1,C),A#H1);")
+        (hybrid_id,) = leaf.hybrid_nodes
+        assert next(n for n in leaf.nodes if n["id"] == hybrid_id)["label"] == "A"
+
+    def test_edge_fields_length_support_gamma(self) -> None:
+        """``:length:support:gamma`` fields (Rich Newick) become edge attributes."""
+        result = parse_enewick("((A:0.5:0.9:0.3,B:0.2::0.7),C:1.0);")
+        edges = {e["v"]: e for e in result.edges}
+        assert edges["A"]["branch_length"] == 0.5
+        assert edges["A"]["bootstrap"] == 0.9
+        assert edges["A"]["gamma"] == 0.3
+        assert edges["B"] == {"u": 1, "v": "B", "key": 0, "branch_length": 0.2, "gamma": 0.7}
+        assert "bootstrap" not in edges["B"]
+        assert edges["C"] == {"u": 0, "v": "C", "key": 0, "branch_length": 1.0}
+
+    def test_edge_fields_empty_length(self) -> None:
+        """Empty fields are allowed when another field follows (``:::0.3``, ``::0.9``)."""
+        result = parse_enewick("((A)#H1:::0.6,#H1:::0.4,B::0.9);")
+        gammas = sorted(e["gamma"] for e in result.edges if "gamma" in e)
+        assert gammas == [0.4, 0.6]
+        assert not any("branch_length" in e for e in result.edges)
+        edge_b = next(e for e in result.edges if e["v"] == "B")
+        assert edge_b["bootstrap"] == 0.9 and "gamma" not in edge_b
+        with pytest.raises(ENewickParseError, match="Expected number"):
+            parse_enewick("(A:,B);")
+
+    def test_siphynetwork_style_string(self) -> None:
+        """A string as written by SiPhyNetwork's write.net (R) loads as a network."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+
+        enewick = (
+            "(((t4:0.19)#H2:0.05::0.55,(t5:0.22,#H3:0::0.49):0.02):0.41,"
+            "((t1:0.1,(t2:0.05)#H3:0.05::0.51):0.3,(#H2:0.3::0.45,t3:0.5):0.24):0.02);"
+        )
+        net = DirectedPhyNetwork.from_string(enewick, format="enewick")
+        assert sorted(net.taxa) == ["t1", "t2", "t3", "t4", "t5"]
+        assert len(net.hybrid_nodes) == 2
+        gammas = sorted(
+            d["gamma"] for _, v, _, d in net._graph.edges(keys=True, data=True) if "gamma" in d
+        )
+        assert gammas == [0.45, 0.49, 0.51, 0.55]
+        again = DirectedPhyNetwork.from_string(net.to_string("enewick"), format="enewick")
+        assert again.number_of_edges() == net.number_of_edges()
+
+    def test_gamma_round_trip_through_to_enewick(self) -> None:
+        """Gammas on both parent edges of a hybrid survive to_string / from_string."""
+        from phylozoo.core.network.dnetwork import DirectedPhyNetwork
+
+        enewick = "((A:1.0,(B:1.0)#H1:0.5::0.6):0.1,(#H1:0.5::0.4,C:2.0):0.1);"
+        net = DirectedPhyNetwork.from_string(enewick, format="enewick")
+        written = net.to_string("enewick")
+        assert "#H1:0.5::0.6" in written and "#H1:0.5::0.4" in written
+        again = DirectedPhyNetwork.from_string(written, format="enewick")
+        for network in (net, again):
+            gammas = sorted(
+                d["gamma"]
+                for _, v, _, d in network._graph.edges(keys=True, data=True)
+                if v in network.hybrid_nodes
+            )
+            assert gammas == [0.4, 0.6]
+
+    def test_hybrid_reference_never_defined_error(self) -> None:
+        """A hybrid that only ever appears as a bare reference is an error."""
+        with pytest.raises(ENewickParseError, match="never defined"):
+            parse_enewick("(#H1,A);")
 
     def test_reject_parent_length_before_hybrid_marker(self) -> None:
         """Parent edge length must not precede #Hk on the same node."""

@@ -38,16 +38,19 @@ Structure
 ---------
 
 eNewick uses nested parentheses, commas, node labels, and optional branch lengths
-and comments. Reticulations use ``#H1``, ``#H2``, … markers. Edge attributes such
-as gamma can appear in **comments** in square brackets (e.g. ``[&gamma=0.6]``)
-before the child’s branch length.
+and comments. Reticulations use ``#H1``, ``#H2``, … markers; the occurrence carrying
+the children and the bare references may come in any order. Each edge can carry up to
+three fields, ``:length:support:gamma`` (the Rich Newick form used by PhyloNetworks,
+PhyloNet, SiPhyNetwork and Dendroscope), with empty fields where a value is missing.
 
 .. code-block:: text
 
-   ((A:1.0[&gamma=0.6],B:1.0[&gamma=0.4])#H1:0.5,C:2.0);
+   ((A:1.0,(B:1.0)#H1:0.5::0.6):1.0,(#H1:0.5::0.4,C:2.0):1.0);
 
-This example shows a hybrid node ``#H1`` with two incoming edges (gamma 0.6 and 0.4)
-and a branch length 0.5. Simple trees look like standard Newick, e.g. ``((A,B),C);``.
+This example shows a hybrid node ``#H1`` with two incoming edges of length 0.5 and
+inheritance probabilities (gamma) 0.6 and 0.4. Simple trees look like standard Newick,
+e.g. ``((A,B),C);``. Comments in square brackets before a branch length, such as
+``A[&bootstrap=0.9]:1.0``, are read as attributes of the edge to that node.
 
 Examples
 --------

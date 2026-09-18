@@ -213,7 +213,7 @@ class TestHybridNodes:
         )
         result = to_enewick(net)
         assert "#H1" in result
-        assert "gamma=0.6" in result or "gamma=0.4" in result
+        assert "::0.6" in result and "::0.4" in result
 
     def test_multiple_hybrid_nodes(self) -> None:
         """Convert network with multiple hybrid nodes."""
@@ -282,17 +282,17 @@ class TestGammaBootstrap:
             ],
         )
         result = to_enewick(net)
-        assert "gamma=" in result
+        assert "::0.6" in result and "::0.4" in result
 
     def test_bootstrap_values(self) -> None:
-        """Convert tree with bootstrap values in comments."""
+        """Convert tree with bootstrap values (empty length field, support field)."""
         net = DirectedPhyNetwork(
             edges=[{"u": 3, "v": 1, "bootstrap": 0.95}, {"u": 3, "v": 2, "bootstrap": 0.87}],
             nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
         )
         result = to_enewick(net)
-        assert "bootstrap=0.95" in result
-        assert "bootstrap=0.87" in result
+        assert "A::0.95" in result
+        assert "B::0.87" in result
 
     def test_gamma_and_bootstrap_combined(self) -> None:
         """Convert network with both gamma and bootstrap values."""
@@ -317,10 +317,9 @@ class TestGammaBootstrap:
             ],
         )
         result = to_enewick(net)
-        assert "gamma=" in result
-        assert "bootstrap=" in result
-        # Check that they're in the same comment block
-        assert "[&" in result
+        # Both values on one edge: empty length, then support, then gamma
+        assert "::0.9:0.6" in result or "::0.85:0.4" in result
+        assert "[&" not in result
 
 
 class TestLabelQuoting:
@@ -385,6 +384,30 @@ class TestParallelEdges:
         # Should use branch lengths from edges
         assert "A:0.5" in result
         assert "B:0.3" in result
+
+    def test_parallel_edges_to_hybrid_written_once_per_edge(self) -> None:
+        """A hybrid with two parallel parent edges gets one occurrence per edge."""
+        net = DirectedPhyNetwork(
+            edges=[
+                (5, 3),
+                (5, 2),
+                {"u": 3, "v": 4, "key": 0, "branch_length": 0.1, "gamma": 0.7},
+                {"u": 3, "v": 4, "key": 1, "branch_length": 0.1, "gamma": 0.3},
+                (4, 1),
+            ],
+            nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
+        )
+        result = to_enewick(net)
+        assert result.count("#H1") == 2
+        again = DirectedPhyNetwork.from_string(result, format="enewick")
+        assert again.number_of_edges() == net.number_of_edges()
+        (hybrid,) = again.hybrid_nodes
+        parents = sorted(
+            (d["branch_length"], d["gamma"])
+            for _, v, _, d in again._graph.edges(keys=True, data=True)
+            if v == hybrid
+        )
+        assert parents == [(0.1, 0.3), (0.1, 0.7)]
 
 
 class TestDeterministicOutput:
@@ -523,8 +546,8 @@ class TestComplexNetworks:
 
         # Check all features are present
         assert "#H1" in result  # Hybrid marker
-        assert "gamma=" in result  # Gamma values
-        assert "bootstrap=" in result  # Bootstrap values
+        assert ":0.3:0.9:0.6" in result  # length, bootstrap and gamma on a hybrid edge
+        assert ":0.1:0.99" in result  # length and bootstrap on a tree edge
         assert ":" in result  # Branch lengths
         assert "int1" in result or "int2" in result  # Internal labels
         assert "root" in result  # Root label

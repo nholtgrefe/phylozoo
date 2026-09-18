@@ -28,11 +28,16 @@ The eNewick format extends standard Newick format with the following features:
    - `(A:0.5,B:0.3):0.1` - edges to A and B have lengths 0.5 and 0.3,
      edge to parent has length 0.1
    - Supports scientific notation: `A:1.5e-3`
+   - Up to two more fields may follow, `:length:support:gamma` (Rich Newick, as written by
+     PhyloNetworks and SiPhyNetwork); empty fields are allowed, so `#H1:0.2::0.3` gives the
+     edge length 0.2 and inheritance probability 0.3. They are stored as the edge attributes
+     `branch_length`, `bootstrap` and `gamma`.
 
 4. **Hybrid Nodes**: Marked with `#H1`, `#H2`, etc. (Extended Newick format)
    - `(A,B)#H1` - defines hybrid node #1 with children A and B
-   - `#H1` - references the previously defined hybrid node #1
-   - A hybrid node can appear multiple times (once with definition, then one or more references)
+   - `#H1` - references hybrid node #1 (before or after its definition)
+   - A hybrid node can appear multiple times (once with definition, one or more references,
+     in any order)
    - Each reference creates an additional parent edge to the hybrid node (reticulation)
    - Example: `((A,B)#H1,#H1,#H1);` creates a hybrid with 3 parents
    - **Parent edge** (to the hybrid's own parent) uses ``#Hk`` **before** ``:length``:
@@ -283,37 +288,60 @@ class _ENewickParser:
         self.hybrid_counter = 0  # For tracking hybrid numbers
         self._hybrid_id_map: dict[int, Any] = {}  # hybrid number -> node id
         self._labels_seen: set[str] = set()  # Track labels to prevent duplicates
+        # Hybrid numbers seen only as bare ``#Hk`` so far (node created, definition pending)
+        self._forward_refs: set[int] = set()
 
         # Track parent-child relationships
         self.parent_stack: list[Any] = []
 
-    def parse(self) -> tuple[Any, float | None]:
+    def parse(self) -> tuple[Any, dict[str, Any]]:
         """
         Parse the eNewick string.
 
         Returns
         -------
-        tuple[Any, float | None]
-            (root_id, root_branch_length) - root has no parent so branch_length is None.
+        tuple[Any, dict[str, Any]]
+            (root_id, root_edge_fields) - the root has no parent, so the fields are ignored.
         """
-        root_id, root_branch_length = self._parse_subtree()
+        root_id, root_edge = self._parse_subtree()
 
         if self.pos < self.length:
             raise ENewickParseError(
                 f"Unexpected characters after tree at position {self.pos}: "
                 f"'{self.enewick_string[self.pos:]}'"
             )
+        if self._forward_refs:
+            numbers = ", ".join(f"#H{k}" for k in sorted(self._forward_refs))
+            raise ENewickParseError(f"Hybrid node {numbers} referenced but never defined")
 
-        return root_id, root_branch_length
+        return root_id, root_edge
 
-    def _parse_subtree(self) -> tuple[Any, float | None]:
+    def _set_hybrid_label(self, node_id: Any, hybrid_number: int | None, node_label: str) -> None:
+        """Attach ``node_label`` to an existing hybrid node, or check that it matches."""
+        existing = next((n for n in self.nodes if n.get("id") == node_id), None)
+        if existing is None:
+            return
+        if existing.get("label"):
+            if node_label != existing["label"]:
+                raise ENewickParseError(
+                    f"Hybrid node #H{hybrid_number} label mismatch: "
+                    f"'{existing['label']}' vs '{node_label}'"
+                )
+            return
+        if node_label in self._labels_seen:
+            raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
+        self._labels_seen.add(node_label)
+        existing["label"] = node_label
+
+    def _parse_subtree(self) -> tuple[Any, dict[str, Any]]:
         """
         Parse a subtree (node with optional children).
 
         Returns
         -------
-        tuple[Any, float | None]
-            (node_id, branch_length) where branch_length is for edge TO this node from parent.
+        tuple[Any, dict[str, Any]]
+            (node_id, edge_fields) where edge_fields (branch_length, bootstrap, gamma)
+            belong to the edge TO this node from its parent.
         """
         # Check if this is a leaf or internal node
         if self._peek() == "(":
@@ -323,7 +351,7 @@ class _ENewickParser:
             # Leaf node
             return self._parse_leaf()
 
-    def _parse_post_label_hybrid_and_length(self) -> tuple[int | None, float | None]:
+    def _parse_post_label_hybrid_and_length(self) -> tuple[int | None, dict[str, Any]]:
         """
         Parse optional ``#Hk`` then optional parent-edge ``:length`` after a node label.
 
@@ -333,8 +361,8 @@ class _ENewickParser:
 
         Returns
         -------
-        tuple[int | None, float | None]
-            ``(hybrid_number, branch_length_to_parent)``.
+        tuple[int | None, dict[str, Any]]
+            ``(hybrid_number, parent_edge_fields)`` (see :meth:`_parse_edge_fields`).
 
         Raises
         ------
@@ -345,27 +373,28 @@ class _ENewickParser:
         peek = self._peek()
         if peek == "#":
             hybrid_number = self._parse_hybrid_marker()
-            branch_length = self._parse_branch_length()
-            return hybrid_number, branch_length
+            edge = self._parse_edge_fields()
+            return hybrid_number, edge
         if peek == ":":
-            branch_length = self._parse_branch_length()
+            edge = self._parse_edge_fields()
             hybrid_number = self._parse_hybrid_marker()
             if hybrid_number is not None:
                 raise ENewickParseError(
                     "eNewick requires hybrid marker #Hk before parent edge length :L "
                     f"(found ':…' before #H{hybrid_number} at position {self.pos})"
                 )
-            return None, branch_length
-        return None, None
+            return None, edge
+        return None, {}
 
-    def _parse_internal_node(self) -> tuple[Any, float | None]:
+    def _parse_internal_node(self) -> tuple[Any, dict[str, Any]]:
         """
         Parse an internal node with children.
 
         Returns
         -------
-        tuple[Any, float | None]
-            (node_id, branch_length) where branch_length is for edge TO this node from parent.
+        tuple[Any, dict[str, Any]]
+            (node_id, edge_fields) where edge_fields (branch_length, bootstrap, gamma)
+            belong to the edge TO this node from its parent.
         """
         self._skip_whitespace()
         # Consume opening parenthesis
@@ -376,8 +405,8 @@ class _ENewickParser:
         internal_id = self.node_counter
         self.node_counter += 1
 
-        # Parse children (each child subtree returns (child_id, branch_length))
-        children: list[tuple[Any, float | None]] = []
+        # Parse children (each child subtree returns (child_id, edge_fields))
+        children: list[tuple[Any, dict[str, Any]]] = []
         first_child = True
 
         while self._peek() != ")":
@@ -386,10 +415,10 @@ class _ENewickParser:
                 self._expect(",")
                 self._skip_whitespace()
 
-            # Parse child subtree (returns child_id and its branch_length)
-            child_id, child_branch_length = self._parse_subtree()
+            # Parse child subtree (returns child_id and the fields of the edge to it)
+            child_id, child_edge = self._parse_subtree()
 
-            children.append((child_id, child_branch_length))
+            children.append((child_id, child_edge))
             first_child = False
 
         # Consume closing parenthesis
@@ -400,7 +429,7 @@ class _ENewickParser:
         node_label, node_attrs = self._parse_node_label_and_attrs()
 
         # Optional #Hk then optional :L (edge to parent); :L without hybrid is allowed
-        hybrid_number, parent_branch_length = self._parse_post_label_hybrid_and_length()
+        hybrid_number, parent_edge = self._parse_post_label_hybrid_and_length()
 
         # Handle hybrid nodes: reuse existing node ID if hybrid number seen before
         is_hybrid_duplicate = False
@@ -408,22 +437,18 @@ class _ENewickParser:
             if hybrid_number in self._hybrid_id_map:
                 internal_id = self._hybrid_id_map[hybrid_number]
                 is_hybrid_duplicate = True
+                if hybrid_number in self._forward_refs:
+                    # The node was created by an earlier bare ``#Hk``; this is its definition.
+                    self._forward_refs.discard(hybrid_number)
+                    existing = next(n for n in self.nodes if n.get("id") == internal_id)
+                    existing.update(node_attrs)
             else:
                 self._hybrid_id_map[hybrid_number] = internal_id
 
         # Enforce unique labels (for provided labels only)
         if node_label:
             if is_hybrid_duplicate:
-                existing_l = next((n for n in self.nodes if n.get("id") == internal_id), None)
-                if (
-                    existing_l is not None
-                    and existing_l.get("label")
-                    and node_label != existing_l.get("label")
-                ):
-                    raise ENewickParseError(
-                        f"Hybrid node #{hybrid_number} label mismatch: "
-                        f"'{existing_l.get('label')}' vs '{node_label}'"
-                    )
+                self._set_hybrid_label(internal_id, hybrid_number, node_label)
             else:
                 if node_label in self._labels_seen:
                     raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
@@ -443,23 +468,22 @@ class _ENewickParser:
             self.hybrid_nodes[internal_id] = hybrid_number
 
         # Create edges from internal node to children
-        # Branch length on edge is the branch_length returned by the child subtree
-        for child_id, child_branch_length in children:
-            edge_data: dict[str, Any] = {"u": internal_id, "v": child_id, "key": 0}
-            if child_branch_length is not None:
-                edge_data["branch_length"] = child_branch_length
+        # Edge fields (branch_length, bootstrap, gamma) come from the child subtree
+        for child_id, child_edge in children:
+            edge_data: dict[str, Any] = {"u": internal_id, "v": child_id, "key": 0, **child_edge}
             self.edges.append(edge_data)
 
-        return internal_id, parent_branch_length
+        return internal_id, parent_edge
 
-    def _parse_leaf(self) -> tuple[Any, float | None]:
+    def _parse_leaf(self) -> tuple[Any, dict[str, Any]]:
         """
         Parse a leaf node.
 
         Returns
         -------
-        tuple[Any, float | None]
-            (node_id, branch_length) where branch_length is for edge TO this leaf from parent.
+        tuple[Any, dict[str, Any]]
+            (node_id, edge_fields) where edge_fields (branch_length, bootstrap, gamma)
+            belong to the edge TO this leaf from its parent.
         """
         self._skip_whitespace()
 
@@ -470,19 +494,22 @@ class _ENewickParser:
             if hybrid_number is None:
                 raise ENewickParseError("Expected hybrid marker after '#'")
 
-            # Look up the existing hybrid node
+            # Look up the hybrid node, or create it if this reference comes first
+            # (its definition with label/children may follow later in the string)
             if hybrid_number not in self._hybrid_id_map:
-                raise ENewickParseError(
-                    f"Hybrid node reference #H{hybrid_number} found before definition"
-                )
-
+                node_id = self.node_counter
+                self.node_counter += 1
+                self._hybrid_id_map[hybrid_number] = node_id
+                self._forward_refs.add(hybrid_number)
+                self.nodes.append({"id": node_id})
+                self.hybrid_nodes[node_id] = hybrid_number
             node_id = self._hybrid_id_map[hybrid_number]
 
             # Parse branch length (if present)
-            branch_length = self._parse_branch_length()
+            edge = self._parse_edge_fields()
 
             # Don't create a new node entry - just return the existing node ID
-            return node_id, branch_length
+            return node_id, edge
 
         # Parse node label
         node_label, node_attrs = self._parse_node_label_and_attrs()
@@ -496,20 +523,16 @@ class _ENewickParser:
         # Named hybrid reference: ``DisplayName#Hk:L`` reuses hybrid ``k`` (same as bare ``#Hk:L``)
         if self._peek() == "#":
             hybrid_number = self._parse_hybrid_marker()
-            branch_length = self._parse_branch_length()
+            edge = self._parse_edge_fields()
             if hybrid_number in self._hybrid_id_map:
                 node_id = self._hybrid_id_map[hybrid_number]
-                existing = next((n for n in self.nodes if n.get("id") == node_id), None)
-                if (
-                    existing is not None
-                    and existing.get("label")
-                    and node_label != existing.get("label")
-                ):
-                    raise ENewickParseError(
-                        f"Hybrid node #H{hybrid_number} label mismatch: "
-                        f"'{existing.get('label')}' vs '{node_label}'"
-                    )
-                return node_id, branch_length
+                if hybrid_number in self._forward_refs:
+                    # A bare ``#Hk`` came first; this named leaf is its definition.
+                    self._forward_refs.discard(hybrid_number)
+                    existing = next(n for n in self.nodes if n.get("id") == node_id)
+                    existing.update(node_attrs)
+                self._set_hybrid_label(node_id, hybrid_number, node_label)
+                return node_id, edge
 
             if node_label in self._labels_seen:
                 raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
@@ -519,13 +542,13 @@ class _ENewickParser:
             self.nodes.append(node_data)
             self.hybrid_nodes[node_label] = hybrid_number
             self._hybrid_id_map[hybrid_number] = node_label
-            return node_label, branch_length
+            return node_label, edge
 
         if node_label in self._labels_seen:
             raise ENewickParseError(f"Duplicate label detected: '{node_label}'")
         self._labels_seen.add(node_label)
 
-        hybrid_number, branch_length = self._parse_post_label_hybrid_and_length()
+        hybrid_number, edge = self._parse_post_label_hybrid_and_length()
 
         node_data = {"id": node_label, "label": node_label}
         node_data.update(node_attrs)
@@ -539,7 +562,7 @@ class _ENewickParser:
             self.hybrid_nodes[node_label] = hybrid_number
             self._hybrid_id_map[hybrid_number] = node_label
 
-        return node_label, branch_length
+        return node_label, edge
 
     def _parse_node_label_and_attrs(self) -> tuple[str | None, dict[str, Any]]:
         """
@@ -622,16 +645,33 @@ class _ENewickParser:
 
         raise ENewickParseError("Unclosed quoted string")
 
-    def _parse_branch_length(self) -> float | None:
-        """Parse branch length (e.g., :0.5)."""
-        self._skip_whitespace()
-        if self._peek() != ":":
-            return None
+    def _parse_edge_fields(self) -> dict[str, Any]:
+        """
+        Parse the parent-edge fields ``:length[:support[:gamma]]`` (e.g. ``:0.5``, ``:0.5::0.3``).
 
-        self.pos += 1  # Consume ':'
-        self._skip_whitespace()
+        Returns
+        -------
+        dict[str, Any]
+            ``branch_length``, ``bootstrap`` and ``gamma`` for the fields that are
+            present and non-empty (an empty dict when there is no ``:``).
+        """
+        fields: dict[str, Any] = {}
+        for key in ("branch_length", "bootstrap", "gamma"):
+            self._skip_whitespace()
+            if self._peek() != ":":
+                break
+            self.pos += 1  # Consume ':'
+            self._skip_whitespace()
+            value = self._parse_number()
+            if value is None and (key != "branch_length" or self._peek() == ":"):
+                continue  # empty field, as in ``::0.3``
+            if value is None:
+                raise ENewickParseError(f"Expected number after ':' at position {self.pos}")
+            fields[key] = value
+        return fields
 
-        # Parse number (can be negative, scientific notation, etc.)
+    def _parse_number(self) -> float | None:
+        """Parse a number (sign, decimals, scientific notation); None if there is none."""
         start = self.pos
 
         # Optional sign
@@ -655,8 +695,9 @@ class _ENewickParser:
             while self.pos < self.length and self.enewick_string[self.pos].isdigit():
                 self.pos += 1
 
-        if self.pos == start or not has_digit:
-            raise ENewickParseError(f"Expected number after ':' at position {start}")
+        if not has_digit:
+            self.pos = start
+            return None
 
         try:
             return float(self.enewick_string[start : self.pos])
@@ -760,7 +801,7 @@ def to_enewick(network: "DirectedPhyNetwork", **kwargs: Any) -> str:
 
     Features:
     - Branch lengths are encoded as :length (e.g., :0.5)
-    - Gamma and bootstrap values are encoded as comments: [&gamma=0.6,bootstrap=0.95]
+    - Bootstrap and gamma values are written as the fields ``:length:support:gamma``
     - Internal node labels are included when present
     - Hybrid nodes use Extended Newick #Hn markers
     - Output is deterministic (children sorted by node ID then label)
@@ -890,14 +931,12 @@ def to_enewick(network: "DirectedPhyNetwork", **kwargs: Any) -> str:
             result += _format_edge_attributes(parent_edge_data)
             return result
 
-        # Internal node: process children
+        # Internal node: process children, one occurrence per edge so that
+        # parallel edges to a hybrid child are written as separate references
         child_strings = []
         for child in children_sorted:
-            # Get edge data from node to child
-            # Handle parallel edges by using the first edge
-            edge_data = _get_first_edge_data(network, node, child)
-            child_str = build_subtree(child, edge_data)
-            child_strings.append(child_str)
+            for edge_data in _edge_data_to_child(network, node, child):
+                child_strings.append(build_subtree(child, edge_data))
 
         # Build the result string
         result = f"({','.join(child_strings)})"
@@ -924,11 +963,9 @@ def to_enewick(network: "DirectedPhyNetwork", **kwargs: Any) -> str:
     return enewick_str + ";"
 
 
-def _get_first_edge_data(network: "DirectedPhyNetwork", u: T, v: T) -> dict[str, Any]:
+def _edge_data_to_child(network: "DirectedPhyNetwork", u: T, v: T) -> list[dict[str, Any]]:
     """
-    Get edge data for the first edge from u to v.
-
-    For parallel edges, returns data from the first edge encountered.
+    Edge data of every edge from u to v (several for parallel edges), in key order.
 
     Parameters
     ----------
@@ -939,58 +976,47 @@ def _get_first_edge_data(network: "DirectedPhyNetwork", u: T, v: T) -> dict[str,
 
     Returns
     -------
-    dict[str, Any]
-        Edge data dictionary.
+    list[dict[str, Any]]
+        One edge data dictionary per edge from u to v.
     """
-    # Look the edge up directly. Scanning every edge leaving u instead would make
+    # Look the edges up directly. Scanning every edge leaving u instead would make
     # writing quadratic in the out-degree, and this is called once per edge.
     graph = network._graph._graph
     if u not in graph:
-        return {}
+        return []
     parallel_edges = graph[u].get(v)
     if not parallel_edges:
-        return {}
-    data = parallel_edges[next(iter(parallel_edges))]
-    return dict(data) if data else {}
+        return []
+    return [dict(parallel_edges[key] or {}) for key in sorted(parallel_edges)]
 
 
 def _format_edge_attributes(edge_data: dict[str, Any] | None) -> str:
     """
-    Format edge attributes (branch_length, gamma, bootstrap) for eNewick.
+    Format edge attributes as the Rich Newick fields ``:length:support:gamma``.
+
+    Missing values leave their field empty and trailing empty fields are
+    dropped, e.g. ``:0.5`` (length only), ``:0.5::0.3`` (length and gamma)
+    or ``:::0.3`` (gamma only); nothing is written when no value is present.
+    This is the form read by PhyloNetworks, PhyloNet, SiPhyNetwork and
+    Dendroscope.
 
     Parameters
     ----------
     edge_data : dict[str, Any] | None
-        Edge data dictionary.
+        Edge data dictionary with optional ``branch_length``, ``bootstrap``
+        and ``gamma``.
 
     Returns
     -------
     str
-        Formatted attribute string (e.g., "[&gamma=0.6,bootstrap=0.95]:0.5").
+        Formatted field string (e.g., ``":0.5::0.3"``).
     """
-    if edge_data is None:
+    if not edge_data:
         return ""
-
-    result = ""
-
-    # Build comment section for gamma and bootstrap
-    comment_parts = []
-    if "gamma" in edge_data:
-        gamma_val = edge_data["gamma"]
-        comment_parts.append(f"gamma={gamma_val}")
-    if "bootstrap" in edge_data:
-        bootstrap_val = edge_data["bootstrap"]
-        comment_parts.append(f"bootstrap={bootstrap_val}")
-
-    if comment_parts:
-        result += f"[&{','.join(comment_parts)}]"
-
-    # Add branch length
-    if "branch_length" in edge_data:
-        branch_length = edge_data["branch_length"]
-        result += f":{branch_length}"
-
-    return result
+    fields = [edge_data.get(key) for key in ("branch_length", "bootstrap", "gamma")]
+    while fields and fields[-1] is None:
+        fields.pop()
+    return "".join(":" + ("" if value is None else str(value)) for value in fields)
 
 
 def _quote_label_if_needed(label: str) -> str:
@@ -1071,8 +1097,8 @@ def from_enewick(enewick_string: str, **kwargs: Any) -> "DirectedPhyNetwork":
 
     This function parses an Extended Newick (eNewick) format string and converts
     it to a DirectedPhyNetwork. It supports:
-    - Branch lengths on edges
-    - Hybrid nodes (reticulations) using #H markers
+    - Branch lengths, support and gamma as edge fields (``:length:support:gamma``)
+    - Hybrid nodes (reticulations) using #H markers, in any order of occurrences
     - Gamma and bootstrap values in comments
     - Node labels (quoted and unquoted)
     - Internal node labels
@@ -1143,9 +1169,10 @@ def from_enewick(enewick_string: str, **kwargs: Any) -> "DirectedPhyNetwork":
     for edge in parsed.edges:
         edge_dict: dict[str, Any] = {"u": edge["u"], "v": edge["v"]}
 
-        # Copy edge attributes (branch_length is already on edge)
-        if "branch_length" in edge:
-            edge_dict["branch_length"] = edge["branch_length"]
+        # Copy edge attributes (branch_length, bootstrap, gamma from ``:L:S:G`` fields)
+        for key, value in edge.items():
+            if key not in ("u", "v", "key"):
+                edge_dict[key] = value
 
         # Check if target node has comment attributes (these are edge attributes for edge TO the node)
         if edge["v"] in node_comments:

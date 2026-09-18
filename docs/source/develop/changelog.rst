@@ -7,6 +7,35 @@ Version History
 0.4
 ~~~
 
+0.4.1
+^^^^^
+
+eNewick interoperability: networks written by PhyloNetworks, PhyloNet and the
+SiPhyNetwork R package now load, and PhyloZoo writes the same edge fields they read.
+
+Changed
+"""""""
+
+* ``to_string("enewick")`` writes branch lengths, bootstrap and gamma values as the Rich
+  Newick fields ``:length:support:gamma`` (empty fields where a value is missing, e.g.
+  ``#H1:0.5::0.6``) instead of ``[&gamma=...]`` comments, which no other network tool reads
+  and which PhyloZoo itself could not read back on a hybrid marker. Files written by
+  earlier versions with gamma or bootstrap comments after a hybrid marker are not read.
+
+Fixed
+"""""
+
+* The eNewick parser accepts a hybrid back-reference (``#Hk``) that appears before the
+  occurrence carrying the label and children, as in
+  ``(N,((C,(D,(B,#H1))),(A,(E,(F)#H1))));``. A hybrid that appears only as bare references
+  now raises an error saying it was never defined.
+* The eNewick parser reads the ``:length:support:gamma`` edge fields (with empty fields
+  allowed, as in ``#H1:0.2::0.3``), storing them as the edge attributes ``branch_length``,
+  ``bootstrap`` and ``gamma``. Networks simulated with SiPhyNetwork now load directly.
+* ``to_string("enewick")`` writes a hybrid node with parallel parent edges once per edge
+  instead of dropping the second edge, so such networks (SiPhyNetwork produces them) survive
+  a write/read round trip with the gamma of every parent edge intact.
+
 0.4.0
 ^^^^^
 
