@@ -19,14 +19,6 @@ Install PhyloZoo using ``pip`` from `PyPI <https://pypi.org/project/phylozoo/>`_
 
      pip install phylozoo[viz]
 
-* **With Graphviz layouts** — Adds Matplotlib and PyGraphviz for additional layout algorithms
-  (dot, neato, fdp, etc.). Requires the Graphviz system library to be installed separately
-  (see troubleshooting below).
-
-  .. code-block:: bash
-
-     pip install phylozoo[graphviz]
-
 For development and contributing to PhyloZoo, install the latest source version in
 editable mode:
 
@@ -47,8 +39,23 @@ PhyloZoo keeps its core dependencies minimal. The mandatory requirements are:
 
 Optional (install via extras):
 
-* `Matplotlib <https://matplotlib.org/>`_ >= 3.5.0 (for plotting; use ``phylozoo[viz]`` or ``phylozoo[graphviz]``)
-* `PyGraphviz <https://pygraphviz.github.io/>`_ (for Graphviz layouts; use ``phylozoo[graphviz]``; requires Graphviz system library)
+* `Matplotlib <https://matplotlib.org/>`_ >= 3.5.0 (for plotting; use ``phylozoo[viz]``)
+
+Graphviz layouts (optional)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PhyloZoo's own layouts (``pz-cladogram``, ``pz-layered``, ``pz-radial``, ``pz-unrooted``) are the
+recommended way to draw networks and need nothing beyond ``phylozoo[viz]``. The Graphviz layouts
+(``dot``, ``neato``, ``twopi``, ...) can additionally be used if `PyGraphviz <https://pygraphviz.github.io/>`_
+is installed; it needs the Graphviz system library (e.g. ``apt install graphviz graphviz-dev`` on
+Debian/Ubuntu, ``brew install graphviz`` on macOS) and then
+
+.. code-block:: bash
+
+   pip install pygraphviz
+
+See the `PyGraphviz installation guide <https://pygraphviz.github.io/documentation/stable/install.html>`_
+for platform details.
 
 Verifying Installation
 ----------------------
@@ -110,14 +117,6 @@ Install the viz extra:
 
    pip install phylozoo[viz]
 
-**Graphviz layouts (dot, neato, fdp, etc.) not working**: You need both the Graphviz system
-library and the ``pygraphviz`` Python package. Install the graphviz extra:
-
-.. code-block:: bash
-
-   pip install phylozoo[graphviz]
-
-You must also install the Graphviz system library (e.g. ``apt install graphviz graphviz-dev``
-on Debian/Ubuntu, ``brew install graphviz`` on macOS). See the
-`PyGraphviz installation guide <https://pygraphviz.github.io/documentation/stable/install.html>`_
-for details.
+**Graphviz layouts (dot, neato, fdp, etc.) not working**: These need the Graphviz system library
+and the ``pygraphviz`` package, see *Graphviz layouts (optional)* above. The PhyloZoo layouts do
+not need them.
