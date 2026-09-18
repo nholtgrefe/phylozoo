@@ -4,6 +4,119 @@ Changelog
 Version History
 ---------------
 
+0.4
+~~~
+
+0.4.0
+^^^^^
+
+A visualization release: every phylogenetic network is now drawn by PhyloZoo's own
+layouts, without Graphviz. Semi-directed networks get an unrooted tree-of-blobs
+drawing, directed networks a rewritten cladogram plus layered and radial views, and
+both can be previewed as text in the terminal. The plotting tutorial and the API
+reference were rewritten around these layouts.
+
+Added
+"""""
+
+* ``pz-unrooted`` layout (:func:`~phylozoo.viz.sdnetwork.layout.unrooted.compute_pz_unrooted_layout`
+  and :func:`~phylozoo.viz.dnetwork.layout.unrooted.compute_pz_unrooted_layout`, shared core in
+  :mod:`phylozoo.viz._unrooted`), the new default for
+  :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork` and also
+  available for :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`. The network
+  is decomposed into blobs; the tree of blobs is drawn with the equal-angle algorithm, each
+  blob as a regular polygon from a planar embedding (Tutte embedding for interior nodes), and
+  pendant subtrees leave a blob in the cyclic order of their attachment nodes, so cut edges
+  never cross blob edges. Optional ``daylight`` rounds (equal-daylight with exact edge lengths,
+  blobs as rigid pivots) and ``refine`` stress-majorization iterations (the ``neato``
+  algorithm) spread the drawing; both are guarded so that they never add edge crossings. On a
+  directed network the root is marked with a larger gold node.
+* ``pz-layered`` layout for :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork`
+  (:func:`~phylozoo.viz.dnetwork.layout.layered.compute_pz_layered_layout`): a self-contained
+  layered (Sugiyama) layout in the style of Graphviz ``dot`` — longest-path layers, bend
+  points for long edges, barycenter sweeps with adjacent swaps, a straightening coordinate
+  pass — without a tree backbone, so heavily reticulate networks get fewer crossings than with
+  ``pz-cladogram``. Options ``align_leaves``, ``rectangular``, ``sweeps`` and ``direction``.
+* ``pz-radial`` for directed networks
+  (:func:`~phylozoo.viz.dnetwork.layout.radial.compute_pz_radial_layout`): a circular
+  cladogram with the root at the centre, leaves evenly spaced on the outer circle and
+  reticulate edges as straight chords, in the style of Dendroscope's radial view.
+* ``pz-cladogram`` options ``align_leaves`` (default True: leaves on the bottom layer),
+  ``rectangular`` (default True: elbow edges, reticulate edges entering the hybrid sideways)
+  and ``horizontal_reticulations`` (default on with ``rectangular``: reticulate parents are
+  lowered onto the hybrid's layer where the network allows it, so those edges are single
+  horizontal segments).
+* :func:`~phylozoo.viz.to_preview_string` and the ``to_preview_string()`` / ``preview()``
+  methods of :class:`~phylozoo.core.network.dnetwork.base.DirectedPhyNetwork` and
+  :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`: a text
+  drawing of the network (box-drawing tree edges, dotted hybrid edges with arrowheads, ``◆``
+  hybrid nodes, ``○`` root) built on the rectangular ``pz-cladogram`` placement, with
+  ``max_width``, ``max_leaves``, ``col_width``, ``rows_per_leaf`` and (semi-directed)
+  ``root_location`` options. Needs no matplotlib: :mod:`phylozoo.viz`,
+  :mod:`phylozoo.viz.dnetwork` and :mod:`phylozoo.viz.sdnetwork` import their matplotlib
+  plotters lazily, so the layouts and the preview work with the core install.
+* :attr:`~phylozoo.viz.dnetwork.style.DNetStyle.arrows` (``'all'``, ``'hybrid'``, ``'none'``
+  or ``None`` for automatic), :attr:`~phylozoo.viz.dnetwork.style.DNetStyle.label_rotation`
+  (``None`` aligns labels with their edge, a fixed angle places them beside the node),
+  :attr:`~phylozoo.viz.dnetwork.style.DNetStyle.root_color` and
+  :attr:`~phylozoo.viz.dnetwork.style.DNetStyle.root_size` on
+  :class:`~phylozoo.viz.dnetwork.style.DNetStyle`; ``label_rotation`` also on
+  :class:`~phylozoo.viz.sdnetwork.style.SDNetStyle`.
+* Shared layout utilities :func:`~phylozoo.viz._layout_utils.stress_majorization`,
+  :func:`~phylozoo.viz._layout_utils.count_crossings` and
+  :func:`~phylozoo.viz._layout_utils.sort_key`.
+* Documentation: the :doc:`plotting tutorial <../tutorials/visualization>` now walks through
+  both network classes and every PhyloZoo layout with figures (replacing the semi-directed-only
+  tutorial); the plotting and styling manuals describe the PhyloZoo layouts first; the viz API
+  reference lists every layout function with its parameters, the layout classes and the
+  preview; the core manual pages and the README quickstart show the text drawing.
+
+Changed
+"""""""
+
+* **pz-dag is now pz-cladogram.**
+  :func:`~phylozoo.viz.dnetwork.layout.cladogram.compute_pz_cladogram_layout` replaces
+  ``compute_pz_dag_layout`` (module ``viz.dnetwork.layout.cladogram`` replaces ``layout.dag``)
+  and ``layout='pz-dag'`` is no longer accepted. The layout itself was rewritten as a layered
+  drawing: nodes hang below their lowest parent, leaves are aligned on the bottom layer, and
+  siblings are ordered by a hybrid-aware barycenter heuristic plus a local search on the exact
+  crossing count instead of 2000 random shuffles. Restarts and the swap search are restricted
+  to the nodes that can change the number of crossings (trees skip them entirely).
+  Deterministic by default (``seed=0``), ``trials`` now counts restarts of the heuristic
+  (default 10), and positions are normalised to unit range like every other layout. Default
+  ``layer_gap`` and ``x_scale`` are 1.0.
+* **The default layout for semi-directed networks is now pz-unrooted** instead of
+  ``'neato'``; pass ``layout='neato'`` for the previous behaviour (needs ``pygraphviz``).
+* ``pz-radial`` for :class:`~phylozoo.core.network.sdnetwork.sd_phynetwork.SemiDirectedPhyNetwork`
+  (:func:`~phylozoo.viz.sdnetwork.layout.radial.compute_pz_radial_layout`) accepts any network
+  instead of trees only: the network is rooted (new ``root_location`` option) and drawn as a
+  circular cladogram; the sibling order is re-optimised with crossings counted in the circle.
+* ``pz-layered`` starts its sweeps from the ``pz-cladogram`` order, which gives noticeably
+  fewer crossings on reticulate networks.
+* All PhyloZoo layouts build their working graph from nodes and edges in sorted order, so a
+  drawing depends only on the network and not on the insertion order of its nodes (which for
+  string-labelled networks varied with Python's hash seed between processes).
+* :class:`~phylozoo.viz.dnetwork.style.DNetStyle` defaults now match
+  :class:`~phylozoo.viz.sdnetwork.style.SDNetStyle`: white tree nodes (``node_size`` 80),
+  black leaves (``leaf_size`` 100), pink hybrid nodes, red hybrid edges, ``label_offset``
+  0.015, ``arrow_head_size`` 12. In the layered and radial layouts only hybrid edges carry an
+  arrowhead, and in ``pz-cladogram`` and aligned ``pz-layered`` drawings leaf labels hang
+  straight below (or, for ``direction='LR'``, right of) the leaves.
+* Automatically rotated labels continue the line of the leaf's pendant edge, starting at the
+  node, instead of being offset diagonally; labels with a fixed ``label_rotation`` sit beside
+  the node on its outward side, and ``pz-radial`` leaf labels read outwards along the radius.
+* The Graphviz layouts are documented as an alternative for the multigraph primitives only;
+  the manuals and tutorial use the PhyloZoo layouts throughout.
+
+Removed
+"""""""
+
+* The ``phylozoo[graphviz]`` install extra. The PhyloZoo layouts need only ``phylozoo[viz]``;
+  Graphviz layouts (``'dot'``, ``'neato'``, …) still work when ``pygraphviz`` is installed by
+  hand (see :doc:`../manual/installation`).
+* ``compute_pz_dag_layout`` and ``layout='pz-dag'`` (see ``pz-cladogram`` above), and the
+  trees-only restriction of ``pz-radial``.
+
 0.3
 ~~~
 
@@ -228,7 +341,7 @@ Added
   in ``neato`` and related layouts.
 * New tutorials:
 
-  * :doc:`../tutorials/visualization_sdnetwork` — step-by-step guide to plotting a
+  * :doc:`../tutorials/visualization` — step-by-step guide to plotting a
     semi-directed phylogenetic network, using the *Xiphophorus* swordfish example from
     :cite:`Holtgrefe2025Squirrel`.
   * Tutorial on displayed-tree indistinguishable networks: introduces the concept and
