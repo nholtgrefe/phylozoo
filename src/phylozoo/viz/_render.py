@@ -70,6 +70,7 @@ def draw_edge(
     style: RenderStyle,
     parallel_groups: dict[tuple[Any, Any], list[int]],
     edge_key: tuple[Any, Any, int],
+    arrow: bool = True,
 ) -> None:
     """
     Draw a single edge.
@@ -87,6 +88,8 @@ def draw_edge(
         Mapping of (u, v) to list of edge keys for parallel edge offset.
     edge_key : tuple
         (u, v, key) for this edge.
+    arrow : bool, optional
+        Whether to draw an arrowhead on a directed edge. By default True.
     """
     points = route.points
     if not points:
@@ -119,7 +122,7 @@ def draw_edge(
             zorder=1,
         )
         ax.add_patch(patch)
-        if route.edge_type.is_directed:
+        if route.edge_type.is_directed and arrow:
             dx = ex - cx
             dy = ey - cy
             ax.annotate(
@@ -144,7 +147,7 @@ def draw_edge(
             linewidth=style.edge_width,
             zorder=1,
         )
-        if route.edge_type.is_directed and len(points) >= 2:
+        if route.edge_type.is_directed and arrow and len(points) >= 2:
             ax.annotate(
                 "",
                 xy=(xs[-1], ys[-1]),
@@ -235,6 +238,7 @@ def draw_label(
     center: tuple[float, float] | None = None,
     anchor: tuple[float, float] | None = None,
     rotation: float | None = None,
+    direction: tuple[float, float] | None = None,
 ) -> Any:
     """
     Add a text label, placed outward from a reference point.
@@ -258,9 +262,12 @@ def draw_label(
         Specific reference point to move away from (e.g. a leaf's neighbour).
         Takes precedence over center when provided. By default None.
     rotation : float | None, optional
-        Label rotation in degrees. None means auto-compute from the
-        anchor-to-node direction so the label aligns with the edge.
-        By default None.
+        Label rotation in degrees. None means auto: the label continues the
+        line from the reference point through the node, reading outward, so
+        a leaf label extends its pendant edge. By default None.
+    direction : tuple[float, float] | None, optional
+        Explicit (dx, dy) direction in which to place the label. Takes
+        precedence over anchor and center. By default None.
 
     Returns
     -------
@@ -270,52 +277,48 @@ def draw_label(
     import math
 
     x, y = position
-    if anchor is not None:
-        cx, cy = anchor
-    elif center is not None:
-        cx, cy = center
+    if direction is not None:
+        dx, dy = direction
     else:
-        cx, cy = 0.0, 0.0
-    dx = x - cx
-    dy = y - cy
-    dist = math.sqrt(dx * dx + dy * dy)
+        cx, cy = anchor if anchor is not None else (center if center is not None else (0.0, 0.0))
+        dx, dy = x - cx, y - cy
+    dist = math.hypot(dx, dy)
 
-    if dist > 1e-6:
-        scale = style.label_offset / dist
-        offset_x = dx * scale
-        offset_y = dy * scale
-        if abs(dx) < 1e-6:
-            ha = "center"
-        elif dx > 0:
-            ha = "left"
-        else:
-            ha = "right"
-        if abs(dy) < 1e-6:
-            va = "center"
-        elif dy > 0:
-            va = "bottom"
-        else:
-            va = "top"
-    else:
-        offset_x = 0.0
-        offset_y = -style.label_offset
-        ha = "center"
-        va = "top"
+    if dist <= 1e-6:
+        return ax.text(
+            x,
+            y - style.label_offset,
+            text,
+            fontsize=style.label_font_size,
+            color=style.label_color,
+            ha="center",
+            va="top",
+            rotation=rotation or 0.0,
+            rotation_mode="anchor",
+            zorder=4,
+        )
 
-    # Auto-rotation: align label with the direction from anchor to node.
-    # Normalize to [-90, 90] so text is never rendered upside-down.
-    if rotation is None and dist > 1e-6:
-        angle_deg = math.degrees(math.atan2(dy, dx))
+    ux, uy = dx / dist, dy / dist
+    if rotation is None:
+        # Text runs along the direction, starting at the node; flip it (and anchor
+        # its end instead) when it would otherwise be upside-down.
+        angle_deg = math.degrees(math.atan2(uy, ux))
+        ha = "left"
         if angle_deg > 90:
             angle_deg -= 180
+            ha = "right"
         elif angle_deg < -90:
             angle_deg += 180
+            ha = "right"
+        va = "center"
     else:
-        angle_deg = rotation if rotation is not None else 0.0
+        angle_deg = rotation
+        ha = "center" if abs(ux) < 1e-6 else ("left" if ux > 0 else "right")
+        va = "center" if abs(uy) < 1e-6 else ("bottom" if uy > 0 else "top")
 
     return ax.text(
-        x + offset_x,
-        y + offset_y,
+        x + ux * style.label_offset,
+        y + uy * style.label_offset,
         text,
         fontsize=style.label_font_size,
         color=style.label_color,
@@ -396,6 +399,8 @@ def render_layout(
     get_node_type: Callable[[Any], str],
     get_label: Callable[[Any], str | None],
     radial_labels_for_leaves: bool = False,
+    arrows: str = "all",
+    leaf_label_direction: tuple[float, float] | None = None,
 ) -> None:
     """
     Shared render loop: draw edges, nodes, and labels.
@@ -418,7 +423,16 @@ def render_layout(
         node_id -> label string or None.
     radial_labels_for_leaves : bool, optional
         If True, use draw_label_radial for leaf nodes. By default False.
+    arrows : str, optional
+        Which directed edges get an arrowhead: 'all', 'hybrid' (only edges
+        into hybrid nodes) or 'none'. By default 'all'.
+    leaf_label_direction : tuple[float, float] | None, optional
+        Fixed (dx, dy) direction for leaf labels (e.g. straight down in a
+        layered drawing). None places each label along its pendant edge.
+        By default None.
     """
+    if arrows not in ("all", "hybrid", "none"):
+        raise ValueError(f"arrows must be 'all', 'hybrid' or 'none', got {arrows!r}")
     parallel_groups = build_parallel_groups(edge_routes)
 
     # Build neighbour position map so labels can be placed away from edges rather
@@ -432,7 +446,8 @@ def render_layout(
             neighbour_positions.setdefault(v, []).append(positions[u])
 
     for (u, v, key), route in edge_routes.items():
-        draw_edge(ax, route, style, parallel_groups, (u, v, key))
+        arrow = arrows == "all" or (arrows == "hybrid" and route.edge_type.is_hybrid)
+        draw_edge(ax, route, style, parallel_groups, (u, v, key), arrow=arrow)
 
     for node, position in positions.items():
         node_type = get_node_type(node)
@@ -463,6 +478,7 @@ def render_layout(
                         center=center,
                         anchor=anchor,
                         rotation=lrot,
+                        direction=leaf_label_direction if node_type == "leaf" else None,
                     )
 
     ax.set_aspect("equal")

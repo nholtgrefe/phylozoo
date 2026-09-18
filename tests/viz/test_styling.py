@@ -14,14 +14,31 @@ class TestDNetStyle:
         """Test default style values."""
         style = DNetStyle()
 
-        assert style.node_color == "lightblue"
-        assert style.leaf_color == "lightblue"
-        assert style.hybrid_color == "lightblue"
-        assert style.leaf_size is None
+        # Defaults match SDNetStyle so directed and semi-directed plots look alike.
+        assert style.node_color == "white"
+        assert style.leaf_color == "#0a0a0a"
+        assert style.hybrid_color == "#fcc0bc"
+        assert style.leaf_size == 100.0
         assert style.edge_color == "gray"
         assert style.hybrid_edge_color == "red"
-        assert style.arrow_head_size == 18.0
+        assert style.arrow_head_size == 12.0
         assert style.with_labels is True
+        assert style.label_rotation is None
+        assert style.arrows is None
+
+    def test_matches_sdnet_style(self) -> None:
+        """Directed and semi-directed default styles share their colours."""
+        from phylozoo.viz.sdnetwork import SDNetStyle
+
+        d, sd = DNetStyle(), SDNetStyle()
+        for attr in ("node_color", "leaf_color", "hybrid_color", "hybrid_edge_color", "edge_color"):
+            assert getattr(d, attr) == getattr(sd, attr)
+
+    def test_copy_keeps_arrows(self) -> None:
+        """copy() carries the arrows and label_rotation options."""
+        style = DNetStyle(arrows="all", label_rotation=0.0).copy()
+        assert style.arrows == "all"
+        assert style.label_rotation == 0.0
 
     def test_leaf_size_default_uses_node_size(self) -> None:
         """Test that leaf_size=None defaults to node_size for leaves."""
@@ -33,7 +50,7 @@ class TestDNetStyle:
             nodes=[(1, {"label": "A"}), (2, {"label": "B"})],
         )
         style = DNetStyle(node_size=1000, leaf_size=None)
-        ax = plot(net, style=style, layout="pz-dag", trials=100)
+        ax = plot(net, style=style, layout="pz-cladogram", trials=100)
         assert ax is not None
 
     def test_custom_values(self) -> None:
@@ -68,4 +85,4 @@ class TestDefaultStyles:
         style = default_style()
 
         assert isinstance(style, DNetStyle)
-        assert style.node_color == "lightblue"
+        assert style.node_color == "white"

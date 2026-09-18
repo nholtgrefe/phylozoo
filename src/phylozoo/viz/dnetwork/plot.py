@@ -13,7 +13,13 @@ from phylozoo.viz._matplotlib import plt
 
 from phylozoo.viz._layout_utils import compute_layout_center
 from .style import DNetStyle, default_style
-from .layout import compute_nx_layout, compute_pz_dag_layout
+from .layout import (
+    compute_nx_layout,
+    compute_pz_unrooted_layout,
+    compute_pz_cladogram_layout,
+    compute_pz_layered_layout,
+    compute_pz_radial_layout,
+)
 from phylozoo.viz._render import render_layout
 
 if TYPE_CHECKING:
@@ -22,7 +28,7 @@ if TYPE_CHECKING:
 
 def plot_dnetwork(
     network: "DirectedPhyNetwork",
-    layout: str = "pz-dag",
+    layout: str = "pz-cladogram",
     style: DNetStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -39,11 +45,14 @@ def plot_dnetwork(
     network : DirectedPhyNetwork
         The network to plot.
     layout : str, optional
-        Layout algorithm. PhyloZoo: 'pz-dag'. NetworkX: 'spring', 'circular',
+        Layout algorithm. PhyloZoo: 'pz-cladogram' (layered with a tree backbone;
+        ``rectangular=True`` for elbow edges), 'pz-layered' (layered, dot-like),
+        'pz-radial' (circular cladogram) or 'pz-unrooted' (unrooted tree of blobs).
+        NetworkX: 'spring', 'circular',
         'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite'.
         Graphviz: 'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'.
-        By default 'pz-dag'.
-    style : NetworkStyle, optional
+        By default 'pz-cladogram'.
+    style : DNetStyle, optional
         Styling configuration. If None, uses default style.
         By default None.
     ax : matplotlib.axes.Axes, optional
@@ -82,11 +91,18 @@ def plot_dnetwork(
     if ax is None:
         _, ax = plt.subplots()
 
-    if layout == "pz-dag":
-        computed_layout = compute_pz_dag_layout(network, **layout_kwargs)
+    if layout == "pz-cladogram":
+        computed_layout = compute_pz_cladogram_layout(network, **layout_kwargs)
+    elif layout == "pz-layered":
+        computed_layout = compute_pz_layered_layout(network, **layout_kwargs)
+    elif layout == "pz-radial":
+        computed_layout = compute_pz_radial_layout(network, **layout_kwargs)
+    elif layout == "pz-unrooted":
+        computed_layout = compute_pz_unrooted_layout(network, **layout_kwargs)
     elif layout.startswith("pz-"):
         raise PhyloZooLayoutError(
-            f"Unknown PhyloZoo layout: '{layout}'. " "Supported PhyloZoo layouts: 'pz-dag'"
+            f"Unknown PhyloZoo layout: '{layout}'. Supported PhyloZoo layouts: "
+            "'pz-cladogram', 'pz-layered', 'pz-radial', 'pz-unrooted'"
         )
     else:
         computed_layout = compute_nx_layout(network, layout=layout, **layout_kwargs)
@@ -107,6 +123,14 @@ def plot_dnetwork(
             return "hybrid"
         return "tree"
 
+    layered = layout in ("pz-cladogram", "pz-layered")
+    arrows = style.arrows or ("hybrid" if layered or layout == "pz-radial" else "all")
+    leaf_label_direction: tuple[float, float] | None = None
+    if layered and layout_kwargs.get("align_leaves", layout != "pz-layered"):
+        # Leaves form the bottom (or right) layer: point their labels away from it.
+        left_right = str(layout_kwargs.get("direction", "TD")).upper() == "LR"
+        leaf_label_direction = (1.0, 0.0) if left_right else (0.0, -1.0)
+
     render_layout(
         ax,
         computed_layout.edge_routes,
@@ -115,7 +139,9 @@ def plot_dnetwork(
         center,
         get_node_type,
         network_obj.get_label,
-        radial_labels_for_leaves=False,
+        radial_labels_for_leaves=(layout == "pz-radial"),
+        arrows=arrows,
+        leaf_label_direction=leaf_label_direction,
     )
 
     if show:

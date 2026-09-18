@@ -32,10 +32,12 @@ def plot(
         The network or graph to plot.
     layout : str, optional
         Layout algorithm. Use 'auto' for the default per type.
-        DirectedPhyNetwork: 'pz-dag' (default), or NetworkX ('spring', 'circular',
+        DirectedPhyNetwork: 'pz-cladogram' (default), 'pz-layered', 'pz-radial', 'pz-unrooted', or NetworkX ('spring',
+        'circular',
         'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite')
         or Graphviz ('dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo').
-        SemiDirectedPhyNetwork: 'neato' (default), 'pz-radial' (trees only), or NetworkX/Graphviz.
+        SemiDirectedPhyNetwork: 'pz-unrooted' (default), 'pz-radial', or
+        NetworkX/Graphviz (e.g. 'neato').
         DirectedMultiGraph / MixedMultiGraph: NetworkX or Graphviz only (no PhyloZoo layouts).
         By default 'auto'.
     style : DNetStyle | SDNetStyle | DMGraphStyle | MGraphStyle, optional
@@ -48,7 +50,7 @@ def plot(
         If True, automatically display the plot using plt.show().
         By default False.
     **kwargs
-        Additional parameters for layout computation (e.g. layer_gap, leaf_gap for pz-dag).
+        Additional parameters for layout computation (e.g. layer_gap, leaf_gap for pz-cladogram).
 
     Returns
     -------

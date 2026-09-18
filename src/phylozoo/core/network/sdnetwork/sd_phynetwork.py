@@ -511,6 +511,56 @@ class SemiDirectedPhyNetwork(MixedPhyNetwork[T], IOMixin):
         new_net._label_to_node = self._label_to_node.copy()
         return new_net
 
+    def to_ascii(self, **kwargs: Any) -> str:
+        """
+        Draw the network as text (root left, leaves right).
+
+        Tree edges are box-drawing lines, hybrid edges dotted lines with an
+        arrowhead at the hybrid node (``◆``); see
+        :func:`phylozoo.viz.to_ascii` for the options (``max_width``,
+        ``max_leaves``, ``col_width``, ``rows_per_leaf``, ``root_location``).
+
+        Parameters
+        ----------
+        **kwargs
+            Passed to :func:`phylozoo.viz.to_ascii`.
+
+        Returns
+        -------
+        str
+            The drawing.
+
+        Examples
+        --------
+        >>> net = SemiDirectedPhyNetwork(
+        ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        ... )
+        >>> print(net.to_ascii())  # doctest: +SKIP
+        """
+        from phylozoo.viz.ascii import to_ascii
+
+        return to_ascii(self, **kwargs)
+
+    def print_ascii(self, **kwargs: Any) -> None:
+        """
+        Print the text drawing of the network; see :meth:`to_ascii`.
+
+        Parameters
+        ----------
+        **kwargs
+            Passed to :func:`phylozoo.viz.to_ascii`.
+
+        Examples
+        --------
+        >>> net = SemiDirectedPhyNetwork(
+        ...     undirected_edges=[(3, 1), (3, 2), (3, 4)],
+        ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (4, {'label': 'C'})]
+        ... )
+        >>> net.print_ascii()  # doctest: +SKIP
+        """
+        print(self.to_ascii(**kwargs))
+
     def __repr__(self) -> str:
         """
         Return string representation of the network.

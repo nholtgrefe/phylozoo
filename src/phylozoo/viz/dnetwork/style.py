@@ -2,6 +2,8 @@
 Styling for DirectedPhyNetwork plots.
 
 This module provides styling configuration for DirectedPhyNetwork visualizations.
+The defaults match those of semi-directed network plots (white tree nodes, black
+leaves, pink hybrid nodes, red hybrid edges, labels aligned with their edge).
 """
 
 from __future__ import annotations
@@ -19,6 +21,17 @@ class DNetStyle(DMGraphStyle):
     This class extends DMGraphStyle with DirectedPhyNetwork-specific options,
     including support for leaves, hybrid nodes, and hybrid edges.
 
+    Attributes
+    ----------
+    arrows : str | None
+        Which edges get an arrowhead: ``'all'``, ``'hybrid'`` (only edges into
+        hybrid nodes) or ``'none'``. ``None`` (default) chooses ``'hybrid'`` for
+        the layered ``pz-cladogram`` layout, where the direction is implied by the
+        drawing, and ``'all'`` for other layouts.
+    label_rotation : float | None
+        ``None`` (default) aligns each label with the direction of its edge;
+        a float applies that fixed rotation (in degrees) to all labels.
+
     Examples
     --------
     >>> style = DNetStyle(node_color='blue', leaf_color='green')
@@ -26,10 +39,16 @@ class DNetStyle(DMGraphStyle):
     'blue'
     """
 
-    leaf_color: str = "lightblue"
-    hybrid_color: str = "lightblue"
-    leaf_size: float | None = None
+    node_color: str = "white"
+    leaf_color: str = "#0a0a0a"
+    hybrid_color: str = "#fcc0bc"
+    leaf_size: float | None = 100.0
     hybrid_edge_color: str = "red"
+    node_size: float = 80.0
+    arrow_head_size: float = 12.0
+    label_offset: float = 0.015
+    label_rotation: float | None = None
+    arrows: str | None = None
 
     def copy(self) -> "DNetStyle":
         """
@@ -63,6 +82,8 @@ class DNetStyle(DMGraphStyle):
             label_offset=self.label_offset,
             label_font_size=self.label_font_size,
             label_color=self.label_color,
+            label_rotation=self.label_rotation,
+            arrows=self.arrows,
         )
 
 
@@ -79,6 +100,6 @@ def default_style() -> DNetStyle:
     --------
     >>> style = default_style()
     >>> style.node_color
-    'lightblue'
+    'white'
     """
     return DNetStyle()

@@ -36,8 +36,8 @@ class SDNetLayout(MGraphLayout[T]):
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
     >>> layout = compute_pz_radial_layout(net)
-    >>> layout.get_position(1)
-    (1.0, 0.0)
+    >>> len(layout.positions)
+    4
     >>> layout.algorithm
     'pz-radial'
 

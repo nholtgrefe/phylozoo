@@ -13,7 +13,7 @@ from phylozoo.viz._layout_utils import compute_layout_center
 from phylozoo.viz._matplotlib import plt
 
 from .style import SDNetStyle, default_style
-from .layout import compute_nx_layout, compute_pz_radial_layout
+from .layout import compute_nx_layout, compute_pz_unrooted_layout, compute_pz_radial_layout
 from phylozoo.viz._render import render_layout
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def plot_sdnetwork(
     network: "SemiDirectedPhyNetwork",
-    layout: str = "neato",
+    layout: str = "pz-unrooted",
     style: SDNetStyle | None = None,
     ax: Any | None = None,
     show: bool = False,
@@ -39,10 +39,11 @@ def plot_sdnetwork(
     network : SemiDirectedPhyNetwork
         The network to plot.
     layout : str, optional
-        Layout algorithm. PhyloZoo: 'pz-radial' (trees only). NetworkX: 'spring',
-        'circular', 'kamada_kawai', 'planar', 'random', 'shell', 'spectral', 'spiral',
-        'bipartite'. Graphviz: 'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'.
-        By default 'neato'.
+        Layout algorithm. PhyloZoo: 'pz-unrooted' (tree-of-blobs layout, any network;
+        ``daylight`` and ``refine`` options) or 'pz-radial' (circular cladogram of the
+        rooted network). NetworkX: 'spring', 'circular', 'kamada_kawai',
+        'planar', 'random', 'shell', 'spectral', 'spiral', 'bipartite'. Graphviz:
+        'dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo'. By default 'pz-unrooted'.
     style : NetworkStyle, optional
         Styling configuration. If None, uses default style.
         By default None.
@@ -74,7 +75,7 @@ def plot_sdnetwork(
     ...     undirected_edges=[(3, 1), (3, 2), (3, 100)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'}), (100, {'label': 'C'})]
     ... )
-    >>> ax = plot(net, layout='spring')  # the default 'neato' needs pygraphviz
+    >>> ax = plot(net)
     """
     if style is None:
         style = default_style()
@@ -82,11 +83,14 @@ def plot_sdnetwork(
     if ax is None:
         _, ax = plt.subplots()
 
-    if layout == "pz-radial":
+    if layout == "pz-unrooted":
+        computed_layout = compute_pz_unrooted_layout(network, **layout_kwargs)
+    elif layout == "pz-radial":
         computed_layout = compute_pz_radial_layout(network, **layout_kwargs)
     elif layout.startswith("pz-"):
         raise PhyloZooLayoutError(
-            f"Unknown PhyloZoo layout: '{layout}'. " "Supported PhyloZoo layouts: 'pz-radial'"
+            f"Unknown PhyloZoo layout: '{layout}'. "
+            "Supported PhyloZoo layouts: 'pz-unrooted', 'pz-radial'"
         )
     else:
         computed_layout = compute_nx_layout(network, layout=layout, **layout_kwargs)

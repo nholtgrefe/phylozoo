@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any, TypeVar
 
 import networkx as nx
+import numpy as np
 
 from phylozoo.utils.exceptions import (
     PhyloZooImportError,
@@ -145,3 +146,113 @@ def compute_layout_center(
     xs = [x for x, _ in pos.values()]
     ys = [y for _, y in pos.values()]
     return ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2)
+
+
+def stress_majorization(
+    graph: nx.Graph,
+    pos: dict[Any, tuple[float, float]],
+    iterations: int,
+    lengths: dict[tuple[Any, Any], float] | float = 1.0,
+) -> dict[Any, tuple[float, float]]:
+    """
+    Relax a drawing by stress majorization (SMACOF), the algorithm behind ``neato``.
+
+    The target distance between two nodes is their shortest-path distance in
+    the graph, with edges weighted by ``lengths``; pairs are weighted by the
+    inverse square of that distance, so local structure dominates. Starting
+    from a good drawing this converges to a nearby local optimum, which is why
+    the layouts built on it are deterministic.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        Simple undirected graph of the drawing (must be connected).
+    pos : dict
+        Starting positions for every node of ``graph``.
+    iterations : int
+        Number of majorization steps.
+    lengths : dict[tuple, float] | float, optional
+        Target length per edge ``(u, v)`` (as iterated by ``graph.edges``), or
+        one length for all edges. By default 1.0.
+
+    Returns
+    -------
+    dict
+        Node ID -> (x, y) position mapping.
+
+    Examples
+    --------
+    >>> import math
+    >>> import networkx as nx
+    >>> g = nx.path_graph(3)
+    >>> pos = stress_majorization(g, {0: (0.0, 0.0), 1: (1.0, 0.3), 2: (2.0, 0.0)}, 20)
+    >>> round(math.dist(pos[0], pos[2]), 1)
+    2.0
+    """
+    if len(pos) < 2 or iterations <= 0:
+        return dict(pos)
+    nodes = list(graph)
+    index = {v: i for i, v in enumerate(nodes)}
+    for u, v in graph.edges:
+        graph.edges[u, v]["len"] = lengths if isinstance(lengths, float) else lengths[(u, v)]
+    n = len(nodes)
+    target = np.zeros((n, n))
+    for u, dists in nx.all_pairs_dijkstra_path_length(graph, weight="len"):
+        for v, d in dists.items():
+            target[index[u], index[v]] = d
+    weights = np.zeros_like(target)
+    off = ~np.eye(n, dtype=bool)
+    weights[off] = target[off] ** -2
+    laplacian = np.diag(weights.sum(axis=1)) - weights
+    solve = np.linalg.pinv(laplacian)
+
+    coords = np.array([pos[v] for v in nodes], dtype=float)
+    for _ in range(iterations):
+        dist = np.linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
+        dist[~off] = 1.0
+        dist[dist < 1e-9] = 1e-9
+        b_matrix = -weights * target / dist
+        b_matrix[~off] = 0.0
+        np.fill_diagonal(b_matrix, -b_matrix.sum(axis=1))
+        coords = solve @ (b_matrix @ coords)
+    return {v: (float(coords[i, 0]), float(coords[i, 1])) for v, i in index.items()}
+
+
+def count_crossings(segments: np.ndarray) -> int:
+    """
+    Number of properly crossing pairs among line segments.
+
+    Parameters
+    ----------
+    segments : np.ndarray
+        Array of shape (m, 4) with rows ``(x1, y1, x2, y2)``.
+
+    Returns
+    -------
+    int
+        Number of pairs of segments that cross at interior points (shared
+        endpoints and collinear overlaps do not count).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> count_crossings(np.array([[0, 0, 1, 1], [0, 1, 1, 0]]))
+    1
+    >>> count_crossings(np.array([[0, 0, 1, 0], [0, 1, 1, 1]]))
+    0
+    """
+    m = len(segments)
+    if m < 2:
+        return 0
+    i, j = np.triu_indices(m, 1)
+    a, b = segments[i, :2], segments[i, 2:]
+    c, d = segments[j, :2], segments[j, 2:]
+
+    def orient(p: np.ndarray, q: np.ndarray, r: np.ndarray) -> np.ndarray:
+        cross = (q[:, 0] - p[:, 0]) * (r[:, 1] - p[:, 1]) - (q[:, 1] - p[:, 1]) * (
+            r[:, 0] - p[:, 0]
+        )
+        return np.asarray(np.sign(cross))
+
+    crossing = (orient(a, b, c) * orient(a, b, d) < 0) & (orient(c, d, a) * orient(c, d, b) < 0)
+    return int(crossing.sum())

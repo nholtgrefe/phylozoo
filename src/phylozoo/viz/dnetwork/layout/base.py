@@ -30,17 +30,19 @@ class DNetLayout(DMGraphLayout[T]):
     Examples
     --------
     >>> from phylozoo.core.network.dnetwork import DirectedPhyNetwork
-    >>> from phylozoo.viz.dnetwork.layout import compute_pz_dag_layout
+    >>> from phylozoo.viz.dnetwork.layout import compute_pz_cladogram_layout
     >>>
     >>> net = DirectedPhyNetwork(
     ...     edges=[(3, 1), (3, 2)],
     ...     nodes=[(1, {'label': 'A'}), (2, {'label': 'B'})]
     ... )
-    >>> layout = compute_pz_dag_layout(net)
-    >>> layout.get_position(1)
-    (0.0, 0.0)
+    >>> layout = compute_pz_cladogram_layout(net)
+    >>> layout.get_position(1)  # leaves on the bottom layer, root centred above
+    (-0.5, -0.5)
+    >>> layout.get_position(3)
+    (0.0, 0.5)
     >>> layout.algorithm
-    'pz-dag'
+    'pz-cladogram'
 
     Attributes
     ----------
@@ -63,4 +65,4 @@ class DNetLayout(DMGraphLayout[T]):
     network: "DirectedPhyNetwork"
     backbone_edges: set[tuple[T, T, int]] = field(default_factory=set)
     reticulate_edges: set[tuple[T, T, int]] = field(default_factory=set)
-    algorithm: str = "pz-dag"  # Default, but typically overridden by specific layouts
+    algorithm: str = "pz-cladogram"  # Default, but typically overridden by specific layouts

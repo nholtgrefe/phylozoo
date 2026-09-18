@@ -73,9 +73,9 @@ def resolve_layout(obj: Any, layout: str) -> str:
     if layout != "auto":
         resolved = layout
     elif isinstance(obj, DirectedPhyNetwork):
-        resolved = "pz-dag"
+        resolved = "pz-cladogram"
     elif isinstance(obj, SemiDirectedPhyNetwork):
-        resolved = "neato"
+        resolved = "pz-unrooted"
     elif isinstance(obj, (DirectedMultiGraph, MixedMultiGraph)):
         resolved = "spring"
     else:
@@ -83,16 +83,19 @@ def resolve_layout(obj: Any, layout: str) -> str:
 
     # Validate layout support per type
     if isinstance(obj, DirectedPhyNetwork):
-        if resolved.startswith("pz-") and resolved != "pz-dag":
+        directed_layouts = ("pz-cladogram", "pz-layered", "pz-radial", "pz-unrooted")
+        if resolved.startswith("pz-") and resolved not in directed_layouts:
             raise PhyloZooLayoutError(
                 f"Layout '{resolved}' is not supported for DirectedPhyNetwork. "
-                "Use 'pz-dag' or a generic layout (spring, circular, dot, etc.)."
+                f"Use one of {', '.join(directed_layouts)} or a generic layout "
+                "(spring, circular, dot, etc.)."
             )
     elif isinstance(obj, SemiDirectedPhyNetwork):
-        if resolved.startswith("pz-") and resolved != "pz-radial":
+        sd_layouts = ("pz-unrooted", "pz-radial")
+        if resolved.startswith("pz-") and resolved not in sd_layouts:
             raise PhyloZooLayoutError(
                 f"Layout '{resolved}' is not supported for SemiDirectedPhyNetwork. "
-                "Use 'pz-radial' (trees only) or a generic layout (twopi, spring, etc.)."
+                f"Use one of {', '.join(sd_layouts)} or a generic layout (neato, spring, etc.)."
             )
     elif isinstance(obj, (DirectedMultiGraph, MixedMultiGraph)):
         if resolved.startswith("pz-"):
