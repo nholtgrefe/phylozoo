@@ -22,10 +22,11 @@ from phylozoo.utils.exceptions import (
     PhyloZooNetworkStructureError,
     PhyloZooValueError,
 )
-from phylozoo.viz._layout_utils import normalize_positions
+from phylozoo.viz._layout_utils import normalize_positions, sort_key
 from phylozoo.viz._types import EdgeRoute, EdgeType
 
 from .base import DNetLayout
+from .cladogram import compute_pz_cladogram_layout
 
 if TYPE_CHECKING:
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
@@ -63,7 +64,8 @@ def compute_pz_layered_layout(
     2. Replaces every edge that spans more than one layer by a chain through
        dummy nodes, one per intermediate layer, so long edges are ordered and
        routed like nodes instead of cutting across.
-    3. Orders each layer by alternating downward and upward barycenter sweeps
+    3. Orders each layer, starting from the ``pz-cladogram`` order, by
+       alternating downward and upward barycenter sweeps
        (a node moves to the mean position of its neighbours in the layer just
        processed), each followed by swapping adjacent nodes while that lowers
        the number of crossings with the neighbouring layers. The ordering with
@@ -133,8 +135,13 @@ def compute_pz_layered_layout(
         raise PhyloZooValueError(f"direction must be 'TD' or 'LR', got '{direction}'")
 
     graph: nx.DiGraph = nx.DiGraph()
-    graph.add_nodes_from(network._graph.nodes)
-    graph.add_edges_from((u, v) for u, v in network._graph.edges if u != v)
+    graph.add_nodes_from(sorted(network._graph.nodes, key=sort_key))
+    graph.add_edges_from(
+        sorted(
+            ((u, v) for u, v in network._graph.edges if u != v),
+            key=lambda e: tuple(map(sort_key, e)),
+        )
+    )
     if not nx.is_directed_acyclic_graph(graph):
         raise PhyloZooNetworkStructureError("Network must be a DAG")
     roots = [n for n in graph if graph.in_degree(n) == 0]
@@ -163,12 +170,16 @@ def compute_pz_layered_layout(
         chain[(u, v)] = bends
         nx.add_path(proper, [u, *bends, v])
 
+    # Initial order within layers: the pz-cladogram order (a good phylogenetic
+    # order), dummy nodes interpolated along their edge.
+    start = compute_pz_cladogram_layout(network, align_leaves=align_leaves).positions
+    x0 = {n: start[n][0] for n in graph}
+    for (u, v), bends in chain.items():
+        for i, d in enumerate(bends, start=1):
+            x0[d] = x0[u] + (x0[v] - x0[u]) * i / (len(bends) + 1)
     layers: Layers = [[] for _ in range(max(depth.values()) + 1)]
-    for n in nx.dfs_preorder_nodes(proper, roots[0]):
+    for n in sorted(proper, key=lambda n: (depth[n], x0[n])):
         layers[depth[n]].append(n)
-    for n in proper:  # nodes unreachable from the first root (extra roots)
-        if n not in layers[depth[n]]:
-            layers[depth[n]].append(n)
 
     # --- 3. Ordering ---
     best_layers = [list(layer) for layer in layers]

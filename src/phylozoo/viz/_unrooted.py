@@ -20,7 +20,12 @@ import networkx as nx
 import numpy as np
 
 from phylozoo.utils.exceptions import PhyloZooLayoutError
-from phylozoo.viz._layout_utils import count_crossings, normalize_positions, stress_majorization
+from phylozoo.viz._layout_utils import (
+    count_crossings,
+    normalize_positions,
+    sort_key,
+    stress_majorization,
+)
 
 Point = tuple[float, float]
 
@@ -44,8 +49,8 @@ def simple_graph(network: Any) -> nx.Graph:
         The underlying simple graph.
     """
     graph: nx.Graph = nx.Graph()
-    graph.add_nodes_from(network._graph.nodes)
-    for u, v in network._graph.edges:
+    graph.add_nodes_from(sorted(network._graph.nodes, key=sort_key))
+    for u, v in sorted(network._graph.edges, key=lambda e: tuple(map(sort_key, e))):
         if u == v:
             continue
         if graph.has_edge(u, v):

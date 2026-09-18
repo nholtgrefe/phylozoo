@@ -337,66 +337,6 @@ def draw_label(
     )
 
 
-def draw_label_radial(
-    ax: Any,
-    position: tuple[float, float],
-    text: str,
-    style: RenderStyle,
-) -> Any:
-    """
-    Add a text label positioned radially outward (for radial layout).
-
-    Parameters
-    ----------
-    ax : matplotlib.axes.Axes
-        Axes to draw on.
-    position : tuple[float, float]
-        (x, y) position of node.
-    text : str
-        Label text.
-    style : RenderStyle
-        Styling configuration.
-
-    Returns
-    -------
-    matplotlib.text.Text
-        The text object.
-    """
-    import math
-
-    x, y = position
-    angle = math.atan2(y, x)
-    radius = math.sqrt(x * x + y * y)
-    label_radius = radius + style.label_offset
-    label_x = label_radius * math.cos(angle)
-    label_y = label_radius * math.sin(angle)
-
-    if abs(angle) < math.pi / 6 or abs(angle) > 5 * math.pi / 6:
-        ha = "center"
-    elif angle > 0:
-        ha = "left"
-    else:
-        ha = "right"
-
-    if abs(angle - math.pi / 2) < math.pi / 6:
-        va = "bottom"
-    elif abs(angle + math.pi / 2) < math.pi / 6:
-        va = "top"
-    else:
-        va = "center"
-
-    return ax.text(
-        label_x,
-        label_y,
-        text,
-        fontsize=style.label_font_size,
-        color=style.label_color,
-        ha=ha,
-        va=va,
-        zorder=4,
-    )
-
-
 def render_layout(
     ax: Any,
     edge_routes: dict[tuple[Any, Any, int], EdgeRoute],
@@ -429,7 +369,8 @@ def render_layout(
     get_label : callable
         node_id -> label string or None.
     radial_labels_for_leaves : bool, optional
-        If True, use draw_label_radial for leaf nodes. By default False.
+        If True, leaf labels are placed outwards from the layout centre (for
+        radial layouts). By default False.
     arrows : str, optional
         Which directed edges get an arrowhead: 'all', 'hybrid' (only edges
         into hybrid nodes) or 'none'. By default 'all'.
@@ -463,7 +404,11 @@ def render_layout(
             label = get_label(node)
             if label:
                 if radial_labels_for_leaves and node_type == "leaf":
-                    draw_label_radial(ax, position, label, style)
+                    # Read outwards along the radius from the layout centre.
+                    lrot_radial: float | None = getattr(style, "label_rotation", None)
+                    draw_label(
+                        ax, position, label, style, node_type, anchor=center, rotation=lrot_radial
+                    )
                 else:
                     nbrs = neighbour_positions.get(node, [])
                     if nbrs:

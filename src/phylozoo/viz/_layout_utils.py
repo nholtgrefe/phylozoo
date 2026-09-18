@@ -256,3 +256,19 @@ def count_crossings(segments: np.ndarray) -> int:
 
     crossing = (orient(a, b, c) * orient(a, b, d) < 0) & (orient(c, d, a) * orient(c, d, b) < 0)
     return int(crossing.sum())
+
+
+def sort_key(node: Any) -> tuple[str, str]:
+    """
+    Sort key that orders mixed node ids deterministically (by type name, then text).
+
+    Layouts add nodes and edges in this order so that a drawing depends only on
+    the network, not on the insertion order of its nodes (which for
+    string-labelled networks can vary with Python's hash seed).
+
+    Examples
+    --------
+    >>> sorted([3, "b", 1, "a"], key=sort_key)
+    [1, 3, 'a', 'b']
+    """
+    return (type(node).__name__, str(node))

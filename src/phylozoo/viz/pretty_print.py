@@ -121,11 +121,11 @@ def to_pretty_print(
     ...     nodes=[(1, {'label': 'A'}), (6, {'label': 'B'}), (7, {'label': 'C'})]
     ... )
     >>> print(to_pretty_print(net))
-    ┌───────────────●───────● C
-    │               v
-    ○       ┌┄┄┄┄┄┄>◆───────● A
-    └───────●
-            └───────────────● B
+            ┌───────────────● B
+    ┌───────●
+    ○       └┄┄┄┄┄┄>◆───────● A
+    │               ^
+    └───────────────●───────● C
     """
     from phylozoo.core.network.dnetwork import DirectedPhyNetwork
     from phylozoo.core.network.sdnetwork import SemiDirectedPhyNetwork

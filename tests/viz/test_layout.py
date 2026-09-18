@@ -504,3 +504,45 @@ class TestUnrootedOptions:
 
         layout = compute_pz_unrooted_layout(LEVEL_1_SDNETWORK_PARALLEL_EDGES)
         assert len(layout.edge_routes) == LEVEL_1_SDNETWORK_PARALLEL_EDGES.number_of_edges()
+
+
+class TestOrderingImprovements:
+    """Radial re-optimisation in polar coordinates and cladogram-initialised layering."""
+
+    def test_local_search_with_custom_score_never_worsens(self) -> None:
+        """_local_search returns a score no worse than the score of the starting order."""
+        from phylozoo.viz.dnetwork.layout.cladogram import _local_search
+
+        kids = {"r": ["a", "b", "c"], "a": [], "b": [], "c": []}
+        penalty = {("a", "b", "c"): 5, ("b", "a", "c"): 3, ("b", "c", "a"): 1}
+
+        def score(order: dict) -> tuple[int, float]:
+            return penalty.get(tuple(order["r"]), 9), 0.0
+
+        assert _local_search("r", kids, [], [], {}, 1.0, score=score) == (1, 0.0)
+        assert kids["r"] == ["b", "c", "a"]
+
+    def test_radial_search_reduces_chord_crossings(self) -> None:
+        """The polar search leaves NON_TREEBASED with fewer crossings than the plain layered order."""
+        from phylozoo.viz._layout_utils import count_crossings
+        from phylozoo.viz.dnetwork.layout import compute_pz_radial_layout
+
+        net = LEVEL_5_DNETWORK_NON_TREEBASED
+        layout = compute_pz_radial_layout(net)
+        segments = np.array(
+            [(*a, *b) for r in layout.edge_routes.values() for a, b in zip(r.points, r.points[1:])]
+        )
+        assert count_crossings(segments) <= 5
+        assert compute_pz_radial_layout(net).positions == layout.positions  # deterministic
+
+    def test_layered_starts_from_cladogram_order(self) -> None:
+        """With aligned leaves the layered drawing keeps the cladogram's crossing-free order."""
+        from phylozoo.viz._layout_utils import count_crossings
+        from phylozoo.viz.dnetwork.layout import compute_pz_layered_layout
+        from tests.fixtures.directed_networks import LEVEL_3_DNETWORK_LARGE_MANY_HYBRIDS
+
+        layout = compute_pz_layered_layout(LEVEL_3_DNETWORK_LARGE_MANY_HYBRIDS, align_leaves=True)
+        segments = np.array(
+            [(*a, *b) for r in layout.edge_routes.values() for a, b in zip(r.points, r.points[1:])]
+        )
+        assert count_crossings(segments) == 0

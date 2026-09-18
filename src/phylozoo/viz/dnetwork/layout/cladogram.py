@@ -12,7 +12,7 @@ deterministic.
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 import networkx as nx
 import numpy as np
@@ -23,7 +23,7 @@ from phylozoo.utils.exceptions import (
     PhyloZooValueError,
 )
 from phylozoo.viz._layout_utils import count_crossings as _count_crossings
-from phylozoo.viz._layout_utils import normalize_positions
+from phylozoo.viz._layout_utils import normalize_positions, sort_key
 
 from .base import DNetLayout
 from .routes import compute_backbone_routes, compute_hybrid_routes, compute_rectangular_routes
@@ -42,7 +42,7 @@ def compute_pz_cladogram_layout(
     network: "DirectedPhyNetwork",
     layer_gap: float = 1.0,
     leaf_gap: float = 1.0,
-    trials: int = 5,
+    trials: int = 10,
     seed: int | None = 0,
     direction: str = "TD",
     x_scale: float = 1.0,
@@ -67,7 +67,9 @@ def compute_pz_cladogram_layout(
        pull subtrees towards the partners of their reticulate edges, then a
        local search swaps adjacent siblings whenever that lowers the exact
        number of edge crossings (skipped for very large networks). ``trials``
-       random restarts of this procedure are compared and the best kept.
+       restarts of this procedure, each from a random order of the nodes that
+       can affect crossings (ancestors of reticulate-edge endpoints), are
+       compared and the best kept.
     4. Places leaves left to right, internal nodes above the mean of their
        children, and maps layers to the vertical (``'TD'``) or horizontal
        (``'LR'``) axis.
@@ -82,7 +84,8 @@ def compute_pz_cladogram_layout(
         Spacing between consecutive leaves. By default 1.0.
     trials : int, optional
         Number of ordering attempts; the first starts from the network's node
-        order, the others from random child orders. By default 5.
+        order, the others from random orders of the crossing-relevant nodes.
+        Trees need one. By default 10.
     seed : int | None, optional
         Random seed for the restarts; None draws a fresh seed. By default 0.
     direction : str, optional
@@ -137,8 +140,13 @@ def compute_pz_cladogram_layout(
         raise PhyloZooValueError(f"direction must be 'TD' or 'LR', got '{direction}'")
 
     graph: nx.DiGraph = nx.DiGraph()
-    graph.add_nodes_from(network._graph.nodes)
-    graph.add_edges_from((u, v) for u, v in network._graph.edges if u != v)
+    graph.add_nodes_from(sorted(network._graph.nodes, key=sort_key))
+    graph.add_edges_from(
+        sorted(
+            ((u, v) for u, v in network._graph.edges if u != v),
+            key=lambda e: tuple(map(sort_key, e)),
+        )
+    )
     if not nx.is_directed_acyclic_graph(graph):
         raise PhyloZooNetworkStructureError("Network must be a DAG")
     roots = [n for n in graph if graph.in_degree(n) == 0]
@@ -173,17 +181,29 @@ def compute_pz_cladogram_layout(
                 depth[n] = bottom
 
     # --- Child ordering ---
+    # Only nodes above an endpoint of a reticulate edge can change the number of
+    # crossings; restarts shuffle those alone (a tree needs no restarts at all).
+    parent_of = {c: p for p, cs in kids.items() for c in cs}
+    relevant: set[Any] = set()
+    for u, v in reticulate:
+        for n in (u, v):
+            while n in parent_of:
+                n = parent_of[n]
+                relevant.add(n)
+    shuffle_nodes = [n for n in topo if n in relevant and len(kids[n]) > 1]
     rng = random.Random(seed)
     best_score: tuple[int, float] | None = None
     best_kids: Children = kids
-    for trial in range(max(1, trials)):
+    for trial in range(max(1, trials) if shuffle_nodes else 1):
         if trial > 0:
-            for cs in kids.values():
-                rng.shuffle(cs)
+            for n in shuffle_nodes:
+                rng.shuffle(kids[n])
         for _ in range(3):
             _barycenter_pass(root, kids, reticulate, leaf_gap)
         if len(edges) <= _LOCAL_SEARCH_MAX_EDGES:
-            score = _local_search(root, kids, edges, reticulate, depth, leaf_gap)
+            score = _local_search(
+                root, kids, edges, reticulate, depth, leaf_gap, nodes=shuffle_nodes
+            )
         else:
             score = _score(root, kids, edges, reticulate, depth, leaf_gap)
         if best_score is None or score < best_score:
@@ -347,18 +367,27 @@ def _local_search(
     reticulate: list[tuple[Any, Any]],
     depth: dict[Any, int],
     leaf_gap: float,
+    score: Callable[[Children], tuple[int, float]] | None = None,
+    nodes: list[Any] | None = None,
 ) -> tuple[int, float]:
-    """Swap adjacent siblings while that improves the score; returns the final score."""
-    best = _score(root, kids, edges, reticulate, depth, leaf_gap)
+    """Swap adjacent siblings (of ``nodes``, default all) while that improves the score; returns the final score."""
+    if score is None:
+
+        def score(k: Children) -> tuple[int, float]:
+            return _score(root, k, edges, reticulate, depth, leaf_gap)
+
+    best = score(kids)
     improved = True
+    candidates = list(kids) if nodes is None else nodes
     while improved:
         improved = False
-        for cs in kids.values():
+        for n in candidates:
+            cs = kids[n]
             for i in range(len(cs) - 1):
                 cs[i], cs[i + 1] = cs[i + 1], cs[i]
-                score = _score(root, kids, edges, reticulate, depth, leaf_gap)
-                if score < best:
-                    best = score
+                candidate = score(kids)
+                if candidate < best:
+                    best = candidate
                     improved = True
                 else:
                     cs[i], cs[i + 1] = cs[i + 1], cs[i]

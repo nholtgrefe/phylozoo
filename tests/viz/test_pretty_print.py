@@ -42,11 +42,11 @@ class TestToAscii:
         )
         expected = "\n".join(
             [
-                "┌───────────────●───────● C",
-                "│               v",
-                "○       ┌┄┄┄┄┄┄>◆───────● A",
-                "└───────●",
-                "        └───────────────● B",
+                "        ┌───────────────● B",
+                "┌───────●",
+                "○       └┄┄┄┄┄┄>◆───────● A",
+                "│               ^",
+                "└───────────────●───────● C",
             ]
         )
         assert to_pretty_print(net) == expected
@@ -139,7 +139,7 @@ class TestToAscii:
         net = LEVEL_1_DNETWORK_SINGLE_HYBRID
         assert net.to_pretty_print() == to_pretty_print(net)
         net.pretty_print()
-        assert capsys.readouterr().out.strip() == to_pretty_print(net)
+        assert capsys.readouterr().out == to_pretty_print(net) + "\n"
         assert SDTREE_LARGE_BINARY.to_pretty_print() == to_pretty_print(SDTREE_LARGE_BINARY)
 
     def test_wrong_type(self) -> None:
