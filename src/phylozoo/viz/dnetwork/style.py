@@ -29,6 +29,9 @@ class DNetStyle(DMGraphStyle):
     implied by the drawing, and ``'all'`` otherwise. ``label_rotation`` of
     ``None`` (default) aligns each label with the direction of its edge; a
     float applies that fixed rotation (in degrees) to all labels.
+    ``root_color`` and ``root_size`` style the root node; ``None`` (default)
+    draws it like any tree node, except in the ``pz-unrooted`` layout, where
+    the root is otherwise indistinguishable and gets a gold, larger marker.
 
     Examples
     --------
@@ -47,6 +50,8 @@ class DNetStyle(DMGraphStyle):
     label_offset: float = 0.015
     label_rotation: float | None = None
     arrows: str | None = None
+    root_color: str | None = None
+    root_size: float | None = None
 
     def copy(self) -> "DNetStyle":
         """
@@ -82,6 +87,8 @@ class DNetStyle(DMGraphStyle):
             label_color=self.label_color,
             label_rotation=self.label_rotation,
             arrows=self.arrows,
+            root_color=self.root_color,
+            root_size=self.root_size,
         )
 
 

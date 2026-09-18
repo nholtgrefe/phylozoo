@@ -87,6 +87,11 @@ def plot_dnetwork(
     """
     if style is None:
         style = default_style()
+    if layout == "pz-unrooted" and (style.root_color is None or style.root_size is None):
+        # In the unrooted drawing nothing else marks the root: make it stand out.
+        style = style.copy()
+        style.root_color = style.root_color or "#f5c542"
+        style.root_size = style.root_size or 2.2 * style.node_size
 
     if ax is None:
         _, ax = plt.subplots()

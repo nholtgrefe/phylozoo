@@ -216,16 +216,22 @@ def _get_node_color(node_type: str, style: RenderStyle) -> str:
         return style.leaf_color  # type: ignore[no-any-return]
     if node_type == "hybrid" and hasattr(style, "hybrid_color"):
         return style.hybrid_color  # type: ignore[no-any-return]
+    root_color = getattr(style, "root_color", None)
+    if node_type == "root" and root_color is not None:
+        return str(root_color)
     return style.node_color
 
 
 def _get_node_size(node_type: str, style: RenderStyle) -> float:
     """Get node size from node type and style.
 
-    For leaf nodes, uses leaf_size if set; otherwise falls back to node_size.
+    Leaves use leaf_size and the root root_size when set; otherwise node_size.
     """
     if node_type == "leaf" and hasattr(style, "leaf_size") and style.leaf_size is not None:
         return style.leaf_size  # type: ignore[no-any-return]
+    root_size = getattr(style, "root_size", None)
+    if node_type == "root" and root_size is not None:
+        return float(root_size)
     return style.node_size
 
 

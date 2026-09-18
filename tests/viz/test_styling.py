@@ -109,3 +109,46 @@ class TestLabelPlacement:
         auto = draw_label(ax, (1.0, 0.0), "x", style, anchor=(0.0, 0.0), rotation=None)
         assert (auto.get_ha(), auto.get_va()) == ("left", "center")
         plt.close("all")
+
+
+class TestRootStyle:
+    """root_color / root_size options."""
+
+    def test_defaults_and_copy(self) -> None:
+        """Unset by default and carried by copy()."""
+        style = DNetStyle()
+        assert style.root_color is None and style.root_size is None
+        copied = DNetStyle(root_color="gold", root_size=300.0).copy()
+        assert (copied.root_color, copied.root_size) == ("gold", 300.0)
+
+    def test_render_uses_root_style(self) -> None:
+        """The root marker takes root_color/root_size when set, node values otherwise."""
+        from phylozoo.viz._render import _get_node_color, _get_node_size
+
+        plain = DNetStyle()
+        assert _get_node_color("root", plain) == plain.node_color
+        assert _get_node_size("root", plain) == plain.node_size
+        styled = DNetStyle(root_color="gold", root_size=300.0)
+        assert _get_node_color("root", styled) == "gold"
+        assert _get_node_size("root", styled) == 300.0
+
+    def test_unrooted_layout_marks_root(self) -> None:
+        """pz-unrooted draws the root larger than the other internal nodes; other layouts do not."""
+        from phylozoo.viz import plot
+        from tests.fixtures.directed_networks import LEVEL_1_DNETWORK_SINGLE_HYBRID as net
+
+        def radii(layout: str) -> dict[float, int]:
+            ax = plot(net, layout=layout)
+            counts: dict[float, int] = {}
+            for patch in ax.patches:
+                if hasattr(patch, "get_radius"):
+                    counts[round(patch.get_radius(), 6)] = (
+                        counts.get(round(patch.get_radius(), 6), 0) + 1
+                    )
+            return counts
+
+        unrooted, cladogram = radii("pz-unrooted"), radii("pz-cladogram")
+        assert (
+            len(unrooted) == len(cladogram) + 1
+        )  # one extra (root) radius in the unrooted drawing
+        assert unrooted[max(unrooted)] == 1

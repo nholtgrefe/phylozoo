@@ -80,6 +80,7 @@ phylogenetic options:
 * **leaf_size** (float, default=100.0): Size of leaf nodes.
 * **hybrid_color** (str, default='#fcc0bc'): Color for hybrid nodes.
 * **hybrid_edge_color** (str, default='red'): Color for hybrid edges.
+* **root_color** / **root_size** (directed networks; default=None): Colour and size of the root node. Unset, the root is drawn like a tree node, except in ``pz-unrooted`` where it gets a gold, larger marker so it can be told apart.
 * **label_rotation** (float | None, default=None): Rotation of taxon labels in degrees. ``None`` aligns each label with its pendant edge (reading outwards); a fixed value such as ``0`` keeps all labels at that angle and places them beside the node on its outward side.
   ``None`` (the default) auto-aligns each label with the direction of its connecting edge,
   which reduces overlap in force-directed layouts like ``neato``.
